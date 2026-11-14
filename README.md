@@ -35,11 +35,11 @@ files. Wall time, median of 10 runs:
 | Run | quicktype | quickertype | Faster |
 |---|---:|---:|---:|
 | Startup (`--version`) | 217 ms | 2.3 ms | 96× |
-| `pokedex.json` (82 KB) → TypeScript | 257 ms | 4.8 ms | 54× |
-| `github-events.json` (82 KB) → 8 languages | 271–289 ms | 6.4–9.0 ms | 32–43× |
-| GraphQL schema (1.2 MB) and query → TypeScript | 245 ms | 9.3 ms | 26× |
-| JSON Schema (vega-lite, 306 KB) → TypeScript | 418 ms | 37 ms | 11× |
-| Generated JSON (40 MB) → TypeScript | 2,621 ms | 319 ms | 8.2× |
+| `pokedex.json` (82 KB) → TypeScript | 257 ms | 4.3 ms | 60× |
+| `github-events.json` (82 KB) → 8 languages | 271–289 ms | 5.6–8.2 ms | 35–50× |
+| GraphQL schema (1.2 MB) and query → TypeScript | 245 ms | 8.9 ms | 28× |
+| JSON Schema (vega-lite, 306 KB) → TypeScript | 418 ms | 36 ms | 11× |
+| Generated JSON (40 MB) → TypeScript | 2,621 ms | 179 ms | 15× |
 | quicktype's test corpus: 11,178 CLI runs, 12 in parallel | 572 s | 12.5 s | 46× |
 | Peak memory, generated JSON (40 MB) | 625 MiB | 62 MiB | 10× less |
 

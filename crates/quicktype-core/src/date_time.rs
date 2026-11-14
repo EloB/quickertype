@@ -18,6 +18,18 @@ pub trait DateTimeRecognizer {
     fn is_time(&self, s: &str) -> bool;
     /// Whether `s` is a date-time (`2020-01-31T10:00:00Z`).
     fn is_date_time(&self, s: &str) -> bool;
+
+    /// Whether no UUID (lower-case hex in groups of 8, 4, 4, 4 and 12,
+    /// joined by `-`) is a date, a time or a date-time to this recognizer.
+    /// Then string inference may test for a UUID before it asks the
+    /// recognizer, which is faster and gives the same answer
+    /// ([`infer_transformed_string_type_kind_for_string`](crate::attributes::string_types::infer_transformed_string_type_kind_for_string)).
+    /// `false` unless a recognizer says otherwise, which keeps quicktype's
+    /// order of checks. The built-in recognizers (the default one, Kotlin's
+    /// and Swift's) all say `true`.
+    fn rejects_uuids(&self) -> bool {
+        false
+    }
 }
 
 /// `DAYS`: the days per month, with February at 29 (no leap-year check).
@@ -41,6 +53,13 @@ impl DateTimeRecognizer for DefaultDateTimeRecognizer {
         // The date part starts with four digits (`is_date`), so a string
         // that does not start with one is not split at all.
         s.as_bytes().first().is_some_and(u8::is_ascii_digit) && default_is_date_time(self, s)
+    }
+
+    /// A date has 10 characters, where a UUID has 36; a time has `:` third,
+    /// where a UUID has a hex digit; and a date-time has a `t` or `T`,
+    /// which a UUID never has.
+    fn rejects_uuids(&self) -> bool {
+        true
     }
 }
 

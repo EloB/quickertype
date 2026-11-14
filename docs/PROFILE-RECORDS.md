@@ -7,9 +7,10 @@ covers how fast our JSON readers are next to `serde_json` and `simd-json`,
 what in them is quicktype's semantics and what is implementation overhead,
 and a ranked list of changes that keep the output byte-identical.
 
-Nothing here changes product code. The prototypes in
+The profile itself changed no product code: the prototypes in
 [Opportunities](#opportunities-ranked) were built in a scratch copy, only
-to measure their gains, and are not part of this branch.
+to measure their gains. Items 1, 3a, 3b and 6 have since been
+implemented, measured and checked; see [Status](#status).
 
 ## Summary
 
@@ -45,6 +46,11 @@ to measure their gains, and are not part of this branch.
   per-token and per-string checks cheaper, and stop counting the string
   values of a place once those can no longer change its type. Details are
   under [Opportunities](#opportunities-ranked).
+- **Implemented so far: items 1, 3a, 3b and 6 make the CLI 31–32% faster
+  on this input** (100k records: 52.3 → 35.9 ms; 1M: 478 → 323 ms), 15%
+  faster on text-heavy records and 13% on pokedex, with identical output
+  on 20,484 CLI runs against main ([Status](#status)). Items 2, 3c, 5 and
+  8 are next.
 
 ## Method
 
@@ -388,7 +394,8 @@ a file (16.3 ms) and 1.90 GB/s from memory (14.1 ms). That is within 5–15%
 of `serde_json`'s validation and the `simd-json` tape. The tallies read
 through it at 920 MB/s (29.2 ms, without prototype 2).
 
-1. **Scan string bodies a word at a time in the stream tokenizer.** Port
+1. **Scan string bodies a word at a time in the stream tokenizer.**
+   *Done; see [Status](#status).* Port
    `plain_run` from the `JSON.parse` reader to `Tokenizer::skip(is_plain)`:
    test 8 bytes with a SWAR mask for `"`, `\` and bytes below 0x20. Take
    the first stop from the mask's lowest set bit (borrows only propagate
@@ -433,7 +440,8 @@ through it at 920 MB/s (29.2 ms, without prototype 2).
      `TallyInference::add_values_to_accumulator` when `with_enums` is
      unrestricted. That saves the 1.1 ms of inference, but none of the
      memory.
-3. **Cheaper per-token and per-string checks.**
+3. **Cheaper per-token and per-string checks.** *The first two are
+   done; see [Status](#status).*
    - Compare with one precomputed threshold in `discard_consumed`
      (`usize::MAX` in memory, the chunk size when streaming), instead of
      checking `reader.is_some()` and the chunk size on every token. That
@@ -473,7 +481,8 @@ through it at 920 MB/s (29.2 ms, without prototype 2).
    - *Gain (estimate):* `add_case` is 7.4%, `intern_text` 2.7% of it; about
      −1 to −2 ms per 100k records.
    - *Exactness:* the same id, so the same counts.
-6. **Build the pluralize rules at compile time.** Serialize the
+6. **Build the pluralize rules at compile time.** *Done; see
+   [Status](#status).* Serialize the
    `regex-automata` multi-pattern DFA in `build.rs`, as the Markov chain
    already is, and deserialize it at run time.
    - *Gain:* −0.7 ms and −12,600 allocations per process. That is 1.5% of
@@ -505,6 +514,85 @@ the classifier are shared by both paths, so the harness cannot see a bug
 there; the tokenizer's chunking unit tests, `cargo xtask parity` and
 `cargo xtask diff` against the TypeScript CLI can. Item 4 is the one that
 changes the scaling for large files.
+
+### Status
+
+What is implemented (branch `perf/reader-speed`), against what the
+prototypes promised. "Measured" is the release CLI, `-l ts`, interleaved
+with main (`d459c3e26`) or with the step before, medians of 21 runs (6
+to 9 at 1M, 100 for the small inputs), wall / CPU ms, at a load average
+of 3 to 14 on 12 cores. Each row comes from its own interleaved table,
+so the steps add up only roughly.
+
+| Item | State | Prototype | Measured |
+|---|---|---|---|
+| 1. Scan string bodies a word at a time | done | with item 3, the CLI 52.4 → 34.4 ms | 100k: 53.2 / 51.9 → 41.5 / 40.2 (−22%); 1M: 483 → 369; text-heavy −15%; pretty-printed −21% |
+| 1'. `skip_whitespace` a word at a time | tried, dropped | – | slower on every input: +24% on pretty-printed records, +3% on compact ones |
+| 2. Skip strings at unrestricted places | next | −3 ms; 1M peak RSS 43.5 → 7.5 MiB | – |
+| 3a. One threshold in `discard_consumed` | done | about −2.3 ms | 100k: 40.9 → 39.4 (−3.6%); 1M: 374 → 354 |
+| 3b. UUID shape first, under the default recognizer | done | with 3c, classification 34.9 → 31.2 ms in the parse bench | 100k: 39.4 → 36.7 (−7%); 1M: 354 → 331; nothing on text without UUIDs |
+| 3c. The UTF-16 bound in `commit_string` | next | (with 3b) | – |
+| 4. Several threads | not started | – | – |
+| 5. Last-case cache | next | −1 to −2 ms (estimate) | – |
+| 6. Pluralize's rules built at compile time | done | −0.7 ms | 9-byte input 4.4 → 3.7 ms, pokedex 5.5 → 4.8 ms, 100k 37.1 → 36.4 ms; peak RSS −1.0 to −1.6 MiB on small inputs |
+| 7. A cheaper window | not started | – | – |
+| 8. Key-table ids in the `JSON.parse` reader | next | – | – |
+
+All four together, against main in one interleaved table (load average
+5): 100k records 52.3 / 51.0 → 35.9 / 34.8 ms (−31%), peak RSS 10.6 →
+9.7 MiB; 1M 478 / 477 → 323 / 322 ms (−32%), 43.5 → 43.1 MiB;
+text-heavy records (23.4 MB of long strings with escapes and non-ASCII
+text) 81.0 → 68.5 ms (−15.5%); the 100k records pretty-printed (30.3 MB)
+54.1 → 37.7 ms (−30%); pokedex 5.5 → 4.7 ms; github-events 7.0 →
+6.4 ms; the 9-byte `[{"a":1}]` 4.1 → 3.5 ms.
+
+How it differs from the prototypes:
+
+- Item 1's scan is shared by both readers (`input::json_scan`). The
+  `JSON.parse` reader now also takes the first stop from the mask's
+  lowest set bit, where it went on byte by byte from the start of that
+  word.
+- Item 3b asks the recognizer whether a UUID can be a date, time or
+  date-time to it (`DateTimeRecognizer::rejects_uuids`, `false` by
+  default, `true` for the three built-in recognizers: the default one,
+  Kotlin's and Swift's), and tests only strings of 36 bytes.
+- Item 6's build script also translates the rules, and builds minimized
+  dense DFAs, which load in 30–37 µs per rule list: a process does no
+  other rule work. Sparse DFAs would be 22% smaller but take 360–450 µs
+  to load. The WebAssembly module uses them too: it grows by 181 KB,
+  18 KB gzipped (see
+  [BENCHMARKS.md](BENCHMARKS.md#reading-after-the-cli-profile)). A hash
+  of the rule tables the build script read is checked against the
+  crate's own tables when the crate compiles.
+
+Exactness of what is implemented:
+
+- The whole CLI against main gave byte-identical stdout, stderr and exit
+  code on 20,484 runs, 425 of them failing identically, with the 9
+  option sets of the prototypes: the files of `tests/inputs/json`, the
+  edge cases below, 40 more for the word scan (every escape, stop and
+  multi-byte character at offsets 0 to 17 from a quote, stops around
+  every offset of three 64 KiB chunks, raw control characters and invalid
+  UTF-8 at and around chunk boundaries, a string unterminated at a
+  boundary), the 100k and 1M files, the text-heavy and pretty-printed
+  inputs, and the 2,000 generated documents.
+- `cargo xtask streaming-fuzz --path all` on 1,000,000 seeds found no
+  difference (6,000,000 graphs, 299,769 whole runs, 24,405 failing
+  alike). The harness cannot see the tokenizer and the classifier, which
+  both paths share; unit tests do. The word scan is checked against the
+  byte-wise one with every byte value at every position of a word (among
+  plain bytes next to the stops' values and of 0x80 and above), every
+  stop at every offset from every start, a byte of every value after the
+  first stop, and random bytes; and in the tokenizer, with a stop, escape
+  or multi-byte character at every offset modulo 8 from the quote, read
+  whole and in chunks of 1 to 17 bytes. The UUID-first classifier is
+  compared with the recognizer-first order on 50,000 strings of 36
+  characters, under each built-in recognizer. Pluralize's DFAs select
+  exactly the rules whose own regex matches, on 31,586 words.
+- `cargo xtask parity`: 11,177 of 11,177. The fuzz targets `json_stream`
+  and `json_parse` ran 5 minutes each (1.8 million inputs each) without a
+  finding. npm/quicktype-core's tests, its differential suite (19,078
+  scenarios, 0 different) and its browser smoke test pass.
 
 ### Exactness of the prototypes
 

@@ -71,6 +71,7 @@ use super::{
     CompressedJson, JsonSink, NO_INDEX, PROCESS_MAX_DEPTH, ParseError, Strings, Value,
     parse_string_value_into, syntax_error, vec_size,
 };
+use crate::input::json_scan::plain_run;
 use crate::messages::{QuickTypeError, Result};
 use crate::support::fast_hash::{BuildHasher, HashMap, HashSet};
 use crate::support::recursion::stack_overflow;
@@ -386,52 +387,6 @@ struct OpenObject {
 enum Open {
     Array(usize),
     Object(OpenObject),
-}
-
-/// Whether reading a string stops at this byte: `"`, `\` or a control
-/// character (which `JSON.parse` rejects).
-const STRING_STOP: [bool; 256] = {
-    let mut table = [false; 256];
-    let mut b = 0;
-    while b < 0x20 {
-        table[b] = true;
-        b += 1;
-    }
-    table[b'"' as usize] = true;
-    table[b'\\' as usize] = true;
-    table
-};
-
-/// Whether a byte of `word` is `"`, `\\` or a control character.
-fn has_string_stop(word: u64) -> bool {
-    const ONES: u64 = u64::from_ne_bytes([1; 8]);
-    const HIGH: u64 = ONES << 7;
-    // A byte below `n` (for `n` at most 0x80), and a zero byte.
-    let below = |v: u64, n: u8| v.wrapping_sub(ONES * u64::from(n)) & !v & HIGH;
-    let zero = |v: u64| below(v, 1);
-    (zero(word ^ (ONES * u64::from(b'"')))
-        | zero(word ^ (ONES * u64::from(b'\\')))
-        | below(word, 0x20))
-        != 0
-}
-
-/// Where the run of string characters from `pos` ends: the first byte
-/// that is `"`, `\\` or a control character, or the end; eight bytes at a
-/// time.
-fn plain_run(bytes: &[u8], mut pos: usize) -> usize {
-    while let Some(chunk) = bytes.get(pos..pos + 8) {
-        let Ok(chunk) = <[u8; 8]>::try_from(chunk) else {
-            break;
-        };
-        if has_string_stop(u64::from_le_bytes(chunk)) {
-            break;
-        }
-        pos += 8;
-    }
-    while bytes.get(pos).is_some_and(|&b| !STRING_STOP[b as usize]) {
-        pos += 1;
-    }
-    pos
 }
 
 /// The first pass over one sample.

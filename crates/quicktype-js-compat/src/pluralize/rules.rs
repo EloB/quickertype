@@ -1,0 +1,237 @@
+// The rule tables of `pluralize` 8.0.0, copied verbatim, in the order
+// `pluralize.js` adds them.
+//
+// This is a module of `pluralize`, and the crate's build script
+// `include!`s it to translate the rules and build their automata ahead of
+// time (see `pluralize::Rules`). So it uses only `std`, and its comments
+// are not inner doc comments.
+
+/// Pluralization rules: a JavaScript regex literal, or a plain word (which
+/// `sanitizeRule` turns into `/^word$/i`), and its replacement.
+pub const PLURAL_RULES: &[(&str, &str)] = &[
+    (r"/s?$/i", "s"),
+    (r"/[^\u0000-\u007F]$/i", "$0"),
+    (r"/([^aeiou]ese)$/i", "$1"),
+    (r"/(ax|test)is$/i", "$1es"),
+    (r"/(alias|[^aou]us|t[lm]as|gas|ris)$/i", "$1es"),
+    (r"/(e[mn]u)s?$/i", "$1s"),
+    (r"/([^l]ias|[aeiou]las|[ejzr]as|[iu]am)$/i", "$1"),
+    (
+        r"/(alumn|syllab|vir|radi|nucle|fung|cact|stimul|termin|bacill|foc|uter|loc|strat)(?:us|i)$/i",
+        "$1i",
+    ),
+    (r"/(alumn|alg|vertebr)(?:a|ae)$/i", "$1ae"),
+    (r"/(seraph|cherub)(?:im)?$/i", "$1im"),
+    (r"/(her|at|gr)o$/i", "$1oes"),
+    (
+        r"/(agend|addend|millenni|dat|extrem|bacteri|desiderat|strat|candelabr|errat|ov|symposi|curricul|automat|quor)(?:a|um)$/i",
+        "$1a",
+    ),
+    (
+        r"/(apheli|hyperbat|periheli|asyndet|noumen|phenomen|criteri|organ|prolegomen|hedr|automat)(?:a|on)$/i",
+        "$1a",
+    ),
+    (r"/sis$/i", "ses"),
+    (r"/(?:(kni|wi|li)fe|(ar|l|ea|eo|oa|hoo)f)$/i", "$1$2ves"),
+    (r"/([^aeiouy]|qu)y$/i", "$1ies"),
+    (r"/([^ch][ieo][ln])ey$/i", "$1ies"),
+    (r"/(x|ch|ss|sh|zz)$/i", "$1es"),
+    (r"/(matr|cod|mur|sil|vert|ind|append)(?:ix|ex)$/i", "$1ices"),
+    (r"/\b((?:tit)?m|l)(?:ice|ouse)$/i", "$1ice"),
+    (r"/(pe)(?:rson|ople)$/i", "$1ople"),
+    (r"/(child)(?:ren)?$/i", "$1ren"),
+    (r"/eaux$/i", "$0"),
+    (r"/m[ae]n$/i", "men"),
+    ("thou", "you"),
+];
+
+/// Singularization rules, as for [`PLURAL_RULES`].
+pub const SINGULAR_RULES: &[(&str, &str)] = &[
+    (r"/s$/i", ""),
+    (r"/(ss)$/i", "$1"),
+    (
+        r"/(wi|kni|(?:after|half|high|low|mid|non|night|[^\w]|^)li)ves$/i",
+        "$1fe",
+    ),
+    (r"/(ar|(?:wo|[ae])l|[eo][ao])ves$/i", "$1f"),
+    (r"/ies$/i", "y"),
+    (
+        r"/\b([pl]|zomb|(?:neck|cross)?t|coll|faer|food|gen|goon|group|lass|talk|goal|cut)ies$/i",
+        "$1ie",
+    ),
+    (r"/\b(mon|smil)ies$/i", "$1ey"),
+    (r"/\b((?:tit)?m|l)ice$/i", "$1ouse"),
+    (r"/(seraph|cherub)im$/i", "$1"),
+    (
+        r"/(x|ch|ss|sh|zz|tto|go|cho|alias|[^aou]us|t[lm]as|gas|(?:her|at|gr)o|[aeiou]ris)(?:es)?$/i",
+        "$1",
+    ),
+    (
+        r"/(analy|diagno|parenthe|progno|synop|the|empha|cri|ne)(?:sis|ses)$/i",
+        "$1sis",
+    ),
+    (r"/(movie|twelve|abuse|e[mn]u)s$/i", "$1"),
+    (r"/(test)(?:is|es)$/i", "$1is"),
+    (
+        r"/(alumn|syllab|vir|radi|nucle|fung|cact|stimul|termin|bacill|foc|uter|loc|strat)(?:us|i)$/i",
+        "$1us",
+    ),
+    (
+        r"/(agend|addend|millenni|dat|extrem|bacteri|desiderat|strat|candelabr|errat|ov|symposi|curricul|quor)a$/i",
+        "$1um",
+    ),
+    (
+        r"/(apheli|hyperbat|periheli|asyndet|noumen|phenomen|criteri|organ|prolegomen|hedr|automat)a$/i",
+        "$1on",
+    ),
+    (r"/(alumn|alg|vertebr)ae$/i", "$1a"),
+    (r"/(cod|mur|sil|vert|ind)ices$/i", "$1ex"),
+    (r"/(matr|append)ices$/i", "$1ix"),
+    (r"/(pe)(rson|ople)$/i", "$1rson"),
+    (r"/(child)ren$/i", "$1"),
+    (r"/(eau)x?$/i", "$1"),
+    (r"/men$/i", "man"),
+];
+
+/// Uncountable words and patterns, in order. Words go into a lookup set;
+/// patterns become both a plural and a singular rule with replacement `$0`.
+pub const UNCOUNTABLE_RULES: &[&str] = &[
+    // Singular words with no plurals.
+    "adulthood",
+    "advice",
+    "agenda",
+    "aid",
+    "aircraft",
+    "alcohol",
+    "ammo",
+    "analytics",
+    "anime",
+    "athletics",
+    "audio",
+    "bison",
+    "blood",
+    "bream",
+    "buffalo",
+    "butter",
+    "carp",
+    "cash",
+    "chassis",
+    "chess",
+    "clothing",
+    "cod",
+    "commerce",
+    "cooperation",
+    "corps",
+    "debris",
+    "diabetes",
+    "digestion",
+    "elk",
+    "energy",
+    "equipment",
+    "excretion",
+    "expertise",
+    "firmware",
+    "flounder",
+    "fun",
+    "gallows",
+    "garbage",
+    "graffiti",
+    "hardware",
+    "headquarters",
+    "health",
+    "herpes",
+    "highjinks",
+    "homework",
+    "housework",
+    "information",
+    "jeans",
+    "justice",
+    "kudos",
+    "labour",
+    "literature",
+    "machinery",
+    "mackerel",
+    "mail",
+    "media",
+    "mews",
+    "moose",
+    "music",
+    "mud",
+    "manga",
+    "news",
+    "only",
+    "personnel",
+    "pike",
+    "plankton",
+    "pliers",
+    "police",
+    "pollution",
+    "premises",
+    "rain",
+    "research",
+    "rice",
+    "salmon",
+    "scissors",
+    "series",
+    "sewage",
+    "shambles",
+    "shrimp",
+    "software",
+    "species",
+    "staff",
+    "swine",
+    "tennis",
+    "traffic",
+    "transportation",
+    "trout",
+    "tuna",
+    "wealth",
+    "welfare",
+    "whiting",
+    "wildebeest",
+    "wildlife",
+    "you",
+    "/pok[eé]mon$/i",
+    // Regexes.
+    "/[^aeiou]ese$/i", // "chinese", "japanese"
+    "/deer$/i",        // "deer", "reindeer"
+    "/fish$/i",        // "fish", "blowfish", "angelfish"
+    "/measles$/i",
+    "/o[iu]s$/i", // "carnivorous"
+    "/pox$/i",    // "chickpox", "smallpox"
+    "/sheep$/i",
+];
+
+/// A hash of a rule list and the uncountable rules: 64-bit FNV-1a over
+/// every string, each followed by a byte that UTF-8 never has. The build
+/// script records it beside what it builds from the tables, and the crate
+/// compares it with the tables it is compiled with, so that the patterns
+/// and automata of other rules fail the build. A `const fn` for that.
+pub const fn rules_hash(rules: &[(&str, &str)], uncountables: &[&str]) -> u64 {
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    let mut i = 0;
+    while i < rules.len() {
+        hash = fnv_string(hash, rules[i].0);
+        hash = fnv_string(hash, rules[i].1);
+        i += 1;
+    }
+    let mut i = 0;
+    while i < uncountables.len() {
+        hash = fnv_string(hash, uncountables[i]);
+        i += 1;
+    }
+    hash
+}
+
+/// [`rules_hash`]'s step: the bytes of `s`, then 0xFF.
+const fn fnv_string(mut hash: u64, s: &str) -> u64 {
+    let bytes = s.as_bytes();
+    let mut i = 0;
+    while i <= bytes.len() {
+        let b = if i < bytes.len() { bytes[i] } else { 0xFF };
+        hash ^= b as u64;
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+        i += 1;
+    }
+    hash
+}

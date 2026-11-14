@@ -35,6 +35,13 @@ impl DateTimeRecognizer for SwiftDateTimeRecognizer {
     fn is_date_time(&self, s: &str) -> bool {
         is_swift_date_time(s).is_some()
     }
+
+    /// Dates and times are the default ones, which reject UUIDs; a
+    /// date-time has an upper-case `T` and a `:`, which a UUID (lower-case
+    /// hex) never has.
+    fn rejects_uuids(&self) -> bool {
+        true
+    }
 }
 
 /// `SwiftProperty`: a property as `initializableProperties` collects it.

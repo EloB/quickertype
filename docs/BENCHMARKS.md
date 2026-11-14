@@ -347,6 +347,114 @@ cargo bench -p quickertype --bench in_process --no-run   # prints the benchmark 
 /usr/bin/time -l <benchmark binary> --parse-only -n 30   # the parse phase's CPU time
 ```
 
+## Reading after the CLI profile
+
+[PROFILE-RECORDS.md](PROFILE-RECORDS.md) found that reading the sample
+is 95% of a large run, and ranked what could be made faster without
+changing the output. Four of its items are done (its
+[Status](PROFILE-RECORDS.md#status) has each one's gain and how it was
+checked):
+
+- the stream tokenizer scans string bodies eight bytes at a time (item
+  1);
+- it checks whether to drop consumed text with one comparison per token
+  (item 3a);
+- under the default date/time recognizer, a 36-byte string is tested for
+  a UUID first (item 3b);
+- pluralize's rule automata are built at compile time (item 6).
+
+Output is byte-identical: 20,484 CLI runs against main, `cargo xtask
+parity` (11,177 of 11,177), the differential harness on a million seeds
+and npm/quicktype-core's differential suite.
+
+**Records and text, interleaved.** Main (`d459c3e26`) and this branch,
+both `cargo build --release -p quickertype`, `-l ts -o <file>`, run in
+turn: medians of 21 runs (9 for 1M records, 100 for the small inputs);
+wall / CPU time in ms (user + system, from `wait4`) and peak RSS. Load
+average 5 on 12 cores.
+
+| Input | Main | This branch | Change |
+|---|---:|---:|---:|
+| 100k records (26.8 MB, the profile's) | 52.3 / 51.0 ms, 10.6 MiB | 35.9 / 34.8 ms, 9.7 MiB | −31% |
+| 1M records (267 MB) | 478 / 477 ms, 43.5 MiB | 323 / 322 ms, 43.1 MiB | −32% |
+| 100k records, pretty-printed (30.3 MB) | 54.1 / 52.9 ms, 10.7 MiB | 37.7 / 36.5 ms, 9.8 MiB | −30% |
+| 20k generated articles: long text with escapes and non-ASCII (23.4 MB) | 81.0 / 79.7 ms, 19.7 MiB | 68.5 / 67.1 ms, 19.4 MiB | −15% |
+| pokedex (82 KB) | 5.5 / 4.5 ms, 8.0 MiB | 4.7 / 3.8 ms, 6.9 MiB | −13% |
+| github-events (82 KB) | 7.0 / 6.0 ms, 8.5 MiB | 6.4 / 5.4 ms, 7.5 MiB | −10% |
+| `[{"a":1}]` (9 bytes) | 4.1 / 3.2 ms, 7.1 MiB | 3.5 / 2.6 ms, 5.5 MiB | −14% |
+
+The records gain most from the word scan and the UUID check; the
+articles, whose strings are long and have no UUIDs, from the word scan
+alone. Small inputs gain the 0.7 ms and 1–1.6 MiB that building
+pluralize's singular rules cost every process.
+
+**`cargo xtask bench`**, with main as `--baseline`: 10 runs per
+benchmark and command after a warm-up, not interleaved, wall time in ms,
+median (min), and peak RSS. Load average 4 to 5. The first two rows ran
+while the machine was still settling and are noise.
+
+| Benchmark | Main | This branch | Peak RSS MiB (main / branch) |
+|---|---:|---:|---:|
+| --version | 7.63 (6.71) | 3.46 (3.03) | 3.5 / 3.5 |
+| tiny JSON (77 B) → TypeScript | 8.31 (7.25) | 8.44 (6.32) | 5.3 / 5.3 |
+| pokedex (82 KB) → TypeScript | 5.14 (5.04) | 4.34 (4.19) | 7.7 / 6.9 |
+| us-senators (155 KB) → TypeScript | 5.48 (5.19) | 4.65 (4.43) | 7.8 / 6.7 |
+| misc/1b409 (606 KB) → TypeScript | 8.14 (7.68) | 6.95 (6.66) | 8.6 / 7.9 |
+| all 13 samples as one top-level (multi-source) → TypeScript | 16.3 (14.5) | 13.2 (13.0) | 10.5 / 10.3 |
+| generated (4 MB) → TypeScript | 26.2 (25.9) | 23.4 (23.3) | 15.8 / 15.6 |
+| generated (40 MB) → TypeScript | 206 (199) | 179 (175) | 62.2 / 62.1 |
+| generated (40 MB) → Rust | 201 (198) | 178 (175) | 60.7 / 60.6 |
+| github-events (82 KB) → ts | 6.79 (6.47) | 5.99 (5.87) | 8.5 / 7.5 |
+| github-events (82 KB) → rust | 7.28 (6.95) | 6.19 (6.08) | 8.4 / 7.3 |
+| github-events (82 KB) → go | 6.77 (6.36) | 5.62 (5.49) | 8.3 / 7.3 |
+| github-events (82 KB) → cs | 6.36 (6.26) | 5.60 (5.50) | 8.5 / 7.4 |
+| github-events (82 KB) → java | 9.00 (8.71) | 8.16 (8.04) | 9.4 / 9.2 |
+| github-events (82 KB) → py | 7.40 (7.24) | 6.54 (6.45) | 9.2 / 8.3 |
+| github-events (82 KB) → swift | 7.17 (6.94) | 6.36 (6.24) | 9.2 / 8.5 |
+| github-events (82 KB) → c++ | 8.12 (7.77) | 7.69 (7.38) | 9.8 / 9.3 |
+| vega-lite.schema (306 KB) → TypeScript | 37.3 (37.0) | 36.4 (36.1) | 16.1 / 16.1 |
+| vega-lite.schema (306 KB) → C# | 41.5 (40.3) | 39.4 (39.2) | 17.8 / 18.3 |
+| github.gqlschema (1.2 MB) + query → TypeScript | 9.27 (9.08) | 8.87 (8.76) | 13.0 / 12.5 |
+| vega-lite.schema → Java (one file per class) | 56.5 (55.4) | 56.2 (55.8) | 20.8 / 20.8 |
+| pokedex → C++ (multi-source) | 5.66 (5.33) | 4.75 (4.63) | 8.0 / 7.2 |
+
+The TypeScript CLI ran in the same benchmark (pokedex 398 (284) ms,
+github-events 274–291 ms, the 40 MB input 2,676 ms), so it is not
+repeated here.
+
+**Module and binary sizes.** The pluralize DFAs, minimized, are 223 KB
+(plural rules) and 276 KB (singular), 15 KB gzipped, in the CLI and in
+the WebAssembly engine alike; the build script's translated patterns
+replace the code that translated them. Bytes; gzip with `-9`, brotli
+with `-q 11`:
+
+| Build | Main | This branch |
+|---|---:|---:|
+| CLI (`target/release/quicktype`) | 8,515,296 | 8,795,984 |
+| `quicktype_wasm.wasm` (`cargo build -p quicktype-wasm --release`) | 6,463,986; gzip 1,980,187 | 6,760,572; gzip 1,994,881 |
+| `quicktype_wasm_bg.wasm` as npm/quicktype-core ships it (wasm-bindgen, `wasm-opt -O3`) | 5,259,102; gzip 1,911,724; brotli 1,262,314 | 5,439,624; gzip 1,929,933; brotli 1,271,602 |
+
+The module the package ships grows by 181 KB, 18 KB gzipped and 9 KB
+with brotli. In exchange, a new engine instance loads the rules'
+patterns and automata instead of translating and building them for its
+first array (natively 30–37 µs per rule list instead of 75–89 µs to
+translate and 0.7–1 ms to build; not measured in a browser). Minimizing
+the DFAs saved 5.5 KB of the shipped module, 60 bytes gzipped, and
+loads them as fast; unminimized, the module was 5,445,167 bytes, gzip
+1,929,993.
+
+To reproduce: build main in a second work tree (or copy its
+`target/release/quicktype`), then
+
+```sh
+cargo xtask bench --baseline ../main/target/release/quicktype
+for bin in ../main/target/release/quicktype target/release/quicktype; do
+  /usr/bin/time -l $bin rulings-100k.json -l ts -o out.ts
+done
+```
+
+with `rulings-100k.json` made as in [PROFILE-RECORDS.md](PROFILE-RECORDS.md#reproducing).
+
 ## Profiling
 
 ```sh
