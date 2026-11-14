@@ -514,7 +514,7 @@ a reader and as text): the same results on both paths, the `RangeError`
 from exactly 1,000 levels on.
 
 - `cargo test` checks 3,000 seeds, each with five graphs and a whole
-  run.
+  run, every way (below), against the reference computed once per seed.
 
 Results when this landed: `cargo xtask streaming-fuzz` over seeds 0 to
 1,999,999 (two runs of a million, the second after merging main) found 0
@@ -579,15 +579,16 @@ checks where each way inferred from (`JsonInput::inferred_from`): forms
 the readers made, and their tables, must be tallied, never declined, so
 a walk that declined them fails the comparison instead of comparing the
 reference with itself (forcing `tally_compressed` to decline fails it on
-the first seeds and on every hand-written case). `cargo test` checks
-3,000 seeds that way too, and the hand-written cases above run every way
-(`Path::All`).
+the first seeds and on every hand-written case). `cargo test`'s 3,000
+seeds and the hand-written cases above run every way (`Path::All`).
 
 - `cargo xtask streaming-fuzz --path compressed --seeds 1_000_000` checks
   the WebAssembly engine's path instead of the CLI's (`--path all` both).
 
 Results when this landed: seeds 0 to 999,999 with `--path compressed`
 found 0 differences in 4,000,000 graphs (two flag combinations per seed,
-each for both ways) and 199,846 whole runs (16,270 failed identically, 77
-skipped for a `$ref` cycle through a union), with 159,927 sources
-failing identically; 544 s on 12 threads.
+each for both ways) and 99,923 whole runs, each both ways (8,135 failed
+identically, 77 skipped for a `$ref` cycle through a union), with
+159,927 sources failing identically; 544 s on 12 threads. (The harness
+then counted a whole run once per way, and reported 199,846 runs and
+16,270 failures; it counts each run once now.)

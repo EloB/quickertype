@@ -345,11 +345,17 @@ pub fn language(name: &str) -> &'static dyn TargetLanguage {
 /// What one seed compared.
 #[derive(Default, Debug)]
 pub struct Stats {
+    /// Graphs compared with the reference's: one per combination of the
+    /// inference flags and way of inferring.
     pub graphs: u64,
+    /// Whole runs (a case, a language and an option set) whose every way
+    /// of inferring was compared with the reference: one each, however
+    /// many ways.
     pub runs: u64,
     /// Whole runs not made: a `$ref` cycle through unions (see
     /// `has_set_operation_cycle`).
     pub skipped_runs: u64,
+    /// Of `runs`, those that failed (alike on every way).
     pub failed_runs: u64,
     pub source_errors: u64,
 }
@@ -455,10 +461,10 @@ fn compare_run(
                 lang.name()
             ));
         }
-        stats.runs += 1;
-        if b.1.is_err() {
-            stats.failed_runs += 1;
-        }
+    }
+    stats.runs += 1;
+    if b.1.is_err() {
+        stats.failed_runs += 1;
     }
     Ok(())
 }
