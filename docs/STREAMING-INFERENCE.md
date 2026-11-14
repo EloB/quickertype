@@ -154,7 +154,7 @@ reads those cases:
   were made, by inference with any flags, and never added to or merged.
 
 URIs still go through, since their protocols and extensions are combined
-beside the string types (`add_produced`), and so do uninterned and
+beside the string types (`add_uri_parts`), and so do uninterned and
 transformed strings in the walk over a compressed form, where they cost a
 bit test. On the 1M records of `docs/PROFILE-RECORDS.md`, whose
 `comment` field is unrestricted from its first long comment on, this
@@ -195,11 +195,14 @@ the whole list at once:
   value).
 
 Two shortcuts skip a combination that cannot change the result
-(`add_unrestricted`, `add_transformation`, `add_produced`): adding
-`unrestricted` to string types that are unrestricted already, adding a
-transformation the string types already allow (or that unrestricted
-types absorb), and adding URI attributes whose protocol and extension are
-already in the combined sets. In each case the union returns the same
+(`add_unrestricted`, `add_transformation`, `add_produced` and its form
+for URIs, `add_uri_parts`): adding `unrestricted` to string types that
+are unrestricted already, adding a transformation the string types
+already allow (or that unrestricted types absorb), and adding URI
+attributes whose protocol and extension are already in the combined
+sets. `add_uri_parts` checks that on the URI's protocol and extension
+before making its attributes, and makes them only to combine them; a
+URI urijs cannot parse has none, which add nothing. In each case the union returns the same
 value with the same key order, so skipping it is exact; it makes the work
 per string value a lookup instead of a set merge. Bits per tally
 (`StringTally::absorbed`) then skip the lookup too: combining only ever
@@ -417,11 +420,18 @@ classified by `commitString` when it was read, and its value records how:
 an interned string (a candidate case, or any string under a `$ref` key
 with references handled) is `add_case`, an uninterned one
 `add_uninterned`, a string format `add_string_format` with its kind, and
-a transformed string `add_transformed_string` with the kind and
-attributes of its text, computed with the form's date/time recognizer as
-`Inference.ts` computes them (once for a text that recurs, which has one
-index: the walk keeps those of the last 256 by index). These are the
-very handlers the builder
+a transformed string `add_uri` with the protocol and extension of its
+text (`uri_inference_parts`, of which `uriInferenceAttributesProducer`
+makes its attributes). A transformed string is a `uri`: `commitString`
+records a string as one only for a kind with an attribute producer, with
+the form's date/time recognizer, and `uri` is the only such kind. That
+holds for a form the readers made; for imported tables
+(`CompressedJson::uris_classified`), the walk recognizes the kind from
+the text as `Inference.ts` does (once for a text that recurs, which has
+one index: the walk keeps the kinds of the last 256 by index), and
+declines a string without a kind or without an attribute producer. The
+builder tallies a URI it reads with the same `add_uri`, after
+classifying it. These are the very handlers the builder
 calls for the reader's events (`Tallies::add_kind`, `add_case`,
 `add_object`, `add_array`, `add_key`, `add_proto_key` and the others,
 which take the node of the place and a string id): the builder finds the

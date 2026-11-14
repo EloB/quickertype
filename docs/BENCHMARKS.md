@@ -1311,7 +1311,8 @@ process, under a load spike: 6.2 s (read 3,192, run 3,040).
 - Copying a string sample in (12 ms of the records' 48–56): only bytes
   avoid it, and the npm API takes strings from most callers.
 - The walk over the compressed form on real data (56% of a native run on
-  the cards): `input/tallies.rs`, changing elsewhere.
+  the cards): `input/tallies.rs`, changing elsewhere. Since done: see
+  [Cards: URIs, the walk and the read's memory](#cards-uris-the-walk-and-the-reads-memory).
 - 64-bit hashing and the allocator, and the other fixed costs of small
   runs, are being worked on separately.
 - V8's tiering: 13–22% of a small warm run is code still in Liftoff, and
@@ -1795,6 +1796,220 @@ WebAssembly's 32-bit hashbrown uses 32 bits of any hash. Natively, the
 seed is per process (address space layout randomization and the clock).
 In WebAssembly it is now per instance, from `crypto.getRandomValues`
 (see "Hash seeds in WebAssembly").
+
+### Cards: URIs, the walk and the read's memory
+
+A user's data showed where the engine was still slow: a dump of
+trading cards, a JSON array of 120,095 cards (656 MB), one per line, each
+with about 27 URIs (the card's API link and web page, a dozen image links
+by the card's id, search links), most of them found in no other card. On
+slices of it (the first N lines, closed with `]`), the walk over the
+compressed form into tallies took 56% of a run natively and half of it in
+WebAssembly, where on small records it takes a few milliseconds. The
+data is not in the repository; `generateCards` in
+`npm/quicktype-core/test/bench/generate.mjs` makes cards of the same
+shape (26.8 URIs per card, four in five distinct, 4.4 KB per card,
+against 27.5, three in four, 5.5 KB), and the benchmarks run 5,000 of
+them (22 MB).
+
+**Where the walk's time went.** A profile of the walk over the 100 MB
+slice (18,244 cards; `sample` on the `profiling` build of the `phases`
+example) put 61% of it in `uriInferenceAttributesProducer` and 16% in
+recognizing each URI's kind again: 77% on URIs, against 23% for the
+tallies themselves. The slice has 502,269 URIs, 381,934 of them
+distinct, so the 256 slots in which the walk kept recurring URIs' kinds
+and attributes seldom held one. The producer parsed each URI with the
+port of urijs, which copies the string and allocates every part of it
+(about ten allocations, two through `format!`), to keep the protocol and
+the path's extension; then it made two index sets and an attribute set,
+which the tallies nearly always found known and dropped.
+
+**What the walk repeated from the read.** The read's commit pass
+classifies every string with the form's date/time recognizer and records
+a `uri` as a transformed string; the walk recognized the kind from the
+text again. Making the attributes is not a repeat: the CLI, which tallies
+while it reads, makes them for every URI too, and so paid the same parse.
+The engine's extra cost over the CLI is the compressed form itself: the
+commit pass interns every distinct URI (the JavaScript tables must hold
+them, as TypeScript's do) and writes 2.2 million object entries, and the
+walk reads them back.
+
+The changes, one commit each:
+
+1. A plain URI (`http://`, `https://` or `ftp://`, a host without `@`,
+   `:` or `[`, no backslash, tab or line break before the query) is read
+   in one pass over a table of the bytes that matter, which finds the
+   path's last dot on the way; every other URI goes to urijs' parser, as
+   before. A test compares the two on 200,000 random strings of the
+   characters that matter to urijs, and `cargo xtask diff` against
+   TypeScript quicktype gave identical output for 600 documents of URIs
+   of every shape and 30 of generated cards (JSON Schema, which shows the
+   protocols and extensions, TypeScript and Rust, with three option sets;
+   the cards in all 27 languages).
+2. The tallies take a URI's protocol and extension, borrowed from its
+   text, and make its attributes only when the place lacks one of them.
+3. The walk takes a transformed string of a form its readers made as a
+   `uri` (the one kind with an attribute producer) instead of recognizing
+   its kind again; imported tables are still checked.
+4. `is_uri` looks for braces byte by byte instead of decoding every
+   character of the URI (the read's commit pass and the CLI).
+5. The `JSON.parse` reader's tape: 8 bytes a node instead of 12, and no
+   room left from its doubling while the tape is committed (see the
+   memory below).
+
+The differential suite has two new sample groups (URIs of every shape,
+and generated cards) to 9 languages; `cargo xtask streaming-fuzz --path
+all` found no difference in 1,000,000 seeds, and `cargo xtask parity`
+passes its 11,177 cases. The measurements below were taken on the
+branch's base, `a07ef1cb4`: before samples as bytes, the slab allocator
+and the new hashing (the sections above).
+
+**Time.** The machine (M2 Max, 12 cores) ran other agents throughout,
+with load averages between 15 and 70, so every comparison below
+interleaves the builds, and a range is that of their medians over the
+rounds. Each step against the one before it, on the 100 MB slice, the
+walk in ms (natively: the `phases` example, medians of 5 runs; in
+WebAssembly: headless Chrome, medians of 3 runs, with the total of
+`addSource` and `quicktypeMultiFile`):
+
+| Step | Native walk | WebAssembly walk | WebAssembly total |
+|---|---:|---:|---:|
+| 1. plain URIs without urijs | 379–387 → 177–204 | 466–469 → 213 | 951 → 694–696 |
+| 2. URIs tallied by their parts | 177–204 → 129–142 | 215–217 → 129 | 707–708 → 636–638 |
+| 3. the reader's classification kept | 100–102 → 60 | 125–129 → 72–73 | 597–624 → 552–561 |
+| 4. braces by bytes (the read's commit pass) | 60 | 72–74 (commit 194–210 → 186–192) | 539–554 → 531–541 |
+
+Before against after, the slices of the dump and generated cards,
+interleaved in one session (load average 10 to 37). Natively in process
+(`phases`, mimalloc; medians of 5 runs, of 3 for 450 MB, two rounds), ms:
+
+| Input | Record | Commit | Walk | Read + run |
+|---|---:|---:|---:|---:|
+| 100 MB of cards, before | 94–102 | 174–185 | 351–374 | 640–660 |
+| after | 88–90 | 163–164 | 67–69 | 331–333 |
+| 250 MB, before | 213–253 | 477–520 | 804–879 | 1,549–1,639 |
+| after | 203–214 | 466–597 | 171–176 | 868–1,003 |
+| 450 MB, before | 430–454 | 889–947 | 1,456–1,665 | 2,801–3,121 |
+| after | 380–415 | 754–764 | 286–329 | 1,465–1,489 |
+| `generateCards(5_000)` (22 MB), before | 18–19 | 35 | 73–74 | 132–136 |
+| after | 19–20 | 33–35 | 15–17 | 74–78 |
+| `generateCards(22_800)` (100 MB), before | 90–91 | 207–220 | 340–375 | 655–699 |
+| after | 84–89 | 174–198 | 71–72 | 343–365 |
+
+Counted by the processor, which other work changes little (`/usr/bin/time
+-l` over four reads and runs in one process): a read and run of the 100
+MB slice takes 3.69 billion instructions and 0.93–0.94 billion cycles,
+against 7.17 and 1.73; of the 22 MB of generated cards 0.94 and 0.23,
+against 1.82 and 0.43. Its peak RSS goes from 361 to 290 MiB.
+
+In WebAssembly, headless Chrome (`phases.mjs`' page: warm, medians of 3
+runs after 3 warm-up runs, two rounds), ms, and the memory after the six
+runs:
+
+| Input | Record | Commit | Walk | `addSource` + run | Memory |
+|---|---:|---:|---:|---:|---:|
+| 100 MB of cards, before | 118–119 | 198–210 | 466–467 | 947–948 | 504 MiB |
+| after | 114–118 | 187–188 | 72–73 | 527–534 | 549 MiB |
+| 250 MB, before | 285 | 699–723 | 1,165–1,166 | 2,522–2,558 | 1,327 MiB |
+| after | 282–283 | 610–648 | 182–183 | 1,438–1,482 | 1,220 MiB |
+| 450 MB, before | 513–522 | 1,089–1,146 | 2,137–2,139 | 4,627–4,732 | 2,424 MiB |
+| after | 505–543 | 980–1,137 | 330–348 | 2,683–2,928 | 1,540 MiB |
+| `generateCards(5_000)` (22 MB), before | 28–29 | 54 | 118 | 243 | 151 MiB |
+| after | 28 | 49–53 | 18 | 136–141 | 135 MiB |
+
+The CLI (`-l ts`, the release build, which reads on one thread) reads
+the same samples into running tallies and gains from changes 1, 2 and 4.
+Billions of instructions, billions of cycles and CPU time (three rounds;
+the peak RSS does not change):
+
+| Input | Before | After |
+|---|---:|---:|
+| 100 MB of cards | 6.24–6.26, 1.34–1.35, 0.40 s | 3.18–3.20, 0.70–0.72, 0.20–0.21 s |
+| 250 MB | 15.47–15.48, 3.32–3.38, 0.99–1.00 s | 7.83–7.84, 1.75–1.77, 0.52–0.53 s |
+| 450 MB | 27.77, 5.96–5.99, 1.79–1.85 s | 14.01, 3.13–3.53, 0.94–1.10 s |
+| `generateCards(5_000)` (22 MB) | 1.61, 0.35–0.36, 0.10–0.11 s | 0.79, 0.19–0.20, 0.05–0.06 s |
+
+On the whole dump (656 MB, more than a JavaScript string holds), the CLI
+writes the same TypeScript as TypeScript quicktype; on the 450 MB slice,
+so do the CLI and the engine (through the npm package in Node).
+
+**Where the time goes now.** At 100 MB natively, the walk is about 65
+ms, of which 37% is reading URIs' parts (a pass over 50 MB of URI text)
+and the rest the tallies. The read is now the larger part: in a profile
+of `jsonRead`, classifying strings is 19%, interning them into the
+string table (hashing, looking up, appending) about a quarter
+(`perf/wasm-hash` works on the hashing), and the record pass's keys 23%.
+
+**Memory.** On a cold page, one `addSource` and one run of the 100 MB
+slice, the most bytes the engine had allocated at once (a `--heap-stats`
+build) was 286 MiB, reached at the end of the read's commit pass:
+
+| Held at that moment | Before | After |
+|---|---:|---:|
+| The text, copied into WebAssembly memory | 95 MiB | 95 MiB |
+| The tape: 4.66 million nodes | 96 MiB (12 B each, grown by doubling to 2^23) | 36 MiB (8 B each, trimmed) |
+| The compressed form: strings | 47 MiB (37 MiB of it the text of 381,934 distinct URIs) | the same |
+| The compressed form: 2.23 million object entries (16 B each), 0.2 million array elements | 43 MiB | the same |
+| Other (key table, decoded strings) | about 5 MiB | the same |
+
+The text, a string here, is copied with wasm-bindgen's `encodeInto` into
+a buffer of the string's UTF-16 length; only what does not fit is
+reallocated at 3 bytes per unit, which on these cards is a few hundred
+kilobytes, so the copy costs about 1× the text in memory (and not three
+times the rest of the text from the first non-ASCII character: that was
+an older glue's way). After the read, the form alone is held (91 MiB),
+and a run adds 7 MiB (the tallies are 1.2 MiB). The WebAssembly memory
+also keeps what the allocator freed and the quarter it added when it grew
+(`allocator.rs` at the time). The peak, and the memory at the end, of one
+read and run on a cold page:
+
+| Input | Peak, before | Peak, after | Memory, before | Memory, after |
+|---|---:|---:|---:|---:|
+| 100 MB of cards | 285.9 MiB | 225.4 MiB | 306.9 MiB | 279.4 MiB |
+| the same, ASCII only (`\u` escapes) | 287.3 MiB | 226.8 MiB | 386.2 MiB | 278.8 MiB |
+| `generateCards(22_800)` (100 MB) | 296.1 MiB | 237.5 MiB | 384.6 MiB | 264.2 MiB |
+| 250 MB of cards | 651.0 MiB | 547.8 MiB | 822.4 MiB | 608.6 MiB |
+| 450 MB of cards | 1,199.5 MiB | 975.2 MiB | 1,509.6 MiB | 1,109.6 MiB |
+
+Per byte of input, the memory of a cold read and run goes from 3.2 to 2.9
+bytes at 100 MB and from 3.5 to 2.6 at 450 MB, and the peak allocated
+from 3.0 to 2.4 and 2.8 to 2.3.
+
+Reading the same sample again in the same page (as the benchmarks do, a
+new input each time) holds two forms at once, the last one being freed
+only when JavaScript finalizes its input: the peak allocated is then
+376.5 MiB at 100 MB (316 after), and the memory at the end depends on
+where the allocator placed the large blocks (the text, the tape, the
+tables' index vectors). It went from 504 to 549 MiB at 100 MB, but from
+1,327 to 1,220 at 250 MB and from 2,424 to 1,540 at 450 MB (the table
+above). A tape in fixed segments of 1 MiB was tried: 482 MiB at 100 MB
+and 1,402 at 250 MB, as mixed, so the tape is not what decides it, and it
+was left as a vector; how the allocator places large blocks is.
+
+**After rebasing onto main** (`fa1218d8c`: samples as bytes, the slab
+allocator, the new hashing), main against the branch, interleaved on a
+quiet machine (load average 5 to 8), the samples as strings:
+
+| | main | the branch |
+|---|---:|---:|
+| 100 MB of cards, native read + run (walk) | 486–513 (277–291) ms | 270–273 (58–60) ms |
+| 450 MB, native | 2,285–2,341 (1,265–1,280) ms | 1,243–1,261 (269–270) ms |
+| 100 MB, Chrome, `addSource` + run (walk) | 806–811 (387–388) ms | 476–485 (69) ms |
+| 450 MB, Chrome | 3,988–4,209 (1,724–1,811) ms | 2,443–2,705 (331–341) ms |
+| `generateCards(5_000)`, Chrome | 190–205 ms | 114–117 ms |
+| 100 MB, the CLI's CPU time | 0.40–0.41 s | 0.20–0.21 s |
+| 450 MB, the CLI | 1.80 s | 0.92–0.93 s |
+| 100 MB, a cold read and run in Chrome: peak allocated, memory | 285.9, 306.9 MiB | 225.4, 278.3 MiB |
+| 450 MB, the same | 1,199.5, 1,483.6 MiB | 975.2, 1,109.6 MiB |
+| 100 MB, memory after six reads and runs in one page | 602 MiB | 547 MiB |
+| 450 MB, the same | 2,392 MiB | 1,540 MiB |
+
+What could still shrink: the form's values are 8 bytes (a tag and an
+index); packed into 4, as TypeScript packs them, object entries would
+take 8 bytes and the form about 68 MiB instead of 90 at 100 MB, but the
+public `get_object_for_value` and `get_array_for_value` return slices of
+values, which would have to become iterators. The URIs' text must stay:
+the JavaScript tables hold it.
 
 ## Reproducing
 
