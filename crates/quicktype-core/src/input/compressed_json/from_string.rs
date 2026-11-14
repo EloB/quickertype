@@ -168,7 +168,7 @@ const KEY_CACHE: usize = 64;
 /// past that, with a set.
 const SCAN_MEMBERS: usize = 16;
 
-/// Tapes of up to this many nodes (48 KiB) are kept for the next sample.
+/// Tapes of up to this many nodes (32 KiB) are kept for the next sample.
 const KEEP_NODES: usize = 1 << 12;
 
 /// The key table is kept for the next sample while it has at most this
@@ -367,17 +367,62 @@ enum Kind {
     Array,
 }
 
+/// The kinds by their number in a [`Node`].
+const KINDS: [Kind; 10] = [
+    Kind::Null,
+    Kind::False,
+    Kind::True,
+    Kind::Integer,
+    Kind::Double,
+    Kind::Text,
+    Kind::Decoded,
+    Kind::Key,
+    Kind::Object,
+    Kind::Array,
+];
+
+/// The bits of [`Node`]'s second word that hold `b`; the kind is in the
+/// four above them.
+const B_BITS: u32 = 28;
+const B_MASK: u32 = (1 << B_BITS) - 1;
+
+/// The longest string the tape holds, in bytes (256 MiB; 64 KiB in tests,
+/// so that they can reach it): a sample with a longer one is read whole,
+/// as a text too long for the tape's offsets is.
+const MAX_STRING: u32 = if cfg!(test) { 1 << 16 } else { B_MASK };
+
+/// A tape node, of 8 bytes: its kind, `a`, and `b` (a string's length, or
+/// whether an object is reordered), which is at most [`B_MASK`].
 #[derive(Clone, Copy, Debug)]
 struct Node {
-    kind: Kind,
     a: u32,
-    b: u32,
+    kind_b: u32,
+}
+
+impl Node {
+    fn new(kind: Kind, a: u32, b: u32) -> Self {
+        debug_assert!(b <= B_MASK);
+        Node {
+            a,
+            kind_b: (kind as u32) << B_BITS | b,
+        }
+    }
+
+    fn kind(self) -> Kind {
+        KINDS[(self.kind_b >> B_BITS) as usize]
+    }
+
+    fn b(self) -> u32 {
+        self.kind_b & B_MASK
+    }
 }
 
 /// Why the first pass stopped.
 enum Stop {
     Syntax,
     Declined(Decline),
+    /// A string longer than [`MAX_STRING`].
+    TooLong,
 }
 
 /// An object whose members are being recorded.
@@ -446,7 +491,7 @@ impl<'t> Recorder<'t> {
     }
 
     fn push(&mut self, kind: Kind, a: u32, b: u32) -> usize {
-        self.nodes.push(Node { kind, a, b });
+        self.nodes.push(Node::new(kind, a, b));
         self.nodes.len() - 1
     }
 
@@ -465,8 +510,7 @@ impl<'t> Recorder<'t> {
     fn close(&mut self, node: usize, reordered: bool) {
         let end = self.nodes.len() as u32;
         let n = &mut self.nodes[node];
-        n.a = end;
-        n.b = u32::from(reordered);
+        *n = Node::new(n.kind(), end, u32::from(reordered));
     }
 
     /// Opens a container one level deeper than `depth` containers.
@@ -520,13 +564,18 @@ impl<'t> Recorder<'t> {
                 Some(b'"') => {
                     self.pos += 1;
                     let start = self.decoded.len();
-                    match self.string(false)? {
-                        Some((a, b)) => self.push(Kind::Text, a, b),
-                        None => {
-                            let len = self.decoded.len() - start;
-                            self.push(Kind::Decoded, start as u32, len as u32)
-                        }
+                    let (kind, a, b) = match self.string(false)? {
+                        Some((a, b)) => (Kind::Text, a, b),
+                        None => (
+                            Kind::Decoded,
+                            start as u32,
+                            (self.decoded.len() - start) as u32,
+                        ),
                     };
+                    if b > MAX_STRING {
+                        return Err(Stop::TooLong);
+                    }
+                    self.push(kind, a, b);
                 }
                 Some(b'-' | b'0'..=b'9') => {
                     let kind = self.number(sink)?;
@@ -672,11 +721,9 @@ impl<'t> Recorder<'t> {
             tests::KEYS_WALKED.with(|n| n.set(n.get() + 1));
             // Past the key and its value.
             i = match self.nodes.get(i + 1) {
-                Some(Node {
-                    kind: Kind::Object | Kind::Array,
-                    a,
-                    ..
-                }) => *a as usize,
+                Some(&value) if matches!(value.kind(), Kind::Object | Kind::Array) => {
+                    value.a as usize
+                }
                 _ => i + 2,
             };
             Some(key)
@@ -941,12 +988,9 @@ enum Frame {
 impl Tape<'_> {
     /// The node after the value at `at`.
     fn after(&self, at: usize) -> usize {
-        match self.nodes[at] {
-            Node {
-                kind: Kind::Object | Kind::Array,
-                a,
-                ..
-            } => a as usize,
+        let node = self.nodes[at];
+        match node.kind() {
+            Kind::Object | Kind::Array => node.a as usize,
             _ => at + 1,
         }
     }
@@ -997,21 +1041,20 @@ impl Tape<'_> {
                 return Err(stack_overflow());
             }
             let node = self.nodes[at];
-            match node.kind {
+            match node.kind() {
                 Kind::Null => sink.commit_null()?,
                 Kind::False => sink.commit_boolean(false)?,
                 Kind::True => sink.commit_boolean(true)?,
                 Kind::Integer => sink.commit_number(false)?,
                 Kind::Double => sink.commit_number(true)?,
                 Kind::Text => {
-                    sink.commit_string(&self.text[node.a as usize..(node.a + node.b) as usize])?
+                    sink.commit_string(&self.text[node.a as usize..(node.a + node.b()) as usize])?
                 }
-                Kind::Decoded => {
-                    sink.commit_string(&self.decoded[node.a as usize..(node.a + node.b) as usize])?
-                }
+                Kind::Decoded => sink
+                    .commit_string(&self.decoded[node.a as usize..(node.a + node.b()) as usize])?,
                 Kind::Object => {
                     sink.push_object_context()?;
-                    frames.push(if node.b != 0 {
+                    frames.push(if node.b() != 0 {
                         Frame::Reordered {
                             members: self.js_order(sink, at),
                             next: 0,
@@ -1103,9 +1146,17 @@ pub(crate) fn read_string_sample_into<S: JsonSink>(
     let span = crate::trace::span("read: record");
     let recorded = recorder.record(sink);
     drop(span);
-    let Recorder { nodes, decoded, .. } = recorder;
+    let Recorder {
+        mut nodes, decoded, ..
+    } = recorder;
     let result = match recorded {
         Ok(()) => {
+            // A large tape is kept only while it is committed, beside the
+            // compressed form that grows meanwhile: without the room its
+            // doubling left (in WebAssembly, freed in place for the form).
+            if nodes.capacity() > KEEP_NODES {
+                nodes.shrink_to_fit();
+            }
             let tape = Tape {
                 text,
                 nodes: &nodes,
@@ -1120,8 +1171,9 @@ pub(crate) fn read_string_sample_into<S: JsonSink>(
             committed.map_err(|e| ReadStringError::Parse(ParseError::Quicktype(e)))
         }
         Err(Stop::Declined(decline)) => Err(ReadStringError::Declined(decline)),
-        // V8's message, from the port of its parser.
-        Err(Stop::Syntax) => read_whole(sink, text, limits),
+        // V8's message, from the port of its parser; or a string too long
+        // for the tape.
+        Err(Stop::Syntax | Stop::TooLong) => read_whole(sink, text, limits),
     };
     sink.string_reader().finish_sample(nodes);
     result
