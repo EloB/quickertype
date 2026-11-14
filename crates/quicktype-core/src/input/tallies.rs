@@ -49,6 +49,7 @@ use super::compressed_json::{
 };
 use crate::attributes::string_types::{
     StringTypes, StringTypesTypeAttributeKind, infer_transformed_string_type_kind_for_string,
+    may_have_attributes,
 };
 use crate::attributes::type_attributes::{
     AttributeKind, CombinationKind, TypeAttributes, combine_type_attributes2,
@@ -132,7 +133,8 @@ impl fmt::Debug for KindOrder {
 pub(crate) struct StringTally {
     /// The interned strings (`Tag.InternedString`, each one
     /// `addStringCase(s, 1)` with enum inference), by their index in
-    /// [`Tallies`]' strings, with their counts, in first-seen order.
+    /// [`Tallies`]' strings, with their counts, in first-seen order; none
+    /// once the strings absorb every string ([`Tallies::add_case`]).
     pub(crate) cases: IndexMap<u32, u64, BuildHasher>,
     /// What the other strings add to the accumulator's `string` attributes
     /// (`addStringType("string", ...)`), combined in order as
@@ -337,6 +339,27 @@ fn take_combined(
 }
 
 impl StringTally {
+    /// Whether the string types are unrestricted both with and without
+    /// enum inference: then a string here changes nothing inference reads
+    /// but for a URI's attributes (see [`Tallies::add_case`]). Once true,
+    /// always true, as [`add_unrestricted_once`] argues, and a merge keeps
+    /// it.
+    #[inline(always)]
+    fn absorbs_strings(&self) -> bool {
+        self.absorbed[0] & self.absorbed[1] & ABSORBS_UNRESTRICTED != 0
+    }
+
+    /// Forgets the cases once the string types absorb every string: nothing
+    /// reads them any more (see [`Tallies::add_case`]), and none are counted
+    /// from then on, so a place that absorbs holds none, however its values
+    /// were split into samples and merged.
+    #[inline(always)]
+    fn forget_absorbed_cases(&mut self) {
+        if self.absorbs_strings() && !self.cases.is_empty() {
+            self.cases = IndexMap::default();
+        }
+    }
+
     /// What an interned string (`Tag.InternedString`) adds besides its
     /// case: an unrestricted string, without enum inference.
     #[inline(always)]
@@ -349,7 +372,11 @@ impl StringTally {
     fn add_uninterned(&mut self) -> Result<()> {
         self.not_interned = true;
         add_unrestricted_once(&mut self.with_enums, &mut self.absorbed[0])?;
-        add_unrestricted_once(&mut self.without_enums, &mut self.absorbed[1])
+        add_unrestricted_once(&mut self.without_enums, &mut self.absorbed[1])?;
+        // The only value that makes the string types unrestricted with
+        // enum inference, and so the strings absorb from here on.
+        self.forget_absorbed_cases();
+        Ok(())
     }
 
     /// A string of a transformed kind without attribute producer
@@ -388,6 +415,19 @@ impl StringTally {
     /// [`combined_with`](Self::combined_with) computed for them, and
     /// empties `other`.
     fn append(&mut self, other: &mut StringTally, (with_enums, without_enums): Combined) {
+        // What either combination absorbs, their union does.
+        for (absorbed, other) in self.absorbed.iter_mut().zip(other.absorbed) {
+            *absorbed |= other;
+        }
+        // The union absorbs every string if either tally does (only an
+        // uninterned string sets the bit with enum inference, and it sets
+        // both). Reading on would have forgotten every case at the value
+        // that made it absorb them and counted none after: so the merged
+        // place holds none either.
+        if self.absorbs_strings() {
+            other.cases.clear();
+            self.forget_absorbed_cases();
+        }
         for (id, count) in other.cases.drain(..) {
             *self.cases.entry(id).or_insert(0) += count;
         }
@@ -398,10 +438,6 @@ impl StringTally {
             without_enums,
         );
         self.not_interned |= other.not_interned;
-        // What either combination absorbs, their union does.
-        for (absorbed, other) in self.absorbed.iter_mut().zip(other.absorbed) {
-            *absorbed |= other;
-        }
     }
 }
 
@@ -1004,6 +1040,15 @@ impl KeyId for u32 {
     }
 }
 
+/// A key as [`TallyBuilder::set_key`] counts it: `"__proto__"`, which is
+/// counted apart, or another key, known by its text (the stream reader's)
+/// or by its index in the string table (the `JSON.parse` reader's).
+enum ReadKey<'a> {
+    Proto,
+    Text(KeyText<'a>),
+    Index(u32),
+}
+
 /// A key known by its text (a reader's), found in the string table (and
 /// added to it) only when it is not the key expected.
 struct KeyText<'a> {
@@ -1074,7 +1119,40 @@ impl Tallies {
         Ok(())
     }
 
+    /// Whether the strings at `node` absorb every further string but a
+    /// URI ([`StringTally::absorbs_strings`]): the reader need not
+    /// classify or intern a string here that cannot be one.
+    #[inline(always)]
+    pub(crate) fn absorbs_strings(&self, node: NodeId) -> Result<bool> {
+        Ok(self
+            .node(node)?
+            .strings
+            .as_deref()
+            .is_some_and(StringTally::absorbs_strings))
+    }
+
     /// An interned string (`Tag.InternedString`): the case `id`.
+    ///
+    /// Not counted where the strings are unrestricted with and without
+    /// enum inference ([`StringTally::absorbs_strings`]): no inference
+    /// reads such a place's cases. With enum inference, the cases are
+    /// replayed as `addStringCase`, and `getMemberKinds` unites them with
+    /// the combined string types, which are unrestricted and so absorb
+    /// them (`StringTypes.union` returns the unrestricted types as they
+    /// are; the `string` kind is there either way). Without it, cases are
+    /// not replayed at all. A `$ref` resolves its cases only where every
+    /// string is interned, and unrestricted string types with enum
+    /// inference come from a string that is not (`add_uninterned` set
+    /// `not_interned` with the bit). Nothing makes the place restricted
+    /// again: more values only add to its string types, and a merge, the
+    /// place's into another or another's into it, unites them with
+    /// another place's, which is unrestricted if either is. So a case
+    /// left out here is not needed later, by a merge, by tallies kept
+    /// with a compressed form for later runs, or by inference with other
+    /// flags. For the same reasons a place forgets the cases it counted
+    /// when it starts absorbing them, alone or in a merge
+    /// ([`StringTally::forget_absorbed_cases`]): a place that absorbs
+    /// holds no cases at all, so merged tallies equal those of reading on.
     #[inline(always)]
     pub(crate) fn add_case(&mut self, node: NodeId, id: u32) -> Result<()> {
         let Tallies {
@@ -1087,6 +1165,9 @@ impl Tallies {
         let strings = n
             .strings
             .get_or_insert_with(|| spare_strings.pop().unwrap_or_default());
+        if strings.absorbs_strings() {
+            return Ok(());
+        }
         if case_slots.is_empty() {
             *case_slots = vec![CaseSlot::default(); CASE_SLOTS];
         }
@@ -1185,7 +1266,7 @@ impl Tallies {
     /// the same order, and a key found there is counted without a lookup.
     /// Returns the node of the key's value and the index of the key
     /// expected next.
-    #[inline]
+    #[inline(always)]
     pub(crate) fn add_key(
         &mut self,
         node: NodeId,
@@ -1640,16 +1721,18 @@ impl<'a> TallyBuilder<'a> {
         }
     }
 
-    /// What [`JsonSink::set_property_key`] does: counts `key` in the
-    /// current object, and makes its value's node where the next value
-    /// goes. Takes only the fields it needs, so that `key` can be borrowed
-    /// from another (the reader's key table,
-    /// [`JsonSink::set_property_key_read`]).
+    /// `setPropertyKey(key)`, for both readers' keys: counts `key` in the
+    /// current object (`is_ref` if it is `"$ref"`), and makes its value's
+    /// node where the next value goes. Takes only the fields it needs, so
+    /// that a key can be borrowed from another (the string table, for
+    /// [`KeyText`]). Inlined into both, which then keep only their kinds of
+    /// key.
+    #[inline(always)]
     fn set_key(
         tallies: &mut Tallies,
-        strings: &mut Strings,
         frames: &mut [Frame],
-        key: &str,
+        key: ReadKey<'_>,
+        is_ref: bool,
     ) -> Result<()> {
         let Some(Frame::Object {
             node,
@@ -1660,13 +1743,13 @@ impl<'a> TallyBuilder<'a> {
         else {
             return panic("Setting a key outside an object");
         };
-        let (child, following) = if key == "__proto__" {
-            (tallies.add_proto_key(*node)?, *next_key)
-        } else {
-            tallies.add_key(*node, KeyText { strings, text: key }, *next_key)?
+        let (child, following) = match key {
+            ReadKey::Proto => (tallies.add_proto_key(*node)?, *next_key),
+            ReadKey::Text(key) => tallies.add_key(*node, key, *next_key)?,
+            ReadKey::Index(key) => tallies.add_key(*node, key, *next_key)?,
         };
         *value = Some(child);
-        *expecting_ref = key == "$ref";
+        *expecting_ref = is_ref;
         *next_key = following;
         Ok(())
     }
@@ -1686,44 +1769,38 @@ impl<'a> TallyBuilder<'a> {
         Ok(())
     }
 
-    /// An interned string (`Tag.InternedString`).
-    fn add_case(&mut self, s: &str) -> Result<()> {
-        let node = self.destination()?;
+    /// An interned string (`Tag.InternedString`) at `node`.
+    fn add_case(&mut self, node: NodeId, s: &str) -> Result<()> {
         let id = self.strings.intern_text(s);
-        self.tallies.add_case(node, id)?;
-        self.value_done();
-        Ok(())
+        self.tallies.add_case(node, id)
     }
 
-    /// A string too long to intern (`Tag.UninternedString`).
-    fn add_uninterned(&mut self) -> Result<()> {
-        let node = self.destination()?;
-        self.tallies.add_uninterned(node)?;
-        self.value_done();
-        Ok(())
-    }
-
-    /// A string of a transformed kind without attribute producer
-    /// (`Tag.StringFormat`).
-    fn add_string_format(&mut self, kind: TypeKind) -> Result<()> {
-        let node = self.destination()?;
-        self.tallies.add_string_format(node, kind)?;
-        self.value_done();
-        Ok(())
-    }
-
-    /// A string of a transformed kind with an attribute producer (`uri`,
-    /// `Tag.TransformedString`): the producer's attributes, then the kind.
-    fn add_transformed_string(
-        &mut self,
-        kind: TypeKind,
-        attributes: &TypeAttributes,
-    ) -> Result<()> {
-        let node = self.destination()?;
-        self.tallies
-            .add_transformed_string(node, kind, attributes)?;
-        self.value_done();
-        Ok(())
+    /// `commitString`'s classification of `s`, a string at `node` that is
+    /// not a reference, and what it adds there; `absorbs` is whether the
+    /// strings there absorb every string ([`Tallies::absorbs_strings`]).
+    fn add_string(&mut self, node: NodeId, s: &str, absorbs: bool) -> Result<()> {
+        match infer_transformed_string_type_kind_for_string(s, self.config.date_time_recognizer()) {
+            Some(kind) => match transformed_string_type_attributes_producer(kind) {
+                Some(producer) => self
+                    .tallies
+                    .add_transformed_string(node, kind, &producer(s)),
+                None => self.tallies.add_string_format(node, kind),
+            },
+            // At most 64 UTF-16 code units: each takes 1 to 3 UTF-8 bytes,
+            // or 4 bytes for a surrogate pair, so a string of at most 64
+            // bytes has at most 64 units and one of more than 192 bytes
+            // more, and only the others are measured. A case is not
+            // counted where the strings absorb it (`Tallies::add_case`), so
+            // it need not be interned there.
+            None if s.len() <= 64 || (s.len() <= 192 && utf16::len(s) <= 64) => {
+                if absorbs {
+                    Ok(())
+                } else {
+                    self.add_case(node, s)
+                }
+            }
+            None => self.tallies.add_uninterned(node),
+        }
     }
 }
 
@@ -1748,6 +1825,9 @@ impl JsonSink for TallyBuilder<'_> {
     }
 
     /// `commitString(s)`: classifies the string as `CompressedJSON` does.
+    /// Where the strings absorb every further string but a URI
+    /// ([`Tallies::absorbs_strings`]), one that cannot be a URI
+    /// ([`may_have_attributes`]) adds nothing, and is not classified.
     fn commit_string(&mut self, s: &str) -> Result<()> {
         let expecting_ref = matches!(
             self.frames.last(),
@@ -1756,17 +1836,19 @@ impl JsonSink for TallyBuilder<'_> {
                 ..
             })
         );
+        let node = self.destination()?;
         if self.config.handle_refs() && expecting_ref {
-            return self.add_case(s);
+            self.add_case(node, s)?;
+        } else {
+            // Looked up once for the string: whether to classify it, and
+            // whether a case needs interning.
+            let absorbs = self.tallies.absorbs_strings(node)?;
+            if !absorbs || may_have_attributes(s) {
+                self.add_string(node, s, absorbs)?;
+            }
         }
-        match infer_transformed_string_type_kind_for_string(s, self.config.date_time_recognizer()) {
-            Some(kind) => match transformed_string_type_attributes_producer(kind) {
-                Some(producer) => self.add_transformed_string(kind, &producer(s)),
-                None => self.add_string_format(kind),
-            },
-            None if utf16::len(s) <= 64 => self.add_case(s),
-            None => self.add_uninterned(),
-        }
+        self.value_done();
+        Ok(())
     }
 
     fn push_object_context(&mut self) -> Result<()> {
@@ -1782,7 +1864,15 @@ impl JsonSink for TallyBuilder<'_> {
     }
 
     fn set_property_key(&mut self, key: &str) -> Result<()> {
-        Self::set_key(self.tallies, self.strings, &mut self.frames, key)
+        let read = if key == "__proto__" {
+            ReadKey::Proto
+        } else {
+            ReadKey::Text(KeyText {
+                strings: self.strings,
+                text: key,
+            })
+        };
+        Self::set_key(self.tallies, &mut self.frames, read, key == "$ref")
     }
 
     fn finish_object(&mut self) -> Result<()> {
@@ -1838,11 +1928,18 @@ impl JsonSink for TallyBuilder<'_> {
         self.string_reader
     }
 
+    /// A key of the reader's key table: its id in the string table is
+    /// found once per key and remembered by the reader
+    /// ([`StringReaderState::key_index`]), the key expected next is
+    /// matched by that id, and `"$ref"` is known by its key id
+    /// ([`StringReaderState::is_reference`]): no text is compared.
     fn set_property_key_read(&mut self, id: u32) -> Result<()> {
-        // The key is the reader's, borrowed beside the fields it is
-        // counted in.
-        let key = self.string_reader.key_text(id);
-        Self::set_key(self.tallies, self.strings, &mut self.frames, key)
+        let read = match self.string_reader.key_index(id, self.strings) {
+            Some(key) => ReadKey::Index(key),
+            None => ReadKey::Proto,
+        };
+        let is_ref = self.string_reader.is_reference(id);
+        Self::set_key(self.tallies, &mut self.frames, read, is_ref)
     }
 
     /// Frees the failed sample's tree: the tallies are as they were before
@@ -1974,11 +2071,23 @@ mod tests {
         assert_eq!(within.tallies.live_nodes(), once.tallies.live_nodes());
     }
 
-    const SAMPLES: [&str; 4] = [
-        r#"{"a":[1,"x"],"b":{"__proto__":1,"c":null},"d":"2020-01-01"}"#,
+    /// Samples with places whose strings come to absorb every string
+    /// partway: `s` and `t`'s elements get a string of more than 64 units
+    /// after cases and before more of them (and URIs), in the fourth and
+    /// fifth samples, the top-level in the eighth; `u` only in the last.
+    /// Every split falls before, between and after those.
+    const SAMPLES: [&str; 11] = [
+        r#"{"a":[1,"x"],"b":{"__proto__":1,"c":null},"d":"2020-01-01","s":"a"}"#,
         r#"[{"b":{"e":true,"__proto__":[2]}},"http://h/x.PNG",{"a":[]}]"#,
-        r#"{"z":{"y":1},"a":[{"q":1.5}],"b":{"c":"s","__proto__":"t"},"d":"https://h/y.jpg"}"#,
+        r#"{"z":{"y":1},"a":[{"q":1.5}],"b":{"c":"s","__proto__":"t"},"d":"https://h/y.jpg","t":["a","b"]}"#,
+        r#"{"s":"b","t":["c","long text long text long text long text long text long text long text","d","a"]}"#,
+        r#"{"s":"long text long text long text long text long text long text long text","t":["e"],"u":"a"}"#,
+        r#"{"s":"c","t":["ftp://h/z.gz","f"],"u":"b","d":"2020-01-02"}"#,
+        r#""short""#,
         r#""long string, long string, long string, long string, long string, too""#,
+        r#""after""#,
+        r#"{"s":"https://h/w.png","t":["a"],"u":"c"}"#,
+        r#"{"s":"d","u":"long text long text long text long text long text long text long text"}"#,
     ];
 
     /// Merging the samples' trees gives the tree of the elements of one
@@ -2330,6 +2439,103 @@ mod tests {
                 "{missing:?}"
             );
         }
+    }
+
+    /// The cases at `node`, as text.
+    fn cases(tallies: &RunningTallies, node: NodeId) -> Vec<(String, u64)> {
+        let strings = tallies.tallies.node(node).unwrap().strings.as_deref();
+        strings
+            .unwrap()
+            .cases
+            .iter()
+            .map(|(&id, &count)| (tallies.strings.get(id as usize).unwrap().to_owned(), count))
+            .collect()
+    }
+
+    /// Once a place's strings are unrestricted with and without enum
+    /// inference, it forgets the cases it counted, and its strings are
+    /// neither counted nor interned, but for URIs, whose attributes still
+    /// count, and references. A merge of such a place with one that is not
+    /// holds no cases either, whichever is merged into which; the walk
+    /// over a compressed form tallies alike.
+    #[test]
+    fn strings_a_place_absorbs_are_not_counted() {
+        let long = "x".repeat(70);
+        let config = config(false);
+        let mut tallies = RunningTallies::new();
+        let sample =
+            format!(r#"["a","{long}","b","https://h/c.PNG","a","ftp://h/d.zip","2020-01-01","c"]"#);
+        let root = read(&mut tallies, &config, &[&sample]);
+        let items = tallies.tallies.node(root).unwrap().items.unwrap();
+        assert!(cases(&tallies, items).is_empty());
+        assert!(tallies.tallies.absorbs_strings(items).unwrap());
+        for text in ["b", "c"] {
+            assert!(!(0..tallies.strings.len()).any(|i| tallies.strings.get(i) == Some(text)));
+        }
+        let strings = tallies.tallies.node(items).unwrap().strings.as_deref();
+        let with_enums = strings.unwrap().with_enums.as_ref().unwrap();
+        let (protocols, extensions) = UriTypeAttributeKind
+            .try_get_in_attributes(with_enums)
+            .unwrap();
+        assert_eq!(protocols.iter().collect::<Vec<_>>(), ["https", "ftp"]);
+        assert_eq!(extensions.iter().collect::<Vec<_>>(), [".png", ".zip"]);
+        // The walk over the compressed form of the same sample.
+        let mut cjson = self::config(false);
+        let value = cjson.parse_stream(sample.as_bytes()).unwrap();
+        let (walked, roots) = tally_compressed(&cjson, [[value].as_slice()])
+            .unwrap()
+            .unwrap();
+        assert_eq!(walked.dump(cjson.strings(), roots[0]), dump(&tallies, root));
+        // Merged with a place that counts its cases, either way round.
+        let counted = r#"["d","e","d"]"#;
+        let absorbing = format!(r#"["{long}","e","f"]"#);
+        for counted_first in [true, false] {
+            let mut tallies = RunningTallies::new();
+            let a = read(&mut tallies, &config, &[counted]);
+            let b = read(&mut tallies, &config, &[&absorbing]);
+            let (into, from) = if counted_first { (a, b) } else { (b, a) };
+            tallies.tallies.merge(into, from).unwrap();
+            let items = tallies.tallies.node(into).unwrap().items.unwrap();
+            assert!(cases(&tallies, items).is_empty());
+            assert!(tallies.tallies.absorbs_strings(items).unwrap());
+            // As reading the samples on in one tree.
+            let mut on = RunningTallies::new();
+            let samples = if counted_first {
+                [counted, absorbing.as_str()]
+            } else {
+                [absorbing.as_str(), counted]
+            };
+            let one = read(&mut on, &config, &[&format!("[{}]", samples.join(","))]);
+            let one = on.tallies.node(one).unwrap().items.unwrap();
+            assert_eq!(dump(&tallies, into), dump(&on, one));
+        }
+        // References are counted wherever they are.
+        let config = self::config(true);
+        let mut tallies = RunningTallies::new();
+        let root = read(
+            &mut tallies,
+            &config,
+            &[&format!(
+                r##"[{{"$ref":"#/a"}},{{"$ref":"{long}"}},{{"$ref":"#/b"}}]"##
+            )],
+        );
+        let items = tallies.tallies.node(root).unwrap().items.unwrap();
+        let object = tallies
+            .tallies
+            .node(items)
+            .unwrap()
+            .object
+            .as_deref()
+            .unwrap();
+        let refs = object.keys[0].node;
+        assert_eq!(
+            cases(&tallies, refs),
+            [
+                ("#/a".to_owned(), 1),
+                (long.clone(), 1),
+                ("#/b".to_owned(), 1)
+            ]
+        );
     }
 
     #[test]

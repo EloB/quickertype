@@ -232,6 +232,44 @@ fn duplicate_keys_samples_and_sources() {
     ));
 }
 
+/// Strings at a place whose string types are unrestricted with and
+/// without enum inference are not counted (`Tallies::add_case`), but URIs
+/// and references are: such places in one sample, in later samples and
+/// sources merged into places that count their cases and the other way
+/// round, with enums and without, and from tallies kept for later runs.
+#[test]
+fn strings_after_unrestricted_ones() {
+    let long = "x".repeat(70);
+    let first = format!(
+        r#"[{{"s":"{long}","t":"a","u":"https://a.b/c.png"}},{{"s":"a","t":"b","u":"{long}"}},{{"s":"b","t":"a","u":"ftp://x.y/z.gz"}},{{"s":"https://q.r/s.JPG","t":"2020-01-01","u":"hello"}},{{"s":"c","t":"a","u":"http://x/y.tar.gz"}}]"#
+    );
+    let second = r#"[{"s":"a","t":"a","u":"a"},{"s":"d","t":"b","u":"ftp://x.y/w.zip"},{"s":"a","t":"a","u":"a"}]"#;
+    let third = format!(
+        r#"{{"s":["e","{long}","f","http://h/i.pdf","f","2020-01-01","123e4567-e89b-12d3-a456-426614174000","g","true","12"]}}"#
+    );
+    check_case(&case(
+        false,
+        &[
+            ("A", &[first.as_str(), second]),
+            ("A", &[second, first.as_str()]),
+            ("B", &[second]),
+            ("B", &[third.as_str(), second]),
+            ("C", &[third.as_str()]),
+            ("C", &[r#"{"s":["e","e","f"]}"#]),
+        ],
+        Encoding::Stream,
+    ));
+    let refs = format!(
+        r##"{{"a":{{"b":[1]}},"s":["{long}","x","y"],"r":[{{"$ref":"#/a"}},{{"$ref":"{long}"}},{{"$ref":"#/a/b"}}],"q":{{"$ref":"#/a/b/0"}}}}"##
+    );
+    check_case(&case(true, &[("Refs", &[refs.as_str()])], Encoding::Stream));
+    check_case(&case(
+        false,
+        &[("Refs", &[refs.as_str()])],
+        Encoding::Stream,
+    ));
+}
+
 #[test]
 fn enum_thresholds() {
     for (values, cases) in [

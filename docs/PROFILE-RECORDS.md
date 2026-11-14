@@ -9,8 +9,9 @@ and a ranked list of changes that keep the output byte-identical.
 
 The profile itself changed no product code: the prototypes in
 [Opportunities](#opportunities-ranked) were built in a scratch copy, only
-to measure their gains. Items 1, 3a, 3b and 6 have since been
-implemented, measured and checked; see [Status](#status).
+to measure their gains. Items 1, 2, 3 (a, b and c), 6 and 8 have since
+been implemented, measured and checked, and item 5 was tried and
+dropped; see [Status](#status).
 
 ## Summary
 
@@ -49,8 +50,10 @@ implemented, measured and checked; see [Status](#status).
 - **Implemented so far: items 1, 3a, 3b and 6 make the CLI 31–32% faster
   on this input** (100k records: 52.3 → 35.9 ms; 1M: 478 → 323 ms), 15%
   faster on text-heavy records and 13% on pokedex, with identical output
-  on 20,484 CLI runs against main ([Status](#status)). Items 2, 3c, 5 and
-  8 are next.
+  on 20,484 CLI runs against main ([Status](#status)). Items 2, 3c and 8
+  then took another 10–11% off the records (100k: 33.7 → 30.5 ms; 1M:
+  294 → 262 ms) and the 1M records' peak RSS from 43 to 6 MiB, and the
+  WebAssembly engine's second run on the records from 1.6 to 0.4 ms.
 
 ## Method
 
@@ -517,26 +520,28 @@ changes the scaling for large files.
 
 ### Status
 
-What is implemented (branch `perf/reader-speed`), against what the
-prototypes promised. "Measured" is the release CLI, `-l ts`, interleaved
-with main (`d459c3e26`) or with the step before, medians of 21 runs (6
-to 9 at 1M, 100 for the small inputs), wall / CPU ms, at a load average
-of 3 to 14 on 12 cores. Each row comes from its own interleaved table,
-so the steps add up only roughly.
+What is implemented (branch `perf/reader-speed`, in two phases: items 1,
+3a, 3b and 6, then, after the tallies' follow-ups, items 2, 3c and 8),
+against what the prototypes promised. "Measured" is the release CLI,
+`-l ts`, interleaved with main (`d459c3e26` for the first phase,
+`397dbbbf2` for the second) or with the step before, medians of 21 runs
+(6 to 9 at 1M, 100 for the small inputs), wall / CPU ms, at a load
+average of 3 to 14 on 12 cores. Each row comes from its own interleaved
+table, so the steps add up only roughly.
 
 | Item | State | Prototype | Measured |
 |---|---|---|---|
 | 1. Scan string bodies a word at a time | done | with item 3, the CLI 52.4 → 34.4 ms | 100k: 53.2 / 51.9 → 41.5 / 40.2 (−22%); 1M: 483 → 369; text-heavy −15%; pretty-printed −21% |
 | 1'. `skip_whitespace` a word at a time | tried, dropped | – | slower on every input: +24% on pretty-printed records, +3% on compact ones |
-| 2. Skip strings at unrestricted places | next | −3 ms; 1M peak RSS 43.5 → 7.5 MiB | – |
+| 2. Skip strings at unrestricted places | done | −3 ms; 1M peak RSS 43.5 → 7.5 MiB | 100k: 33.7 / 32.5 → 30.8 / 29.5 (−9%), peak RSS 9.7 → 6.1 MiB; 1M: 296 → 270 (−9%), 43.1 → 6.0 MiB; text-heavy −8.5%; the engine: the records' kept tallies 310,511 → 1,052 bytes, a second run 1.6 → 0.4 ms in Chrome |
 | 3a. One threshold in `discard_consumed` | done | about −2.3 ms | 100k: 40.9 → 39.4 (−3.6%); 1M: 374 → 354 |
 | 3b. UUID shape first, under the default recognizer | done | with 3c, classification 34.9 → 31.2 ms in the parse bench | 100k: 39.4 → 36.7 (−7%); 1M: 354 → 331; nothing on text without UUIDs |
-| 3c. The UTF-16 bound in `commit_string` | next | (with 3b) | – |
+| 3c. The UTF-16 bound in `commit_string` | done | (with 3b) | 100k: 30.4 → 29.8 (−2%); generated 43.7 MB: 175 → 170 (−3%) |
 | 4. Several threads | not started | – | – |
-| 5. Last-case cache | next | −1 to −2 ms (estimate) | – |
+| 5. Last-case cache | tried, dropped | −1 to −2 ms (estimate) | the tallies' case slots already count a recurring case without hashing its id; comparing a string with its place's last case before hashing it saved under 1% on the records and cost 1.5–2.4% on the generated input, whose places vary |
 | 6. Pluralize's rules built at compile time | done | −0.7 ms | 9-byte input 4.4 → 3.7 ms, pokedex 5.5 → 4.8 ms, 100k 37.1 → 36.4 ms; peak RSS −1.0 to −1.6 MiB on small inputs |
 | 7. A cheaper window | not started | – | – |
-| 8. Key-table ids in the `JSON.parse` reader | next | – | – |
+| 8. Key-table ids in the `JSON.parse` reader | done | – | text samples into running tallies (the Rust API): 100k records 30.0 → 27.8 ms, generated 43.7 MB 177–181 → 170–176; the engine reads into compressed forms and was not affected (see below) |
 
 All four together, against main in one interleaved table (load average
 5): 100k records 52.3 / 51.0 → 35.9 / 34.8 ms (−31%), peak RSS 10.6 →
@@ -564,6 +569,38 @@ How it differs from the prototypes:
   [BENCHMARKS.md](BENCHMARKS.md#reading-after-the-cli-profile)). A hash
   of the rule tables the build script read is checked against the
   crate's own tables when the crate compiles.
+- Item 2 is one rule in `Tallies::add_case`, which reading and the walk
+  over a compressed form share: a place whose string types are
+  unrestricted with and without enum inference counts no more cases,
+  and forgets those it counted when it starts absorbing them, alone or
+  in a merge, so that merged tallies equal reading on exactly (parallel
+  reading relies on that). The reader also skips classifying and
+  interning a string there whose first byte is none of a URI prefix's
+  (`http://`, `https://`, `ftp://`). It builds on the `absorbed` bits of
+  the tallies' follow-ups, and holds for merges and for tallies kept
+  with a form: nothing makes such a place restricted again
+  ([STREAMING-INFERENCE.md](STREAMING-INFERENCE.md#interned-strings-cases-and-counts)).
+  A review then had the reader test that state once per string, take
+  the URI prefixes from `is_uri` (testing whole prefixes instead cost
+  2–4% on the records, oddly, and was left out), count both readers'
+  keys in one function, and know `"$ref"` by its key id. Splitting
+  `add_key` into an inlined fast path and an out-of-line lookup was
+  tried and dropped: generating the 20 MB input in Chrome took 0.2–0.8
+  ms more in three runs (49.5–50.1 against 49.3–49.7 ms).
+- Item 8 was meant for the WebAssembly engine, but the engine reads its
+  samples into compressed forms, whose keys the `JSON.parse` reader
+  already interns once per key-table id, and the walk over a form knows
+  keys by index. Reading text samples into running tallies (the Rust
+  API's path) is where keys were compared by text, and that is what it
+  changes. Its first version slowed the engine's walk (2 ms on the
+  generated 20 MB input in Chrome): `add_key` got a second caller and
+  was no longer inlined into the walk. It is now inlined always.
+- Neither item 2 nor item 5 recovers the 1.4–2.6 ms that generating the
+  generated 20 MB input in the engine took more after the tallies'
+  follow-ups: item 2 changes nothing there (its places keep their
+  cases), item 5 was dropped and never touched the walk, and inlining
+  the walk's other handlers (`add_transformed_string`, `add_proto_key`)
+  did not change it either (48.7 against 48.9 ms).
 
 Exactness of what is implemented:
 
@@ -593,6 +630,19 @@ Exactness of what is implemented:
   and `json_parse` ran 5 minutes each (1.8 million inputs each) without a
   finding. npm/quicktype-core's tests, its differential suite (19,078
   scenarios, 0 different) and its browser smoke test pass.
+- The second phase (items 2, 3c and 8) the same way: 20,484 CLI runs
+  identical to main before either phase; `cargo xtask streaming-fuzz
+  --path all` on 1,000,000 seeds without a difference (6,000,000 graphs,
+  99,923 whole runs, 8,135 failing alike); parity 11,177 of 11,177; the
+  npm jobs; `json_stream`, `json_parse` (3 minutes, a million inputs
+  each) and `pipeline` (5 minutes, 540,000) without a finding. Item 2
+  also has a hand-written case in the harness (places unrestricted in
+  one sample, then cases, URIs, dates and `$ref`s in later samples and
+  sources merged both ways, read as streams, in chunks and as text), and
+  three wrong variants were caught by it and by the seeds, then
+  reverted: also skipping URI candidates, skipping where only the
+  combination without enums is unrestricted, and the walk skipping URIs
+  at such places.
 
 ### Exactness of the prototypes
 

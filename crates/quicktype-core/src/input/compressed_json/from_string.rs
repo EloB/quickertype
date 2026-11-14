@@ -154,6 +154,8 @@ struct Keys {
     /// Objects of one shape (an array of records) have the same key at the
     /// same position, which is then found without hashing it.
     cache: Vec<u32>,
+    /// The id of `"$ref"`, once it was read.
+    reference: Option<u32>,
 }
 
 /// The key id of `"__proto__"`, which is not in [`Keys`]: TypeScript
@@ -226,6 +228,9 @@ impl Keys {
 
     fn add(&mut self, key: &str, hash: u64) -> u32 {
         let id = self.spans.len() as u32;
+        if key == "$ref" {
+            self.reference = Some(id);
+        }
         self.spans.push((self.text.len() as u32, key.len() as u32));
         self.text.push_str(key);
         self.interned.push(NO_INDEX);
@@ -280,6 +285,19 @@ impl StringReaderState {
     /// The text of key `id`.
     pub(crate) fn key_text(&self, id: u32) -> &str {
         self.keys.get(id)
+    }
+
+    /// Whether key `id` is `"$ref"` (each text has one id).
+    pub(crate) fn is_reference(&self, id: u32) -> bool {
+        self.keys.reference == Some(id)
+    }
+
+    /// The index of key `id` in `strings`, interned the first time and
+    /// remembered by its id from then on, as [`intern_key`](Self::intern_key)
+    /// finds it; `None` for `"__proto__"`, which is not in the key table.
+    /// Each key's text is in `strings` once.
+    pub(crate) fn key_index(&mut self, id: u32, strings: &mut Strings) -> Option<u32> {
+        (id != PROTO).then(|| self.intern_key(id, strings))
     }
 
     /// `makeString(key)` for key `id`: its index in `strings`, interned the

@@ -126,6 +126,41 @@ The cases are kept even without enum inference, because the flag is
 only known when the types are added, after the samples were read; the
 `$ref` case needs them too.
 
+But a place stops counting cases once its string types are unrestricted
+both with and without enum inference (`StringTally::absorbs_strings`:
+the `absorbed` bit of unrestricted strings in both combinations, see the
+next section), and forgets the cases it counted until then
+(`forget_absorbed_cases`, also when a merge makes it absorb them). The
+readers do not even classify or intern a string there that cannot be a
+URI (`may_have_attributes`: only `uri` has attributes of its own, and a
+URI starts with one of `is_uri`'s prefixes, `http://`, `https://` or
+`ftp://`, case and all, so with the first byte of one of them). Nothing
+reads those cases:
+
+- With enum inference they are replayed as `addStringCase`, and
+  `getMemberKinds` unites `StringTypes(cases)` with the combined string
+  types, which are unrestricted: `StringTypes.union` returns unrestricted
+  types as they are, so the cases vanish, and the `string` kind is there
+  either way. Without enum inference they are not replayed.
+- A `$ref` resolves its cases only where every string is interned, and
+  string types become unrestricted with enum inference only by a string
+  that is not (`add_uninterned` sets `not_interned` with the bit; a merge
+  carries both). Strings under a `$ref` key, with references handled,
+  are counted wherever they are.
+- Nothing makes the place restricted again. More values only add to its
+  string types; a merge unites them with another place's, the place's
+  into the other or the other's into it, and the union is unrestricted
+  if either is. Tallies kept with a compressed form are used as they
+  were made, by inference with any flags, and never added to or merged.
+
+URIs still go through, since their protocols and extensions are combined
+beside the string types (`add_produced`), and so do uninterned and
+transformed strings in the walk over a compressed form, where they cost a
+bit test. On the 1M records of `docs/PROFILE-RECORDS.md`, whose
+`comment` field is unrestricted from its first long comment on, this
+leaves nearly all of its 107,412 short comments uncounted and
+uninterned: the CLI's peak RSS drops from 43 to 6 MiB.
+
 ### Other strings: combined attributes
 
 Every other string value adds attributes to the accumulator's `string`
@@ -313,7 +348,12 @@ merged recursively. Each rule is the corresponding operation applied to
 the concatenation, so a merged tree equals the tree of reading on: the
 unit test `merging_trees_is_reading_on` checks that the merged trees of a
 sequence of samples, split anywhere, equal the items of one array of
-those samples read in one go.
+those samples read in one go. That holds for a place whose string types
+come to absorb every string too (see "Interned strings"): it holds no
+cases, read on or merged, since it forgets them when it starts absorbing
+them, whichever tree that happens in, and counts none after. The
+samples of that test make places absorb partway, with cases before and
+after, on both sides of every split.
 
 The CLI adds each file (or standard input) as its own source, with one
 sample, so a directory of samples is merged into one tree per top-level.
@@ -328,7 +368,11 @@ emits the tape into a `JsonSink` in `Object.getOwnPropertyNames` order,
 the events `process` would emit for the parsed value. The same function
 (`parse_string_into`) fills a `CompressedJson` on the reference path and a
 `TallyBuilder` here, so the tallies receive exactly the events the
-compressed form is built from. Nothing of the sample is kept.
+compressed form is built from. Nothing of the sample is kept. Keys
+arrive as ids of the reader's key table; the builder counts each by its
+index in the tallies' string table, which the reader finds once per key
+and remembers (`StringReaderState::key_index`), as the walk over a
+compressed form counts keys by index.
 
 `JsonInput::to_compressed` exports samples in the compressed form, which
 an input that infers from tallies does not have: there it is an error,
