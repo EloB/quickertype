@@ -491,9 +491,11 @@ function start(cjson: any, text: string): NativeSamples | undefined {
 
 /**
  * Keeps the forms in `current`'s engine instance within `heldLimit`
- * bytes after a sample was read into `current` (when the instance holds
- * `held` bytes in all). `current` itself is exempt, however large: the
- * limit is on the others together. If they are past it, they are kept
+ * bytes after a sample was read into the one form of `current`, or a run
+ * used the forms of `current` (when the instance holds `held` bytes in
+ * all, and `current` their bytes up to date). `current` is exempt,
+ * however large: the limit is on the others together. If they are past
+ * it, they are kept
  * most recently used first, each one as long as it still fits beside
  * those kept before it, and the others are evicted. So a form past the
  * limit on its own (one large input read in many samples, say) evicts
@@ -509,15 +511,16 @@ function start(cjson: any, text: string): NativeSamples | undefined {
  * is the whole loop. So the tables of one that is gone are exported too,
  * where the garbage collector sees them, and collected with it.
  */
-function evict(current: NativeSamples, held: number): void {
-    const { glue } = current;
+function evict(current: NativeSamples[], held: number): void {
+    if (current.length === 0) return;
+    const { glue } = current[0];
     // The bytes of the others not looked at yet, and of those kept.
-    let rest = held - current.bytes;
+    let rest = held - current.reduce((sum, state) => sum + state.bytes, 0);
     let kept = 0;
     if (rest <= heldLimit) return;
     try {
         for (const state of [...recent].reverse()) {
-            if (state === current || state.glue !== glue) continue;
+            if (current.includes(state) || state.glue !== glue) continue;
             if (kept + rest <= heldLimit) return;
             rest -= state.bytes;
             if (kept + state.bytes <= heldLimit) {
@@ -725,25 +728,30 @@ export function leaseSamples(cjson: any, glue: WasmGlue | undefined, roots: numb
 
 /**
  * After a run on `glue` that used the forms of `cjsons` (`leaseSamples`):
- * their bytes as the engine counts them now, and the other forms kept
- * within `heldLimit` with these the ones in use. A run keeps the tallies
- * it inferred the types from with the form, for the next run on the same
- * samples (the next sample read into it drops them), and the engine
- * counts them in the form's bytes when the run ends (`jsonBytes`).
+ * their bytes as the engine counts them now, and then the other forms
+ * kept within `heldLimit`, with all of these the ones in use. A run keeps
+ * the tallies it inferred the types from with each form, for the next run
+ * on the same samples (the next sample read into it drops them), and the
+ * engine counts them in the form's bytes when the run ends (`jsonBytes`).
+ * Every form's bytes are taken up before any eviction, which would
+ * otherwise count one form's new tallies against the others.
  */
 export function afterRun(glue: WasmGlue, cjsons: object[]): void {
-    for (const cjson of cjsons) {
-        const state = states.get(cjson);
-        if (state === undefined || state.glue !== glue || state.exported !== undefined || isDiscarded(glue)) continue;
-        try {
+    if (isDiscarded(glue)) return;
+    const used: NativeSamples[] = [];
+    try {
+        for (const cjson of cjsons) {
+            const state = states.get(cjson);
+            if (state === undefined || state.glue !== glue || state.exported !== undefined || used.includes(state)) continue;
             const bytes = glue.jsonBytes(state.id);
             if (bytes === undefined) continue;
             state.bytes = bytes;
-            evict(state, glue.jsonHeld());
-        } catch (e) {
-            engineFailed(glue, e);
-            return;
+            used.push(state);
         }
+
+        evict(used, glue.jsonHeld());
+    } catch (e) {
+        engineFailed(glue, e);
     }
 }
 
@@ -818,7 +826,7 @@ function readSample(cjson: any, text: unknown): number | undefined {
         }
 
         touch(state);
-        evict(state, held);
+        evict([state], held);
         return value;
     }
 

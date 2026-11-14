@@ -763,6 +763,50 @@ test("a run's tallies are kept with the form, counted, and dropped by the next s
     noLeases();
 });
 
+// A run over two inputs (two forms) takes up both forms' new bytes before
+// it keeps the others within the limit, with both forms the ones in use:
+// one form's new tallies must not be counted against the other, nor
+// either be evicted for the other's.
+test("a run over two forms counts both before it evicts, and keeps both", async () => {
+    const glue = engine.engineSync();
+    const texts = [generateJson(200, 4_250), generateJson(200, 4_251)];
+    const both = (inputs) => {
+        const inputData = new qt.InputData();
+        for (const input of inputs) inputData.addInput(input);
+        return inputData;
+    };
+    const expected = await inMode("ts", async () => {
+        const inputs = [await addAll("go", [["A", [texts[0]]]]), await addAll("go", [["B", [texts[1]]]])];
+        return [...(await qt.quicktypeMultiFile({ lang: "go", inputData: both(inputs) }))];
+    });
+    const inputs = [await addAll("go", [["A", [texts[0]]]]), await addAll("go", [["B", [texts[1]]]])];
+    const read = inputs.map((input) => nativeSamples.formBytes(input._compressedJSON));
+    assert.ok(read.every((bytes) => bytes !== undefined));
+    // A limit past which any form but the run's two is evicted.
+    const old = nativeSamples.setHeldLimit(1);
+    try {
+        const before = { ...engineStats };
+        assert.deepEqual([...(await qt.quicktypeMultiFile({ lang: "go", inputData: both(inputs) }))], expected);
+        assert.equal(engineStats.wasm, before.wasm + 1);
+        const after = inputs.map((input) => nativeSamples.formBytes(input._compressedJSON));
+        assert.ok(after[0] > read[0] && after[1] > read[1], `${after} against ${read}`);
+        // Nothing else is held, and the counts agree with the engine's.
+        assert.equal(glue.jsonHeld(), after[0] + after[1]);
+        // From the kept tallies, the same again.
+        assert.deepEqual([...(await qt.quicktypeMultiFileSync({ lang: "go", inputData: both(inputs) }))], expected);
+        assert.deepEqual(
+            inputs.map((input) => nativeSamples.formBytes(input._compressedJSON)),
+            after,
+        );
+        assert.equal(engineStats.tablesFilled, before.tablesFilled);
+    } finally {
+        nativeSamples.setHeldLimit(old);
+    }
+
+    for (const input of inputs) assert.ok(input._compressedJSON._strings.length > 0);
+    noLeases();
+});
+
 // ---- Memory and limits (the second code review) ------------------------------
 
 // The garbage collector does not see the engine's memory, which never
