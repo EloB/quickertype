@@ -238,8 +238,9 @@ fn read_options() -> ParallelOptions {
         options.threads = usize::try_from(threads).unwrap_or(usize::MAX);
     }
     if let Some(range) = number("QUICKTYPE_READ_CHUNK") {
-        options.range = usize::try_from(range).unwrap_or(usize::MAX).max(1);
-        options.min_len = 0;
+        options = options
+            .with_small_ranges(usize::try_from(range).unwrap_or(usize::MAX))
+            .with_min_len(0);
     }
     if let Some(budget) = number("QUICKTYPE_READ_BUDGET") {
         options.budget = Some(budget);

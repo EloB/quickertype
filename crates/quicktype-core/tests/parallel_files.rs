@@ -73,7 +73,7 @@ fn files_read_on_several_threads_read_as_in_one_go() {
             for range in [64, 4_096, 65_536] {
                 let options = ParallelOptions::default()
                     .with_threads(threads)
-                    .with_range(range)
+                    .with_small_ranges(range)
                     .with_min_len(0);
                 let before = parallel_reads();
                 let sample = parallel_file_sample(&path, options).unwrap();

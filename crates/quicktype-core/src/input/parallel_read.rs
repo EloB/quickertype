@@ -314,7 +314,8 @@ pub struct ParallelOptions {
     /// The largest size of the ranges the sample is cut into, in bytes; a
     /// part between two splits is about this long. Ranges are smaller for
     /// samples that would not give each thread [`PARTS_PER_THREAD`] of
-    /// them, down to [`MIN_RANGE`].
+    /// them, but at least [`MIN_RANGE`] (a smaller `range` is raised to
+    /// it), and large enough that a sample has at most [`MAX_RANGES`].
     pub range: usize,
     /// Samples shorter than this (in bytes) are read in one go.
     pub min_len: u64,
@@ -323,6 +324,9 @@ pub struct ParallelOptions {
     /// (`None`), the threads that read times the range size, or
     /// [`TREE_BUDGET`].
     pub budget: Option<u64>,
+    /// Whether `range` may be under [`MIN_RANGE`] (see
+    /// [`with_small_ranges`](Self::with_small_ranges)).
+    small_ranges: bool,
     /// A fault to inject, to check that the checks catch it (for tests:
     /// see [`with_fault`](Self::with_fault)).
     #[cfg(any(test, feature = "test-support"))]
@@ -352,6 +356,16 @@ impl ParallelOptions {
     /// or the default one.
     pub fn with_budget(mut self, budget: Option<u64>) -> Self {
         self.budget = budget;
+        self
+    }
+
+    /// These options with ranges of at most `range` bytes, however few,
+    /// down to one: to read small samples split everywhere (for tests,
+    /// and the CLI's internal `QUICKTYPE_READ_CHUNK`).
+    #[doc(hidden)]
+    pub fn with_small_ranges(mut self, range: usize) -> Self {
+        self.range = range;
+        self.small_ranges = true;
         self
     }
 
@@ -402,6 +416,10 @@ pub const TREE_BUDGET: u64 = 32 << 20;
 /// The most threads that read a sample, whatever the options ask for.
 pub const MAX_THREADS: usize = 1024;
 
+/// The most ranges a sample is cut into, whatever the options ask for:
+/// what is kept for each takes about 100 bytes.
+pub const MAX_RANGES: usize = 1 << 16;
+
 /// Parts shorter than this tell little about how large other parts' trees
 /// are (a single element has a tree as large as its text, many share
 /// theirs).
@@ -417,6 +435,7 @@ impl Default for ParallelOptions {
             range: DEFAULT_RANGE,
             min_len: DEFAULT_MIN_LEN,
             budget: None,
+            small_ranges: false,
             #[cfg(any(test, feature = "test-support"))]
             fault: None,
         }
@@ -540,9 +559,15 @@ impl Plan {
         }
         let threads = options.threads.min(MAX_THREADS);
         let share = size / threads.saturating_mul(PARTS_PER_THREAD) as u64;
+        let least = if options.small_ranges {
+            1
+        } else {
+            MIN_RANGE as u64
+        };
         let range = (options.range as u64)
             .min(share.max(MIN_RANGE as u64))
-            .max(1);
+            .max(least)
+            .max(size.div_ceil(MAX_RANGES as u64));
         if size < options.min_len || size <= range {
             return None;
         }
@@ -1428,7 +1453,7 @@ mod tests {
     fn options(threads: usize, range: usize) -> ParallelOptions {
         ParallelOptions::default()
             .with_threads(threads)
-            .with_range(range)
+            .with_small_ranges(range)
             .with_min_len(0)
     }
 
@@ -1860,6 +1885,22 @@ mod tests {
             plan(usize::MAX, DEFAULT_RANGE, None, 64 << 30),
             Some((4 * MIB, 16_384, MAX_THREADS, MAX_THREADS as u64 * 4 * MIB))
         );
+        // Ranges are MIN_RANGE at least, however small the options ask
+        // for, unless small ranges are asked for; and no more than
+        // MAX_RANGES, however small.
+        assert_eq!(
+            plan(12, 1, None, 267 * MIB),
+            Some((256 << 10, 1_068, 12, TREE_BUDGET))
+        );
+        let small = |range, size| {
+            let options = ParallelOptions::default()
+                .with_threads(12)
+                .with_small_ranges(range)
+                .with_min_len(0);
+            Plan::new(options, size).map(|p| (p.range, p.ranges))
+        };
+        assert_eq!(small(1, 1_000), Some((1, 1_000)));
+        assert_eq!(small(1, 64 << 30), Some((1 << 20, MAX_RANGES)));
         // The budget asked for is kept; under the threshold, in one go.
         assert_eq!(
             plan(12, DEFAULT_RANGE, Some(7), 267 * MIB).map(|p| p.3),

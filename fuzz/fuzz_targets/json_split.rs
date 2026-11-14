@@ -26,7 +26,7 @@ fuzz_target!(|data: &[u8]| {
     };
     let options = ParallelOptions::default()
         .with_threads(2 + usize::from(threads % 3))
-        .with_range(1 + usize::from(*range))
+        .with_small_ranges(1 + usize::from(*range))
         .with_min_len(0)
         .with_budget((flags & 2 != 0).then_some(1 << 12));
     let handle_refs = flags & 1 != 0;

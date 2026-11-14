@@ -87,7 +87,7 @@ fn sample(s: &generator::Sample, seed: u64, parallel: Option<bool>) -> JsonSampl
             let len = s.text.len() as u64;
             let mut options = ParallelOptions::default()
                 .with_threads(rng.range(2, 5) as usize)
-                .with_range(rng.range(1, (len / 2).max(1)) as usize)
+                .with_small_ranges(rng.range(1, (len / 2).max(1)) as usize)
                 .with_min_len(0);
             if fault {
                 options = options.with_fault(Fault::Prepend);
