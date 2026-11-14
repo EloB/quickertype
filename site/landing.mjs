@@ -433,7 +433,7 @@ function specimenHtml(specimen) {
             (o) => `<div class="panel" data-lang="${o.lang}">
 <pre class="code" tabindex="0" aria-label="${e(o.name)}, generated from ${specimenFile}"><code>${highlight(o.text, o.lang)}</code></pre>
 <p class="command"><code>${o.command.split(" ").map((arg) => `<span>${e(arg)}</span>`).join(" ")}</code></p>
-<p class="proof"><svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg><span>quicktype's engine and quickertype's wrote the same <span data-stat="specimen-bytes-${o.lang}" data-value="${o.bytes}">${number(o.bytes)}</span> bytes. sha256 <code data-stat="specimen-sha-${o.lang}" data-value="${o.sha256}">${o.sha256.slice(0, 12)}…</code></span></p>
+<p class="proof"><svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg><span>quicktype's and quickertype's engines wrote the same <span data-stat="specimen-bytes-${o.lang}" data-value="${o.bytes}">${number(o.bytes)}</span> bytes. sha256 <code data-stat="specimen-sha-${o.lang}" data-value="${o.sha256}">${o.sha256.slice(0, 12)}…</code></span></p>
 </div>`,
         )
         .join("\n");
