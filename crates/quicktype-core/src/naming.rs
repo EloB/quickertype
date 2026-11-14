@@ -764,11 +764,17 @@ pub fn assign_names(naming: &Naming, root_namespaces: &[NamespaceId]) -> Result<
         }
     }
 
-    let mut unfinished: IndexSet<NamespaceId> = namespaces
+    // The unfinished namespaces in order. A finished one is marked and
+    // dropped from the list in bulk now and then: taking each out right away
+    // (`unfinished.delete(namespace)`) would move all later entries every
+    // time, quadratic in the number of classes.
+    let mut unfinished: Vec<NamespaceId> = namespaces
         .iter()
         .copied()
         .filter(|&ns| naming.members(ns).iter().any(|&m| !ctx.names.has(m)))
         .collect();
+    let mut finished = vec![false; naming.namespaces.len()];
+    let mut finished_in_list = 0;
 
     loop {
         // 1. Find a namespace whose forbiddens are all fully named, and which
@@ -776,6 +782,9 @@ pub fn assign_names(naming: &Naming, root_namespaces: &[NamespaceId]) -> Result<
         //    satisfied.
         let mut ready_namespace = None;
         for &ns in &unfinished {
+            if finished[ns.0 as usize] {
+                continue;
+            }
             if ctx.are_forbiddens_fully_named(ns)
                 && naming
                     .members(ns)
@@ -851,7 +860,12 @@ pub fn assign_names(naming: &Naming, root_namespaces: &[NamespaceId]) -> Result<
         }
 
         if naming.members(namespace).iter().all(|&m| ctx.names.has(m)) {
-            unfinished.shift_remove(&namespace);
+            finished[namespace.0 as usize] = true;
+            finished_in_list += 1;
+            if finished_in_list * 2 > unfinished.len() {
+                unfinished.retain(|ns| !finished[ns.0 as usize]);
+                finished_in_list = 0;
+            }
         }
     }
 }
