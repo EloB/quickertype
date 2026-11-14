@@ -70,6 +70,75 @@ pub fn parse(text: &str) -> Result<JsonValue, JsonParseError> {
     .parse_json()
 }
 
+/// A syntax error of [`parse_lines`]: V8's error, and the line of the
+/// value it is in.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct JsonLinesParseError {
+    /// The error as [`parse`] words it, with positions, lines and columns
+    /// counted in the whole text.
+    pub error: JsonParseError,
+    /// The line the bad value starts on, from 1: one more than the line
+    /// feeds before it.
+    pub line: usize,
+}
+
+/// JSON Lines read with `JSON.parse`'s grammar: the values of `text`,
+/// which are separated by JSON whitespace that holds a line feed (`\n`, so
+/// also `\r\n`). Whitespace before the first value and after the last,
+/// blank lines included, is skipped, and a text without values has none.
+/// This is not a JavaScript function: it is what `JSON.parse` would report
+/// if it read the values one after the other in the whole text, so its
+/// messages are V8's and count positions in `text`. A second value on a
+/// line is `Unexpected non-whitespace character after JSON`, as for
+/// `JSON.parse` of that line.
+///
+/// ```
+/// use quicktype_js_compat::json::{self, parse::parse_lines};
+///
+/// let values = parse_lines("{\"a\": 1}\r\n\n[2,\n 3]\n").unwrap();
+/// assert_eq!(json::stringify(&json::JsonValue::Array(values), None), r#"[{"a":1},[2,3]]"#);
+///
+/// let error = parse_lines("1\n2 3\n").unwrap_err();
+/// assert_eq!(error.line, 2);
+/// assert_eq!(
+///     error.error.message(),
+///     "Unexpected non-whitespace character after JSON at position 4 (line 2 column 3)"
+/// );
+/// ```
+pub fn parse_lines(text: &str) -> Result<Vec<JsonValue>, JsonLinesParseError> {
+    let bytes = text.as_bytes();
+    let mut parser = Parser {
+        text,
+        bytes,
+        pos: 0,
+    };
+    let mut values = Vec::new();
+    // The line feeds before `counted`.
+    let (mut feeds, mut counted) = (0, 0);
+    loop {
+        let after_value = parser.pos;
+        let token = parser.skip_whitespace();
+        feeds += bytes[counted..parser.pos]
+            .iter()
+            .filter(|&&b| b == b'\n')
+            .count();
+        counted = parser.pos;
+        if token == Token::Eos {
+            return Ok(values);
+        }
+        let fail = |error| JsonLinesParseError {
+            error,
+            line: feeds + 1,
+        };
+        if !values.is_empty() && !bytes[after_value..parser.pos].contains(&b'\n') {
+            return Err(fail(
+                parser.positional(Positional::UnexpectedNonWhiteSpaceCharacter),
+            ));
+        }
+        values.push(parser.parse_json_value().map_err(fail)?);
+    }
+}
+
 /// V8's `JsonToken`: what a character can start.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Token {
@@ -801,6 +870,67 @@ mod tests {
         assert_eq!(
             err("[1, 2, 3, 4, 5, 6, 7, 8, 😀]"),
             "Unexpected token '\u{FFFD}', ...\" 6, 7, 8, 😀]\" is not valid JSON"
+        );
+    }
+
+    fn lines(text: &str) -> Result<String, (usize, String)> {
+        parse_lines(text)
+            .map(|values| stringify(&JsonValue::Array(values), None))
+            .map_err(|e| (e.line, e.error.message().to_owned()))
+    }
+
+    #[test]
+    fn json_lines_values() {
+        assert_eq!(lines(""), Ok("[]".to_owned()));
+        assert_eq!(lines(" \r\n\t\n"), Ok("[]".to_owned()));
+        assert_eq!(lines("{\"a\":1}"), Ok(r#"[{"a":1}]"#.to_owned()));
+        assert_eq!(
+            lines("\n1\r\n\n  \"x\" \n[\n2\n]\n\n"),
+            Ok(r#"[1,"x",[2]]"#.to_owned())
+        );
+        // A pretty-printed value spans lines.
+        assert_eq!(
+            lines("{\n  \"a\": [\n    1\n  ]\n}\n{\"a\": []}"),
+            Ok(r#"[{"a":[1]},{"a":[]}]"#.to_owned())
+        );
+    }
+
+    /// Errors name the line the bad value starts on; V8's message counts
+    /// positions in the whole text.
+    #[test]
+    fn json_lines_errors() {
+        assert_eq!(
+            lines("1\n2 3"),
+            Err((
+                2,
+                "Unexpected non-whitespace character after JSON at position 4 (line 2 column 3)"
+                    .to_owned()
+            ))
+        );
+        // A carriage return alone does not end a line.
+        assert_eq!(
+            lines("1\r2").unwrap_err().1,
+            "Unexpected non-whitespace character after JSON at position 2 (line 2 column 1)"
+        );
+        assert_eq!(
+            lines("{\"a\":1}\n{\"a\":\n"),
+            Err((2, "Unexpected end of JSON input".to_owned()))
+        );
+        // An unclosed value is reported where the next line shows it.
+        assert_eq!(
+            lines("[1,\n2\n{\"b\":2}\n"),
+            Err((
+                1,
+                "Expected ',' or ']' after array element in JSON at position 6 (line 3 column 1)"
+                    .to_owned()
+            ))
+        );
+        assert_eq!(
+            lines("\u{feff}{}").unwrap_err(),
+            (
+                1,
+                "Unexpected token '\u{feff}', \"\u{feff}{}\" is not valid JSON".to_owned()
+            )
         );
     }
 }
