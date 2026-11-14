@@ -571,12 +571,22 @@ How it differs from the prototypes:
   crate's own tables when the crate compiles.
 - Item 2 is one rule in `Tallies::add_case`, which reading and the walk
   over a compressed form share: a place whose string types are
-  unrestricted with and without enum inference counts no more cases.
-  The reader also skips classifying and interning a string there that
-  cannot be a URI. It builds on the `absorbed` bits of the tallies'
-  follow-ups, and holds for merges and for tallies kept with a form:
-  nothing makes such a place restricted again
+  unrestricted with and without enum inference counts no more cases,
+  and forgets those it counted when it starts absorbing them, alone or
+  in a merge, so that merged tallies equal reading on exactly (parallel
+  reading relies on that). The reader also skips classifying and
+  interning a string there whose first byte is none of a URI prefix's
+  (`http://`, `https://`, `ftp://`). It builds on the `absorbed` bits of
+  the tallies' follow-ups, and holds for merges and for tallies kept
+  with a form: nothing makes such a place restricted again
   ([STREAMING-INFERENCE.md](STREAMING-INFERENCE.md#interned-strings-cases-and-counts)).
+  A review then had the reader test that state once per string, take
+  the URI prefixes from `is_uri` (testing whole prefixes instead cost
+  2–4% on the records, oddly, and was left out), count both readers'
+  keys in one function, and know `"$ref"` by its key id. Splitting
+  `add_key` into an inlined fast path and an out-of-line lookup was
+  tried and dropped: generating the 20 MB input in Chrome took 0.2–0.8
+  ms more in three runs (49.5–50.1 against 49.3–49.7 ms).
 - Item 8 was meant for the WebAssembly engine, but the engine reads its
   samples into compressed forms, whose keys the `JSON.parse` reader
   already interns once per key-table id, and the walk over a form knows
