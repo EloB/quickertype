@@ -901,11 +901,15 @@ impl Reading<'_> {
             // The first part, here.
             if appended == 0 && !parts.is_empty() {
                 let part = parts[0];
-                let before = running.tallies.heap_size() + running.strings.heap_size();
-                root = Some(self.read_part(part, running, config)?);
-                let after = running.tallies.heap_size() + running.strings.heap_size();
+                let first = self.read_part(part, running, config)?;
+                root = Some(first);
                 if part_len(&part) >= PROBE_LEN {
-                    ratio = after.saturating_sub(before) as f64 / part_len(&part) as f64;
+                    // As a part read elsewhere would hold it.
+                    let size = running.tallies.portable_size(&running.strings, first);
+                    let Ok(size) = size else {
+                        return rest(running, root, &parts, 1);
+                    };
+                    ratio = ratio.max(size as f64 / part_len(&part) as f64);
                 }
                 appended = 1;
             }

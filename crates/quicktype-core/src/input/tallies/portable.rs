@@ -12,6 +12,7 @@
 //! "Reading on several threads").
 
 use std::collections::VecDeque;
+use std::mem::size_of;
 use std::rc::Rc;
 
 use indexmap::IndexMap;
@@ -179,6 +180,46 @@ impl PortableTree {
 }
 
 impl Tallies {
+    /// About how many bytes the tree at `root` takes as a [`PortableTree`],
+    /// with a string table of its own: what a part read on another thread
+    /// holds. Unlike how much the tallies grew while reading it, it does
+    /// not depend on what they held before (texts already interned, nodes
+    /// and tallies reused).
+    pub(crate) fn portable_size(&self, strings: &Strings, root: NodeId) -> Result<usize> {
+        let mut texts = std::collections::HashSet::new();
+        let mut text = |id: u32| -> Result<usize> {
+            Ok(if texts.insert(id) {
+                defined(strings.get(id as usize))?.len() + size_of::<(u32, u64)>()
+            } else {
+                0
+            })
+        };
+        let mut bytes = 0;
+        let mut pending = vec![root];
+        while let Some(id) = pending.pop() {
+            let node = self.node(id)?;
+            bytes += size_of::<PortableNode>();
+            pending.extend(node.items);
+            if let Some(s) = node.strings.as_deref() {
+                bytes += size_of::<PortableStrings>() + s.cases.len() * size_of::<(u32, u64)>();
+                for &case in s.cases.keys() {
+                    bytes += text(case)?;
+                }
+            }
+            if let Some(o) = node.object.as_deref() {
+                bytes += size_of::<PortableObject>()
+                    + o.keys.len() * size_of::<(u32, u64, u32)>()
+                    + vec_size(&o.proto_runs);
+                for (&key, tally) in &o.keys {
+                    bytes += text(key)?;
+                    pending.push(tally.node);
+                }
+                pending.extend(o.proto);
+            }
+        }
+        Ok(bytes)
+    }
+
     /// Copies `tree` into these tallies, its keys and cases as ids into
     /// `strings` (whose texts it adds as needed); returns the copy's root.
     pub(crate) fn import(&mut self, strings: &mut Strings, tree: &PortableTree) -> Result<NodeId> {
@@ -292,6 +333,50 @@ mod tests {
         r#""long string, long string, long string, long string, long string, too""#,
         r##"{"$ref":"#/z","$ref":"2020-01-01","a":{"$ref":"https://h/r"},"c":"false","t":"12:00:00Z"}"##,
     ];
+
+    /// A tree's portable size is about that of its portable tree, and the
+    /// same whatever the tallies it is in held before.
+    #[test]
+    fn portable_size_does_not_depend_on_the_tallies() {
+        let config = config(false);
+        let sample: Vec<String> = (0..3_000)
+            .map(|i| format!(r#"{{"k":"s{i}","n":{i}}}"#))
+            .collect();
+        let sample = format!("[{}]", sample.join(","));
+        let read = |tallies: &mut RunningTallies| {
+            parse_stream_into(&mut TallyBuilder::new(tallies, &config), sample.as_bytes()).unwrap()
+        };
+        let mut tallies = RunningTallies::new();
+        let grown = |t: &RunningTallies| t.tallies.heap_size() + t.strings.heap_size();
+        let before = grown(&tallies);
+        let tree = read(&mut tallies);
+        let fresh = (
+            grown(&tallies) - before,
+            tallies
+                .tallies
+                .portable_size(&tallies.strings, tree)
+                .unwrap(),
+        );
+        tallies.tallies.free_tree(tree);
+        let before = grown(&tallies);
+        let tree = read(&mut tallies);
+        let warmed = (
+            grown(&tallies) - before,
+            tallies
+                .tallies
+                .portable_size(&tallies.strings, tree)
+                .unwrap(),
+        );
+        // The tallies grow less the second time (the texts are there
+        // already); the size is the same.
+        assert!(warmed.0 < fresh.0 / 2, "{fresh:?} {warmed:?}");
+        assert_eq!(warmed.1, fresh.1);
+        let portable = portable(&config, &sample).heap_size();
+        assert!(
+            fresh.1 <= portable && portable <= 2 * fresh.1 + (64 << 10),
+            "{fresh:?} {portable}"
+        );
+    }
 
     /// A tree made portable and imported into other tallies is the same
     /// tree, with the same texts, whatever those tallies held before.
