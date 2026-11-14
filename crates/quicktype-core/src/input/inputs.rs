@@ -29,7 +29,7 @@ use super::compressed_json::{
 };
 use super::compressed_json_from_stream::{parse_stream_into, parse_stream_reader_into};
 use super::inference::TypeInference;
-use super::tallies::{NodeId, Tallies, TallyBuilder};
+use super::tallies::{NodeId, Tallies, TallyBuilder, tally_compressed};
 use super::tally_inference::TallyInference;
 use crate::attributes::description::DescriptionTypeAttributeKind;
 use crate::attributes::type_attributes::AttributeKind;
@@ -400,12 +400,16 @@ pub struct CompressedTopLevel {
 /// given as text, [`JsonSample::String`], is still read whole first: its
 /// syntax is checked, as `JSON.parse` checks it, on a tape of the whole
 /// sample). The types are the same as quicktype infers from the
-/// compressed form of the samples, which an input built with
-/// [`from_compressed`](Self::from_compressed) still does, and an input
-/// does after [`set_tally_inference(false)`](Self::set_tally_inference)
-/// (or with `QUICKTYPE_INFERENCE=compressed-json` in the environment, for
-/// testing). Only such an input can be exported with
-/// [`to_compressed`](Self::to_compressed).
+/// compressed form of the samples, which an input keeps after
+/// [`set_tally_inference(false)`](Self::set_tally_inference) (or with
+/// `QUICKTYPE_INFERENCE=compressed-json` in the environment, for testing)
+/// and an input built with [`from_shared`](Self::from_shared) or
+/// [`from_compressed`](Self::from_compressed) has. Only such an input can
+/// be exported with [`to_compressed`](Self::to_compressed). It infers from
+/// that form's values one by one, as quicktype does, or from tallies made
+/// of it in one walk when the types are inferred, the default of
+/// `from_shared` and `from_compressed` (see
+/// [`set_tally_compressed`](Self::set_tally_compressed)).
 #[derive(Debug)]
 pub struct JsonInput {
     /// How samples are read; with inference from the compressed form, also
@@ -413,8 +417,14 @@ pub struct JsonInput {
     /// [`from_shared`](Self::from_shared).
     compressed_json: Rc<CompressedJson>,
     top_levels: IndexMap<String, JsonTopLevel>,
-    /// The running tallies; `None` to infer from the compressed form.
+    /// The running tallies; `None` to keep the samples in the compressed
+    /// form.
     tallies: Option<Tallies>,
+    /// Without running tallies: whether the types are inferred from
+    /// tallies of the compressed form, made when they are inferred, rather
+    /// than from its values one by one (see
+    /// [`set_tally_compressed`](Self::set_tally_compressed)).
+    tally_compressed: bool,
 }
 
 /// Whether `QUICKTYPE_INFERENCE=compressed-json` asks every new
@@ -439,6 +449,7 @@ impl JsonInput {
             compressed_json: Rc::new(compressed_json),
             top_levels: IndexMap::new(),
             tallies: (!compressed_json_inference_requested()).then(Tallies::new),
+            tally_compressed: false,
         }
     }
 
@@ -449,8 +460,8 @@ impl JsonInput {
     /// `_topLevels`, the samples encoded as in TypeScript; they cannot be
     /// strings (whose index in TypeScript's string table this compressed
     /// form does not know). The input cannot take more samples while the
-    /// compressed form is shared. It infers from the compressed form, not
-    /// from running tallies.
+    /// compressed form is shared. It infers from tallies of the compressed
+    /// form (see [`set_tally_compressed`](Self::set_tally_compressed)).
     pub fn from_shared(
         compressed_json: Rc<CompressedJson>,
         top_levels: Vec<CompressedTopLevel>,
@@ -471,6 +482,7 @@ impl JsonInput {
             compressed_json,
             top_levels: IndexMap::new(),
             tallies: None,
+            tally_compressed: !compressed_json_inference_requested(),
         };
         for top_level in top_levels {
             let values = top_level
@@ -515,10 +527,34 @@ impl JsonInput {
         self.tallies.is_some()
     }
 
+    /// For an input that keeps its samples in compressed form (made with
+    /// [`from_shared`](Self::from_shared) or
+    /// [`from_compressed`](Self::from_compressed), or after
+    /// [`set_tally_inference(false)`](Self::set_tally_inference)): whether
+    /// the types are inferred from tallies of the compressed form, made in
+    /// one walk over it when they are inferred (`true`, the default of
+    /// `from_shared` and `from_compressed`), or from its values one by one,
+    /// as quicktype does (`false`, the reference, and the default after
+    /// `set_tally_inference(false)` and with
+    /// `QUICKTYPE_INFERENCE=compressed-json`). Both infer the same types;
+    /// should the values not be a tree as a reader makes them (tables from
+    /// elsewhere), they are inferred one by one either way. No effect on an
+    /// input that infers from running tallies; can be changed any time.
+    pub fn set_tally_compressed(&mut self, tally: bool) {
+        self.tally_compressed = tally;
+    }
+
+    /// Whether types are inferred from tallies of the compressed form (see
+    /// [`set_tally_compressed`](Self::set_tally_compressed)).
+    pub fn tally_compressed(&self) -> bool {
+        self.tally_compressed
+    }
+
     /// A JSON input from the tables and top-levels a JavaScript
     /// `CompressedJSON` and `JSONInput` built: the JavaScript facade reads
     /// the samples (with `JSON.parse` and its error messages) and sends the
-    /// result this way (research 05, §4.2).
+    /// result this way (research 05, §4.2). It infers from tallies of the
+    /// compressed form (see [`set_tally_compressed`](Self::set_tally_compressed)).
     pub fn from_compressed(
         tables: &CompressedJsonTables,
         handle_refs: bool,
@@ -696,7 +732,22 @@ impl JsonInput {
             Tallies(TallyInference<'a>),
             CompressedJson(TypeInference<'a>),
         }
-        let inference = match &self.tallies {
+        // Without running tallies, those of the compressed form: each
+        // top-level's tree, in order.
+        let compressed_tallies = if self.tallies.is_none() && self.tally_compressed {
+            tally_compressed(
+                &self.compressed_json,
+                self.top_levels.values().map(|t| t.samples.as_slice()),
+            )
+        } else {
+            None
+        };
+        let (tallies, compressed_roots) = match (&self.tallies, &compressed_tallies) {
+            (Some(tallies), _) => (Some(tallies), None),
+            (None, Some((tallies, roots))) => (Some(tallies), Some(roots)),
+            (None, None) => (None, None),
+        };
+        let inference = match tallies {
             Some(tallies) => Inference::Tallies(TallyInference::new(
                 tallies,
                 self.compressed_json.handle_refs(),
@@ -709,13 +760,16 @@ impl JsonInput {
                 infer_enums,
             )),
         };
-        for (name, top_level) in &self.top_levels {
+        for (i, (name, top_level)) in self.top_levels.iter().enumerate() {
             let attributes = make_names_type_attributes(name, false);
             let tref = match &inference {
                 Inference::Tallies(inference) => inference.infer_top_level_type(
                     type_builder,
                     attributes,
-                    defined(top_level.tally)?,
+                    match compressed_roots {
+                        Some(roots) => *defined(roots.get(i))?,
+                        None => defined(top_level.tally)?,
+                    },
                     fixed_top_levels,
                 )?,
                 Inference::CompressedJson(inference) => inference.infer_top_level_type(
@@ -873,6 +927,77 @@ mod tests {
             .map(|(name, t)| (name.clone(), tallies.dump(t.tally.unwrap())))
             .collect();
         (top_levels, tallies.live_nodes())
+    }
+
+    /// The type graph `input` infers, or the error, for TypeScript.
+    fn graph(input: &mut JsonInput) -> String {
+        use crate::inference::InferenceFlags;
+        use crate::language::all::language_named;
+        let lang = language_named("typescript", default_target_languages()).unwrap();
+        let ctx = RunContext::for_target_language(lang, &InferenceFlags::default());
+        let mut builder =
+            TypeBuilder::new(ctx.string_type_mapping.clone(), false, false, false, false).unwrap();
+        match input
+            .add_types_sync(&ctx, &mut builder, true, true, false)
+            .and_then(|()| builder.finish())
+        {
+            Ok(graph) => format!("{graph:?}"),
+            Err(e) => format!("error {e:?}"),
+        }
+    }
+
+    /// An input over a compressed form infers from tallies of it, and the
+    /// same as from its values one by one; also over tables no reader
+    /// makes, where it infers from the values.
+    #[test]
+    fn inputs_over_a_compressed_form_tally_it() {
+        let mut reference = JsonInput::new(CompressedJson::with_int64_range(
+            Box::new(DefaultDateTimeRecognizer),
+            true,
+        ));
+        reference.set_tally_inference(false).unwrap();
+        assert!(!reference.tally_compressed());
+        reference.add_source_sync(source("T", &[A, B])).unwrap();
+        reference.add_source_sync(source("U", &[C])).unwrap();
+        let (good, top_levels) = reference.to_compressed().unwrap();
+        // `{"a": o, "b": o}` with `o = [1]`: an array reached twice.
+        let shared = CompressedJsonTables {
+            strings: vec!["a".to_owned(), "b".to_owned()],
+            objects: vec![6, 9, 6 | 1 << 4, 9],
+            object_offsets: vec![0],
+            arrays: vec![4],
+            array_offsets: vec![0],
+        };
+        let shared_top_levels = vec![CompressedTopLevel {
+            name: "S".to_owned(),
+            description: None,
+            samples: vec![8],
+        }];
+        for (tables, top_levels) in [(good, top_levels), (shared, shared_top_levels)] {
+            let input = || {
+                JsonInput::from_compressed(
+                    &tables,
+                    true,
+                    Box::new(DefaultDateTimeRecognizer),
+                    top_levels.clone(),
+                )
+                .unwrap()
+            };
+            let mut tallied = input();
+            assert_eq!(
+                tallied.tally_compressed(),
+                !compressed_json_inference_requested()
+            );
+            let mut by_value = input();
+            by_value.set_tally_compressed(false);
+            let expected = graph(&mut by_value);
+            assert!(!expected.starts_with("error"), "{expected}");
+            assert_eq!(graph(&mut tallied), expected);
+        }
+        reference.set_tally_compressed(true);
+        let tallied = graph(&mut reference);
+        reference.set_tally_compressed(false);
+        assert_eq!(tallied, graph(&mut reference));
     }
 
     const A: &str = r#"{"a":[1,{"b":"x"}],"c":{"d":"2020-01-01"},"__proto__":{"p":1}}"#;

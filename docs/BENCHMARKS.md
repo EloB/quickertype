@@ -156,7 +156,10 @@ Considered and left out:
   5–10% of engine time, but they appear in quicktype-core's public types
   (`Type`, `StringTypes`, `JsonValue`, `MultiFileRenderResult`, ...), so
   switching their hasher changes the Rust API used by the GraphQL input,
-  the CLI and the WASM bindings. Worth doing as its own change.
+  the CLI and the WASM bindings. Worth doing as its own change. (Since
+  inference uses tallies on every path, SipHash is 2–8% of a WebAssembly
+  run, most of it in public types: see [Inference from tallies in the
+  engine](#inference-from-tallies-in-the-engine).)
 
 ## Memory on large inputs
 
@@ -424,6 +427,9 @@ in the same page):
 | the code review's fixes, again | 2.30 (2.26×) | 23.1 (2.08×) | 214 (1.99×) | 127 (1.31×) |
 | + main, the second code review's fixes (the branch) | **2.40 (2.17×)** | **23.7 (2.03×)** | **217 (1.97×)** | **127 (1.31×)** |
 | TypeScript (same page) | 5.20 | 48.1 | 426 | 166 |
+| main after the merge, again (load 3–4) | 2.40 (2.13×) | 22.8 (1.99×) | 211 (1.91×) | 129 (1.39×) |
+| + inference from tallies ([below](#inference-from-tallies-in-the-engine)) | **2.30 (2.22×)** | **16.9 (2.69×)** | **145 (2.78×)** | **65.8 (2.72×)** |
+| TypeScript (same page) | 5.10 | 45.4 | 404 | 179 |
 
 Where the branch's time goes: reading against generating, in ms:
 
@@ -645,12 +651,159 @@ profile of (c) on WebAssembly shows:
 - about 30% in the union accumulators' attribute sets: one set per string
   value, combined value by value.
 
-The streaming-inference work replaces those sets with tallies. With
-foldhash for `IndexMap` (a separate change to quicktype-core's types),
-that is where (c) gains next. The reading (a) and the boundary (b) are
+The streaming-inference work replaces those sets with tallies, which
+the engine now uses too ([Inference from tallies in the
+engine](#inference-from-tallies-in-the-engine): (c) is down to 8.6 ms,
+and SipHash is no longer hot). The reading (a) and the boundary (b) are
 what this branch changed. In (a), what is left is the copy of the text
 into WebAssembly memory (`TextEncoder.encodeInto`, about 12 ms for 27 MB)
 and the reader itself.
+
+### Inference from tallies in the engine
+
+The engine keeps each input's samples in the compressed form, because
+quicktype's API can ask for a `CompressedJSON`'s tables at any time, and
+until this change it inferred types from that form value by value, with
+one string-attribute set per value, as TypeScript does. Generating was
+therefore only at parity with TypeScript. Now a run makes the tallies of
+Phase 8a from the compressed form in one walk over it, then infers from
+them ([STREAMING-INFERENCE.md](STREAMING-INFERENCE.md#tallies-of-a-compressed-form));
+the tallies are freed when inference ends. Output is byte-identical:
+the differential suite (19,078 scenarios, 0 different), `cargo xtask
+parity`, the streaming harness on the engine's path (a million seeds, 0
+differences; STREAMING-INFERENCE.md, "Testing"),
+and every benchmark run below checks that the outputs are the same.
+
+**Choosing the design.** Three were considered:
+
+- (a) tallies made while a sample is read, kept beside the compressed
+  form for the runs;
+- (b) tallies made from the compressed form when a run starts, freed
+  after it;
+- (c) only tallies, regenerating the tables when JavaScript asks for them.
+
+(c) cannot be exact. Tallies keep counts, not values, so the tables
+could only be regenerated from the sample texts. Those would then have
+to be kept for every input, at 1 to 2 bytes per character, where now
+only an input's first 4 Mi code units are kept. Between (a) and (b),
+measured natively in process (thin LTO, median of 15), reading a text
+sample into running tallies costs more than reading it into the
+compressed form. (a) needs both at once, so its reading would grow by
+more than that difference, and so would its memory at rest. (b) keeps
+reading and memory as they are, and its walk is a small part of a run:
+
+| Input | Reading into the compressed form | Reading into running tallies | A run, value by value | A run, from tallies of the form |
+|---|---:|---:|---:|---:|
+| generated (2 MB) | 6.53 ms | 9.44 ms | 10.9 ms | 5.66 ms |
+| 35k records (9.3 MB) | 11.7 ms | 13.9 ms | 22.5 ms | 2.27 ms |
+| 100k records (27 MB) | 33.4 ms | 39.2 ms | 63.7 ms | 6.15 ms |
+| generated (20 MB) | 67.4 ms | 97.6 ms | 99.5 ms | 43.2 ms |
+
+(a) would only gain where an input is run many times, and would pay for
+it in reading and memory on every input, so (b) was chosen. In the walk,
+keys and string cases are known by their index in the form's string
+table, and bits per tally skip the string-attribute combinations that
+cannot change anything. The branch's second commit finds a key or case
+in its place's tally through a remembered position instead of a hash
+(generating on the 27 MB records: 9.9 → 8.2 ms in Chrome).
+
+**Machine and method.** Apple M2 Max (12 cores, 64 GiB), macOS 26.6.2,
+Chrome 157.0.8103.78 (headless), Node.js 24.16.0. `compare.mjs` with
+`--variant before=<main at 250f1661f> --variant after=<this branch>`,
+TypeScript being quicktype's own engine in the same page or process.
+Load average 3 to 4, unlike the busy machine of the earlier
+measurements. Medians, ms; reading
+(`addSource`) + generating (`quicktypeMultiFile`) = total.
+
+Warm, headless Chrome:
+
+| Input | Before | After | TypeScript | After vs TypeScript, generating |
+|---|---:|---:|---:|---:|
+| pokedex (82 KB) | 0.60 + 1.80 = 2.40 | 0.50 + 1.70 = 2.30 | 1.40 + 3.80 = 5.10 | 2.2× |
+| generated (2 MB) | 10.0 + 12.8 = 22.8 | 9.90 + 7.10 = 16.9 | 22.7 + 22.4 = 45.4 | 3.2× |
+| generated (20 MB) | 97.8 + 113 = 211 | 98.7 + 46.9 = 145 | 248 + 155 = 404 | 3.3× |
+| 100k records (27 MB) | 57.5 + 71.4 = 129 | 57.0 + 8.60 = 65.8 | 83.3 + 95.8 = 179 | 11× |
+| 35k records (9.3 MB) | 19.8 + 25.0 = 44.8 | 19.8 + 3.60 = 23.4 | 27.2 + 28.4 = 55.6 | 7.9× |
+
+The 35k records are the shape and size of the 9.3 MB input of a user's
+report from the playground (there, warm in their Chrome: quickertype 18.6
++ 21.7 ms, quicktype 25.0 + 22.3 ms); it is not one of
+`compare.mjs`'s inputs (a copy of the script with `generateRulings(35_000)`
+as its only input).
+
+Warm, Node, wall time (CPU time of the process in parentheses):
+
+| Input | Before | After | TypeScript |
+|---|---:|---:|---:|
+| pokedex (82 KB) | 0.61 + 1.84 = 2.44 (3.06) | 0.62 + 1.74 = 2.34 (3.30) | 2.07 + 5.51 = 7.55 (10.0) |
+| generated (2 MB) | 11.4 + 14.2 = 25.6 (26.3) | 11.3 + 7.53 = 18.9 (19.7) | 33.7 + 32.8 = 66.9 (96.5) |
+| generated (20 MB) | 113 + 122 = 235 (244) | 113 + 52.5 = 166 (168) | 386 + 221 = 610 (809) |
+| 100k records (27 MB) | 64.6 + 75.4 = 140 (140) | 64.4 + 9.60 = 74.2 (75.8) | 131 + 106 = 239 (379) |
+
+Cold (the first run in a fresh browser after the page compiled the
+module, median of 5; in a fresh Node process, which compiles it, median
+of 7, CPU time in parentheses):
+
+| Input | Chrome before | Chrome after | Chrome TypeScript | Node before | Node after | Node TypeScript |
+|---|---:|---:|---:|---:|---:|---:|
+| pokedex (82 KB) | 4.40 + 34.9 = 39.3 | 4.40 + 35.7 = 39.7 | 2.80 + 22.9 = 25.7 | 3.76 + 47.1 = 50.9 (154) | 3.79 + 47.7 = 51.6 (165) | 3.54 + 24.7 = 28.5 (44.5) |
+| generated (2 MB) | 19.5 + 48.1 = 67.1 | 19.3 + 41.9 = 61.3 | 29.3 + 44.2 = 74.3 | 25.4 + 53.6 = 79.1 (216) | 25.5 + 46.8 = 72.3 (198) | 39.5 + 55.0 = 94.0 (169) |
+| generated (20 MB) | 135 + 152 = 286 | 135 + 91.2 = 227 | 277 + 198 = 473 | 154 + 176 = 330 (493) | 154 + 107 = 261 (433) | 387 + 241 = 630 (864) |
+| 100k records (27 MB) | 78.6 + 104 = 183 | 79.0 + 38.8 = 119 | 88.5 + 105 = 193 | 89.2 + 114 = 203 (330) | 89.4 + 43.8 = 134 (240) | 123 + 118 = 240 (415) |
+
+A first run on pokedex in Node takes more CPU time after. With 21 runs
+and a second copy of the before build: 149 and 151 ms before, 159 after,
+for the same wall time (50.8 and 50.3 ms, 50.1). The extra is in V8's
+background threads, which tier up the module's hot functions. Every
+other first run is faster. The module is 13 KB larger: 5,259,102 bytes,
+1,911,724 gzipped with `-9`, against 5,245,950 and 1,906,815.
+
+**Memory.** Builds with `--heap-stats`, one input per fresh Node process.
+The first column is what the engine holds for the input after
+`addSource` (`jsonHeld`), the bytes the memory limit counts. The second
+is the most the allocator had in use during a run, above what it had
+before the run:
+
+| Input | Held, before / after | A run's peak, before / after |
+|---|---:|---:|
+| pokedex (82 KB) | 1,676,012 / 1,676,020 bytes | 4.5 / 4.5 MiB |
+| generated (2 MB) | 4,064,016 / 4,064,024 bytes | 6.1 / 5.6 MiB |
+| generated (20 MB) | 29,165,120 / 29,165,128 bytes | 21.4 / 15.1 MiB |
+| 100k records (27 MB) | 11,879,612 / 11,879,620 bytes | 31.6 / 6.2 MiB |
+
+An input holds 8 bytes more: a flag of the string table, padded, which
+says whether it holds a text twice (only imported tables can). The
+memory limit, eviction and the tables JavaScript gets are unchanged, and
+their tests pass. A run needs less: one tally per place instead of an
+attribute set per string value and the values of every property. The
+WebAssembly memory after the run is the same size (the sample's reading
+is the peak).
+
+**Where generating's time goes now.** A build that keeps the module's
+function names (`--profile profiling`, `wasm-opt -O3 -g`), the runs of
+one input under Node's sampling profiler (V8, as in Chrome), self time:
+
+- 100k records (27 MB): the walk about 77% (`CompressedTally::visit` 41%,
+  the walk's loop and keys, inlined into `JsonInput::add_types_sync`,
+  30%), the allocator 2.5%, SipHash 1.6%. Before, the attribute sets
+  were about 30%, the allocator 18% and SipHash 10% (above).
+- generated (20 MB): the walk about 39%; the attributes of each URI value,
+  which `Inference.ts` computes from its text as well (`Uri::parse` twice,
+  for its kind and for its attributes), about 12%; the allocator 10.5%;
+  `expand_strings`' enum overlap search 4.7%; SipHash 4.0%.
+
+**Hashing.** SipHash (std's `RandomState`, under `IndexMap` and
+`IndexSet`) is no longer hot. Counted with the string-keyed maps'
+inserts, lookups and rehashing, by caller: 3.2% of generating on the
+records (2.7% the union accumulators' string cases), 8.1% on the
+generated input (4.0% the accumulators' string cases, 2.1%
+`expand_strings`' case sets, 1.2% the URI attribute sets, 0.5% other).
+The accumulators' cases end up in a `StringTypes`, and the URI
+attributes are a public type too, so changing either hasher changes
+quicktype-core's Rust API. A swap within private maps (`expand_strings`'
+case sets) could save at most 2.1% on the generated input and nothing on
+the records, less than the spread of these measurements, so the hasher
+was left as it is.
 
 ### Large outputs
 

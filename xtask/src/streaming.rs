@@ -1,6 +1,7 @@
-//! `cargo xtask streaming-fuzz`: runs generated inputs through both ways of
-//! inferring JSON types, running tallies and quicktype's compressed form,
-//! and requires identical results (docs/STREAMING-INFERENCE.md).
+//! `cargo xtask streaming-fuzz`: runs generated inputs through the ways of
+//! inferring JSON types (running tallies, or tallies of the compressed
+//! form, against quicktype's compressed form value by value) and requires
+//! identical results (docs/STREAMING-INFERENCE.md).
 //!
 //! The generator and the comparison are quicktype-core's
 //! `tests/streaming_inference.rs` (its ignored `fuzz` and `dump_documents`
@@ -13,8 +14,9 @@ pub const USAGE: &str = "\
 cargo xtask streaming-fuzz [options]
 
 Generates JSON inputs from consecutive seeds and checks, for each, that
-inference from running tallies and from the compressed form give the same
-add_source results, the same type graphs (every inference flag
+inference from running tallies (or, with --path, from tallies of the
+compressed form) and from the compressed form value by value give the
+same add_source results, the same type graphs (every inference flag
 combination) and the same output of a whole run (a language and an option
 set picked by the seed, on every tenth seed by default). Runs optimized,
 in process (built in target/streaming-fuzz, without LTO).
@@ -27,6 +29,10 @@ in process (built in target/streaming-fuzz, without LTO).
   --runs <n>     whole runs per seed that has runs (default 1)
   --runs-every <n>
                  whole runs on every <n>th seed (default 10)
+  --path <p>     what is compared with the reference: `running` (running
+                 tallies, the CLI's; the default), `compressed` (tallies
+                 of the compressed form as the readers made it and as
+                 imported tables, the WebAssembly engine's) or `all`
   --trace        print each seed as it starts (to find one that crashes)
   --dump <dir>   instead, write <n> generated documents (default 2000) to
                  <dir> as <seed>.json, for `cargo xtask diff --each <dir>`
@@ -34,6 +40,7 @@ in process (built in target/streaming-fuzz, without LTO).
 examples:
   cargo xtask streaming-fuzz --seeds 1_000_000 -j 8
   cargo xtask streaming-fuzz --start 5000000 --seeds 100000 --runs 3
+  cargo xtask streaming-fuzz --path compressed --seeds 1_000_000
   cargo xtask streaming-fuzz --dump target/streaming-docs --seeds 2000
 ";
 
@@ -45,6 +52,7 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
     let mut graphs = "2".to_owned();
     let mut runs_every = "10".to_owned();
     let mut trace = false;
+    let mut path = "running".to_owned();
     let mut dump: Option<String> = None;
     let mut iter = args.into_iter();
     while let Some(arg) = iter.next() {
@@ -57,9 +65,13 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
             "--graphs" => graphs = value()?,
             "--runs-every" => runs_every = value()?,
             "--trace" => trace = true,
+            "--path" => path = value()?,
             "--dump" => dump = Some(value()?),
             other => return Err(format!("unknown option {other}\n\n{USAGE}")),
         }
+    }
+    if !matches!(path.as_str(), "running" | "compressed" | "all") {
+        return Err(format!("unknown --path {path}\n\n{USAGE}"));
     }
     let test = if dump.is_some() {
         "dump_documents"
@@ -96,7 +108,8 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
         .env("QUICKTYPE_STREAMING_START", &start)
         .env("QUICKTYPE_STREAMING_RUNS", &runs)
         .env("QUICKTYPE_STREAMING_GRAPHS", &graphs)
-        .env("QUICKTYPE_STREAMING_RUNS_EVERY", &runs_every);
+        .env("QUICKTYPE_STREAMING_RUNS_EVERY", &runs_every)
+        .env("QUICKTYPE_STREAMING_PATH", &path);
     if trace {
         command.env("QUICKTYPE_STREAMING_TRACE", "1");
     }
