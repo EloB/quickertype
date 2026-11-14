@@ -15,9 +15,9 @@
 // `corpus.results.<tool>.unexpected_exits_note`, a sentence saying why
 // that tool's runs exited unexpectedly.
 //
-// The charts are inline SVG in HTML rows: the labels are HTML text (it
-// wraps, and stays legible at any width), the bars SVG, placed in percent
-// of their row. quickertype is the violet accent, quicktype the gray it is
+// The charts are inline SVG in HTML rows (site/charts.mjs): the labels are
+// HTML text (it wraps, and stays legible at any width), the bars SVG, placed
+// in percent of their row. quickertype is the violet accent, quicktype the gray it is
 // compared with (the emphasis form; checked with the dataviz palette
 // validator against both themes' surfaces). Every chart has a table with
 // its numbers, every bar an accessible label.
@@ -26,6 +26,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { bar, legend, pairChart, roomFor, rowSvg, startIds, tableView, tip } from "./charts.mjs";
 import { escapeHtml } from "./src/html.js";
 
 const siteRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -337,60 +338,9 @@ function longDate(iso) {
 }
 
 const e = escapeHtml;
-const pct = (x) => `${(Math.max(0, Math.min(1, x)) * 100).toFixed(2)}%`;
 
 // ---------------------------------------------------------------------------
-// Charts
-
-/**
- * One bar, `fraction` of its row wide, rounded at its end and square at the
- * baseline: a nested <svg> clips the square cap to the bar, however narrow.
- * `parts` splits it ([fraction of the bar, class]).
- */
-function bar({ fraction, y = 2, height = 12, kind, parts }) {
-    const segments = (parts ?? [[1, ""]])
-        .reduce(
-            (acc, [share, cls]) => {
-                acc.list.push(`<rect x="${pct(acc.at)}" width="${pct(share)}" height="${height}" class="${cls}"/>`);
-                acc.at += share;
-                return acc;
-            },
-            { at: 0, list: [] },
-        )
-        .list.join("");
-    // The rounded end: the whole bar with rx, its baseline end squared by a cap.
-    return `<svg x="0" y="${y}" width="${pct(fraction)}" height="${height}" class="bar-mark ${kind}" overflow="hidden"><clipPath id="c${++clipIds}"><rect width="100%" height="${height}" rx="4"/><rect width="8" height="${height}"/></clipPath><g clip-path="url(#c${clipIds})">${segments}</g></svg>`;
-}
-
-let clipIds = 0;
-
-/** A value at a bar's tip. */
-const tip = (fraction, y, label) => `<text x="${pct(fraction)}" dx="6" y="${y}" class="tip">${e(label)}</text>`;
-
-/** An <svg> drawing a row's bars: an image, with its accessible name. */
-function rowSvg(label, height, content) {
-    return `<svg class="bars-svg" width="100%" height="${height}" role="img" aria-label="${e(label)}"><title>${e(label)}</title>${content}</svg>`;
-}
-
-/** A table of a chart's numbers, closed by default. */
-function tableView(caption, head, rows) {
-    return `<details class="table-view"><summary>The numbers as a table</summary><table><caption>${e(caption)}</caption><thead><tr>${head
-        .map((h, i) => `<th scope="col"${i > 0 ? ' class="num"' : ""}>${e(h)}</th>`)
-        .join("")}</tr></thead><tbody>${rows
-        .map((r) => `<tr>${r.map((c, i) => (i === 0 ? `<th scope="row">${e(c)}</th>` : `<td class="num">${e(c)}</td>`)).join("")}</tr>`)
-        .join("")}</tbody></table></details>`;
-}
-
-/** The legend: quicktype (gray) and quickertype (violet). */
-const legend = (theirs = "quicktype", ours = "quickertype") =>
-    `<p class="legend"><span class="key theirs" aria-hidden="true"></span>${e(theirs)}<span class="key ours" aria-hidden="true"></span>${e(ours)}</p>`;
-
-/**
- * The room a bar's tip label needs, as a fraction of the narrowest row (a
- * 328 px phone column): bars stop short of it, so the label never leaves
- * the row.
- */
-const roomFor = (label) => Math.min(0.5, (label.length * 7.4 + 10) / 328);
+// Charts (the pieces are site/charts.mjs)
 
 /** A group's heading in the CLI chart ("Eight languages" says how many of its benchmarks there are). */
 function groupHeading(group, rows) {
@@ -462,26 +412,6 @@ function memoryChart(bench) {
         rows.map((r) => [r.name, formatMiB(r.results.typescript.peak_rss_mib), formatMiB(r.results.rust.peak_rss_mib), times(r.results.typescript.peak_rss_mib / r.results.rust.peak_rss_mib)]),
     );
     return { html, table };
-}
-
-/** Two bars on one scale, each named (quicktype, quickertype), values at the tips or beside the names. */
-function pairChart({ theirs, ours, tips = true, more = false }) {
-    const room = tips ? Math.max(roomFor(theirs.tip), roomFor(ours.tip)) : 0.08;
-    const top = Math.max(theirs.value, ours.value) / (1 - room);
-    const row = (side, kind) =>
-        `<li class="bar-row"><span class="bar-name"><span class="key ${kind}" aria-hidden="true"></span>${e(side.name)}</span>${
-            tips ? "" : `<span class="bar-value">${e(side.text)}</span>`
-        }${rowSvg(
-            side.label,
-            16,
-            // A value too small to see still gets a mark (3 px).
-            (side.value / top < 0.004
-                ? `<rect x="0" y="2" width="3" height="12" rx="1.5" class="bar-mark ${kind}"/>`
-                : bar({ fraction: side.value / top, kind })) +
-                (more && kind === "theirs" ? `<rect x="${pct(side.value / top)}" y="2" width="${pct(room * 0.8)}" height="12" class="more"/>` : "") +
-                (tips ? tip(side.value / top, 12.5, side.tip) : ""),
-        )}</li>`;
-    return `<ol class="bars pair">${row(theirs, "theirs")}${row(ours, "ours")}</ol>`;
 }
 
 /** The pokedex CLI run of each engine: start-up (what --version takes), then the rest. */
@@ -603,7 +533,7 @@ function sizeRange(rows) {
 
 /** The benchmarks page's content (inside <main>), from the checked data. */
 export function benchmarksPageHtml({ bench, big }) {
-    clipIds = 0;
+    startIds();
     const facts = speedFacts(bench);
     const cli = (name) => bench.cli.find((r) => r.name === name);
     const pokedex = cli(named.pokedex);
