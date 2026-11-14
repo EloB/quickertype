@@ -61,11 +61,16 @@ pub(crate) enum Positional {
 }
 
 impl Positional {
-    fn len(&self) -> io::Result<u64> {
+    /// Its length, and a file's time of last change: what tells that it
+    /// changed.
+    fn stamp(&self) -> io::Result<(u64, Option<std::time::SystemTime>)> {
         match self {
             #[cfg(all(any(unix, windows), feature = "fs"))]
-            Positional::File(shared) => Ok(shared.file.metadata()?.len()),
-            Positional::Memory(bytes) => Ok(bytes.len() as u64),
+            Positional::File(shared) => {
+                let metadata = shared.file.metadata()?;
+                Ok((metadata.len(), metadata.modified().ok()))
+            }
+            Positional::Memory(bytes) => Ok((bytes.len() as u64, None)),
         }
     }
 
@@ -427,6 +432,10 @@ thread_local! {
     static SLOW_PART: Cell<Option<(usize, std::time::Duration)>> = const { Cell::new(None) };
     /// A part whose reading thread panics (for tests).
     static PANIC_PART: Cell<Option<usize>> = const { Cell::new(None) };
+    /// A part before whose reading the file at a path is written with
+    /// these bytes (for tests).
+    static CHANGE_FILE: std::cell::RefCell<Option<(usize, std::path::PathBuf, Vec<u8>)>> =
+        const { std::cell::RefCell::new(None) };
     /// The most bytes the parts given out held at once in the last reading
     /// on this thread, and the largest part's tree (for tests).
     static HELD: Cell<(u64, u64)> = const { Cell::new((0, 0)) };
@@ -528,23 +537,11 @@ pub(crate) fn read_sample(
             sample.seek_to_end();
             Ok(tree)
         }
-        // (The parts' tree always has the array's elements.)
-        Some(Outcome::InPart(tree, from))
-            if tallies.tallies.node(tree).is_ok_and(|n| n.items.is_some()) =>
-        {
+        Some(Outcome::InPart(tree, from)) => {
             count_read(|r| r.in_part += 1);
             let mut builder =
                 TallyBuilder::in_array(tallies, config, tree).map_err(ParseError::Quicktype)?;
             parse_array_rest_into(&mut builder, &mut *sample.into_reader_from(from))
-        }
-        Some(Outcome::InPart(tree, _)) => {
-            tallies.tallies.free_tree(tree);
-            count_read(|r| r.again += 1);
-            parse_stream_reader_into(
-                &mut TallyBuilder::new(tallies, config),
-                &mut *sample.into_reader(),
-                Framing::Value,
-            )
         }
         None => parse_stream_reader_into(
             &mut TallyBuilder::new(tallies, config),
@@ -563,12 +560,9 @@ fn read(
     tallies: &mut RunningTallies,
     config: &CompressedJson,
 ) -> Option<Outcome> {
-    let options = sample.options;
-    if options.threads < 2 {
-        return None;
-    }
-    let len = sample.source.len().ok()?;
-    let plan = Plan::new(options, len.checked_sub(sample.start)?)?;
+    let stamp = sample.source.stamp().ok()?;
+    let len = stamp.0;
+    let plan = Plan::new(sample.options, len.checked_sub(sample.start)?)?;
     let configs = (0..plan.threads)
         .map(|_| {
             Some(ThreadConfig {
@@ -596,6 +590,8 @@ fn read(
         slow_part: SLOW_PART.with(Cell::get),
         #[cfg(test)]
         panic_part: PANIC_PART.with(Cell::get),
+        #[cfg(test)]
+        change_file: CHANGE_FILE.with(|c| c.borrow().clone()),
     };
     let outcome = thread::scope(|scope| {
         let (sender, results) = mpsc::channel();
@@ -622,20 +618,22 @@ fn read(
         close.1 = !matches!(outcome, Some(Outcome::Whole(_)));
         outcome
     });
-    match outcome {
-        // Reading in one go reads to the end of the file, which must not
-        // have changed.
-        Some(Outcome::Whole(tree)) if sample.source.len().ok() != Some(len) => {
-            tallies.tallies.free_tree(tree);
-            count_read(|r| r.again += 1);
-            None
+    // The parts' tree stands if the file did not change while it was read
+    // (its length and time of last change): the rest, if any, is read from
+    // where the parts end, and reading in one go reads the file as it is.
+    // (The parts' tree always has the array's elements.)
+    if let Some(outcome) = outcome {
+        let tree = match outcome {
+            Outcome::Whole(tree) | Outcome::InPart(tree, _) => tree,
+        };
+        let has_elements = tallies.tallies.node(tree).is_ok_and(|n| n.items.is_some());
+        if has_elements && sample.source.stamp().ok() == Some(stamp) {
+            return Some(outcome);
         }
-        None => {
-            count_read(|r| r.again += 1);
-            None
-        }
-        outcome => outcome,
+        tallies.tallies.free_tree(tree);
     }
+    count_read(|r| r.again += 1);
+    None
 }
 
 /// The first byte from `at` to `end` that is not whitespace, and where.
@@ -753,6 +751,8 @@ struct Reading<'s> {
     slow_part: Option<(usize, std::time::Duration)>,
     #[cfg(test)]
     panic_part: Option<usize>,
+    #[cfg(test)]
+    change_file: Option<(usize, std::path::PathBuf, Vec<u8>)>,
 }
 
 /// How many bytes a thread scans at a time (a multiple of 64): what the
@@ -844,6 +844,12 @@ impl Reading<'_> {
                 #[cfg(test)]
                 if self.panic_part == Some(i) {
                     panic!("a part panicked (a test hook)");
+                }
+                #[cfg(test)]
+                if let Some((part, path, bytes)) = &self.change_file
+                    && *part == i
+                {
+                    std::fs::write(path, bytes).unwrap();
                 }
                 Done::Part(i, self.tally(part, config))
             }
@@ -1698,6 +1704,52 @@ mod tests {
             std::fs::rename(&other, &path).unwrap();
             assert_eq!(read_whole(&sample), expected);
             assert_eq!(spares(&sample), 0);
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A file that changes while it is read on several threads is read
+    /// again in one go from its start, as it is now: whether the parts
+    /// after the change find its end (the rest would have been read from
+    /// where the parts before end), or all of them read, of the old bytes
+    /// and the new.
+    #[cfg(all(any(unix, windows), feature = "fs"))]
+    #[test]
+    fn a_file_that_changes_is_read_again_in_one_go() {
+        let config = config(false);
+        let dir = std::env::temp_dir().join(format!("quicktype-changes-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("changes.json");
+        let elements: Vec<String> = (0..3_000)
+            .map(|i| format!(r#"{{"id":{i},"s":"v{}"}}"#, i % 7))
+            .collect();
+        let old = format!("[{}]", elements.join(","));
+        let same_length = old.replace(r#""s""#, r#""t""#);
+        for new in [r#"[{"new":true}]"#.to_owned(), same_length] {
+            std::fs::write(&path, &old).unwrap();
+            // Changed long ago, so that writing it now changes the time.
+            let ago = std::time::SystemTime::now() - std::time::Duration::from_secs(60);
+            let file = std::fs::OpenOptions::new().write(true).open(&path).unwrap();
+            file.set_modified(ago).unwrap();
+            drop(file);
+            let sample = PositionalSample {
+                source: Positional::File(SharedFile::new(
+                    std::fs::File::open(&path).unwrap(),
+                    None,
+                )),
+                start: 0,
+                options: options(4, 1_024),
+            };
+            CHANGE_FILE
+                .with(|c| *c.borrow_mut() = Some((3, path.clone(), new.clone().into_bytes())));
+            let before = parallel_reads();
+            let mut tallies = RunningTallies::new();
+            let result = read_sample(sample, &mut tallies, &config)
+                .map(|tree| tallies.dump(tree))
+                .map_err(|e| e.message().to_owned());
+            CHANGE_FILE.with(|c| c.borrow_mut().take());
+            assert_eq!(result, in_one_go(&config, new.as_bytes()), "{new:.40}");
+            assert_eq!(parallel_reads().again - before.again, 1, "{new:.40}");
         }
         let _ = std::fs::remove_dir_all(&dir);
     }
