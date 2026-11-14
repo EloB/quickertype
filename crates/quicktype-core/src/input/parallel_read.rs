@@ -543,7 +543,14 @@ fn count_read(count: impl FnOnce(&mut ParallelReads)) {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct Plan {
     range: u64,
+    /// The first range's size: shorter, so that the first parts, which
+    /// are read on the reading thread to measure the trees, are.
+    head: u64,
     ranges: usize,
+    /// How much text the first parts hold, at least, when their tree
+    /// gives the first ratio of tree to text (see
+    /// [`Reading::coordinate`]).
+    probe: u64,
     threads: usize,
     budget: u64,
     #[cfg(any(test, feature = "test-support"))]
@@ -567,11 +574,15 @@ impl Plan {
         let range = (options.range as u64)
             .min(share.max(MIN_RANGE as u64))
             .max(least)
-            .max(size.div_ceil(MAX_RANGES as u64));
+            .max(size.div_ceil(MAX_RANGES as u64 - 1));
         if size < options.min_len || size <= range {
             return None;
         }
-        let ranges = usize::try_from(size.div_ceil(range)).ok()?;
+        // PROBE_LEN, or a 64th of a smaller sample; the first range twice
+        // that, if the ranges are longer.
+        let probe = PROBE_LEN.min(size / 64).max(1);
+        let head = range.min(2 * probe);
+        let ranges = 1 + usize::try_from((size - head).div_ceil(range)).ok()?;
         // No more threads than the ranges give PARTS_PER_THREAD each (more
         // would wait for work, and the default budget grows with them); a
         // single one would only add the scan to reading in one go.
@@ -581,7 +592,9 @@ impl Plan {
         }
         Some(Plan {
             range,
+            head,
             ranges,
+            probe,
             threads,
             budget: options
                 .budget
@@ -661,6 +674,7 @@ fn read(
         start: sample.start,
         len,
         range: plan.range,
+        head: plan.head,
         ranges: plan.ranges,
         queue: Mutex::new(Queue::default()),
         ready: Condvar::new(),
@@ -821,6 +835,8 @@ struct Reading<'s> {
     start: u64,
     len: u64,
     range: u64,
+    /// The first range's size (see [`Plan`]).
+    head: u64,
     ranges: usize,
     queue: Mutex<Queue>,
     ready: Condvar,
@@ -937,8 +953,14 @@ impl Reading<'_> {
 
     /// Range `k`: from where to where.
     fn bounds(&self, k: usize) -> (u64, u64) {
-        let from = self.start + k as u64 * self.range;
-        (from, (from + self.range).min(self.len))
+        let (from, to) = match k {
+            0 => (self.start, self.start + self.head),
+            k => {
+                let from = self.start + self.head + (k as u64 - 1) * self.range;
+                (from, from + self.range)
+            }
+        };
+        (from, to.min(self.len))
     }
 
     fn aborted(&self) -> io::Result<()> {
@@ -1133,16 +1155,19 @@ impl Reading<'_> {
         let mut summarized = 0;
         let mut parts: Vec<Part> = Vec::new();
         let mut all_formed = false;
-        // Parts given to other threads (the first is read here), and
+        // Parts given to other threads (the first ones are read here), and
         // appended; the trees waiting to be, and the bytes each part given
         // out holds until it is appended (estimated while it is read).
-        let (mut dispatched, mut appended) = (1, 0);
+        let (mut dispatched, mut appended) = (0, 0);
         let mut waiting: BTreeMap<usize, PortableTree> = BTreeMap::new();
         let mut held: BTreeMap<usize, u64> = BTreeMap::new();
         // The largest ratio of tree to text seen (of parts long enough), and
         // the smallest tree.
         let mut ratio: f64 = 1.0;
         let mut smallest = 0u64;
+        // The text of the parts read here and their trees' bytes, and
+        // whether they have given the first ratio.
+        let (mut probed, mut probe_bytes, mut measured) = (0, 0, false);
         let parts_ahead = 2 * threads + 2;
         #[cfg(test)]
         {
@@ -1253,23 +1278,45 @@ impl Reading<'_> {
                     return rest(running, root, &parts, appended);
                 }
             }
-            // The first part, here.
-            if appended == 0 && !parts.is_empty() {
-                let part = parts[0];
-                let first = self.read_part(part, running, config)?;
-                root = Some(first);
-                if part_len(&part) >= PROBE_LEN {
-                    // As a part read elsewhere would hold it.
-                    let size = running.tallies.portable_size(&running.strings, first);
-                    let Ok(size) = size else {
-                        return rest(running, root, &parts, 1);
-                    };
-                    ratio = ratio.max(size as f64 / part_len(&part) as f64);
+            // The first parts, here, each as a part read elsewhere is (its
+            // tree then appended), until they hold `probe` bytes or are the
+            // whole sample: their trees give the first ratio of tree to
+            // text, before any part is given out.
+            while !measured && appended < parts.len() {
+                let part = parts[appended];
+                let Some(tree) = self.tally(part, config) else {
+                    return rest(running, root, &parts, appended);
+                };
+                let bytes = tree.heap_size() as u64;
+                smallest = if smallest == 0 {
+                    bytes
+                } else {
+                    smallest.min(bytes)
+                };
+                let Ok(tree) = running.tallies.import(&mut running.strings, tree) else {
+                    return rest(running, root, &parts, appended);
+                };
+                root = Some(match root {
+                    None => tree,
+                    // A failed merge changes nothing, and frees what it was
+                    // given.
+                    Some(so_far) => {
+                        if running.tallies.merge(so_far, tree).is_err() {
+                            return rest(running, Some(so_far), &parts, appended);
+                        }
+                        so_far
+                    }
+                });
+                appended += 1;
+                dispatched = appended;
+                (probed, probe_bytes) = (probed + part_len(&part), probe_bytes + bytes);
+                if probed >= plan.probe || (all_formed && appended == parts.len()) {
+                    ratio = ratio.max(probe_bytes as f64 / probed as f64);
+                    measured = true;
                 }
-                appended = 1;
             }
             // The others, elsewhere, as the budget allows.
-            while appended > 0 && dispatched < parts.len() && dispatched < appended + parts_ahead {
+            while measured && dispatched < parts.len() && dispatched < appended + parts_ahead {
                 let estimate = ((ratio * part_len(&parts[dispatched]) as f64) as u64).max(smallest);
                 if estimate.saturating_mul(2) > budget {
                     // Too large to read beside others: the rest in one go,
@@ -1321,7 +1368,7 @@ impl Reading<'_> {
                     } else {
                         smallest.min(bytes)
                     };
-                    if part_len(&parts[i]) >= PROBE_LEN {
+                    if part_len(&parts[i]) >= plan.probe {
                         ratio = ratio.max(bytes as f64 / part_len(&parts[i]) as f64);
                     }
                     waiting.insert(i, tree);
@@ -1444,10 +1491,10 @@ mod tests {
     }
 
     /// Whether a sample of `len` bytes is read on several threads with
-    /// ranges of `range` (as small samples' ranges are): with more than
-    /// PARTS_PER_THREAD ranges, at least two threads read, 1 sample whole.
+    /// ranges of `range` (1 sample whole), as the plan says: where more than
+    /// PARTS_PER_THREAD ranges give at least two threads.
     fn on_threads(len: usize, range: usize) -> usize {
-        usize::from(len.div_ceil(range) > PARTS_PER_THREAD)
+        usize::from(Plan::new(options(2, range), len as u64).is_some())
     }
 
     fn options(threads: usize, range: usize) -> ParallelOptions {
@@ -1870,27 +1917,28 @@ mod tests {
             Plan::new(options, size).map(|p| (p.range, p.ranges, p.threads, p.budget))
         };
         const MIB: u64 = 1 << 20;
-        // 8 MiB on 128 threads: ranges of 256 KiB, 32 of them, 8 threads.
+        // 8 MiB on 128 threads: ranges of 256 KiB (the first 128 KiB, twice
+        // the probe), 33 of them, 9 threads.
         assert_eq!(
             plan(128, DEFAULT_RANGE, None, 8 * MIB),
-            Some((256 << 10, 32, 8, TREE_BUDGET))
+            Some((256 << 10, 33, 9, TREE_BUDGET))
         );
         // 1 GiB on 128 threads: ranges of 2 MiB, all 128 threads.
         assert_eq!(
             plan(128, DEFAULT_RANGE, None, 1024 * MIB),
-            Some((2 * MIB, 512, 128, 256 * MIB))
+            Some((2 * MIB, 513, 128, 256 * MIB))
         );
         // 64 GiB, as many threads as can be asked for: MAX_THREADS.
         assert_eq!(
             plan(usize::MAX, DEFAULT_RANGE, None, 64 << 30),
-            Some((4 * MIB, 16_384, MAX_THREADS, MAX_THREADS as u64 * 4 * MIB))
+            Some((4 * MIB, 16_385, MAX_THREADS, MAX_THREADS as u64 * 4 * MIB))
         );
         // Ranges are MIN_RANGE at least, however small the options ask
         // for, unless small ranges are asked for; and no more than
         // MAX_RANGES, however small.
         assert_eq!(
             plan(12, 1, None, 267 * MIB),
-            Some((256 << 10, 1_068, 12, TREE_BUDGET))
+            Some((256 << 10, 1_069, 12, TREE_BUDGET))
         );
         let small = |range, size| {
             let options = ParallelOptions::default()
@@ -1900,7 +1948,7 @@ mod tests {
             Plan::new(options, size).map(|p| (p.range, p.ranges))
         };
         assert_eq!(small(1, 1_000), Some((1, 1_000)));
-        assert_eq!(small(1, 64 << 30), Some((1 << 20, MAX_RANGES)));
+        assert_eq!(small(1, 64 << 30), Some(((1 << 20) + 17, MAX_RANGES)));
         // The budget asked for is kept; under the threshold, in one go.
         assert_eq!(
             plan(12, DEFAULT_RANGE, Some(7), 267 * MIB).map(|p| p.3),
@@ -1919,6 +1967,32 @@ mod tests {
             assert_eq!(result, expected, "{threads} threads, ranges of {range}");
             assert_eq!(how.whole, 1, "{threads} threads, ranges of {range}");
         }
+    }
+
+    /// Parts whose trees are many times their text (an element for each
+    /// key, all of them distinct) are measured before any is read
+    /// elsewhere: behind a part read slowly, the parts given out and not
+    /// appended yet (their trees, once read) hold at most the budget, but
+    /// for one part over it.
+    #[test]
+    fn trees_larger_than_their_text_stay_within_the_budget() {
+        let config = config(false);
+        let elements: Vec<String> = (0..100_000).map(|i| format!(r#"{{"k{i}":{i}}}"#)).collect();
+        let bytes = format!("[{}]", elements.join(","));
+        let budget = 2 << 20;
+        let options = options(4, 16 << 10).with_budget(Some(budget));
+        SLOW_PART.with(|s| s.set(Some((3, std::time::Duration::from_millis(300)))));
+        let (result, how) = read_with(&config, bytes.as_bytes(), options);
+        SLOW_PART.with(|s| s.set(None));
+        assert_eq!(result, in_one_go(&config, bytes.as_bytes()));
+        assert_eq!(how.whole + how.in_part, 1, "{how:?}");
+        let (peak, largest) = HELD.with(Cell::get);
+        // The parts' trees are many times their text.
+        assert!(largest > 4 * (16 << 10), "{largest}");
+        assert!(
+            peak <= budget + largest,
+            "{peak} bytes held, over {budget} + {largest}"
+        );
     }
 
     /// Where the system refuses a reading thread, the sample is read in one
