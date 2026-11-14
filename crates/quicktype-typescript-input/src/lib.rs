@@ -826,6 +826,120 @@ mod tests {
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
+    /// Inherited documentation of every kind the generator follows (tags-only
+    /// and `@inheritDoc` members, statics, accessors, names with
+    /// underscores, private names and symbol keys, a library base, a chain
+    /// through a package), and the tuple labels and mapped members near it:
+    /// the prefetch foresees every question.
+    #[test]
+    fn inherited_documentation_is_prefetched() {
+        let Some(exe) = compiler() else {
+            eprintln!(
+                "skipped: no TypeScript {} compiler",
+                tsc::generated::TSC_VERSION
+            );
+            return;
+        };
+        testing::verify_local_answers(true);
+        let dir = scratch("inherited-docs");
+        let write = |path: &str, text: &str| {
+            let path = dir.join(path);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, text).unwrap();
+        };
+        write(
+            "node_modules/pkg/package.json",
+            r#"{ "name": "pkg", "version": "1.0.0", "types": "index.d.ts" }"#,
+        );
+        write(
+            "node_modules/pkg/index.d.ts",
+            r#"export interface PkgBase {
+  /** pkg x */
+  x: string;
+  /** pkg y */
+  y: number;
+}
+export interface PkgMid extends PkgBase {
+  x: string;
+}
+"#,
+        );
+        write(
+            "main.ts",
+            r#"import { PkgMid } from "pkg";
+export interface Base {
+  /** doc of __x */
+  __x: string;
+  /** Base a. */
+  a: string;
+  /** Base b. */
+  b: string;
+  /** Base tag. */
+  readonly [Symbol.toStringTag]: string;
+}
+export interface Derived extends Base {
+  __x: string;
+  /** Own a.
+   * @inheritDoc */
+  a: string;
+  /** @deprecated */
+  b: string;
+  readonly [Symbol.toStringTag]: string;
+}
+export class S {
+  /** static s */
+  static s: number = 1;
+  /** p */
+  #p: string = "";
+  /** g */
+  get g(): string { return ""; }
+  /** i */
+  i: number = 0;
+}
+export class T extends S {
+  static s: number = 2;
+  #p: string = "";
+  get g(): string { return "t"; }
+  i: number = 1;
+}
+export interface MyArr extends Array<string> {
+  length: number;
+}
+export interface Mine extends PkgMid {
+  x: string;
+  y: number;
+}
+export type Pair = [/** first */ first: string, second: number];
+export type Mapped = { [K in "a" | "b"]: string };
+export type Picked = Pick<Base, "a">;
+export interface Holder {
+  d: Derived;
+  t: T;
+  k: typeof T;
+  arr: MyArr;
+  mine: Mine;
+  pair: Pair;
+  mapped: Mapped;
+  picked: Picked;
+}
+"#,
+        );
+        let names = vec!["main.ts".to_owned()];
+        let (session, files) = open(&names, &dir, &exe, true).unwrap();
+        let schema = run(&session, &names, &files).unwrap().source.schema;
+        for text in [
+            "Own a.",
+            "pkg x",
+            "pkg y",
+            "static s",
+            "Gets or sets the length",
+        ] {
+            assert!(schema.contains(text), "{text}: {schema}");
+        }
+        assert_eq!(session.misses(), Default::default());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
     /// The generator's questions to the compiler go out in a few pipelined
     /// batches: neither the requests sent one at a time nor the batches
     /// become more with more interfaces.

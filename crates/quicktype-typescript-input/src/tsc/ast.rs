@@ -404,6 +404,15 @@ impl Node {
         }
     }
 
+    /// `getFullText()`: the source text with its leading trivia (comments
+    /// and whitespace before the first token).
+    pub fn get_full_text(&self) -> String {
+        let text = self.sf.text16();
+        let start = self.pos().min(text.len());
+        let end = self.end().min(text.len()).max(start);
+        String::from_utf16_lossy(&text[start..end])
+    }
+
     /// `getText()`: the source text from the first token to the end.
     pub fn get_text(&self) -> String {
         let text = self.sf.text16();
@@ -432,6 +441,18 @@ impl Node {
             }),
             _ => None,
         }
+    }
+
+    /// The `token` of a heritage clause: `ExtendsKeyword` or
+    /// `ImplementsKeyword`.
+    pub fn token(&self) -> Option<u32> {
+        (self.kind() == sk::HeritageClause).then(|| {
+            if (self.data() >> 24) & 0x1 != 0 {
+                sk::ImplementsKeyword
+            } else {
+                sk::ExtendsKeyword
+            }
+        })
     }
 
     /// `ModifierFlags` of the node's own `modifiers`.

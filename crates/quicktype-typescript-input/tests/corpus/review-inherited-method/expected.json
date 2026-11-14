@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"A\":{\"title\":\"A\",\"type\":\"object\",\"properties\":{\"count\":{\"description\":\"The count.\",\"type\":\"number\",\"title\":\"count\",\"default\":0}},\"additionalProperties\":false,\"propertyOrder\":[\"run\",\"count\"],\"required\":[\"count\"],\"quicktypePropertyOrder\":[\"run\",\"count\"]},\"B\":{\"title\":\"B\",\"type\":\"object\",\"properties\":{\"count\":{\"description\":\"The count.\",\"type\":\"number\",\"title\":\"count\",\"default\":1}},\"additionalProperties\":false,\"propertyOrder\":[\"run\",\"count\"],\"required\":[\"count\"],\"quicktypePropertyOrder\":[\"run\",\"count\"]},\"IA\":{\"title\":\"IA\",\"type\":\"object\",\"properties\":{\"level\":{\"description\":\"The level.\",\"type\":\"number\",\"title\":\"level\"}},\"additionalProperties\":false,\"propertyOrder\":[\"go\",\"level\"],\"required\":[\"level\"],\"quicktypePropertyOrder\":[\"go\",\"level\"]},\"IB\":{\"title\":\"IB\",\"type\":\"object\",\"properties\":{\"level\":{\"description\":\"The level.\",\"type\":\"number\",\"title\":\"level\"}},\"additionalProperties\":false,\"propertyOrder\":[\"go\",\"level\"],\"required\":[\"level\"],\"quicktypePropertyOrder\":[\"go\",\"level\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

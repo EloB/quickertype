@@ -1,11 +1,2 @@
 # Corpus cases (directory names in tests/corpus) whose output is known to
-# differ from the reference, one per line.
-#
-# Inherited documentation: TypeScript 5.9's services give a member the
-# documentation of the base's member when its own comment text is empty
-# (no JSDoc, or one with tags only, or an empty one) and look through
-# `implements` too; TypeScript 7.0.2 inherits only for a member without any
-# JSDoc of its own, through `extends`. The descriptions of B.x, B.z, C.x
-# and C.z, and of K.i, K.r, L.i and L.r, are missing.
-review-inherited-class
-review-inherited-docs
+# differ from the reference, one per line. Empty: every case matches.

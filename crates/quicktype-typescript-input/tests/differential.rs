@@ -168,8 +168,10 @@ fn corpus_matches_reference() {
         }
     }
     let same = cases.len() - differing.len();
+    let missed: u64 = misses.iter().flat_map(|(_, m)| m.values()).sum();
     eprintln!(
-        "TypeScript input: {same}/{} cases identical to the reference",
+        "TypeScript input: {same}/{} cases identical to the reference; \
+         {missed} questions the prefetch did not foresee",
         cases.len()
     );
     let mut problems = Vec::new();
@@ -212,7 +214,6 @@ fn corpus_matches_reference() {
     // left to the generator (the JSDoc tags of the library's `Readonly`
     // alias, in review-aliased-tuple-labels); a few more means the walk no
     // longer foresees what the generator asks.
-    let missed: u64 = misses.iter().flat_map(|(_, m)| m.values()).sum();
     if filter.is_none() && custom_corpus.is_none() && missed > MAX_MISSES {
         let list: Vec<String> = misses
             .iter()

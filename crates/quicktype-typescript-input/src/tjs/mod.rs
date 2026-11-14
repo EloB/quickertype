@@ -133,6 +133,8 @@ pub struct Generator<'s> {
     index_cache: HashMap<u64, Option<Rc<Type>>>,
     order: order::CreationOrder,
     main_files: Vec<String>,
+    /// TypeScript 5.9 documentation comments by symbol (`comments`).
+    docs: std::cell::RefCell<HashMap<(u64, comments::Accessors), Vec<comments::Part>>>,
 }
 
 /// `table[key]` on one of typescript-json-schema's keyword tables, which are
@@ -223,6 +225,7 @@ impl<'s> Generator<'s> {
             fqn_cache: HashMap::new(),
             index_cache: HashMap::new(),
             order,
+            docs: Default::default(),
             main_files: user_files
                 .iter()
                 .filter(|f| !f.is_declaration_file())
@@ -471,25 +474,47 @@ impl<'s> Generator<'s> {
         if let Some(target) = tuple_target {
             let flags = target.element_flags.clone();
             let elem_types = s.type_arguments(ty)?;
-            // `labeledElementDeclarations` is not exposed by TS 7; the labels
-            // come from the type printed as a node, without truncation or the
+            // `labeledElementDeclarations[i].name.getFullText().trim()`: TS 7
+            // does not expose the declarations. A tuple written in a user
+            // file has them there, with the trivia before each name (a
+            // comment there is part of the label); otherwise the labels come
+            // from the type printed as a node, without truncation or the
             // alias name, and with a `readonly` operator unwrapped.
-            let mut node =
-                s.type_to_type_node(ty, NODE_BUILDER_NO_TRUNCATION | NODE_BUILDER_IN_TYPE_ALIAS)?;
-            while let Some(n) = node.clone().filter(|n| n.kind() == sk::TypeOperator) {
-                node = n.named("type");
-            }
-            let labels: Vec<Option<String>> = match node {
-                Some(n) if n.kind() == sk::TupleType => n
+            let source = self.order.tuple_node(ty.id).cloned();
+            let labels: Vec<Option<String>> = match source {
+                Some(n) => n
                     .named_list("elements")
                     .iter()
                     .map(|e| {
                         (e.kind() == sk::NamedTupleMember)
-                            .then(|| e.named("name").and_then(|n| n.text()))
+                            .then(|| {
+                                e.named("name")
+                                    .map(|n| js::trim(&n.get_full_text()).to_owned())
+                            })
                             .flatten()
                     })
                     .collect(),
-                _ => Vec::new(),
+                None => {
+                    let mut node = s.type_to_type_node(
+                        ty,
+                        NODE_BUILDER_NO_TRUNCATION | NODE_BUILDER_IN_TYPE_ALIAS,
+                    )?;
+                    while let Some(n) = node.clone().filter(|n| n.kind() == sk::TypeOperator) {
+                        node = n.named("type");
+                    }
+                    match node {
+                        Some(n) if n.kind() == sk::TupleType => n
+                            .named_list("elements")
+                            .iter()
+                            .map(|e| {
+                                (e.kind() == sk::NamedTupleMember)
+                                    .then(|| e.named("name").and_then(|n| n.text()))
+                                    .flatten()
+                            })
+                            .collect(),
+                        _ => Vec::new(),
+                    }
+                }
             };
             let mut fixed = Vec::new();
             let arity = if flags.is_empty() {

@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"A\":{\"title\":\"A\",\"type\":\"object\",\"properties\":{\"p\":{\"description\":\"The p of A.\",\"type\":\"number\",\"title\":\"p\"},\"q\":{\"description\":\"The q of A.\",\"type\":\"string\",\"title\":\"q\"}},\"additionalProperties\":false,\"propertyOrder\":[\"p\",\"q\"],\"required\":[\"p\",\"q\"],\"quicktypePropertyOrder\":[\"p\",\"q\"]},\"B\":{\"title\":\"B\",\"type\":\"object\",\"properties\":{\"p\":{\"description\":\"The p of A.\",\"type\":\"number\",\"title\":\"p\"},\"q\":{\"description\":\"The q of A.\",\"type\":\"string\",\"title\":\"q\"}},\"additionalProperties\":false,\"propertyOrder\":[\"p\",\"q\"],\"required\":[\"p\",\"q\"],\"quicktypePropertyOrder\":[\"p\",\"q\"]},\"Holder\":{\"title\":\"Holder\",\"type\":\"object\",\"properties\":{\"b\":{\"$ref\":\"#/definitions/B\",\"title\":\"b\"}},\"additionalProperties\":false,\"propertyOrder\":[\"b\"],\"required\":[\"b\"],\"quicktypePropertyOrder\":[\"b\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

@@ -23,6 +23,7 @@ use crate::tsc::generated::{
     object_flags as of, symbol_flags as sf, syntax_kind as sk, type_flags as tf,
 };
 
+use super::comments::{Accessors, BaseLookup, DocPlan, doc_plan};
 use super::{
     NO_TRUNCATION, NODE_BUILDER_IN_TYPE_ALIAS, NODE_BUILDER_NO_TRUNCATION, USE_FULLY_QUALIFIED_TYPE,
 };
@@ -71,6 +72,10 @@ pub fn warm(s: &Session, files: &[Node], types: &[Rc<Type>], symbols: &[Rc<Symbo
         seen_types: HashSet::new(),
         seen_symbols: HashSet::new(),
         asked_parents: HashSet::new(),
+        lookups: Vec::new(),
+        docs_planned: HashSet::new(),
+        order_bases: Vec::new(),
+        order_done: HashSet::new(),
     };
     let mut reached: Vec<Reached> = types
         .iter()
@@ -81,7 +86,8 @@ pub fn warm(s: &Session, files: &[Node], types: &[Rc<Type>], symbols: &[Rc<Symbo
         .collect();
     let mut found: Vec<Rc<Symbol>> = symbols.to_vec();
     for _ in 0..MAX_STEPS {
-        if !s.pipelining() || reached.is_empty() && found.is_empty() {
+        let idle = reached.is_empty() && found.is_empty();
+        if !s.pipelining() || idle && walk.lookups.is_empty() && walk.order_bases.is_empty() {
             break;
         }
         (reached, found) = walk.step(reached, found)?;
@@ -104,6 +110,25 @@ struct Walk<'s> {
     seen_symbols: HashSet<u64>,
     /// Parent handles already asked for (many symbols share a parent).
     asked_parents: HashSet<u64>,
+    /// The base lookups of inherited documentation still under way.
+    lookups: Vec<Pending>,
+    /// Symbols (and which of their declarations) whose documentation the
+    /// walk has planned for.
+    docs_planned: HashSet<(u64, Accessors)>,
+    /// Base types whose properties and bases the TypeScript 5.9 property
+    /// order reads (`ts5_names`), with the question last asked for each.
+    order_bases: Vec<(Rc<Type>, Option<Query>)>,
+    /// Classes and interfaces whose properties and bases that order reads.
+    order_done: HashSet<u64>,
+}
+
+/// A [`BaseLookup`] the walk advances one question per batch: the super
+/// type node's type, the static side's symbol and type for a static member,
+/// then the property. `asked` is its last question; still unanswered after
+/// its batch (an error), the lookup is dropped, and the generator asks.
+struct Pending {
+    lookup: BaseLookup,
+    asked: Option<Query>,
 }
 
 impl Walk<'_> {
@@ -242,6 +267,8 @@ impl Walk<'_> {
         for sym in &found {
             self.symbol_queries(sym, &mut queries);
         }
+        self.advance_lookups(&mut queries);
+        self.advance_order(&mut queries);
         s.prefetch(queries)?;
 
         // What the answers reach, and the properties to fetch.
@@ -286,7 +313,20 @@ impl Walk<'_> {
                 _ => {}
             }
             next_symbols.push(Rc::clone(&sym));
+            let number_index = s
+                .cached::<Vec<IndexInfo>>(&Query::IndexInfosOfType(t.id))
+                .is_some_and(|infos| infos.iter().any(|i| i.key_type.flags & tf::Number != 0));
+            if number_index && t.object_flags & (of::Anonymous | of::Interface | of::Mapped) != 0 {
+                // An array-like object: the generator looks for members
+                // besides the index signature.
+                queries.push(Query::MembersOfSymbol(sym.id));
+            }
             if self.has_walked_properties(t, &sym) {
+                if let Some(bases) = s.cached::<Vec<Rc<Type>>>(&Query::BaseTypes(t.id)) {
+                    self.order_done.insert(t.id);
+                    self.order_bases
+                        .extend(bases.into_iter().map(|b| (b, None)));
+                }
                 queries.push(Query::PropertiesOfType(t.id));
                 if let Some(sig) = self.index_signature(&sym) {
                     if let Some(name) = &sig.parameter {
@@ -307,6 +347,8 @@ impl Walk<'_> {
             }
         }
         queries.extend(arguments.iter().cloned());
+        self.advance_lookups(&mut queries);
+        self.advance_order(&mut queries);
         s.prefetch(queries)?;
         for q in &arguments {
             reach(s.cached(q), false, &mut next);
@@ -366,6 +408,8 @@ impl Walk<'_> {
                 properties.push(p);
             }
         }
+        self.advance_lookups(&mut queries);
+        self.advance_order(&mut queries);
         s.prefetch(queries)?;
         for p in properties {
             if let Some(Some(t)) = s.cached(&Query::TypeOfSymbol(p.id)) {
@@ -390,6 +434,187 @@ impl Walk<'_> {
         Ok((next, next_symbols))
     }
 
+    /// What the generator asks to render the documentation of `sym` (its
+    /// declarations `which`) as TypeScript 5.9 does, by the same
+    /// [`doc_plan`]: nothing for its own JSDoc's text, TypeScript 7's
+    /// rendering, or the base lookups of inherited documentation, which
+    /// [`Walk::advance_lookups`] follows. `base` is a member reached by a
+    /// lookup, whose documentation the generator reads also from a library
+    /// file (other library symbols' it does not).
+    fn documentation_queries(
+        &mut self,
+        sym: &Rc<Symbol>,
+        which: Accessors,
+        base: bool,
+        out: &mut Vec<Query>,
+    ) {
+        if !self.docs_planned.insert((sym.id, which)) {
+            return;
+        }
+        let handles: Vec<_> = sym
+            .declarations
+            .iter()
+            .filter(|h| match which {
+                Accessors::All => true,
+                Accessors::Getters => h.kind == sk::GetAccessor,
+                Accessors::Setters => h.kind == sk::SetAccessor,
+            })
+            .collect();
+        if handles
+            .iter()
+            .any(|h| self.in_default_library(&h.path) != Some(false))
+        {
+            if base {
+                out.push(Query::DocumentationComment(sym.id));
+            }
+            return;
+        }
+        let mut decls: Vec<Node> = Vec::new();
+        for h in handles {
+            match self.s.loaded(h) {
+                Some(d)
+                    if !decls.iter().any(|x| {
+                        x.index() == d.index() && Rc::ptr_eq(x.source_file(), d.source_file())
+                    }) =>
+                {
+                    decls.push(d)
+                }
+                Some(_) => {}
+                None => {
+                    out.push(Query::DocumentationComment(sym.id));
+                    return;
+                }
+            }
+        }
+        match doc_plan(&sym.name, &decls, which == Accessors::All) {
+            DocPlan::Own => {}
+            DocPlan::Compiler => out.push(Query::DocumentationComment(sym.id)),
+            DocPlan::Inherit(lookups) => {
+                self.lookups
+                    .extend(lookups.into_iter().flatten().map(|lookup| Pending {
+                        lookup,
+                        asked: None,
+                    }));
+            }
+        }
+    }
+
+    /// Advances the base types the TypeScript 5.9 property order reads: an
+    /// instantiated generic's target, then each class or interface's
+    /// properties and base types, whose bases come next.
+    fn advance_order(&mut self, out: &mut Vec<Query>) {
+        let s = self.s;
+        let mut keep = Vec::new();
+        for (t, asked) in std::mem::take(&mut self.order_bases) {
+            if asked.as_ref().is_some_and(|q| !s.knows(q)) {
+                continue;
+            }
+            let reference = t.object_flags & of::Reference != 0;
+            let target = if reference && t.object_flags & of::ClassOrInterface == 0 {
+                let known = t.target.and_then(|h| s.known_type(h)).or_else(|| {
+                    s.cached::<Option<Rc<Type>>>(&Query::TargetOfType(t.id))
+                        .flatten()
+                });
+                match known {
+                    Some(target) => target,
+                    None if t.target.is_some() => {
+                        let q = Query::TargetOfType(t.id);
+                        out.push(q.clone());
+                        keep.push((t, Some(q)));
+                        continue;
+                    }
+                    None => continue,
+                }
+            } else {
+                t
+            };
+            if target.flags & tf::Object == 0 || target.object_flags & of::ClassOrInterface == 0 {
+                continue;
+            }
+            match s.cached::<Vec<Rc<Type>>>(&Query::BaseTypes(target.id)) {
+                Some(bases) => {
+                    if self.order_done.insert(target.id) {
+                        out.push(Query::PropertiesOfType(target.id));
+                        keep.extend(bases.into_iter().map(|b| (b, None)));
+                    }
+                }
+                None => {
+                    let q = Query::BaseTypes(target.id);
+                    out.push(Query::PropertiesOfType(target.id));
+                    out.push(q.clone());
+                    keep.push((target, Some(q)));
+                }
+            }
+        }
+        self.order_bases = keep;
+    }
+
+    /// Advances every base lookup by the questions it can ask now, into
+    /// `out`, and plans the documentation of the base members found.
+    fn advance_lookups(&mut self, out: &mut Vec<Query>) {
+        let s = self.s;
+        let mut found: Vec<(Rc<Symbol>, Option<Accessors>)> = Vec::new();
+        let mut keep = Vec::new();
+        for mut p in std::mem::take(&mut self.lookups) {
+            // A question asked in the last batch and still unanswered.
+            if p.asked.as_ref().is_some_and(|q| !s.knows(q)) {
+                continue;
+            }
+            let ask = |p: &mut Pending, q: Query, out: &mut Vec<Query>| {
+                out.push(q.clone());
+                p.asked = Some(q);
+            };
+            let at = Query::TypeAt(p.lookup.node.handle());
+            let base = match s.cached::<Option<Rc<Type>>>(&at) {
+                Some(Some(base)) => base,
+                Some(None) => continue,
+                None => {
+                    ask(&mut p, at, out);
+                    keep.push(p);
+                    continue;
+                }
+            };
+            let ty = if p.lookup.is_static && base.symbol.is_some() {
+                let sym = base.symbol.and_then(|h| s.known_symbol(h)).or_else(|| {
+                    s.cached::<Option<Rc<Symbol>>>(&Query::SymbolOfType(base.id))
+                        .flatten()
+                });
+                let Some(sym) = sym else {
+                    ask(&mut p, Query::SymbolOfType(base.id), out);
+                    keep.push(p);
+                    continue;
+                };
+                match s.cached::<Option<Rc<Type>>>(&Query::TypeOfSymbol(sym.id)) {
+                    Some(Some(t)) => t,
+                    Some(None) => continue,
+                    None => {
+                        ask(&mut p, Query::TypeOfSymbol(sym.id), out);
+                        keep.push(p);
+                        continue;
+                    }
+                }
+            } else {
+                base
+            };
+            let property = Query::PropertyOfType(ty.id, p.lookup.name.clone());
+            match s.cached::<Option<Rc<Symbol>>>(&property) {
+                Some(Some(prop)) => found.push((prop, p.lookup.accessor)),
+                Some(None) => {}
+                None => {
+                    ask(&mut p, property, out);
+                    keep.push(p);
+                }
+            }
+        }
+        self.lookups = keep;
+        for (prop, accessor) in found {
+            if let Some(which) = accessor {
+                self.documentation_queries(&prop, which, true, out);
+            }
+            self.documentation_queries(&prop, Accessors::All, true, out);
+        }
+    }
+
     /// The questions about a newly found symbol: its JSDoc, members and
     /// parent.
     fn symbol_queries(&mut self, sym: &Rc<Symbol>, out: &mut Vec<Query>) {
@@ -397,22 +622,7 @@ impl Walk<'_> {
             return;
         }
         out.push(Query::JsDocTags(sym.id));
-        // The generator asks for the documentation comment of a symbol
-        // outside the libraries when its declarations have none to read.
-        let from_lib = sym
-            .declarations
-            .first()
-            .and_then(|d| self.in_default_library(&d.path));
-        if from_lib != Some(true) {
-            let documented = sym.declarations.iter().any(|d| {
-                self.s
-                    .loaded(d)
-                    .is_some_and(|decl| decl.js_doc().iter().any(Node::has_comment))
-            });
-            if !documented {
-                out.push(Query::DocumentationComment(sym.id));
-            }
-        }
+        self.documentation_queries(sym, Accessors::All, false, out);
         if sym.flags & sf::TypeLiteral != 0 {
             out.push(Query::MembersOfSymbol(sym.id));
         }
