@@ -482,6 +482,63 @@ fn syntax_errors_commit_nothing() {
     assert_eq!(r.to_tables(&[]).0.strings, ["a"]);
 }
 
+/// A tape node keeps its kind, `a` and `b`, in 8 bytes.
+#[test]
+fn tape_nodes_keep_their_kind() {
+    assert_eq!(std::mem::size_of::<Node>(), 8);
+    for kind in [
+        Kind::Null,
+        Kind::False,
+        Kind::True,
+        Kind::Integer,
+        Kind::Double,
+        Kind::Text,
+        Kind::Decoded,
+        Kind::LongText,
+        Kind::LongDecoded,
+        Kind::Key,
+        Kind::Object,
+        Kind::Array,
+    ] {
+        assert_eq!(KINDS[kind as usize], kind);
+        for b in [0, 1, B_MASK] {
+            let node = Node::new(kind, u32::MAX - 1, b);
+            assert_eq!((node.kind(), node.a, node.b()), (kind, u32::MAX - 1, b));
+        }
+    }
+}
+
+/// A string longer than a node holds the length of ([`MAX_INLINE`] bytes,
+/// 64 KiB in tests), with or without escapes, has its length in the
+/// tape's side table: the sample is read on the tape, within limits too,
+/// as the value read whole is read. Long URIs show that their text is
+/// whole (the string table keeps it), beside URIs of exactly the limit and
+/// short strings after them.
+#[test]
+fn strings_longer_than_a_node_holds() {
+    let long = "x".repeat(MAX_INLINE as usize + 1);
+    let fits = "y".repeat(MAX_INLINE as usize - "https://h/.png".len());
+    let limits = StringSampleLimits {
+        max_depth: Some(10),
+        lone_surrogates: false,
+    };
+    for text in [
+        format!(
+            r#"[{{"a": "https://h/{long}.png", "b": "short"}}, "{long}é", "s", "https://h/{fits}.png"]"#
+        ),
+        format!(
+            r#"{{"a": ["https:\/\/h\/{long}.gif", "\n{long}"], "b": "https:\/\/h\/{fits}.jpg", "c": "a"}}"#
+        ),
+    ] {
+        let mut tape = reader(None, false);
+        let mut whole = reader(None, false);
+        let read = tape.read_string_sample(&text, limits).unwrap();
+        let parsed = parse_string_value_into(&mut whole, &text).unwrap();
+        assert_eq!(dump(&tape, read), dump(&whole, parsed));
+        assert_eq!(tape.to_tables(&[]), whole.to_tables(&[]));
+    }
+}
+
 /// The tape and the key table of a large sample are not kept; those of a
 /// small one are, and are reused.
 #[test]

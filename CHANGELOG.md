@@ -87,6 +87,15 @@ section are absolute.
 
   If you unlinked homebrew-core's `quicktype` for 0.1.0,
   `brew link quicktype` links it again.
+
+- JSON with many URIs infers faster, in the CLI and in the JavaScript
+  API's WebAssembly engine: a plain URI's protocol and extension are read
+  without parsing it whole, and its attributes are made only where they
+  add something. On a 100 MB dump of trading cards, with 27 URIs per
+  card, the CLI takes 0.20 instead of 0.40 s of CPU, and the engine in
+  Chrome 0.48 instead of 0.81 s for `addSource` and a run. The engine
+  also holds less while it reads a large sample: its peak on those cards
+  goes from 286 to 225 MiB.
 - The JavaScript API's WebAssembly engine keeps the tallies a run inferred
   an input's types from with the input's samples, so that the next run on
   the same input (another language, other options) does not walk them

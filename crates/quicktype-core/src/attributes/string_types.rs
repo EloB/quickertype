@@ -269,12 +269,14 @@ fn all_lowercase_hex(w: u64) -> bool {
 
 /// What a `URI` (`/^(https?|ftp):\/\/[^{}]+$/`) starts with. The regex has
 /// no `i` flag, so they match as they are.
-const URI_PREFIXES: [&str; 3] = ["http://", "https://", "ftp://"];
+pub(crate) const URI_PREFIXES: [&str; 3] = ["http://", "https://", "ftp://"];
 
-/// `URI` (`/^(https?|ftp):\/\/[^{}]+$/`).
+/// `URI` (`/^(https?|ftp):\/\/[^{}]+$/`). The braces are ASCII, and no
+/// byte of a multi-byte character is, so they are looked for byte by byte:
+/// a search by characters decodes every character of the URI.
 fn is_uri(s: &str) -> bool {
     let rest = URI_PREFIXES.iter().find_map(|p| s.strip_prefix(p));
-    rest.is_some_and(|r| !r.is_empty() && !r.contains(['{', '}']))
+    rest.is_some_and(|r| !r.is_empty() && !r.bytes().any(|b| b == b'{' || b == b'}'))
 }
 
 /// Whether [`infer_transformed_string_type_kind_for_string`] could classify
@@ -375,6 +377,41 @@ mod tests {
                 assert!(!is_uuid(std::str::from_utf8(&b).unwrap()));
             }
         }
+    }
+
+    /// `is_uri` looks for braces byte by byte, and answers as a search by
+    /// characters does: braces and multi-byte characters (two, three and
+    /// four bytes, and the full-width braces, whose bytes are not braces)
+    /// before, between and after one another, after each prefix.
+    #[test]
+    fn uri_braces_by_bytes() {
+        let by_chars = |s: &str| {
+            URI_PREFIXES
+                .iter()
+                .find_map(|p| s.strip_prefix(p))
+                .is_some_and(|r| !r.is_empty() && !r.contains(['{', '}']))
+        };
+        let prefixes = ["http://", "https://", "ftp://", "http:/", "HTTP://", ""];
+        let pieces = [
+            "a", "{", "}", "é", "€", "😀", "\u{ff5b}", "\u{ff5d}", "\u{2028}", "/", " ", "\n",
+            "%7B",
+        ];
+        let mut braces = 0;
+        for prefix in prefixes {
+            for a in pieces {
+                for b in pieces {
+                    for c in pieces {
+                        let s = format!("{prefix}{a}{b}{c}");
+                        braces += usize::from(s.contains(['{', '}']));
+                        assert_eq!(is_uri(&s), by_chars(&s), "{s:?}");
+                    }
+                }
+            }
+        }
+        assert!(braces > 1000, "{braces}");
+        assert!(!is_uri("https://"));
+        assert!(is_uri("https://é.example/\u{ff5b}x\u{ff5d}"));
+        assert!(!is_uri("https://é.example/€{x"));
     }
 
     #[test]

@@ -160,3 +160,91 @@ export function generateRulings(records, seed = 0x5eed0000 + records) {
     parts.push("\n]\n");
     return parts.join("");
 }
+
+const SETS = Array.from({ length: 40 }, (_, i) => `s${hex(i * 7919 + 4099, 3)}`);
+const LEGALITY_FORMATS = [
+    "standard", "future", "historic", "timeless", "gladiator", "pioneer", "modern", "legacy", "pauper", "vintage", "penny",
+    "commander", "oathbreaker", "standardbrawl", "brawl", "alchemy", "paupercommander", "duel", "oldschool", "premodern", "predh",
+];
+const LEGALITIES = ["legal", "not_legal", "not_legal", "not_legal", "restricted", "banned"];
+const TYPES = ["Creature — Elf Warrior", "Instant", "Sorcery", "Artifact", "Enchantment — Aura", "Land", "Legendary Creature — Human Wizard"];
+const COLORS = ["W", "U", "B", "R", "G"];
+const IMAGE_SIZES = [
+    ["small", "jpg"], ["normal", "jpg"], ["large", "jpg"], ["png", "png"], ["art_crop", "jpg"], ["border_crop", "jpg"],
+    ["thumb", "webp"], ["grid", "webp"], ["display", "webp"], ["art", "webp"], ["crop", "webp"], ["jpeg", "jpg"],
+];
+/** The ids of the tokens and other cards that cards refer to (`all_parts`). */
+const PARTS = Array.from({ length: 300 }, (_, i) => `${hex(i * 2654435761 % 4294967296, 8)}-0000-4000-8000-${hex(i, 12)}`);
+
+/** A slug of a card name, as in a URI path. */
+const slug = (name) => name.toLowerCase().replaceAll(" ", "-");
+
+/** A price: a decimal string, or null. */
+const price = (r) => (r.chance(30) ? "null" : `"${r.below(200)}.${two(r.below(100))}"`);
+
+/**
+ * A JSON document shaped like a public dump of trading cards: a top-level
+ * array of `records` cards, one per line, about 4.4 KB each. What makes
+ * such data slow to infer is in each card: about 27 URIs, four in five of
+ * them found in no other card (image links by the card's id, with a file
+ * extension and a query; API links; search links with percent-encoded
+ * queries), with a nested object of two dozen enum-valued keys, prices,
+ * short names and type lines (interned as enum cases; some type lines have
+ * a non-ASCII dash), longer rules and flavor text (not interned), UUIDs,
+ * dates and small arrays.
+ */
+export function generateCards(records, seed = 0x5eed0000 + records) {
+    const r = new Rng(seed);
+    const parts = ["["];
+    for (let i = 0; i < records; i++) {
+        const id = uuid(r).slice(1, -1);
+        const oracle = uuid(r);
+        const set = r.pick(SETS);
+        const number = 1 + r.below(400);
+        const name = `${r.pick(WORDS)[0].toUpperCase()}${r.pick(WORDS).slice(1)} ${r.pick(WORDS)}`;
+        const stamp = 1500000000 + r.below(300000000);
+        const image = (size, ext, face) => `"https://cards.example.io/${size}/${face}/${id[0]}/${id[1]}/${id}.${ext}?${stamp}"`;
+        const colors = COLORS.filter(() => r.chance(25));
+        const list = (items) => `[${items.map((x) => `"${x}"`).join(",")}]`;
+        let o = `{"object":"card","id":"${id}","oracle_id":${oracle},"multiverse_ids":[${r.below(700000)}]`;
+        if (r.chance(60)) o += `,"mtgo_id":${r.below(130000)}`;
+        o += `,"tcgplayer_id":${r.below(600000)},"name":"${name}","lang":"${r.chance(90) ? "en" : r.pick(["de", "fr", "ja"])}"`;
+        o += `,"released_at":"20${two(r.below(25))}-${two(1 + r.below(12))}-${two(1 + r.below(28))}"`;
+        o += `,"uri":"https://api.example.com/cards/${id}","web_uri":"https://example.com/card/${set}/${number}/${slug(name)}?utm_source=api"`;
+        o += `,"layout":"normal","highres_image":${r.chance(80)},"image_status":"${r.pick(["highres_scan", "lowres", "placeholder"])}"`;
+        const images = (face) =>
+            `{${IMAGE_SIZES.map(([size, ext]) => `"${size}":${image(size, ext, face)}`).join(",")}}`;
+        o += `,"image_uris":${images("front")}`;
+        if (r.chance(15)) {
+            const face = (side) =>
+                `{"object":"card_face","name":"${r.pick(WORDS)} ${r.pick(WORDS)}","mana_cost":"","type_line":"${r.pick(TYPES)}","oracle_text":${JSON.stringify(text(r, 6 + r.below(20)))},"image_uris":${images(side)}}`;
+            o += `,"card_faces":[${face("front")},${face("back")}]`;
+        }
+
+        if (r.chance(20)) {
+            const part = () => `{"object":"related_card","id":${uuid(r)},"component":"${r.pick(["token", "combo_piece"])}","name":"${r.pick(WORDS)}","uri":"https://api.example.com/cards/${r.pick(PARTS)}"}`;
+            o += `,"all_parts":[${part()},${part()}]`;
+        }
+        o += `,"mana_cost":"{${r.below(8)}}{${r.pick(COLORS)}}","cmc":${r.below(9)}.0,"type_line":"${r.pick(TYPES)}"`;
+        o += `,"oracle_text":${JSON.stringify(text(r, 6 + r.below(40)))}`;
+        if (r.chance(50)) o += `,"power":"${r.below(8)}","toughness":"${r.below(8)}"`;
+        o += `,"colors":${list(colors)},"color_identity":${list(colors)},"keywords":${list(r.chance(30) ? [r.pick(["Flying", "Trample", "Haste"])] : [])}`;
+        o += `,"legalities":{${LEGALITY_FORMATS.map((f) => `"${f}":"${r.pick(LEGALITIES)}"`).join(",")}}`;
+        o += `,"games":${list(r.chance(50) ? ["paper", "mtgo"] : ["paper"])},"reserved":false,"foil":${r.chance(50)},"nonfoil":true,"finishes":${list(["nonfoil", "foil"])}`;
+        o += `,"oversized":false,"promo":${r.chance(10)},"reprint":${r.chance(40)},"variation":false`;
+        o += `,"set_id":${uuid(r)},"set":"${set}","set_name":"${r.pick(WORDS)} ${r.pick(WORDS)}","set_type":"${r.pick(["expansion", "core", "masters", "promo"])}"`;
+        o += `,"set_uri":"https://api.example.com/sets/${set}","set_search_uri":"https://api.example.com/cards/search?order=set&q=e%3A${set}&unique=prints"`;
+        o += `,"set_web_uri":"https://example.com/sets/${set}?utm_source=api","rulings_uri":"https://api.example.com/cards/${id}/rulings"`;
+        o += `,"prints_search_uri":"https://api.example.com/cards/search?order=released&q=oracleid%3A${oracle.slice(1, -1)}&unique=prints"`;
+        o += `,"collector_number":"${number}","digital":false,"rarity":"${r.pick(["common", "uncommon", "rare", "mythic"])}"`;
+        if (r.chance(70)) o += `,"flavor_text":${JSON.stringify(text(r, 5 + r.below(20)))}`;
+        o += `,"artist":"${r.pick(WORDS)} ${r.pick(WORDS)}","border_color":"black","frame":"${r.pick(["1993", "2003", "2015"])}","full_art":false,"textless":false,"booster":true`;
+        o += `,"prices":{"usd":${price(r)},"usd_foil":${price(r)},"eur":${price(r)},"tix":${price(r)}}`;
+        o += `,"related_uris":{"gatherer":"https://gatherer.example.com/Pages/Card/Details.aspx?multiverseid=${r.below(700000)}","edhrec":"https://edhrec.example.com/route/?cc=${encodeURIComponent(name)}"}`;
+        o += `,"purchase_uris":{"tcgplayer":"https://partner.example.com/c/${r.below(10000)}/${r.below(10000)}?u=https%3A%2F%2Fshop.example.com%2Fproduct%2F${r.below(600000)}","cardmarket":"https://www.example.eu/Products/Search?searchString=${encodeURIComponent(name)}&utm_campaign=card_prices"}}`;
+        parts.push((i > 0 ? ",\n" : "\n") + o);
+    }
+
+    parts.push("\n]\n");
+    return parts.join("");
+}

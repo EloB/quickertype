@@ -7,6 +7,7 @@
 // engine leaves to TypeScript (deep nesting, string roots, lone
 // surrogates).
 
+import { generateCards } from "../../bench/generate.mjs";
 import { jsonSample } from "../packages.mjs";
 
 function scenario(name, run, lang) {
@@ -104,6 +105,31 @@ async function addPatched(qt, object, name, value) {
 
 const deep = (n, open = "[", close = "]", inner = "1") => open.repeat(n) + inner + close.repeat(n);
 
+/**
+ * URIs of the shapes urijs' parser reads in its own ways (user info, valid
+ * and invalid ports, IPv6 hosts, a slash or backslash after the protocol,
+ * tabs and line breaks, paths that are not ASCII or hold U+2028, queries
+ * and fragments with dots and slashes, upper-case extensions), next to the
+ * plain ones the engine reads without it, at the same places: the
+ * protocols and extensions inferred for them show in JSON Schema
+ * (`qt-uri-protocols`, `qt-uri-extensions`).
+ */
+function uriSamples() {
+    const schemes = ["https://", "http://", "ftp://", "HTTP://", "http:/", "https:///", "ftp:\\\\", "https:"];
+    const hosts = ["example.com", "a.example", "", "u@h", "u:p@h", "u%zz@h", "u%C3%A9@h", "h:8080", "h:0", "h:99999", "h:0x50", "[::1]", "[::1]:80", "h:a:b", "é.example", "h\\x", "h\tx"];
+    const paths = ["", "/", "/a", "/b.c", "/.hidden", "/x.JPG", "/y.tar.gz", "/z.", "/d.d/", "/p:q.png", "/a@b.gif", "/\u2028x.png", "/ü.PNG", "/É.ÉX", "/f.WebP", "/a\\b.c", "/t\tq.png", "/n\nq.gif", "/q.Ω", "/a/b/c.json"];
+    const tails = ["", "", "?q=1", "?a.b/c.d", "#frag.x", "#?", "?#", "?x\\y", "?q.png#f.jpg"];
+    let seed = 7;
+    const pick = (items) => {
+        seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
+        return items[(seed >>> 16) % items.length];
+    };
+    const uri = () => pick(schemes) + pick(hosts) + pick(paths) + pick(tails);
+    return [0, 1, 2].map(() =>
+        JSON.stringify(Array.from({ length: 40 }, () => ({ a: uri(), b: uri(), c: [uri(), uri()], d: pick(["plain", "https://example.com/p.png", uri()]) }))),
+    );
+}
+
 const groups = {
     "duplicate keys": [['{"a": {"x": 1}, "b": [1, 2], "a": {"y": [2, {"z": 3}]}, "b": "s"}', '[{"k": 1, "k": 2, "k": {"k": [3]}}]']],
     "__proto__ keys": [['{"__proto__": 1, "__proto__": {"a": 2}, "b": {"__proto__": [3]}}', '{"c": {"__proto__": "x"}}']],
@@ -129,6 +155,8 @@ const groups = {
     "deeper than the engine reads": [[deep(10), deep(300), deep(5)]],
     "lone surrogate escapes": [['["\\ud800"]', '{"\\udc00": 1}', '["\\ud83d\\ude00", "ok"]']],
     "lone surrogates in the text": [['["\ud800x"]', "[1]"]],
+    "URIs of every shape": [uriSamples()],
+    "cards with many URIs": [[generateCards(40)]],
     "two top-levels": [['{"a": 1}'], ['{"a": "x", "b": [true]}']],
     "same top-level twice": [['{"a": 1}'], ['{"a": 2.5}']],
 };
@@ -235,6 +263,10 @@ export function scenarios() {
                 );
             }
         }
+    }
+
+    for (const name of ["URIs of every shape", "cards with many URIs"]) {
+        list.push(scenario(`${name} → schema`, (qt) => addThenRun(qt, "schema", [["TopLevel", groups[name][0]]]), "schema"));
     }
 
     for (const [i, bad] of invalid.entries()) {
