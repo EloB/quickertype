@@ -74,7 +74,7 @@ fn files_read_on_several_threads_read_as_in_one_go() {
                     threads,
                     range,
                     min_len: 0,
-                    budget: 32 << 20,
+                    budget: None,
                     fault: None,
                 };
                 let before = parallel_reads();

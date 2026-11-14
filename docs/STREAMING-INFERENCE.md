@@ -394,7 +394,8 @@ it stands, and is left at its end as reading it in one go leaves it.
 ### How
 
 1. **Ranges.** The file is cut into ranges of 4 MiB, or smaller (down
-   to 256 KiB) where that would give each thread fewer than four. In
+   to 256 KiB) where that would give each thread fewer than four; where
+   even those give fewer, fewer threads read (as many as get four). In
    parallel, each range is *summarized*: a scan that knows strings and
    escapes, 64 bytes at a time (simdjson's first stage, with eight-byte
    words for SIMD registers, since the workspace has no unsafe code).
@@ -438,14 +439,14 @@ bytes until it is appended: its tree as estimated while it is read (by
 the largest ratio of tree to text seen, and at least the smallest tree
 seen; the first part is measured as a part read elsewhere would hold it),
 its tree's own size once read and while it waits for the parts before
-it. Together they may hold at most the threads times the range size, or
-32 MiB, and at most 2 × threads + 2 parts are given out beyond the last
-one appended. Where a single part's tree would take half of the budget,
-the parallel reading stops and the rest is read in one go (below), which
-shares one set of tallies for all elements; so it does, without scanning
-on, once the ranges hold no split for as long as such a part. Summaries
-run only a few ranges ahead of the next part to give out, so the second
-read of a range finds it cached.
+it. Together they may hold at most the threads that read times the
+range size, or 32 MiB, and at most 2 × threads + 2 parts are given out
+beyond the last one appended. Where a single part's tree would take half
+of the budget, the parallel reading stops and the rest is read in one go
+(below), which shares one set of tallies for all elements; so it does,
+without scanning on, once the ranges hold no split for as long as such a
+part. Summaries run only a few ranges ahead of the next part to give
+out, so the second read of a range finds it cached.
 
 Files are read at offsets with `pread` on Unix and `seek_read` on
 Windows, which also moves the file's position: every reading in one go

@@ -217,8 +217,10 @@ impl<R: Read + io::Seek> Read for StreamFrom<R> {
 /// ([`from_env`](Self::from_env)).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ParallelOptions {
-    /// The threads that read; with fewer than two, the sample is read in
-    /// one go.
+    /// The most threads that read (besides the one that reads the
+    /// sample): fewer for samples with fewer than [`PARTS_PER_THREAD`]
+    /// ranges for each, and at most [`MAX_THREADS`]. With fewer than two,
+    /// the sample is read in one go.
     pub threads: usize,
     /// The largest size of the ranges the sample is cut into, in bytes; a
     /// part between two splits is about this long. Ranges are smaller for
@@ -228,8 +230,10 @@ pub struct ParallelOptions {
     /// Samples shorter than this (in bytes) are read in one go.
     pub min_len: u64,
     /// How many bytes the trees of the parts being read on other threads
-    /// may take together (see [`Reading::coordinate`]).
-    pub budget: u64,
+    /// may take together (see [`Reading::coordinate`]); by default
+    /// (`None`), the threads that read times the range size, or
+    /// [`TREE_BUDGET`].
+    pub budget: Option<u64>,
     /// A fault to inject, to check that the checks catch it (for tests).
     #[doc(hidden)]
     pub fault: Option<Fault>,
@@ -264,8 +268,11 @@ pub const DEFAULT_MIN_LEN: u64 = 8 << 20;
 
 /// The least the trees of the parts being read on other threads may take
 /// together by default (see [`Reading::coordinate`]); otherwise the
-/// threads times the range size.
+/// threads that read times the range size.
 pub const TREE_BUDGET: u64 = 32 << 20;
+
+/// The most threads that read a sample, whatever the options ask for.
+pub const MAX_THREADS: usize = 1024;
 
 /// Parts shorter than this tell little about how large other parts' trees
 /// are (a single element has a tree as large as its text, many share
@@ -299,14 +306,7 @@ impl ParallelOptions {
                 threads,
                 range,
                 min_len,
-                budget: number("QUICKTYPE_READ_BUDGET").map_or_else(
-                    || {
-                        (threads as u64)
-                            .saturating_mul(range as u64)
-                            .max(TREE_BUDGET)
-                    },
-                    |budget| budget as u64,
-                ),
+                budget: number("QUICKTYPE_READ_BUDGET").map(|budget| budget as u64),
                 fault: None,
             }
         })
@@ -393,6 +393,49 @@ fn count_read(count: impl FnOnce(&mut ParallelReads)) {
     });
 }
 
+/// How a sample is read on several threads, for its size: the size of its
+/// ranges and how many there are, the threads that read it, the budget
+/// for the parts' trees, and the fault to inject.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Plan {
+    range: u64,
+    ranges: usize,
+    threads: usize,
+    budget: u64,
+    fault: Option<Fault>,
+}
+
+impl Plan {
+    /// How a sample of `size` bytes is read with `options`; `None` for in
+    /// one go.
+    fn new(options: ParallelOptions, size: u64) -> Option<Plan> {
+        if options.threads < 2 {
+            return None;
+        }
+        let threads = options.threads.min(MAX_THREADS);
+        let share = size / threads.saturating_mul(PARTS_PER_THREAD) as u64;
+        let range = (options.range as u64)
+            .min(share.max(MIN_RANGE as u64))
+            .max(1);
+        if size < options.min_len || size <= range {
+            return None;
+        }
+        let ranges = usize::try_from(size.div_ceil(range)).ok()?;
+        // No more threads than the ranges give PARTS_PER_THREAD each (more
+        // would wait for work, and the default budget grows with them).
+        let threads = threads.min(ranges.div_ceil(PARTS_PER_THREAD));
+        Some(Plan {
+            range,
+            ranges,
+            threads,
+            budget: options
+                .budget
+                .unwrap_or_else(|| (threads as u64).saturating_mul(range).max(TREE_BUDGET)),
+            fault: options.fault,
+        })
+    }
+}
+
 /// What reading a sample on several threads came to.
 enum Outcome {
     /// The sample's tree: all of it was read.
@@ -457,15 +500,8 @@ fn read(
         return None;
     }
     let len = sample.source.len().ok()?;
-    let size = len.checked_sub(sample.start)?;
-    let share = size / (options.threads * PARTS_PER_THREAD) as u64;
-    let range = (options.range as u64)
-        .min(share.max(MIN_RANGE as u64))
-        .max(1);
-    if size < options.min_len || size <= range {
-        return None;
-    }
-    let configs = (0..options.threads)
+    let plan = Plan::new(options, len.checked_sub(sample.start)?)?;
+    let configs = (0..plan.threads)
         .map(|_| {
             Some(ThreadConfig {
                 recognizer: config.date_time_recognizer().thread_copy()?,
@@ -483,8 +519,8 @@ fn read(
         source: &sample.source,
         start: sample.start,
         len,
-        range,
-        ranges: usize::try_from(size.div_ceil(range)).ok()?,
+        range: plan.range,
+        ranges: plan.ranges,
         queue: Mutex::new(Queue::default()),
         ready: Condvar::new(),
         abort: AtomicBool::new(false),
@@ -513,7 +549,7 @@ fn read(
             }
         }
         drop(sender);
-        let outcome = reading.coordinate(open, tallies, config, &results, options);
+        let outcome = reading.coordinate(open, tallies, config, &results, plan);
         // Whatever is under way is not needed any more.
         close.1 = !matches!(outcome, Some(Outcome::Whole(_)));
         outcome
@@ -927,11 +963,15 @@ impl Reading<'_> {
         running: &mut RunningTallies,
         config: &CompressedJson,
         results: &mpsc::Receiver<Done>,
-        options: ParallelOptions,
+        plan: Plan,
     ) -> Option<Outcome> {
-        let threads = options.threads;
+        let Plan {
+            threads,
+            budget,
+            fault,
+            ..
+        } = plan;
         let n = self.ranges;
-        let budget = options.budget;
         let mut summaries: Vec<Option<RangeSummary>> = vec![None; n];
         let mut splits = vec![Split::Unknown; n];
         // The state at the start of the first range not resolved yet.
@@ -1155,7 +1195,7 @@ impl Reading<'_> {
                             Err(_) => return rest(running, Some(so_far), &parts, appended),
                         };
                         // (The fault merges the tree so far into this one.)
-                        let (into, from) = match options.fault {
+                        let (into, from) = match fault {
                             Some(Fault::Prepend) => (imported, so_far),
                             None => (so_far, imported),
                         };
@@ -1279,7 +1319,7 @@ mod tests {
             threads,
             range,
             min_len: 0,
-            budget: TREE_BUDGET,
+            budget: None,
             fault: None,
         }
     }
@@ -1433,7 +1473,7 @@ mod tests {
         let bytes = format!("[{element},{element},{element}]");
         let expected = in_one_go(&config, bytes.as_bytes());
         let mut options = options(3, 1_000);
-        options.budget = 64 << 10;
+        options.budget = Some(64 << 10);
         let (result, how) = read_with(&config, bytes.as_bytes(), options);
         assert_eq!(result, expected);
         assert_eq!(how.again, 1, "{how:?}");
@@ -1469,7 +1509,7 @@ mod tests {
         // Where it allows only one of these parts at a time, the rest is
         // read in one go.
         let mut options = options(3, 1000);
-        options.budget = 4 << 20;
+        options.budget = Some(4 << 20);
         let (result, how) = read_with(&config, bytes.as_bytes(), options);
         assert_eq!(result, expected);
         assert_eq!(how.in_part, 1, "{how:?}");
@@ -1488,7 +1528,7 @@ mod tests {
             .collect();
         let bytes = format!("[{}]", elements.join(","));
         let mut options = options(4, 200);
-        options.budget = 1 << 20;
+        options.budget = Some(1 << 20);
         // The second part, the first read elsewhere, is read last.
         SLOW_PART.with(|s| s.set(Some((1, std::time::Duration::from_millis(300)))));
         let (result, how) = read_with(&config, bytes.as_bytes(), options);
@@ -1497,10 +1537,10 @@ mod tests {
         assert_eq!(how.whole, 1);
         let (peak, largest) = HELD.with(Cell::get);
         assert!(largest >= 64 << 10, "{largest}");
+        let budget = options.budget.unwrap();
         assert!(
-            peak <= options.budget + largest,
-            "{peak} bytes held, over {} + {largest}",
-            options.budget
+            peak <= budget + largest,
+            "{peak} bytes held, over {budget} + {largest}"
         );
     }
 
@@ -1578,6 +1618,57 @@ mod tests {
             payload,
             Some(Some("a part panicked (a test hook)".to_owned()))
         );
+    }
+
+    /// The threads that read are as many as the ranges give
+    /// PARTS_PER_THREAD each, at most MAX_THREADS whatever the options ask
+    /// for, and the default budget is theirs.
+    #[test]
+    fn threads_are_as_many_as_the_ranges_keep_busy() {
+        let plan = |threads, range, budget, size| {
+            let options = ParallelOptions {
+                threads,
+                range,
+                min_len: DEFAULT_MIN_LEN,
+                budget,
+                fault: None,
+            };
+            Plan::new(options, size).map(|p| (p.range, p.ranges, p.threads, p.budget))
+        };
+        const MIB: u64 = 1 << 20;
+        // 8 MiB on 128 threads: ranges of 256 KiB, 32 of them, 8 threads.
+        assert_eq!(
+            plan(128, DEFAULT_RANGE, None, 8 * MIB),
+            Some((256 << 10, 32, 8, TREE_BUDGET))
+        );
+        // 1 GiB on 128 threads: ranges of 2 MiB, all 128 threads.
+        assert_eq!(
+            plan(128, DEFAULT_RANGE, None, 1024 * MIB),
+            Some((2 * MIB, 512, 128, 256 * MIB))
+        );
+        // 64 GiB, as many threads as can be asked for: MAX_THREADS.
+        assert_eq!(
+            plan(usize::MAX, DEFAULT_RANGE, None, 64 << 30),
+            Some((4 * MIB, 16_384, MAX_THREADS, MAX_THREADS as u64 * 4 * MIB))
+        );
+        // The budget asked for is kept; under the threshold, in one go.
+        assert_eq!(
+            plan(12, DEFAULT_RANGE, Some(7), 267 * MIB).map(|p| p.3),
+            Some(7)
+        );
+        assert_eq!(plan(12, DEFAULT_RANGE, None, 8 * MIB - 1), None);
+        assert_eq!(plan(1, DEFAULT_RANGE, None, 267 * MIB), None);
+        // A small sample with tiny ranges, on many threads: read as in one
+        // go.
+        let config = config(false);
+        let elements: Vec<String> = (0..400).map(|i| format!(r#"{{"a":{i}}}"#)).collect();
+        let bytes = format!("[{}]", elements.join(","));
+        let expected = in_one_go(&config, bytes.as_bytes());
+        for (threads, range) in [(64, 256), (usize::MAX, 64), (usize::MAX, 1)] {
+            let (result, how) = read_with(&config, bytes.as_bytes(), options(threads, range));
+            assert_eq!(result, expected, "{threads} threads, ranges of {range}");
+            assert_eq!(how.whole, 1, "{threads} threads, ranges of {range}");
+        }
     }
 
     /// Where the system refuses a reading thread, the sample is read in one

@@ -88,11 +88,11 @@ fn sample(s: &generator::Sample, seed: u64, parallel: Option<bool>) -> JsonSampl
                 threads: rng.range(2, 5) as usize,
                 range: rng.range(1, (len / 2).max(1)) as usize,
                 min_len: 0,
-                budget: ParallelOptions::from_env().budget,
+                budget: None,
                 fault: fault.then_some(Fault::Prepend),
             };
             if rng.chance(20) {
-                options.budget = rng.below(4096);
+                options.budget = Some(rng.below(4096));
             }
             JsonSample::Reader(parallel_sample(s.text.as_bytes().to_vec(), options))
         }

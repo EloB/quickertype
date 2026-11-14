@@ -28,7 +28,7 @@ fuzz_target!(|data: &[u8]| {
         threads: 2 + usize::from(threads % 3),
         range: 1 + usize::from(*range),
         min_len: 0,
-        budget: if flags & 2 != 0 { 1 << 12 } else { 32 << 20 },
+        budget: (flags & 2 != 0).then_some(1 << 12),
         fault: None,
     };
     let handle_refs = flags & 1 != 0;
