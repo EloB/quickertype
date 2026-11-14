@@ -593,7 +593,7 @@ has no `__trace` export.
 # TypeScript, warm, medians of each phase. The copy into WebAssembly memory
 # and the facade's share are timed around the glue's calls.
 (cd npm/quicktype-core && node script/build.mjs --trace)
-node npm/quicktype-core/test/bench/phases.mjs [--only REGEX] [--rounds N] [--json]
+node npm/quicktype-core/test/bench/phases.mjs [--only REGEX] [--rounds N] [--bytes] [--json]
 # The same entry points natively, in process (jsonCreate and jsonRead, then
 # a run over a lease on the form), with the same spans; mimalloc.
 cargo run --release -p quicktype-wasm --features trace --example phases -- input.json [ROUNDS]
@@ -1163,6 +1163,196 @@ grows a few dozen times instead of tens of thousands.
 fewer than 60 times (`__memoryGrowths`). Converting the output back to
 JavaScript (`TextDecoder`, then slicing lines) stays under 1% of a run,
 even for 490 KB of Java.
+
+### Where the time goes in the browser, phase by phase
+
+The engine already generated code more than ten times faster than
+TypeScript in Chrome, so the question was why the whole run was only
+about three times faster. Reading the sample is the answer: it races V8's
+native `JSON.parse`. This section breaks a warm run down phase by phase,
+against the same code run natively, and lists what changed.
+
+**Method.** The `trace` feature ([Profiling](#phase-by-phase-webassembly-against-native-trace))
+times the engine's phases. In WebAssembly it uses `performance.now()`
+through one import, in a cross-origin isolated page (5 µs steps), and
+the trace is read out once after each run. The boundary (copying the
+sample in, the facade, decoding the outcome) is timed around the glue's
+calls. Natively, the `phases` example calls the same entry points in
+process (`jsonCreate`, `jsonRead`, then a run over a lease on the form),
+on one thread, with mimalloc.
+
+The tables give medians in ms. Chrome 157 ran headless on the M2 Max, at
+a load average of 4 to 20 for the first table and 11 to 20 for the
+second; the machine was shared. Native and WebAssembly outputs are
+identical.
+
+**Before any change** (`a07ef1cb4`, the trace added to main). Native ms,
+WebAssembly ms and their ratio:
+
+| Phase | pokedex (82 KB) | generated 2 MB | generated 20 MB | 100k records (27 MB) |
+|---|---|---|---|---|
+| copy the text in (`TextEncoder.encodeInto`) | – / 0.115 | – / 0.93 | – / 8.9 | – / **12.0** |
+| read: record (scan, validate, tape) | 0.098 / 0.150 (1.5×) | 3.13 / 4.66 (1.5×) | 32.3 / 44.4 (1.4×) | 16.3 / 18.7 (1.15×) |
+| read: commit (classify, intern) | 0.114 / 0.185 (1.6×) | 2.78 / 4.68 (1.7×) | 30.0 / 45.4 (1.5×) | 12.0 / **21.4 (1.8×)** |
+| the facade around the read | – / 0.055 | – / 0.08 | – / 0.10 | – / 0.10 |
+| run: tally the compressed form | 0.121 / 0.240 (2.0×) | 2.37 / 3.75 (1.6×) | 24.8 / 35.5 (1.4×) | 4.10 / 6.09 (1.5×) |
+| run: infer from the tallies | 0.074 / 0.165 (2.2×) | 0.72 / 1.17 (1.6×) | 4.53 / 6.42 (1.4×) | 0.02 / 0.03 |
+| run: the rewrite passes | 0.121 / 0.330 (2.7×) | 0.91 / 1.30 (1.4×) | 4.68 / 5.91 (1.3×) | 0.05 / 0.09 |
+| run: gather names | 0.021 / 0.075 (3.5×) | 0.05 / 0.10 | 0.06 / 0.11 | 0.01 / 0.03 |
+| run: render | 0.158 / 0.405 (2.6×) | 0.27 / 0.56 (2.0×) | 0.30 / 0.54 (1.8×) | 0.12 / 0.19 (1.6×) |
+| run: the facade, encoding and decoding the request, assembling | – / 0.125 | – / 0.175 | – / 0.235 | – / 0.22 |
+| the outcome back to JavaScript | – / 0.08 | – / 0.10 | – / 0.13 | – / 0.095 |
+| **total** | 0.72 / 1.99 (2.8×) | 10.3 / 17.7 (1.7×) | 97.6 / 148 (1.5×) | 32.5 / 59.0 (1.8×) |
+
+What this shows:
+
+- **Copying the text in** has no native counterpart. On the records it is
+  a fifth of the run. `TextEncoder.encodeInto` turns a Latin-1 string
+  into UTF-8 at about 2.2 GB/s, and a two-byte string (any non-Latin-1
+  character: pokedex has ♀ and ♂) at about 0.7 GB/s. For a two-byte
+  string, the glue also reallocates its buffer to three times the rest of
+  the text at the first non-ASCII character. Chrome offers no faster way
+  to get a string into WebAssembly memory. A sample's bytes can skip it
+  (below).
+- **The engine's own phases run at 1.2–1.8× native** on 2 MB and up,
+  which is ordinary for WebAssembly. `rustc --print cfg --target
+  wasm32-unknown-unknown` (1.99) gives bulk memory, multi-value, mutable
+  globals, non-trapping float-to-int, reference types and sign extension,
+  but not simd128.
+- **The commit on the records is the outlier, at 1.8×**, because of
+  `is_uuid`: 9% of the read in Chrome's profile, about 50 ns per UUID. It
+  checked each hex digit with a branch on whether the digit is a decimal
+  one or a letter. V8 keeps that branch, and on random digits it is
+  mispredicted about half the time.
+- **64-bit hashing.** foldhash's folded multiply (64 × 64 → 128 bits) has
+  no WebAssembly instruction: it becomes four `i64.mul`, shifts and a call
+  to `__ashlti3`. `FoldHasher::write_str` is 7.1% of reading the
+  generated 20 MB input in the profile. It is not changed here.
+- **Small inputs are 2–3.5× native per phase**, for two reasons. First,
+  V8 tiers code up from Liftoff to TurboFan only once it has run enough:
+  with `--no-wasm-dynamic-tiering`, which compiles everything with
+  TurboFan, a tiny input's warm run goes from 0.49 to 0.38 ms and
+  pokedex's from 2.04 to 1.77 ms. Second, the allocator: dlmalloc is
+  16% of a pokedex run's profile, and natively the system allocator alone
+  makes pokedex take 0.96 instead of 0.72 ms. The boundary adds about
+  0.25 ms per run: the facade around the read (0.05), the `Run`, the
+  request encoded and decoded (0.12–0.16), and the outcome (0.06–0.08).
+
+**Real data, large.** A JSON array of 120,095 card records from
+Scryfall's bulk data (656 MB, two-byte text) and its first 18,300,
+45,700 and 82,300 records (100, 250 and 450 MB). The samples are strings,
+5 rounds each, interleaved over two cycles; the ranges are of the two
+cycles:
+
+| Phase | 100 MB native / WASM | 250 MB native / WASM | 450 MB native / WASM |
+|---|---|---|---|
+| copy the text in | – / 136–138 | – / 336–338 | – / 616–619 |
+| read: record | 80–84 / 118 (1.4×) | 202 / 288 (1.4×) | 368–430 / 520–522 (1.3×) |
+| read: commit | 141–149 / 206–217 (1.5×) | 448–457 / 741–760 (1.7×) | 679–913 / 1,124–1,142 (1.4×) |
+| run: tally the compressed form | 293–306 / 473–474 (1.6×) | 704–716 / 1,188–1,194 (1.7×) | 1,321–1,673 / 2,117–2,139 (1.4×) |
+| run: everything else (inference, rewrites, naming, rendering, the boundary) | 9.4–9.6 / 14.6–14.8 | 15.0–15.3 / 22.4–22.9 | 21.2–24.0 / 29.9 |
+| **total** | 524–550 / 951–974 (1.8×) | 1,370–1,396 / 2,582–2,611 (1.9×) | 2,399–3,048 / 4,630–4,684 (1.7×) |
+| WebAssembly memory afterwards (its high-water mark) | 505 MiB | 1,326 MiB | 2,422 MiB |
+
+On this data, walking the compressed form into tallies is the largest
+single phase, natively too: 56% of the native run at 100 MB, against 4 ms
+on the synthetic records. Every card has about ten distinct URIs and a
+lot of distinct text. That walk is in `input/tallies.rs`, which other
+work is changing, so it is not touched here. At 450 MB, the facade around
+the read took 240–249 ms. That was eviction: the previous round's input
+was unreachable but not finalized yet, so its form still counted toward
+the 256 MiB limit and its tables were copied out (see the last commit
+below).
+
+For reference, the parallel-read branch's CLI reads the same files with
+its own reader (the stream reader into running tallies, a different
+path), `-l ts`. On 12 threads: 90 ms at 100 MB, 180–270 ms at 250 MB,
+300–730 ms at 450 MB and 1,010–1,070 ms at 656 MB of wall time, with a
+peak RSS of 40–56 MiB. On one thread: 410–450, 1,010–1,870, 1,800–6,030
+and 4,720–5,110 ms. The machine's load spiked during the larger runs.
+
+**What changed**, each commit measured against the one before it in the
+same page, interleaved:
+
+| Commit | What | WebAssembly (Chrome) | Native |
+|---|---|---|---|
+| `5b92430ce` | `is_uuid` checks the 32 hex digits as four 64-bit words, without a branch per byte | records: commit 20.8–21.1 → 16.9–17.1, reading 53.6–60.3 → 48.9–49.5; generated 20 MB: reading 102–121 → 99–105; others within 0.2 | records: commit 11.6–12.0 → 10.9–11.4; others unchanged |
+| `f4abcbeca` | JSON samples as bytes (`Uint8Array`, `Buffer`) for the npm API, which the engine reads as they are (`jsonReadBytes`) | records: copying in 12.4 → 0.6 ms plus a 1.8 ms UTF-8 check, the run 56.9–57.7 → 48.0–48.1; 20 MB: copying in 9.3 → 0.4 + 1.3; cards 934 → 811 (100 MB), 2,537 → 2,202 (250 MB), 4,622 → 4,087 (450 MB); 656 MB, too large for a string, reads in 6.4 s | – |
+| `90528c5df` | the playground reads a file's bytes for quickertype (`arrayBuffer()` instead of `file.text()`) | getting the file: 169 → 56 ms (100 MB), 365 → 115, 556 → 275; then the bytes as above on every run | – |
+| `1142b0416` | the playground reuses the input it read for the next run on it read the same way, on both engines | a change of language: records 56 → 0.5 ms (quicktype 177 → 79), 20 MB 157 → 14.3 (442 → 177), pokedex 2.2 → 1.1 (5.1 → 2.3) | – |
+| `84726429e` | the playground lets go of an input it will not use again at once (`releaseJSONInput`, not public), so a large one is never evicted | no eviction when a reading option changes on a large file (230–340 ms at 450–656 MB before) | – |
+| `83eecde16` | the run reads its clock only when a pass's time is reported (`onTiming`, `--debug print-times`): about 30 calls into JavaScript per run fewer | tiny input, 4,000 runs in a row: 148.1 → 143.9 µs (−3%); pokedex unchanged | nothing measurable |
+| `4445a64ca` | a run's random type names are seeded when the first is drawn, not at the start of every run (624 steps of the Mersenne Twister) | tiny: 139.9 → 136.1 µs (−3%); pokedex 1,538 → 1,516 µs, within the noise | tiny 35.6–39.6 → 33.5–38.2 µs |
+| `5f4b9b36c` | when the forms are past their limit, those whose `CompressedJSON` was collected already (a `WeakRef`) are dropped instead of exported | 450 MB cards, a loop whose rounds are functions of their own, `gc()` after a task boundary: 7 evicted → 7 dropped; the facade around the read 240.6 → 18.2 ms, reading 2,482 → 2,212 ms. In the phases tool's own loop nothing changes: the previous round's input is still reachable from the loop's frame | – |
+
+Tried and not adopted:
+
+- **simd128**, the flag alone (`-C target-feature=+simd128`, wasm-opt
+  `--enable-simd`), against the branch in one page. Pokedex 2.20 → 2.20
+  ms, 2 MB 17.5–17.7 → 17.4–17.6, 20 MB 151–153 → 149–152, records
+  55.5–56.1 → 55.1–55.3: under 2%. The module is 79 KB smaller
+  (5,449,071 → 5,369,935 bytes; 1,935,603 → 1,906,451 gzipped). It would
+  raise the browsers the engine needs to Safari 16.4 (from 15), Chrome 91
+  and Firefox 89. A hand-written SIMD string scan might save 3–5 ms on the
+  records, where the string scan is about 17% of the read. It would need
+  unsafe code or a 16-lane constructor in the reader, which is kept free
+  of unsafe code.
+- **Counting UTF-16 units eight bytes at a time** (`utf16::len`, 2.7% of
+  the records' read): nothing measurable, natively or in Chrome.
+
+**The full 656 MB file**, through bytes in Chrome: 6,371 ms. Reading
+takes 3,189 ms: copying in 14, the UTF-8 check 50, record 771, commit
+2,007. The run takes 3,185 ms, 3,156 of them walking the form. The
+WebAssembly memory peaks at 2,468 MiB of its 4 GiB. Natively, in
+process, under a load spike: 6.2 s (read 3,192, run 3,040).
+
+**What is left, and why:**
+
+- Copying a string sample in (12 ms of the records' 48–56): only bytes
+  avoid it, and the npm API takes strings from most callers.
+- The walk over the compressed form on real data (56% of a native run on
+  the cards): `input/tallies.rs`, changing elsewhere.
+- 64-bit hashing and the allocator, and the other fixed costs of small
+  runs, are being worked on separately.
+- V8's tiering: 13–22% of a small warm run is code still in Liftoff, and
+  a page cannot ask for TurboFan.
+- TypeScript's own `initTypeNames()`, which `Run.preRun()` calls before a
+  run is handed to the engine, seeds TypeScript's Mersenne Twister on
+  every run. It is about 8% of a tiny run in a profile of 20,000 of them.
+  Making it lazy means changing `attributes/TypeNames.ts`, an upstream
+  file the package otherwise keeps unchanged.
+- The engine's phases at 1.2–1.8× native, which is what WebAssembly
+  costs.
+
+**Reading on several workers** (the parallel-read branch's approach in
+the browser, not built). On the 100k records, reading (record + commit,
+38 ms of the 48) would split across workers, each reading its part of
+the bytes into tallies. Natively the branch reads them 3× faster on 12
+threads (31 → 10 ms) and 2.3× on 4. In the browser each worker needs its
+own engine instance: about 1 ms to instantiate from the shared module,
+and a first run of some 30 ms while V8 compiles what it uses, paid once
+per worker. Each worker also needs its part of the bytes (a transfer, or
+a `SharedArrayBuffer` in a cross-origin isolated page), and the tallies
+have to be merged. With 4 workers, the records' run would take about
+20–25 ms instead of 48. On the 656 MB cards, the branch's CLI takes 1.0 s
+on 12 threads against 5 s on one. Reading into tallies directly, without
+the compressed form and its walk, would also keep each worker's memory
+small, against 2.5 GiB in one instance now. But the JavaScript API must
+still be able to give the `CompressedJSON`'s tables, which tallies alone
+cannot. A browser run at about 1.5× native would then take 1.5–2 s
+instead of 6.4 s.
+
+To reproduce:
+
+```sh
+(cd npm/quicktype-core && node script/build.mjs --trace)
+node npm/quicktype-core/test/bench/phases.mjs              # WebAssembly, string samples
+node npm/quicktype-core/test/bench/phases.mjs --bytes      # the same samples as bytes
+node npm/quicktype-core/test/bench/phases.mjs --json       # also writes the inputs to build/bench/phases/
+cargo run --release -p quicktype-wasm --features trace --example phases -- npm/quicktype-core/build/bench/phases/input4.json
+(cd npm/quicktype-core && node script/build.mjs)           # back to a normal build
+node --expose-gc npm/quicktype-core/test/bench/compare.mjs --browser --again --variant main=<main's package> --variant branch=npm/quicktype-core
+```
 
 ## Reproducing
 
