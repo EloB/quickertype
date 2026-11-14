@@ -76,6 +76,7 @@ const els = {
     copy: $("copy"),
     download: $("download"),
     meter: $("meter"),
+    announce: $("announce"),
     notes: $("notes"),
     output: $("output"),
     codeWrap: $("code-wrap"),
@@ -759,6 +760,12 @@ function renderTabs() {
 
 /** What the code pane holds: which result's files, and which of them. */
 let drawn = { files: undefined, tab: -1 };
+/**
+ * What the note in the code's place says: "empty" (no input), or the result
+ * whose error it is; drawn again only for another (an alert is said again
+ * when it is drawn again, and the empty note has a button).
+ */
+let drawnNote;
 
 function renderCode() {
     const result = view.shown.result;
@@ -766,14 +773,17 @@ function renderCode() {
     const file = view.status !== "empty" && result?.ok ? view.files[view.tab] : undefined;
     els.error.hidden = !showError && view.status !== "empty";
     els.output.hidden = !els.error.hidden;
-    els.error.setAttribute("role", showError ? "alert" : "note");
-    if (view.status === "empty") {
+    const note = view.status === "empty" ? "empty" : showError ? result : undefined;
+    const drawNote = note !== drawnNote && note !== undefined;
+    drawnNote = note;
+    if (drawNote) els.error.setAttribute("role", note === "empty" ? "note" : "alert");
+    if (drawNote && note === "empty") {
         els.error.className = "empty";
         // Beside the input, or (phones) with the input a switch away; the stylesheet shows one.
         els.error.innerHTML =
             `<p class="beside">Paste JSON or a JSON Schema in the Input pane, load a sample, or drop a file there.</p>` +
             `<p class="alone">Switch to <button type="button" class="quiet show-input">Input</button> to paste JSON or a JSON Schema, load a sample, or open a file.</p>`;
-    } else if (showError) {
+    } else if (drawNote) {
         els.error.className = "error";
         const { title, message, link } = result.error;
         const name = result.error.messageName ?? result.error.name;
@@ -840,8 +850,10 @@ function verdict(a, b) {
  * "quickertype and quicktype were about as fast (172 ms and 168 ms)".
  * `ms` is each engine's time, { wasm, ts }; `qualifier` goes inside the
  * parentheses ("start-up included"). As HTML; `short`, for the line at a
- * glance ("quicktype 1.1× faster", "about as fast"); and `key`, which is
- * the same for the same verdict (who, and how many times faster).
+ * glance ("quicktype 1.1× faster", "about as fast"); `plain`, as text
+ * ("quicktype 1.1× faster", "quickertype and quicktype about as fast");
+ * and `key`, which is the same for the same verdict (who, and how many
+ * times faster).
  */
 function pace(ms, qualifier) {
     const ratio = ms.ts / ms.wasm;
@@ -853,6 +865,7 @@ function pace(ms, qualifier) {
             key: "same",
             html: `${name("wasm")} and ${name("ts")} were about as fast (${formatMs(ms.wasm)} and ${formatMs(ms.ts)}${extra})`,
             short: "about as fast",
+            plain: `${engineNames.wasm} and ${engineNames.ts} about as fast`,
         };
     }
 
@@ -863,6 +876,7 @@ function pace(ms, qualifier) {
         key: `${faster} ${times}`,
         html: `${name(faster)} was ${times}× faster (${formatMs(ms[faster])} vs ${formatMs(ms[otherEngine(faster)])}${extra})`,
         short: `${name(faster)} ${times}× faster`,
+        plain: `${engineNames[faster]} ${times}× faster`,
     };
 }
 
@@ -915,7 +929,9 @@ function lane(engine, result, { scale, timeOf, note, split, shown }) {
  * from both engines' results ("Warm medians: …" once measured; first runs
  * are said to include start-up). If either stopped with an error, both
  * times: "quickertype: 2.90 ms · quicktype: 4.20 ms · different errors ≠".
- * With `verdict` (its last part, for the line at a glance) and `startUp`.
+ * With `verdict` (its last part, for the line at a glance), `startUp`,
+ * and `said`, in a few words, as text ("quickertype 1.4× faster;
+ * identical output"), for the live region.
  */
 function summary({ wasm, ts }, timeOf, phases, measured) {
     const v = verdict(wasm, ts);
@@ -934,12 +950,14 @@ function summary({ wasm, ts }, timeOf, phases, measured) {
         `<span class="verdict ${v.same ? "same" : "differ"}">${escapeHtml(v.text)} <span class="verdict-mark" aria-hidden="true">${v.same ? "✓" : "≠"}</span></span>`,
     );
     const prefix = measured ? `<span class="muted">Warm medians:</span> ` : "";
+    const times = `${engineNames.wasm} ${formatMs(timeOf(wasm))}, ${engineNames.ts} ${formatMs(timeOf(ts))}`;
     return {
         same: v.same,
         detail: v.detail,
         faster,
         startUp,
         verdict: parts.at(-1),
+        said: `${faster?.plain ?? times}; ${v.text}`,
         html: `<p class="summary">${prefix}${parts.join('<span class="sep"> · </span>')}</p>`,
     };
 }
@@ -964,7 +982,40 @@ const isResult = (r) => typeof r === "object";
 /** A result with a time: the run happened (a worker that did not start has none). */
 const timed = (r) => isResult(r) && r.times.length > 0;
 
+/** The engines' comparison, drawn again on every change; what the live region says of it, once. */
 function renderMeter() {
+    announce(drawMeter());
+}
+
+/** Last said in the live region: the result's key (see drawMeter). */
+let announced;
+
+/**
+ * The page's one live region (#announce, outside all that is drawn again):
+ * `said`, { key, text }, once for its key, the key of a finished result;
+ * cleared while none is shown (undefined), so that the next is said even if
+ * it reads the same.
+ */
+function announce(said) {
+    const region = els.announce;
+    if (said === undefined) {
+        if (region.textContent !== "") region.textContent = "";
+        return;
+    }
+
+    if (said.key === announced) return;
+    announced = said.key;
+    // A change, even for the same words (a run as fast as the one before, with no running in between).
+    region.textContent = region.textContent === said.text ? `${said.text}\u00a0` : said.text;
+}
+
+/**
+ * Draws the comparison; returns what the live region says of it, if it
+ * shows a finished result, { key, text }: a measurement (the key: it), both
+ * engines' results compared (the request), or the result shown alone (it);
+ * an error is said by the error itself (an alert).
+ */
+function drawMeter() {
     const { status, shown, bench } = view;
     const result = shown.result;
     const body = document.body.dataset;
@@ -1043,8 +1094,11 @@ function renderMeter() {
     const fine = [];
     const note = (text) => fine.push(escapeHtml(text));
     let compare = "off";
+    /** Both engines' results compared, in a few words. */
+    let compared;
     if (isResult(sides.wasm) && isResult(sides.ts)) {
         const line = summary(sides, timeOf, phases, measured);
+        compared = line.said;
         compare = line.same ? "identical" : "different";
         if (line.faster !== undefined) say(line.faster.short, "pace");
         if (measured) say("warm runs");
@@ -1106,15 +1160,21 @@ function renderMeter() {
     // in turn; the workers share one lane, so no two requests ever overlap).
     details += `<div class="fine"><p>${fine.join(" ")}</p><small id="measure-how">${measureHow}</small></div>`;
     // The line at a glance is the button that opens the details.
-    let html = `<div class="meter-line"><div class="glance-wrap" role="status"><button type="button" id="meter-toggle" class="glance" aria-expanded="${meterOpen}" aria-controls="meter-details"><span class="sr-only">Details: </span>${glance.join("")}<span class="glance-more" aria-hidden="true">Details</span></button></div>`;
+    let html = `<div class="meter-line"><div class="glance-wrap"><button type="button" id="meter-toggle" class="glance" aria-expanded="${meterOpen}" aria-controls="meter-details"><span class="sr-only">Details: </span>${glance.join("")}<span class="glance-more" aria-hidden="true">Details</span></button></div>`;
     html += `<button type="button" id="measure" class="measure" aria-describedby="measure-how"${off ? ' aria-disabled="true"' : ""}>${label}</button></div>`;
     if (bench?.failure !== undefined) {
-        html += `<p class="bench-failure" role="alert">Measuring warm runs stopped: ${escapeHtml(bench.failure)}</p>`;
+        html += `<p class="bench-failure">Measuring warm runs stopped: ${escapeHtml(bench.failure)}</p>`;
     }
     html += `<div id="meter-details" class="meter-details"${meterOpen ? "" : " hidden"}>${details}</div>`;
     els.meter.innerHTML = html;
     // The buttons are drawn again: the one that had the keyboard focus keeps it.
     if (focused === "measure" || focused === "meter-toggle") document.getElementById(focused).focus();
+
+    if (bench?.failure !== undefined) return { key: bench, text: `Measuring warm runs stopped: ${bench.failure}` };
+    if (status === "running" || !result.ok || !lanes.every((engine) => isResult(sides[engine]))) return undefined;
+    if (measured) return { key: bench, text: `Warm runs: ${compared}.` };
+    if (!solo) return { key: `compared ${gen}`, text: `${compared}.` };
+    return { key: result, text: `Generated by ${engineNames[shown.engine]} in ${formatMs(timeOf(result))}.` };
 }
 
 /** What "Measure warm runs" does, said under the comparison and read with the button. */

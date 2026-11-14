@@ -56,7 +56,7 @@
       <div id="large" class="large" hidden>
         <div class="large-card">
           <p><strong id="large-name"></strong> <span id="large-size"></span></p>
-          <p id="large-status" class="large-status" role="status"></p>
+          <p id="large-status" class="large-status"></p>
           <p id="large-note">Not shown in the editor, which would slow the page down; it runs all the same.</p>
           <button id="large-edit" type="button">Show in the editor</button>
         </div>
@@ -108,6 +108,9 @@
       <button id="copy-cli" type="button" class="quiet">Copy</button>
     </div>
   </section>
+
+  <!-- The page's one live region: each finished result, said once (main.js, announce()). -->
+  <p id="announce" class="sr-only" role="status"></p>
 
   <!-- Beside the output on wide screens; a drawer over the page on narrower ones. -->
   <dialog id="options-panel" class="inspector" aria-labelledby="options-heading">
