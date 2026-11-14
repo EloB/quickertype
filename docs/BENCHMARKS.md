@@ -375,6 +375,10 @@ Where the time goes now:
   ~10%, naming and rendering the rest. SipHash in `IndexMap`/`IndexSet`,
   allocation and `memmove` are the biggest flat costs left.
 
+These were measured before Phase 8a. For a record array after it, with a
+comparison of our JSON readers against `serde_json` and `simd-json`, see
+[PROFILE-RECORDS.md](PROFILE-RECORDS.md).
+
 ## WebAssembly
 
 The JS API's engine is `crates/quicktype-wasm` behind `npm/quicktype-core`.
