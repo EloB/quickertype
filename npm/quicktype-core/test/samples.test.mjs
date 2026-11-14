@@ -887,16 +887,89 @@ test("inputs that are gone but not finalized are evicted too, and nothing is fil
                 await new Promise((resolve) => setImmediate(resolve));
                 global.gc();
             }
-            console.log(JSON.stringify({ max: Math.max(...held), count: glue.__jsonCount(), evicted: engineStats.evicted, filled: engineStats.tablesFilled }));
+            console.log(JSON.stringify({ max: Math.max(...held), count: glue.__jsonCount(), evicted: engineStats.evicted, dropped: engineStats.dropped, filled: engineStats.tablesFilled }));
         })();
     `;
     const out = JSON.parse(execFileSync(process.execPath, ["--expose-gc", "-e", script], { encoding: "utf8" }));
     assert.ok(out.max <= 2 << 20, JSON.stringify(out));
     // Each read came before the finalizers of the inputs collected just
-    // before it had run: those were evicted (their tables exported, and
-    // collected), the others freed by their finalizers. None was filled.
-    assert.ok(out.evicted > 0, JSON.stringify(out));
+    // before it had run: those were dropped (their owners no longer
+    // dereference: nothing can reach them), not exported, and the others
+    // freed by their finalizers. None was evicted or filled.
+    assert.ok(out.dropped > 0, JSON.stringify(out));
+    assert.equal(out.evicted, 0, JSON.stringify(out));
     assert.equal(out.filled, 0, JSON.stringify(out));
+});
+
+// An input still in use when the forms are past their limit is evicted:
+// its tables are exported, and it works as before. One that is gone but
+// kept alive for the rest of the job its weak reference was made or read
+// in (KeepDuringJob: a `WeakRef` keeps its target until the job ends) is
+// evicted too, as one in use, and collected with its tables afterwards.
+test("a live input past the limit is exported, also one kept alive by its weak reference", () => {
+    const script = `
+        const qt = require(${JSON.stringify(packageRoot)});
+        const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
+        const nativeSamples = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "samples.js"))});
+        const { engineStats } = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "bridge.js"))});
+        nativeSamples.setHeldLimit(1);
+        const glue = engine.engineSync();
+        const text = JSON.stringify(Array.from({ length: 2000 }, (_, i) => ({ id: i, name: "n" + (i % 50), when: "2020-01-0" + (1 + (i % 9)) })));
+        const read = () => {
+            const input = qt.jsonInputForTargetLanguage("rust");
+            input.addSourceSync({ name: "A", samples: [text] });
+            return input;
+        };
+        const generate = (input) => {
+            const inputData = new qt.InputData();
+            inputData.addInput(input);
+            return qt.quicktypeMultiFileSync({ lang: "rust", inputData }).get("stdout").lines.join("\\n");
+        };
+        const stats = () => ({ evicted: engineStats.evicted, dropped: engineStats.dropped, filled: engineStats.tablesFilled });
+        (async () => {
+            const out = {};
+            // A live input: exported, and it works afterwards.
+            const live = read();
+            const expected = generate(live);
+            await new Promise((resolve) => setImmediate(resolve));
+            global.gc();
+            let before = stats();
+            read();
+            out.live = { evicted: engineStats.evicted - before.evicted, dropped: engineStats.dropped - before.dropped };
+            out.same = generate(live) === expected;
+            out.filled = engineStats.tablesFilled - before.filled;
+            // Every input gone by now finalized and freed.
+            for (let i = 0, last = -1; i < 50 && glue.__jsonCount() !== last; i++) {
+                last = glue.__jsonCount();
+                await new Promise((resolve) => setTimeout(resolve, 10));
+                global.gc();
+                await new Promise((resolve) => setTimeout(resolve, 10));
+            }
+            // Gone, but its weak reference was made in this very job: still
+            // alive after a collection, so exported, not dropped.
+            before = stats();
+            (() => read())();
+            global.gc();
+            read();
+            out.keptForTheJob = { evicted: engineStats.evicted - before.evicted, dropped: engineStats.dropped - before.dropped };
+            // In a later job it is collected, with the tables exported for it.
+            const count = glue.__jsonCount();
+            for (let i = 0; i < 50 && glue.__jsonCount() >= count; i++) {
+                await new Promise((resolve) => setTimeout(resolve, 10));
+                global.gc();
+            }
+            out.collected = glue.__jsonCount() < count;
+            out.filledAfter = engineStats.tablesFilled - before.filled;
+            console.log(JSON.stringify(out));
+        })();
+    `;
+    const out = JSON.parse(execFileSync(process.execPath, ["--expose-gc", "-e", script], { encoding: "utf8" }));
+    assert.deepEqual(out.live, { evicted: 1, dropped: 0 }, JSON.stringify(out));
+    assert.equal(out.same, true);
+    assert.equal(out.filled, 1, "the live input's tables were filled from what was exported");
+    assert.deepEqual(out.keptForTheJob, { evicted: 1, dropped: 0 }, JSON.stringify(out));
+    assert.equal(out.collected, true, JSON.stringify(out));
+    assert.equal(out.filledAfter, 0, JSON.stringify(out));
 });
 
 // The limit is on the forms other than the one just read into, and those
@@ -1035,3 +1108,270 @@ test("an engine that takes no more inputs or runs declines them and stays", asyn
     assert.equal(engineStats.wasm, before.wasm + 1);
 });
 
+
+// Samples given as bytes (a `Uint8Array`, a Node.js `Buffer`): the UTF-8
+// text `new TextDecoder().decode(bytes)` gives, without a leading byte order
+// mark and with U+FFFD for what is not UTF-8, read by the engine straight
+// from the bytes (or by TypeScript after decoding them).
+const utf8 = (text) => new TextEncoder().encode(text);
+class Bytes extends Uint8Array {}
+
+/** `bytes` at a non-zero offset of a larger buffer, between other bytes. */
+function offsetView(bytes) {
+    const buffer = new Uint8Array(bytes.length + 13);
+    buffer.fill(0xff);
+    buffer.set(bytes, 7);
+    return new Uint8Array(buffer.buffer, 7, bytes.length);
+}
+
+const byteForms = {
+    Uint8Array: (b) => b,
+    Buffer: (b) => Buffer.from(b),
+    "a Uint8Array subclass": (b) => Bytes.from(b),
+    "a view at a non-zero byteOffset": offsetView,
+};
+
+test("samples given as bytes are read as their UTF-8 text, by the engine", async () => {
+    for (const lang of ["typescript", "kotlin", "rust"]) {
+        const groups = Object.entries(samples);
+        const expected = await inMode("ts", async () => inside(await addAll(lang, groups)));
+        const expectedRun = await inMode("ts", async () => [...(await run(await addAll(lang, plainGroups, { sync: true }), lang))]);
+        for (const [form, make] of Object.entries(byteForms)) {
+            const asBytes = (list) => list.map((text) => make(utf8(text)));
+            const before = { ...engineStats };
+            const input = await addAll(lang, groups.map(([name, list]) => [name, asBytes(list)]));
+            assert.ok(engineStats.samplesRead > before.samplesRead, form);
+            assert.deepEqual(inside(input), expected, `${lang}, ${form}`);
+            // On TypeScript too.
+            const ts = await inMode("ts", async () => inside(await addAll(lang, groups.map(([name, list]) => [name, asBytes(list)]))));
+            assert.deepEqual(ts, expected, `${lang}, ${form}, TypeScript`);
+
+            const plain = plainGroups.map(([name, list]) => [name, asBytes(list)]);
+            const before2 = { ...engineStats };
+            const sync = await addAll(lang, plain, { sync: true });
+            assert.equal(engineStats.samplesRead, before2.samplesRead + plain.flatMap(([, l]) => l).length);
+            assert.deepEqual([...(await run(sync, lang))], expectedRun, `${lang}, ${form}, run`);
+            assert.equal(engineStats.tablesFilled, before2.tablesFilled);
+        }
+    }
+
+    noLeases();
+});
+
+test("bytes: a byte order mark, bytes that are not UTF-8, an empty buffer", async () => {
+    const decoded = (bytes) => new TextDecoder().decode(bytes);
+    const cases = [
+        // A byte order mark is not part of the text (as a string, it is not
+        // JSON: `JSON.parse` rejects U+FEFF).
+        new Uint8Array([0xef, 0xbb, 0xbf, ...utf8('{"bom": [1, "é"]}')]),
+        // Only one is.
+        new Uint8Array([0xef, 0xbb, 0xbf, 0xef, 0xbb, 0xbf, ...utf8("{}")]),
+        // Not UTF-8: each maximal invalid subpart becomes U+FFFD.
+        new Uint8Array([...utf8('{"a": "x'), 0xff, 0xc3, 0x28, 0xe2, 0x82, ...utf8('", "b": ["'), 0xed, 0xa0, 0x80, ...utf8('"]}')]),
+        // A key that is not UTF-8, and one that is the same after decoding.
+        new Uint8Array([...utf8('{"k'), 0x80, ...utf8('": 1, "k\u{fffd}": 2}')]),
+        // Not UTF-8 outside a string: not JSON either way.
+        new Uint8Array([...utf8("[1, "), 0xff, ...utf8("]")]),
+        // Empty, and only a byte order mark.
+        new Uint8Array([]),
+        new Uint8Array([0xef, 0xbb, 0xbf]),
+    ];
+    for (const bytes of cases) {
+        const text = decoded(bytes);
+        for (const sync of [false, true]) {
+            const attempt = (sample) => async () => {
+                const input = qt.jsonInputForTargetLanguage("rust");
+                const add = { name: "Bytes", samples: [sample, "[1]"] };
+                const failed = await outcome(async () => (sync ? input.addSourceSync(add) : input.addSource(add)));
+                const state = inside(input);
+                return { failed, state, result: failed.error === undefined ? [...(await run(input, "rust"))] : undefined };
+            };
+            const expected = await inMode("ts", attempt(text));
+            assert.deepEqual(await attempt(bytes)(), expected, `${[...bytes]} ${sync}`);
+            assert.deepEqual(await inMode("ts", attempt(bytes)), expected, `${[...bytes]} ${sync}, TypeScript`);
+        }
+    }
+
+    noLeases();
+});
+
+test("bytes changed after addSource change nothing", async () => {
+    const bytes = utf8('{"a": [1, {"b": "c"}]}');
+    const input = qt.jsonInputForTargetLanguage("typescript");
+    await input.addSource({ name: "T", samples: [bytes] });
+    const expected = await inMode("ts", async () => [...(await run(await addAll("typescript", [["T", ['{"a": [1, {"b": "c"}]}']]]), "typescript"))]);
+    bytes.fill(0x20);
+    assert.deepEqual([...(await run(input, "typescript"))], expected);
+    // Nor do they when the instance fails: the samples TypeScript reads
+    // again then are a copy.
+    const kept = utf8('{"x": true, "y": "\u00e9"}');
+    const input2 = qt.jsonInputForTargetLanguage("typescript");
+    await input2.addSource({ name: "T", samples: [kept] });
+    kept.fill(0x20);
+    const glue = engine.engineSync();
+    assert.throws(() => glue.__panicForTests(), WebAssembly.RuntimeError);
+    engine.discardEngine(glue);
+    const before = engineStats.tablesFilled;
+    assert.deepEqual(inside(input2), await inMode("ts", async () => inside(await addAll("typescript", [["T", ['{"x": true, "y": "\u00e9"}']]]))));
+    assert.equal(engineStats.tablesFilled, before + 1);
+});
+
+// The playground's workers let go of an input they will not use again
+// (`releaseJSONInput`, not public): its form is freed in the engine at once,
+// so that reading the next input does not find the engine past its limit
+// and evict it, as it would an input that is gone but not finalized yet.
+test("an input released is freed in the engine at once, and is not evicted", async () => {
+    const glue = engine.engineSync();
+    const count = glue.__jsonCount();
+    const held = glue.jsonHeld();
+    const make = () => addAll("rust", plainGroups);
+    const first = await make();
+    assert.equal(glue.__jsonCount(), count + 1);
+    assert.ok(glue.jsonHeld() > held);
+    // What the inputs of earlier tests hold fits, and no more: another
+    // input kept would be evicted.
+    const old = nativeSamples.setHeldLimit(held + 1);
+    try {
+        const before = { ...engineStats };
+        nativeSamples.releaseJSONInput(first);
+        assert.equal(glue.__jsonCount(), count);
+        assert.equal(glue.jsonHeld(), held);
+        const second = await make();
+        assert.equal(engineStats.evicted, before.evicted);
+        assert.equal(engineStats.tablesFilled, before.tablesFilled);
+        // The input released can no longer be used.
+        assert.throws(() => first._compressedJSON._strings, /samples of this input were released/);
+        await assert.rejects(run(first, "rust"), /samples of this input were released/);
+        // Without releasing it, the next input read evicts one.
+        await make();
+        assert.ok(engineStats.evicted > before.evicted);
+        assert.deepEqual([...(await run(second, "rust"))], await inMode("ts", async () => [...(await run(await make(), "rust"))]));
+        // Releasing an input the engine does not hold does nothing.
+        nativeSamples.releaseJSONInput(await inMode("ts", make));
+        nativeSamples.releaseJSONInput(first);
+    } finally {
+        nativeSamples.setHeldLimit(old);
+    }
+
+    noLeases();
+});
+
+// What the decoder throws for bytes that are not UTF-8 (a `RangeError` for
+// a text longer than the longest string) is the input's error, thrown from
+// `addSource` as on TypeScript: the engine has not failed, and keeps every
+// other input's samples. Such bytes are decoded once, also when the engine
+// then leaves the text to TypeScript (not JSON, or a string root).
+test("bytes that are not UTF-8: the decoder's error is the input's, and they are decoded once", async () => {
+    const decoderClass = globalThis.TextDecoder;
+    const decode = decoderClass.prototype.decode;
+    const notUtf8 = (json) => {
+        const bytes = utf8(json);
+        const at = bytes.indexOf(0x7e); // "~": a byte that becomes U+FFFD
+        bytes[at] = 0xff;
+        return bytes;
+    };
+    // How often the sample's own bytes were decoded (the glue decodes the
+    // engine's strings with a TextDecoder too).
+    let decoded = 0;
+    let watched;
+    let failing = false;
+    decoderClass.prototype.decode = function (input) {
+        if (input !== undefined && input === watched) {
+            decoded++;
+            if (failing) throw new RangeError("Invalid string length");
+        }
+        return decode.call(this, input);
+    };
+    try {
+        const glue = engine.engineSync();
+        const other = await addAll("rust", plainGroups);
+        const expected = await inMode("ts", async () => [...(await run(await addAll("rust", plainGroups), "rust"))]);
+        const before = { ...engineStats };
+        failing = true;
+        for (const sync of [false, true]) {
+            const input = qt.jsonInputForTargetLanguage("rust");
+            watched = notUtf8('{"a": "~"}');
+            const add = { name: "T", samples: [watched] };
+            const failed = await outcome(async () => (sync ? input.addSourceSync(add) : input.addSource(add)));
+            // quicktype's "Syntax error in input JSON" around it, as on TypeScript.
+            assert.match(failed.error?.message ?? "", /Invalid string length/);
+            const ts = await inMode("ts", async () => outcome(async () => qt.jsonInputForTargetLanguage("rust").addSource(add)));
+            assert.deepEqual(failed, ts);
+        }
+
+        failing = false;
+        // The engine did not fail: the other input's samples are still there.
+        assert.equal(engine.currentEngine(), glue);
+        assert.ok(!engine.isDiscarded(glue));
+        assert.equal(engineStats.rerun, before.rerun);
+        assert.deepEqual([...(await run(other, "rust"))], expected);
+        assert.equal(engineStats.tablesFilled, before.tablesFilled);
+
+        // Read on the engine: one decode.
+        for (const [json, form] of [
+            ['{"a": "~", "b": [1]}', "read by the engine"],
+            ['[1, "~", ', "not JSON"],
+            ['"~ a string root"', "a string root, left to TypeScript"],
+        ]) {
+            const bytes = notUtf8(json);
+            const text = new TextDecoder().decode(bytes);
+            watched = bytes;
+            decoded = 0;
+            const ours = await outcome(async () => {
+                const input = qt.jsonInputForTargetLanguage("rust");
+                await input.addSource({ name: "T", samples: [bytes] });
+                return inside(input);
+            });
+            assert.equal(decoded, 1, form);
+            const theirs = await inMode("ts", async () =>
+                outcome(async () => {
+                    const input = qt.jsonInputForTargetLanguage("rust");
+                    await input.addSource({ name: "T", samples: [text] });
+                    return inside(input);
+                }),
+            );
+            assert.deepEqual(ours, theirs, form);
+        }
+    } finally {
+        decoderClass.prototype.decode = decode;
+    }
+
+    noLeases();
+});
+
+// A `Uint8Array` (or `Buffer`) from another realm, such as a `vm` context
+// or an iframe, is bytes too, though `instanceof Uint8Array` says no.
+test("bytes from another realm are bytes", async () => {
+    const vm = await import("node:vm");
+    const groups = Object.entries(samples);
+    const expected = await inMode("ts", async () => inside(await addAll("typescript", groups)));
+    const foreign = (text) => vm.runInNewContext("new Uint8Array(bytes)", { bytes: [...utf8(text)] });
+    assert.ok(!(foreign("1") instanceof Uint8Array));
+    for (const mode of [undefined, "ts"]) {
+        const before = engineStats.samplesRead;
+        const input = await inMode(mode, async () => addAll("typescript", groups.map(([name, list]) => [name, list.map(foreign)])));
+        assert.deepEqual(inside(input), expected, mode ?? "the engine");
+        if (mode === undefined) assert.ok(engineStats.samplesRead > before);
+    }
+
+    // Not the comma-joined byte values (`[49]` is "1", not 49).
+    const one = qt.jsonInputForTargetLanguage("typescript");
+    await one.addSource({ name: "One", samples: [foreign('"x"')] });
+    assert.deepEqual([...(await run(one, "typescript"))], await inMode("ts", async () => [...(await run(await addAll("typescript", [["One", ['"x"']]]), "typescript"))]));
+    noLeases();
+});
+
+// How an input's samples are read, for the playground's reuse of an input
+// (`readingKey`, not public): from the configuration the engine reads them
+// with, so that two inputs share it exactly when they read alike.
+test("the reading key follows the CompressedJSON's configuration", () => {
+    const key = (lang, handleRefs = false, rendererOptions = {}) =>
+        nativeSamples.readingKey(qt.jsonInputForTargetLanguage(lang, undefined, handleRefs, rendererOptions));
+    assert.equal(key("go"), key("cs"));
+    assert.notEqual(key("go"), key("kotlin"));
+    assert.notEqual(key("kotlin"), key("swift"));
+    assert.notEqual(key("go"), key("go", true));
+    assert.notEqual(key("rust"), key("rust", false, { "integer-type": "force-i32" }));
+    assert.equal(nativeSamples.readingKey(new qt.JSONInput(new (class extends CompressedJSONFromString {})(new DefaultDateTimeRecognizer(), false))), undefined);
+    assert.equal(nativeSamples.readingKey({}), undefined);
+});

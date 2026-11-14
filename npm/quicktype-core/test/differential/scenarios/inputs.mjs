@@ -5,7 +5,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { inputsDir } from "../packages.mjs";
+import { inputsDir, jsonSample } from "../packages.mjs";
 
 /** quicktype's `defaultTargetLanguages`, by canonical name. */
 export const allLanguages = [
@@ -28,10 +28,33 @@ function files(dir, extension) {
     return found;
 }
 
+/** The languages every JSON file is also read as bytes for (`inputs-bytes/`). */
+const bytesLanguages = ["typescript", "rust", "kotlin", "swift", "go", "python"];
+
 export function scenarios() {
     const list = [];
     const jsonFiles = files(path.join(inputsDir, "json"), ".json");
     const schemaFiles = files(path.join(inputsDir, "schema"), ".schema");
+    // The file's bytes (a Buffer) for this package, its text for the
+    // reference: the same output.
+    for (const lang of bytesLanguages) {
+        for (const file of jsonFiles) {
+            list.push({
+                id: `inputs-bytes/${lang}/${path.relative(inputsDir, file)}`,
+                category: "inputs",
+                group: `json as bytes → ${lang}`,
+                lang,
+                async run(qt, ctx) {
+                    const input = qt.jsonInputForTargetLanguage(lang);
+                    await input.addSource({ name: "TopLevel", samples: [jsonSample(ctx, fs.readFileSync(file))] });
+                    const inputData = new qt.InputData();
+                    inputData.addInput(input);
+                    return await qt.quicktypeMultiFile({ lang, inputData });
+                },
+            });
+        }
+    }
+
     for (const lang of allLanguages) {
         for (const file of jsonFiles) {
             list.push({

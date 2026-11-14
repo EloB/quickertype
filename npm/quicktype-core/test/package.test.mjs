@@ -159,32 +159,58 @@ test("the vendored files the bridge depends on are unchanged", async () => {
     assert.ok(Object.keys(guarded).length > 10);
     const changed = Object.entries(guarded)
         // The files modified here; their hashes are upstream's.
-        .filter(([file]) => file !== "src/Run.ts" && file !== "src/input/CompressedJSON.ts")
+        .filter(([file]) => !["src/Run.ts", "src/input/CompressedJSON.ts", "src/input/Inputs.ts"].includes(file))
         .filter(([file, hash]) => createHash("sha256").update(fs.readFileSync(path.join(packageRoot, file))).digest("hex") !== hash)
         .map(([file]) => file);
     assert.deepEqual(changed, []);
 });
 
-test("CompressedJSON.ts is upstream's but for the hook of the JSON samples reader", (t) => {
-    const configured = process.env.QUICKTYPE_REFERENCE;
-    const candidates = configured ? [configured] : [path.join(repositoryRoot, "..", "quicktype"), path.join(repositoryRoot, "..", "..", "quicktype")];
-    const file = path.join("packages", "quicktype-core", "src", "input", "CompressedJSON.ts");
-    const upstream = candidates.map((c) => path.join(c, file)).find((f) => fs.existsSync(f));
-    if (upstream === undefined) {
-        t.skip("no reference checkout");
-        return;
+/**
+ * What src/ changes in two upstream files besides Run.ts, as [ours,
+ * upstream] pairs: the hook of the JSON samples reader, and samples given as
+ * bytes (README, "JSON samples as bytes"), typed and decoded.
+ */
+const modifiedParts = {
+    "input/CompressedJSON.ts": [
+        ['import { readSampleNatively, sampleText } from "../native/hook.js";\n', ""],
+        [
+            "        // quicktype-wasm: the WebAssembly engine reads the sample if it can,\n" +
+                "        // and a sample may be the bytes of UTF-8 text.\n" +
+                "        const value = readSampleNatively(this, input);\n" +
+                "        if (value !== undefined) return value;\n\n",
+            "",
+        ],
+        ["const json = JSON.parse(sampleText(input) as string);", "const json = JSON.parse(input);"],
+        ["extends CompressedJSON<string | Uint8Array> {", "extends CompressedJSON<string> {"],
+        ["public async parse(input: string | Uint8Array): Promise<Value> {", "public async parse(input: string): Promise<Value> {"],
+        ["public parseSync(input: string | Uint8Array): Value {", "public parseSync(input: string): Value {"],
+    ],
+    "input/Inputs.ts": [["): JSONInput<string | Uint8Array> {", "): JSONInput<string> {"]],
+};
+
+/** `text` with each of `parts` replaced, once, by its upstream text. */
+function upstreamOf(text, parts) {
+    for (const [ours, upstream] of parts) {
+        assert.ok(text.includes(ours), ours);
+        text = text.replace(ours, upstream);
     }
 
-    const ours = fs.readFileSync(path.join(packageRoot, "src", "input", "CompressedJSON.ts"), "utf8");
-    const hook = [
-        'import { readSampleNatively } from "../native/hook.js";\n',
-        "        // quicktype-wasm: the WebAssembly engine reads the sample if it can.\n" +
-            "        const value = readSampleNatively(this, input);\n" +
-            "        if (value !== undefined) return value;\n\n",
-    ];
-    for (const part of hook) assert.ok(ours.includes(part), part);
-    const unhooked = hook.reduce((text, part) => text.replace(part, ""), ours);
-    assert.equal(unhooked, fs.readFileSync(upstream, "utf8"));
+    return text;
+}
+
+test("CompressedJSON.ts and Inputs.ts are upstream's but for the samples reader's hook and byte samples", (t) => {
+    const configured = process.env.QUICKTYPE_REFERENCE;
+    const candidates = configured ? [configured] : [path.join(repositoryRoot, "..", "quicktype"), path.join(repositoryRoot, "..", "..", "quicktype")];
+    for (const [file, parts] of Object.entries(modifiedParts)) {
+        const upstream = candidates.map((c) => path.join(c, "packages", "quicktype-core", "src", file)).find((f) => fs.existsSync(f));
+        if (upstream === undefined) {
+            t.skip("no reference checkout");
+            return;
+        }
+
+        const ours = fs.readFileSync(path.join(packageRoot, "src", file), "utf8");
+        assert.equal(upstreamOf(ours, parts), fs.readFileSync(upstream, "utf8"), file);
+    }
 });
 
 test("declaration files are byte-identical to the reference build", (t) => {
@@ -200,9 +226,24 @@ test("declaration files are byte-identical to the reference build", (t) => {
 
     const declarations = walk(referenceDist, (n) => n.endsWith(".d.ts")).map((f) => path.relative(referenceDist, f));
     assert.ok(declarations.length > 400);
+    // But for JSON samples given as bytes, which the types of two
+    // declarations take too.
+    const widened = {
+        [path.join("input", "CompressedJSON.d.ts")]: [
+            ["extends CompressedJSON<string | Uint8Array> {", "extends CompressedJSON<string> {"],
+            ["parse(input: string | Uint8Array): Promise<Value>;", "parse(input: string): Promise<Value>;"],
+            ["parseSync(input: string | Uint8Array): Value;", "parseSync(input: string): Value;"],
+        ],
+        [path.join("input", "Inputs.d.ts")]: [["): JSONInput<string | Uint8Array>;", "): JSONInput<string>;"]],
+    };
     const different = declarations.filter((f) => {
         const ours = path.join(dist, f);
-        return !fs.existsSync(ours) || !fs.readFileSync(ours).equals(fs.readFileSync(path.join(referenceDist, f)));
+        if (!fs.existsSync(ours)) return true;
+        const reference = fs.readFileSync(path.join(referenceDist, f), "utf8");
+        const text = fs.readFileSync(ours, "utf8");
+        // The CommonJS and ES module trees alike.
+        const parts = widened[f.replace(/^esm[\\/]/, "")];
+        return (parts === undefined ? text : upstreamOf(text, parts)) !== reference;
     });
     assert.deepEqual(different, []);
 });

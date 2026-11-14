@@ -135,9 +135,12 @@ impl RunContext {
         name: &str,
         f: impl FnOnce() -> std::result::Result<T, E>,
     ) -> std::result::Result<T, E> {
-        let start = (self.clock)();
+        let _span = crate::trace::span(name);
+        let start = self.start_timing();
         let result = f()?;
-        self.report(name, (self.clock)() - start);
+        if let Some(start) = start {
+            self.report(name, (self.clock)() - start);
+        }
         Ok(result)
     }
 
@@ -149,10 +152,20 @@ impl RunContext {
         name: &str,
         f: impl Future<Output = std::result::Result<T, E>>,
     ) -> std::result::Result<T, E> {
-        let start = (self.clock)();
+        let _span = crate::trace::span(name);
+        let start = self.start_timing();
         let result = f.await?;
-        self.report(name, (self.clock)() - start);
+        if let Some(start) = start {
+            self.report(name, (self.clock)() - start);
+        }
         Ok(result)
+    }
+
+    /// The clock's time now, if a pass's time is reported at all (to
+    /// `onTiming`, or printed): the clock is not read for nothing (in
+    /// WebAssembly every reading is a call into JavaScript).
+    fn start_timing(&self) -> Option<f64> {
+        (self.debug_print_times || self.on_timing.is_some()).then(|| (self.clock)())
     }
 
     /// `time` as a [`Timer`] that outlives this borrow of the context.
@@ -160,10 +173,14 @@ impl RunContext {
         let clock = Rc::clone(&self.clock);
         let on_timing = self.on_timing.clone();
         let print_times = self.debug_print_times;
+        let timed = print_times || on_timing.is_some();
         Rc::new(move |name, f| {
-            let start = clock();
+            let _span = crate::trace::span(name);
+            let start = timed.then(|| clock());
             f();
-            report(print_times, on_timing.as_ref(), name, clock() - start);
+            if let Some(start) = start {
+                report(print_times, on_timing.as_ref(), name, clock() - start);
+            }
         })
     }
 
@@ -867,6 +884,7 @@ impl<'a> Run<'a> {
         WithTypeNames {
             type_names,
             future: Box::pin(async move {
+                let _span = crate::trace::span("run");
                 if let Some(result) = self.pre_run()? {
                     return Ok(result);
                 }
@@ -879,6 +897,7 @@ impl<'a> Run<'a> {
     /// `runSync()`, with the run's own random type names.
     fn run_sync(mut self) -> Result<MultiFileRenderResult> {
         with_type_name_generator(&Rc::new(TypeNameGenerator::new()), || {
+            let _span = crate::trace::span("run");
             if let Some(result) = self.pre_run()? {
                 return Ok(result);
             }

@@ -28,6 +28,36 @@ inputData.addInput(input);
 const { lines } = await quicktype({ inputData, lang: "typescript" });
 ```
 
+### JSON samples as bytes
+
+The JSON inputs of `jsonInputForTargetLanguage` also take a sample as its
+UTF-8 bytes: a `Uint8Array`, or a Node.js `Buffer`, also one from another
+realm (a `vm` context, an iframe). This is an addition to
+quicktype-core's API. A sample given as bytes is the text that
+`new TextDecoder().decode(bytes)` gives, which is also what a browser's
+`file.text()` gives for a file: a leading byte order mark is not part of
+the text, and every sequence that is not UTF-8 becomes U+FFFD. The engine
+reads the bytes as they are, without a JavaScript string in between. A
+string sample has to be decoded into a string first, then encoded again
+into the engine's memory.
+
+```ts
+import * as fs from "node:fs";
+import { jsonInputForTargetLanguage } from "quickertype-core";
+
+const input = jsonInputForTargetLanguage("typescript");
+await input.addSource({ name: "Cards", samples: [fs.readFileSync("cards.json")] });
+```
+
+In a browser, use `new Uint8Array(await file.arrayBuffer())`. Bytes can
+also hold a file too large to be a JavaScript string, which in V8 is about
+2^29 UTF-16 code units. The bytes are read when `addSource` is called, so
+changing them afterwards changes nothing. On the TypeScript engine (see
+below), the bytes are decoded first, then parsed with `JSON.parse`. Bytes
+that are not UTF-8 are decoded once either way, and what the decoder
+throws (a `RangeError` for a text longer than the longest string) is
+`addSource`'s error, as on the TypeScript engine.
+
 `require("quickertype-core")` works too. The package matches `quicktype-core`
 24.0.0 at quicktype commit
 [`c39af7d3`](https://github.com/glideapps/quicktype/tree/c39af7d303b025280e2668a1b2d29913093593c9)
@@ -42,11 +72,14 @@ The rest of this file is about how the package works and how to build it.
 ## How it works
 
 `src/` is quicktype's `packages/quicktype-core/src` at the commit in
-`src/native/UPSTREAM.json`, byte for byte, except two files: `Run.ts`,
+`src/native/UPSTREAM.json`, byte for byte, except three files: `Run.ts`,
 which after `preRun()` hands the run to the engine (`src/native/bridge.ts`)
-when the engine can do it exactly, and `input/CompressedJSON.ts`, whose
+when the engine can do it exactly; `input/CompressedJSON.ts`, whose
 `CompressedJSONFromString.parseSync` lets the engine read a JSON sample
-before parsing it itself (see [JSON samples](#json-samples)). Everything
+before parsing it itself (see [JSON samples](#json-samples)), and decodes
+a sample given as bytes; and `input/Inputs.ts`, whose
+`jsonInputForTargetLanguage` is typed to take such samples (see [JSON
+samples as bytes](#json-samples-as-bytes)). Everything
 else before the run stays in TypeScript, so inputs are collected, schema
 text parsed (JSON, then YAML) and files and URLs read exactly as before.
 Each run is **one call** into `crates/quicktype-wasm`, carrying the JSON
@@ -92,9 +125,11 @@ load the engine an error instead of a fallback. `engineStats` in
 the runs the engine declined (`unsupported`, by feature in
 `unsupportedBy`) or that were redone after it failed (`rerun`), the JSON
 samples the engine read (`samplesRead`), the `CompressedJSON`s whose
-TypeScript tables were filled after all (`tablesFilled`), and the
+TypeScript tables were filled after all (`tablesFilled`), the
 compressed forms the engine exported and let go of to stay within its
-memory limit (`evicted`; see [JSON samples](#json-samples)).
+memory limit (`evicted`; see [JSON samples](#json-samples)), and those
+it freed without exporting them because nothing could reach them any
+more (`dropped`).
 
 ### JSON samples
 
@@ -114,9 +149,12 @@ class without own properties whose methods are still the ones that class
 had then; a valid integer range: all checked at its first sample; for the
 later ones, that its prototype, the number of its own properties, its
 methods and its configuration are unchanged) and a string sample that is
-well-formed UTF-16, while the engine is compiled
-(see below) and not forced off, that is **one engine call per sample**:
-`jsonRead(id, text)` reads the text with the port's `JSON.parse`-semantics
+well-formed UTF-16 (or a sample given as bytes), while the engine is
+compiled (see below) and not forced off, that is **one engine call per
+sample**: `jsonRead(id, text)` (`jsonReadBytes(id, bytes)` for bytes,
+which reads them as UTF-8 after a leading byte order mark, and leaves
+bytes that are not UTF-8 to the facade, which decodes them as
+`TextDecoder` does and calls `jsonRead`) reads the text with the port's `JSON.parse`-semantics
 reader (`CompressedJson::read_string_sample` in quicktype-core: V8's
 grammar, own-property order, the last of duplicate keys) into a compressed
 form held in WebAssembly memory, one per `CompressedJSON` (`id`, made by
@@ -203,11 +241,14 @@ tables are exported to JavaScript, where the garbage collector sees them,
 and the form is freed in the engine: the input's `CompressedJSON` gets those
 tables when anything first uses it, and from then on it is an ordinary
 `CompressedJSON`, whose further samples TypeScript reads and whose runs
-send its tables. Whether that `CompressedJSON` is still in use cannot be
-told (a `WeakRef` would keep it alive until the current job ends, which in
-a loop of `await`s is the whole loop), so the tables of one that is gone
-but not finalized yet are exported too, and collected with it. A run that
-holds an evicted form keeps it until it ends. The limit is the form of
+send its tables. A form whose `CompressedJSON` the garbage collector has
+collected already, though its finalizer has not run yet (its `WeakRef` no
+longer dereferences), is not exported but dropped, first: nothing can reach
+it. One that is gone but not collected yet cannot be told from one in use
+(a `WeakRef` also keeps its target alive until the job that made or read
+it ends, which in a loop of `await`s is the whole loop), so its tables are
+exported, and collected with it. A run that holds an evicted form keeps it
+until it ends. The limit is the form of
 about 190 MB of JSON (a 104 MB sample takes 138 MiB), more than nearly any
 program has in its inputs at once, so that eviction is a backstop for
 inputs the garbage collector has not got to, not something runs normally
@@ -220,6 +261,23 @@ long-running process stays at about the limit plus the largest of those.
 (With every input kept and a 16 MiB limit, 200 inputs of a 1 MB sample
 leave the engine at 54.6 MiB of memory, as after the first 50; without a
 limit it grew by 2.2 MiB per input, to 539 MiB.)
+
+A long-running program that makes many large inputs one after the other
+can therefore pay for eviction until the garbage collector has collected
+the old ones: their forms still count toward the limit, and their tables
+are copied out when the next input is read. That is expected, and it only
+matters for inputs whose forms come near the limit on their own. In
+Chrome, the form of a 450 MB sample takes 230–250 ms to evict, and that of
+a 656 MB sample about 340 ms. In a benchmark loop that read one 450 MB
+input per round, 7 of 8 were evicted while an old input was still
+reachable from the loop's own frame (the previous round's variables), even
+with `gc()` between rounds. With each round in a function of its own and
+`gc()` after a task boundary, all 7 were dropped instead, and reading took
+2,212 instead of 2,482 ms. The playground's workers avoid eviction
+altogether with `releaseJSONInput(input)` in `dist/native/samples.js`,
+which frees the form of an input they will not use again right away. That
+function is not part of the public API: the input must not be used
+afterwards, and using it throws.
 
 **Why this cannot be told apart from TypeScript reading the samples:**
 

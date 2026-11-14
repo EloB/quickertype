@@ -799,10 +799,13 @@ impl JsonInput {
         }
         // Without running tallies, those of the compressed form, if it is
         // tallied (an error making them is this way's).
+        let span = crate::trace::span("read input: tally the form");
         let (inferred_from, compressed_tallies) = match self.tallies {
             Some(_) => (JsonInference::RunningTallies, Ok(None)),
             None => self.compressed_tallies(),
         };
+        drop(span);
+        let _span = crate::trace::span("read input: infer");
         self.inferred_from = Some(inferred_from);
         let compressed_tallies = compressed_tallies?;
         // The tallies, and the text of their keys and cases.

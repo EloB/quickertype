@@ -78,3 +78,13 @@ export function loadPackages() {
     const ours = { label: packageRoot, root: packageRoot, qt: oursQt, wrap: (f) => withEngine("wasm", f), stats };
     return { reference, ours, checkout };
 }
+
+/**
+ * A JSON sample for `ctx`'s package: the UTF-8 bytes `bytes` (or what
+ * `view` makes of them) for this package, which reads them as the text
+ * `new TextDecoder().decode(bytes)` gives; that text, as a string, for the
+ * reference.
+ */
+export function jsonSample(ctx, bytes, view = (b) => b) {
+    return ctx.ours ? view(bytes) : new TextDecoder().decode(bytes);
+}

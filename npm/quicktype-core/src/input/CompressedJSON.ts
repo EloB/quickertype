@@ -2,7 +2,7 @@ import { addHashCode, hashCodeInit, hashString } from "collection-utils";
 
 import { inferTransformedStringTypeKindForString } from "../attributes/StringTypes.js";
 import type { DateTimeRecognizer } from "../DateTime.js";
-import { readSampleNatively } from "../native/hook.js";
+import { readSampleNatively, sampleText } from "../native/hook.js";
 import {
     INT64_RANGE,
     type IntegerRange,
@@ -364,17 +364,18 @@ export abstract class CompressedJSON<T> {
     }
 }
 
-export class CompressedJSONFromString extends CompressedJSON<string> {
-    public async parse(input: string): Promise<Value> {
+export class CompressedJSONFromString extends CompressedJSON<string | Uint8Array> {
+    public async parse(input: string | Uint8Array): Promise<Value> {
         return this.parseSync(input);
     }
 
-    public parseSync(input: string): Value {
-        // quicktype-wasm: the WebAssembly engine reads the sample if it can.
+    public parseSync(input: string | Uint8Array): Value {
+        // quicktype-wasm: the WebAssembly engine reads the sample if it can,
+        // and a sample may be the bytes of UTF-8 text.
         const value = readSampleNatively(this, input);
         if (value !== undefined) return value;
 
-        const json = JSON.parse(input);
+        const json = JSON.parse(sampleText(input) as string);
         this.process(json);
         return this.finish();
     }

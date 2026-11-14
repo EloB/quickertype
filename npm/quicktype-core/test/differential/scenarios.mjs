@@ -11,7 +11,10 @@
 //   (undefined when the reference is this package's own TypeScript
 //   engine), e.g. for its built quicktype-typescript-input;
 // * `deepRequire(qt, subpath)`: a deep import from `qt`'s package, such as
-//   `deepRequire(qt, "dist/language/Kotlin/utils.js")`.
+//   `deepRequire(qt, "dist/language/Kotlin/utils.js")`;
+// * `ours`: whether `qt` is this package (on the WebAssembly engine), which
+//   also takes JSON samples as bytes: a scenario can give it the bytes of
+//   the text it gives the reference as a string (`jsonSample` in packages.mjs).
 
 import * as apiTests from "./scenarios/api-tests.mjs";
 import * as corpus from "./scenarios/corpus.mjs";
@@ -39,3 +42,4 @@ export function allScenarios(categories) {
 
     return list;
 }
+

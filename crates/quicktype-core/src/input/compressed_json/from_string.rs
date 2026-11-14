@@ -1102,7 +1102,9 @@ pub(crate) fn read_string_sample_into<S: JsonSink>(
     }
     sink.string_reader().reserve_serials(text.len());
     let mut recorder = Recorder::new(sink, text, limits);
+    let span = crate::trace::span("read: record");
     let recorded = recorder.record(sink);
+    drop(span);
     let Recorder { nodes, decoded, .. } = recorder;
     let result = match recorded {
         Ok(()) => {
@@ -1111,7 +1113,9 @@ pub(crate) fn read_string_sample_into<S: JsonSink>(
                 nodes: &nodes,
                 decoded: &decoded,
             };
+            let span = crate::trace::span("read: commit");
             let committed = tape.commit(sink);
+            drop(span);
             if committed.is_err() {
                 sink.reset_partial_sample();
             }

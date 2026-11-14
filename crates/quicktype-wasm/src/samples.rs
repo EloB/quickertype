@@ -75,6 +75,11 @@ pub const INVALID: i32 = 0;
 /// it, with TypeScript.
 pub const DECLINED: i32 = -1;
 
+/// [`json_read_bytes`]: the bytes are not UTF-8; nothing was read. The
+/// facade decodes them (as `TextDecoder` does, which replaces what is not
+/// UTF-8) and reads the text with [`json_read`].
+pub const NOT_UTF8: i32 = -2;
+
 /// A JavaScript `CompressedJSON`'s samples.
 struct Samples {
     /// `None` while [`json_read`] reads a sample into it (and for good if
@@ -144,7 +149,29 @@ pub fn json_create(
 /// [`DECLINED`].
 #[wasm_bindgen(js_name = jsonRead)]
 pub fn json_read(id: f64, text: &str) -> i32 {
+    crate::install_clock();
+    let _span = quicktype_core::trace::span("jsonRead");
     read_with(id, |cjson| cjson.read_string_sample(text, LIMITS))
+}
+
+/// [`json_read`] for a sample given as bytes: the text that `new
+/// TextDecoder().decode(bytes)` gives, read without decoding the bytes into
+/// a JavaScript string and encoding that again into WebAssembly memory. A
+/// leading byte order mark is not part of the text, as for the decoder.
+/// Bytes that are not UTF-8 are not read ([`NOT_UTF8`]): the decoder would
+/// replace what is not UTF-8 with U+FFFD, and the facade does that.
+#[wasm_bindgen(js_name = jsonReadBytes)]
+pub fn json_read_bytes(id: f64, bytes: &[u8]) -> i32 {
+    crate::install_clock();
+    let _span = quicktype_core::trace::span("jsonRead");
+    let bytes = bytes.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(bytes);
+    let span = quicktype_core::trace::span("read: check UTF-8");
+    let text = std::str::from_utf8(bytes);
+    drop(span);
+    match text {
+        Ok(text) => read_with(id, |cjson| cjson.read_string_sample(text, LIMITS)),
+        Err(_) => NOT_UTF8,
+    }
 }
 
 /// [`json_read`] with `read` reading the sample. The compressed form is
@@ -399,6 +426,52 @@ mod tests {
         json_drop(id);
         assert_eq!(json_read(id, "[]"), DECLINED);
         assert!(json_acquire(id).is_none());
+    }
+
+    /// Bytes are read as the UTF-8 text a `TextDecoder` gives: a leading
+    /// byte order mark is not part of it, and bytes that are not UTF-8 are
+    /// left to the facade, with nothing read.
+    #[test]
+    fn bytes() {
+        let tables = |read: &dyn Fn(f64) -> i32| {
+            let id = create("default", None, None);
+            let root = read(id);
+            let tables = (root > 0).then(|| form(id).to_tables(&[]).0);
+            json_drop(id);
+            (root, tables.map(|t| (t.strings, t.objects, t.arrays)))
+        };
+        let text = r#"{"a": ["é", 1, {"b": "2020-01-01"}]}"#;
+        let expected = tables(&|id| json_read(id, text));
+        assert!(expected.0 > 0);
+        assert_eq!(tables(&|id| json_read_bytes(id, text.as_bytes())), expected);
+        let bom = [b"\xEF\xBB\xBF".as_slice(), text.as_bytes()].concat();
+        assert_eq!(tables(&|id| json_read_bytes(id, &bom)), expected);
+        // Only one byte order mark is not part of the text; as a string,
+        // U+FEFF is not JSON.
+        let two = [b"\xEF\xBB\xBF".as_slice(), &bom].concat();
+        assert_eq!(tables(&|id| json_read_bytes(id, &two)), (INVALID, None));
+        assert_eq!(
+            tables(&|id| json_read(id, &format!("\u{feff}{text}"))),
+            (INVALID, None)
+        );
+        for bad in [
+            &b"[\"\xFF\"]"[..],
+            b"[\"\xED\xA0\x80\"]",
+            b"{\"a\xC3\": 1}",
+            b"[1, \xFF]",
+        ] {
+            let id = create("default", None, None);
+            let before = form(id).heap_size();
+            assert_eq!(json_read_bytes(id, bad), NOT_UTF8);
+            assert_eq!(form(id).heap_size(), before);
+            assert!(json_read(id, "[1]") > 0);
+            json_drop(id);
+        }
+        assert_eq!(tables(&|id| json_read_bytes(id, b"")), (INVALID, None));
+        assert_eq!(
+            tables(&|id| json_read_bytes(id, b"\xEF\xBB\xBF")),
+            (INVALID, None)
+        );
     }
 
     #[test]

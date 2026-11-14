@@ -37,6 +37,8 @@ export interface WasmGlue {
     /** `undefined` if the engine has as many inputs as it takes. */
     jsonCreate(dateTime: string, handleRefs: boolean, min: string | undefined, max: string | undefined): number | undefined;
     jsonRead(id: number, text: string): number;
+    /** `jsonRead` for the UTF-8 bytes of a sample; -2 if they are not UTF-8 (nothing is read). */
+    jsonReadBytes(id: number, bytes: Uint8Array): number;
     jsonDrop(id: number): void;
     /** The bytes the compressed forms hold together. */
     jsonHeld(): number;
@@ -54,6 +56,8 @@ export interface WasmGlue {
     __heapBytes(): number;
     /** `NaN` unless the engine is built with `--heap-stats`. */
     __heapPeak(): number;
+    /** The spans recorded since the last call; only in engines built with `--trace`. */
+    __trace?(): string;
     engineVersion(): string;
     __pow(x: number, y: number): number;
     __panicForTests(): void;

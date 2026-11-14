@@ -1,7 +1,7 @@
 {
     "repository": "https://github.com/glideapps/quicktype",
     "commit": "c39af7d303b025280e2668a1b2d29913093593c9",
-    "comment": "Upstream files whose internals or behavior src/native depends on, with their SHA-256 at that commit. Run.ts and input/CompressedJSON.ts are modified here; the others are vendored unchanged. When one of them changes upstream, review src/native before syncing (script/sync-upstream.mjs).",
+    "comment": "Upstream files whose internals or behavior src/native depends on, with their SHA-256 at that commit. Run.ts, input/CompressedJSON.ts and input/Inputs.ts are modified here; the others are vendored unchanged. When one of them changes upstream, review src/native before syncing (script/sync-upstream.mjs).",
     "guarded": {
         "src/Run.ts": "429586d910f21e6a6486eb19af14a04661f62a23a997496a85b4fbfea43fca84",
         "src/Annotation.ts": "5097a9e42969b9904a541fe461c618533c34f4557ad4723361ff10e425105e42",

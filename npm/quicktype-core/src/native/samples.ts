@@ -2,10 +2,12 @@
 //
 // `JSONInput.addSource`/`addSourceSync` parse each sample right away with
 // `CompressedJSONFromString.parseSync`, which asks `readSample` first (the
-// one line changed in src/input/CompressedJSON.ts). For a built-in
+// lines changed in src/input/CompressedJSON.ts). For a built-in
 // `CompressedJSONFromString` and a string sample, the engine reads the text
 // (crates/quicktype-wasm/src/samples.rs: the port's `JSON.parse`-semantics
-// reader) into a compressed form it keeps for every run that uses the
+// reader; a sample given as a `Uint8Array` is its UTF-8 bytes, which the
+// engine reads as they are, `jsonReadBytes`, as the text `TextDecoder`
+// would give) into a compressed form it keeps for every run that uses the
 // input, and returns the sample's root `Value` exactly as TypeScript would
 // have computed it. The TypeScript tables of the `CompressedJSON` stay
 // empty until something reads them: its four table fields become accessors
@@ -16,7 +18,9 @@
 // of the tables are both skipped.
 //
 // Everything else is read by TypeScript, as before, after the tables are
-// filled: samples that are not strings or not well-formed UTF-16; samples
+// filled (a `Uint8Array` decoded first, `sampleText` in hook.ts): samples
+// that are neither strings nor `Uint8Array`s, strings that are not
+// well-formed UTF-16; samples
 // the engine declines (a string root value, whose index depends on
 // TypeScript's string table; nesting deeper than its limit, where
 // TypeScript's recursive `process` could run out of stack; a `\u` escape
@@ -46,7 +50,7 @@ import { CompressedJSONFromString, Tag, valueTag } from "../input/CompressedJSON
 import { engineFailed, engineStats } from "./bridge.js";
 import { dateTimeKind, hasOnlyBuiltinFields, isWellFormed } from "./encode.js";
 import { engineIfCompiled, engineMode, engineSync, isDiscarded } from "./engine.js";
-import { installSampleReader } from "./hook.js";
+import { decodeUtf8, installSampleReader, isBytes, passDecoded, sampleText } from "./hook.js";
 import type { ExportedTables, WasmGlue } from "./wasm/glue.js";
 
 // biome-ignore-all lint/suspicious/noExplicitAny: the samples reader reads private fields of the facade's objects
@@ -78,12 +82,13 @@ interface NativeSamples {
      */
     readonly ownProperties: number;
     /**
-     * Every sample the engine read into these tables, in order, while they
-     * add up to at most `keptTexts` code units; `undefined` after that.
-     * Only for an engine instance that fails (see `materialize`).
+     * Every sample the engine read into these tables, in order (a copy of
+     * the bytes of one given as a `Uint8Array`), while they add up to at
+     * most `keptTexts` code units or bytes; `undefined` after that. Only
+     * for an engine instance that fails (see `materialize`).
      */
-    texts: string[] | undefined;
-    /** The code units of the samples read. */
+    texts: Array<string | Uint8Array> | undefined;
+    /** The code units (or bytes) of the samples read. */
     textLength: number;
     /**
      * The bytes of its form, as `jsonHeld` counts them: what it added to
@@ -98,6 +103,12 @@ interface NativeSamples {
      * longer has it, and `materialize` fills the fields from these.
      */
     exported?: ExportedTables;
+    /**
+     * The `CompressedJSON`, weakly (where the host has `WeakRef`): once it
+     * no longer dereferences, nothing can reach the form, which `evict`
+     * then drops instead of exporting its tables.
+     */
+    readonly owner: { deref(): object | undefined } | undefined;
 }
 
 /**
@@ -179,8 +190,67 @@ function touch(state: NativeSamples): void {
     recent.add(state);
 }
 
+/**
+ * What `jsonReadBytes` returns for bytes that are not UTF-8 (nothing is
+ * read; crates/quicktype-wasm/src/samples.rs, `NOT_UTF8`).
+ */
+const notUtf8 = -2;
+
 /** The fields a sample changes when TypeScript reads it. */
 const tableFields = ["_strings", "_stringIndexes", "_objects", "_arrays"];
+
+/**
+ * Not public (the playground's workers use it): frees the engine's
+ * compressed form of `input`'s `CompressedJSON` now, instead of when the
+ * garbage collector has finalized the input, so that it no longer counts
+ * toward `heldLimit` (an input that is gone but not finalized yet would be
+ * evicted, its tables exported, when the next one is read). The input must
+ * not be used afterwards: its samples are gone, and reading its tables, or
+ * a run on it, throws. A run that holds the form keeps it until it ends.
+ */
+export function releaseJSONInput(input: any): void {
+    const cjson = input?._compressedJSON;
+    const state = cjson === undefined || cjson === null ? undefined : states.get(cjson);
+    if (state === undefined) return;
+    states.delete(cjson);
+    recent.delete(state);
+    registry.unregister(state);
+    const released = new Error("quicktype-core: the JSON samples of this input were released");
+    for (const [name, descriptor] of state.fields) {
+        const fail = (): never => {
+            throw released;
+        };
+        Object.defineProperty(cjson, name, { configurable: true, enumerable: descriptor.enumerable, get: fail, set: fail });
+    }
+
+    if (state.exported === undefined) {
+        drop(state.glue, state.id);
+        engineStats.dropped++;
+    }
+}
+
+/**
+ * Not public (the playground's workers use it): how `input`'s samples are
+ * read, as a string that two JSON inputs share exactly when their
+ * `CompressedJSON`s read samples the same way (the configuration the
+ * engine reads them with: the built-in date/time recognizer, whether `$ref`s
+ * are references, and the integer range); `undefined` for an input that
+ * is not one of `jsonInputForTargetLanguage`'s, or whose configuration
+ * the engine does not model.
+ */
+export function readingKey(input: any): string | undefined {
+    const cjson = input?._compressedJSON;
+    if (cjson === undefined || cjson === null || Object.getPrototypeOf(cjson) !== CompressedJSONFromString.prototype) return undefined;
+    const config = configOf(cjson);
+    if (config === undefined) return undefined;
+    return JSON.stringify([config.dateTime, !!config.handleRefs, config.range]);
+}
+
+/** `WeakRef`, where the host has it. */
+const WeakRefClass: (new (target: object) => { deref(): object | undefined }) | undefined = (() => {
+    const WeakRefConstructor = (globalThis as any).WeakRef;
+    return typeof WeakRefConstructor === "function" ? WeakRefConstructor : undefined;
+})();
 
 /** Engine compressed forms whose `CompressedJSON` was collected. */
 const registry: any = (() => {
@@ -412,10 +482,10 @@ function isFresh(cjson: any): boolean {
  * anyway. Only then is the text scanned for lone surrogates (the engine
  * reads it as UTF-8), and before a large sample compiles the engine.
  */
-function engineForSample(text: string): WasmGlue | undefined {
+function engineForSample(sample: string | Uint8Array): WasmGlue | undefined {
     const compiled = engineIfCompiled();
-    if (compiled === undefined && text.length < compileForSample) return undefined;
-    if (!isWellFormed(text)) return undefined;
+    if (compiled === undefined && sample.length < compileForSample) return undefined;
+    if (typeof sample === "string" && !isWellFormed(sample)) return undefined;
     return compiled ?? engineSync();
 }
 
@@ -426,7 +496,7 @@ function engineForSample(text: string): WasmGlue | undefined {
  * table fields replaced by accessors that fill them on first use. What is
  * checked here holds for the later samples as long as `readsAsStarted`.
  */
-function start(cjson: any, text: string): NativeSamples | undefined {
+function start(cjson: any, text: string | Uint8Array): NativeSamples | undefined {
     if (
         Object.getPrototypeOf(cjson) !== CompressedJSONFromString.prototype ||
         !hasOnlyBuiltinFields(cjson) ||
@@ -464,6 +534,7 @@ function start(cjson: any, text: string): NativeSamples | undefined {
         textLength: 0,
         bytes,
         fields,
+        owner: WeakRefClass === undefined ? undefined : new WeakRefClass(cjson),
     };
     internArrays.set(cjson, cjson.internArray);
     for (const name of tableFields) {
@@ -505,11 +576,14 @@ function start(cjson: any, text: string): NativeSamples | undefined {
  * An evicted form's tables are exported to JavaScript
  * (`NativeSamples.exported`) and the form is freed in the engine; its
  * `CompressedJSON` gets those tables when anything first uses it
- * (`materialize`), and is an ordinary one from then on. Whether that
- * `CompressedJSON` is still used cannot be told: a `WeakRef` to it would
- * keep it alive until the current job ends, which in a loop of `await`s
- * is the whole loop. So the tables of one that is gone are exported too,
- * where the garbage collector sees them, and collected with it.
+ * (`materialize`), and is an ordinary one from then on. A form whose
+ * `CompressedJSON` was collected already (its `WeakRef` no longer
+ * dereferences, though its finalizer has not run yet) is dropped first,
+ * without exporting anything: nothing can reach it. One that is gone but
+ * not collected yet cannot be told from one in use (a `WeakRef` keeps its
+ * target alive until the job that made or read it ends, which in a loop of
+ * `await`s is the whole loop), so its tables are exported, where the
+ * garbage collector sees them, and collected with it.
  */
 function evict(current: NativeSamples[], held: number): void {
     if (current.length === 0) return;
@@ -519,6 +593,18 @@ function evict(current: NativeSamples[], held: number): void {
     let kept = 0;
     if (rest <= heldLimit) return;
     try {
+        // Forms nothing can reach any more (their `CompressedJSON` was
+        // collected, and is not finalized yet) are dropped first: no use
+        // of them is left to give their tables to.
+        for (const state of [...recent]) {
+            if (current.includes(state) || state.glue !== glue || state.owner === undefined || state.owner.deref() !== undefined) continue;
+            rest -= state.bytes;
+            recent.delete(state);
+            registry.unregister(state);
+            drop(glue, state.id);
+            engineStats.dropped++;
+        }
+
         for (const state of [...recent].reverse()) {
             if (current.includes(state) || state.glue !== glue) continue;
             if (kept + rest <= heldLimit) return;
@@ -587,7 +673,7 @@ export function materialize(cjson: any): void {
         }
 
         if (tables !== undefined) fill(cjson, tables);
-        else replay(cjson, state.config, texts as string[]);
+        else replay(cjson, state.config, texts as Array<string | Uint8Array>);
         // Only tables that were filled.
         engineStats.tablesFilled++;
     } finally {
@@ -640,7 +726,7 @@ function fill(cjson: any, tables: ExportedTables): void {
  * configuration they were read with. Whatever `cjson` is in the middle of
  * (a read that touched a table first) is set aside meanwhile.
  */
-function replay(cjson: any, config: Config, texts: string[]): void {
+function replay(cjson: any, config: Config, texts: Array<string | Uint8Array>): void {
     // `_ctx` and `_rootValue` exist (as own fields) only once a read has
     // created them, as the engine's reads did for the samples replayed.
     const own = (name: string): boolean => Object.prototype.hasOwnProperty.call(cjson, name);
@@ -657,7 +743,7 @@ function replay(cjson: any, config: Config, texts: string[]): void {
         cjson.handleRefs = config.handleRefs;
         cjson.supportedIntegerRange = config.range;
         for (const text of texts) {
-            cjson.process(JSON.parse(text));
+            cjson.process(JSON.parse(sampleText(text) as string));
             cjson.finish();
         }
     } finally {
@@ -776,12 +862,34 @@ function declined(cjson: object): undefined {
     return undefined;
 }
 
+/**
+ * `jsonRead` (or `jsonReadBytes`) of `sample` into `state`'s form: what it
+ * returned, and what the forms hold afterwards; `undefined` if the engine
+ * failed (it is discarded).
+ */
+function readOnEngine(state: NativeSamples, sample: string | Uint8Array): { value: number; held: number } | undefined {
+    const { glue, id } = state;
+    try {
+        const before = glue.jsonHeld();
+        const value = typeof sample === "string" ? glue.jsonRead(id, sample) : glue.jsonReadBytes(id, sample);
+        const held = glue.jsonHeld();
+        state.bytes += held - before;
+        return { value, held };
+    } catch (e) {
+        engineFailed(glue, e);
+        return undefined;
+    }
+}
+
 /** The reader `CompressedJSONFromString.parseSync` asks first (see the top). */
-function readSample(cjson: any, text: unknown): number | undefined {
+function readSample(cjson: any, sample: unknown): number | undefined {
+    passDecoded(undefined);
     let state = states.get(cjson);
-    if (typeof text !== "string" || engineMode() === "ts") return declined(cjson);
-    // The text is scanned for lone surrogates only once the engine is to
-    // read it (here, or in `start`).
+    const bytes = isBytes(sample);
+    if ((typeof sample !== "string" && !bytes) || engineMode() === "ts") return declined(cjson);
+    let text = sample as string | Uint8Array;
+    // A string is scanned for lone surrogates only once the engine is to
+    // read it (here, or in `start`); bytes are checked by the engine.
     if (state === undefined) {
         if (registry === undefined) return undefined;
         state = start(cjson, text);
@@ -790,27 +898,36 @@ function readSample(cjson: any, text: unknown): number | undefined {
         state.exported !== undefined ||
         isDiscarded(state.glue) ||
         !readsAsStarted(cjson, state) ||
-        !isWellFormed(text)
+        (typeof text === "string" && !isWellFormed(text))
     ) {
         return declined(cjson);
     }
 
-    let value: number;
-    let held: number;
-    try {
-        const before = state.glue.jsonHeld();
-        value = state.glue.jsonRead(state.id, text);
-        held = state.glue.jsonHeld();
-        state.bytes += held - before;
-    } catch (e) {
-        engineFailed(state.glue, e);
-        return declined(cjson);
+    let read = readOnEngine(state, text);
+    if (read?.value === notUtf8) {
+        // What the decoder replaces is read as it replaces it. Decoded here,
+        // outside the engine's calls: what the decoder throws (a text
+        // longer than the longest string) is the input's, thrown from
+        // `addSource` as TypeScript's own decoding of it would be. Nothing
+        // was read.
+        text = decodeUtf8(text as Uint8Array);
+        read = readOnEngine(state, text);
+        if (read === undefined || read.value <= 0) {
+            // `parseSync` then parses this text, without decoding it again.
+            const result = read === undefined || read.value !== 0 ? declined(cjson) : undefined;
+            passDecoded(sample as Uint8Array, text);
+            return result;
+        }
     }
+
+    if (read === undefined) return declined(cjson);
+    const { value, held } = read;
 
     if (value > 0) {
         state.textLength += text.length;
         if (state.texts !== undefined) {
-            if (state.textLength <= keptTexts) state.texts.push(text);
+            // A copy of the bytes: the caller may change them afterwards.
+            if (state.textLength <= keptTexts) state.texts.push(typeof text === "string" ? text : new Uint8Array(text));
             else state.texts = undefined;
         }
 

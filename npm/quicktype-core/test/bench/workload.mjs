@@ -8,7 +8,7 @@
 
 const engineKey = Symbol.for("quicktype-core.engine");
 
-const median = (values) => {
+export const median = (values) => {
     const sorted = [...values].sort((a, b) => a - b);
     const middle = sorted.length >> 1;
     return sorted.length % 2 === 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;

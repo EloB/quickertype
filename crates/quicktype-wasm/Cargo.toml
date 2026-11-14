@@ -26,12 +26,20 @@ wasm-bindgen.workspace = true
 [dev-dependencies]
 serde_json.workspace = true
 
+# The allocator of `examples/phases.rs`, the CLI's.
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+mimalloc.workspace = true
+
 [features]
 # The allocator counts the bytes in use and their peak (`__heapBytes`,
 # `__heapPeak`), for measuring what an operation needs: about 2% of a
 # run's time, so release builds leave it out
 # (`node npm/quicktype-core/script/build.mjs --heap-stats` turns it on).
 heap-stats = []
+# Records where a run's time goes (`__trace`), for measurements
+# (`node npm/quicktype-core/script/build.mjs --trace`); see
+# docs/BENCHMARKS.md.
+trace = ["quickertype-core/trace"]
 
 [lints]
 workspace = true
