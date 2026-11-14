@@ -1,85 +1,142 @@
 # Benchmarks
 
 How fast the Rust port is compared to the TypeScript quicktype it
-replaces, how to measure it, and what Phase 7 changed. The numbers come
-from `cargo xtask bench` (see [Reproducing](#reproducing)). Every
-optimization keeps the output byte-identical: `cargo xtask parity` passes
-the same 10,796 cases with 0 regressions, the render-case and scenario
-tests pass, and the benchmark itself checks that every CLI writes the same
-files.
+replaces, how to measure it, and what each phase changed. The summary and
+the sections up to [WebAssembly in Chrome](#webassembly-in-chrome) are
+main at `4cf135e28`, measured on November 14, 2026; the sections after
+them record each change as it was measured at the time. The CLI numbers
+come from `cargo xtask bench` (see [Reproducing](#reproducing)). Every
+optimization keeps the output byte-identical (`cargo xtask parity`, the
+render-case and scenario tests), and every benchmark here checks that the
+commands it compares write the same files.
 
 ## Summary
 
-| | TypeScript | Rust before Phase 7 | Rust after | vs TypeScript | vs before |
+| | TypeScript | Rust before | Rust now | vs TypeScript | vs before |
 |---|---:|---:|---:|---:|---:|
-| Startup, `--version` | 217 ms | 2.09 ms | 2.26 ms | 96× | 0.9× |
-| Tiny JSON (77 B) | 241 ms | 4.16 ms | 2.83 ms | 85× | 1.5× |
-| Small JSON (pokedex, 82 KB) | 257 ms | 11.7 ms | 4.78 ms | 54× | 2.5× |
-| github-events (82 KB), 8 languages | 271–289 ms | 15.0–31.1 ms | 6.4–9.0 ms | 32–43× | 2.3–3.4× |
-| Large JSON (generated, 40 MB) | 2,621 ms | 595 ms | 319 ms | 8.2× | 1.9× |
-| JSON Schema (vega-lite, 306 KB) → TS | 418 ms | 61.3 ms | 37.4 ms | 11× | 1.6× |
-| Golden corpus, 11,178 CLI runs (wall, 12 jobs) | 571.7 s | 18.4 s | 12.5 s | 46× | 1.5× |
-| In process, 112 runs (engine as a library) | 369 ms (warm Node) | 288 ms | 153 ms | 2.4× | 1.9× |
-| JS API in Chrome, 20 MB JSON (WebAssembly engine, warm; see [WebAssembly](#webassembly)) | 435 ms | 502 ms (main) | 230 ms | 1.9× | 2.2× |
-| Peak RSS, 40 MB input | 625 MiB | 221 MiB | 154 MiB | 4.1× less | 1.4× less |
-| Peak RSS, 2.6 GB input | — | 6.73 GiB | 5.76 GiB | — | 1.2× less |
+| Startup, `--version` | 226 ms | 2.26 ms | 2.92 ms | 77× | 0.8× |
+| Tiny JSON (77 B) | 244 ms | 2.83 ms | 2.85 ms | 86× | 1.0× |
+| Small JSON (pokedex, 82 KB) | 266 ms | 4.34 ms | 3.95 ms | 67× | 1.1× |
+| github-events (82 KB), 8 languages | 284–312 ms | 5.60–8.16 ms | 5.93–8.50 ms | 37–49× | 0.8–1.0× |
+| Large JSON (generated, 40 MB) | 2,676 ms | 179 ms | 155 ms | 17× | 1.2× |
+| JSON Schema (vega-lite, 306 KB) → TS | 439 ms | 36.4 ms | 38.7 ms | 11× | 0.9× |
+| Golden corpus, 11,178 CLI runs (wall, 12 jobs) | 473.8 s | 12.5 s | 9.0 s | 52× | 1.4× |
+| In process, 112 runs (engine as a library) | 342 ms (warm Node) | 98.2 ms | 92.8 ms | 3.7× | 1.1× |
+| JS API in Chrome, 20 MB JSON (WebAssembly engine, warm) | 406 ms | 145 ms | 122 ms | 3.3× | 1.2× |
+| 1M records (267 MB), on all cores | 5,440 ms | 49.9 ms | 56.7 ms | 96× | 0.9× |
+| Scryfall cards (real data), 656 MB | 29.9 s | – | 0.284 s | 105× | – |
+| Peak RSS, 40 MB input | 653 MiB | 62.1 MiB | 60.6 MiB | 11× less | 1.0× |
+| Peak RSS, 2.6 GB input | – | 63.1 MiB | 64.2 MiB | – | 1.0× |
+| Peak RSS, Scryfall cards (real data), 656 MB | 3.20 GiB | – | 50.1 MiB | 65× less | – |
 
-Wall-time medians. The CLI's lead over TypeScript on small inputs is mostly
-Node's startup (~215 ms); on large inputs and in process it is the engine
-itself, which this phase made about twice as fast. The one regression,
-`--version` (+0.17 ms), is mimalloc's set-up and tear-down; it pays for
-itself as soon as there is any input to read (build with
-`--no-default-features` for the system allocator).
+Wall-time medians. "Before" is what this file and the README published
+before this refresh, each measured at its own time and load (see
+[Machine](#machine)), so differences of up to about 10% between the two
+columns are within what separate runs give on this machine. The CLI's
+lead over TypeScript on small inputs is mostly Node's startup (about
+220 ms); on large inputs and in process it is the engine.
+
+What moved:
+
+- **Startup** varies on this machine from hour to hour, for every build
+  alike: `--version` took 2.92 ms in this run and 2.89 ms in a
+  startup-only run of `cargo xtask bench` half an hour later; an hour
+  later it took 2.43 to 2.52 ms, when Phase 7's build (`54611ae41`,
+  2.26 ms in its day) took 2.45 to 2.66 ms interleaved with it, and
+  v0.1.0's 2.43 ms. So the largest speed-up in this run is the tiny
+  input's, 86×, and `--version`'s is 77× (96× before).
+- **The corpus** has no unexpected exits any more (381 before: C/cJSON
+  output was being ported) and takes 9.0 s instead of 12.5 s.
+- **Large inputs**: the 40 MB input takes 155 ms (179 ms before). The
+  1M records' 56.7 ms on 12 threads is against 49.9 ms measured at a load
+  average of 4.1 to 4.5; reading on every core is the first thing to slow
+  down when other work runs ([Reading on several
+  threads](#reading-on-several-threads)).
+- **New here:** quicktype on the 1M records and on real data (Scryfall
+  cards, 656 MB), and the large inputs on all cores against one thread
+  ([Large inputs](#large-inputs)).
 
 ## Machine
 
-- CPU: Apple M2 Max, 12 cores, 64 GiB
+- CPU: Apple M2 Max, 12 cores (8 performance, 4 efficiency), 64 GiB
 - OS: macOS 26.6.2
-- rustc 1.99.1, Node.js v24.16.0, TypeScript reference at `c39af7d3`
-  (`tests/golden/REFERENCE`)
-- "Before" is `11091954f` (the merge of `feat/graphql-input`, where this
-  branch starts); "after" is this branch.
-- The machine was shared with other work while these numbers were taken
-  (load average around 10). The in-process runs were interleaved in three
-  rounds; the CLI numbers agree with quieter earlier runs within a few
-  percent.
+- rustc 1.99.1, Node.js v24.16.0, Chrome 157.0.8103.78 (headless),
+  TypeScript reference at `c39af7d3` (`tests/golden/REFERENCE`)
+- Now: main at `4cf135e28` (`cargo build --release -p quickertype`), on
+  November 14, 2026.
+- Before: the README's numbers where it had the row (its CLI rows came
+  from the last full `cargo xtask bench` run, in [Reading after the CLI
+  profile](#reading-after-the-cli-profile), at a load average of 4 to 5,
+  without TypeScript; its browser row from [Inference from tallies in the
+  engine](#inference-from-tallies-in-the-engine)), else the newest section
+  that measured it: startup and the tiny input from Phase 7 (that last
+  run calls its first two rows noise), the 1M records and the 2.6 GB input
+  from [Reading on several threads](#reading-on-several-threads), in
+  process from [The second phase](#the-second-phase-strings-that-change-nothing-and-keys-by-id)
+  (a whole iteration), the corpus from Phase 7.
+- The machine was shared with another agent that compiled and ran tests.
+  Every block of measurements started once the 1-minute load average was
+  under 6 (waiting up to 20 minutes); the load average during each:
+  - `cargo xtask bench --corpus --in-process --json
+    site/data/benchmarks.json`: 3.6 at the start and 3.6 to 8.1 during the
+    CLI benchmarks; 10 to 67 during the corpus (its 12 TypeScript jobs and
+    the other agent's builds) and 66 to 73 during the in-process benchmark.
+    Three more interleaved rounds of the in-process benchmark at 4.4 to 5.5
+    agreed within 5% (see [In process](#in-process)).
+  - The second full run ([CLI](#cli)): 2.7 to 9 during the CLI
+    benchmarks, 14 to 39 during the corpus, 29 to 36 in process.
+  - The startup checks above: 5.0 to 5.1, then 5.8.
+  - [Large inputs](#large-inputs): 4.1 to 5.9.
+  - [WebAssembly in Chrome](#webassembly-in-chrome): 3.6 to 6.3.
+  - The `hash_str` check ([Hashing strings in
+    WebAssembly](#hashing-strings-in-webassembly)): 5.3 to 7.4.
 
 ## CLI
 
 10 timed runs per benchmark and command after one warm-up run; wall time in
 ms, median (min). The rightmost column is the peak resident set size of one
-more run.
+more run. "Before" as in [Machine](#machine) (the last full run had no
+TypeScript column; Phase 7's TypeScript medians were 1 to 10% lower than
+these).
 
-| Benchmark | TypeScript | Rust (before) | Rust (after) | vs TS | vs before | Peak RSS MiB (TypeScript / Rust (before) / Rust (after)) |
+| Benchmark | TypeScript | Rust (before) | Rust (now) | vs TS | vs before | Peak RSS MiB (TypeScript / Rust (before) / Rust (now)) |
 |---|---:|---:|---:|---:|---:|---:|
 | **startup** | | | | | | |
-| --version | 217 (214) | 2.09 (1.97) | 2.26 (2.16) | 95.8× | 0.9× | 151.4 / 2.6 / 3.4 |
-| tiny JSON (77 B) → TypeScript | 241 (231) | 4.16 (3.99) | 2.83 (2.53) | 85.2× | 1.5× | 150.3 / 4.8 / 5.5 |
+| --version | 226 (222) | 2.26 (2.16) | 2.92 (2.61) | 77× | 0.8× | 149.7 / 3.4 / 3.5 |
+| tiny JSON (77 B) → TypeScript | 244 (243) | 2.83 (2.53) | 2.85 (2.75) | 86× | 1.0× | 150.7 / 5.5 / 5.3 |
 | **json** | | | | | | |
-| pokedex (82 KB) → TypeScript | 257 (253) | 11.7 (11.1) | 4.78 (4.58) | 53.8× | 2.5× | 157.7 / 9.2 / 8.1 |
-| us-senators (155 KB) → TypeScript | 263 (259) | 13.1 (12.7) | 5.42 (5.19) | 48.5× | 2.4× | 163.0 / 9.3 / 8.2 |
-| misc/1b409 (606 KB) → TypeScript | 292 (289) | 18.9 (18.2) | 7.94 (7.75) | 36.8× | 2.4× | 172.0 / 11.2 / 9.9 |
-| all 13 samples as one top-level (multi-source) → TypeScript | 341 (334) | 27.6 (27.1) | 14.5 (14.1) | 23.5× | 1.9× | 181.6 / 12.2 / 10.8 |
-| generated (4 MB) → TypeScript | 507 (500) | 71.3 (69.5) | 36.5 (35.3) | 13.9× | 2.0× | 237.8 / 37.8 / 27.8 |
-| generated (40 MB) → TypeScript | 2621 (2588) | 595 (583) | 319 (314) | 8.2× | 1.9× | 624.7 / 221.0 / 177.5 |
-| generated (40 MB) → Rust | 2600 (2551) | 590 (581) | 321 (319) | 8.1× | 1.8× | 681.8 / 223.0 / 177.4 |
+| pokedex (82 KB) → TypeScript | 266 (261) | 4.34 (4.19) | 3.95 (3.77) | 67× | 1.1× | 157.1 / 6.9 / 6.9 |
+| us-senators (155 KB) → TypeScript | 272 (268) | 4.65 (4.43) | 4.38 (4.17) | 62× | 1.1× | 160.8 / 6.7 / 6.7 |
+| misc/1b409 (606 KB) → TypeScript | 302 (298) | 6.95 (6.66) | 6.27 (5.86) | 48× | 1.1× | 175.2 / 7.9 / 7.9 |
+| all 13 samples as one top-level (multi-source) → TypeScript | 352 (349) | 13.2 (13.0) | 12.2 (11.7) | 29× | 1.1× | 184.6 / 10.3 / 10.5 |
+| generated (4 MB) → TypeScript | 543 (525) | 23.4 (23.3) | 20.1 (19.4) | 27× | 1.2× | 232.3 / 15.6 / 15.8 |
+| generated (40 MB) → TypeScript | 2676 (2644) | 179 (175) | 155 (154) | 17× | 1.2× | 653.1 / 62.1 / 60.6 |
+| generated (40 MB) → Rust | 2733 (2682) | 178 (175) | 171 (161) | 16× | 1.0× | 638.3 / 60.6 / 60.8 |
 | **languages** | | | | | | |
-| github-events (82 KB) → ts | 271 (268) | 15.2 (14.7) | 6.42 (6.35) | 42.2× | 2.4× | 172.0 / 9.5 / 8.4 |
-| github-events (82 KB) → rust | 273 (271) | 16.6 (16.1) | 6.64 (6.51) | 41.1× | 2.5× | 172.8 / 9.3 / 8.2 |
-| github-events (82 KB) → go | 273 (269) | 15.0 (14.6) | 6.35 (6.17) | 43.0× | 2.4× | 172.4 / 9.4 / 8.2 |
-| github-events (82 KB) → cs | 277 (274) | 15.8 (15.3) | 6.52 (6.33) | 42.5× | 2.4× | 174.3 / 9.7 / 8.5 |
-| github-events (82 KB) → java | 289 (284) | 25.9 (25.6) | 9.02 (8.85) | 32.0× | 2.9× | 174.3 / 11.0 / 9.6 |
-| github-events (82 KB) → py | 279 (276) | 16.7 (16.5) | 7.13 (6.97) | 39.1× | 2.3× | 173.1 / 10.3 / 9.1 |
-| github-events (82 KB) → swift | 277 (272) | 18.3 (18.0) | 7.06 (6.94) | 39.2× | 2.6× | 172.3 / 10.4 / 9.1 |
-| github-events (82 KB) → c++ | 289 (284) | 31.1 (30.6) | 9.03 (8.82) | 32.0× | 3.4× | 173.9 / 11.5 / 9.8 |
+| github-events (82 KB) → ts | 288 (285) | 5.99 (5.87) | 5.93 (5.68) | 49× | 1.0× | 174.0 / 7.5 / 7.5 |
+| github-events (82 KB) → rust | 293 (285) | 6.19 (6.08) | 6.44 (6.22) | 46× | 1.0× | 173.4 / 7.3 / 7.3 |
+| github-events (82 KB) → go | 300 (292) | 5.62 (5.49) | 6.95 (5.62) | 43× | 0.8× | 176.6 / 7.3 / 7.3 |
+| github-events (82 KB) → cs | 294 (288) | 5.60 (5.50) | 5.99 (5.77) | 49× | 0.9× | 177.3 / 7.4 / 7.5 |
+| github-events (82 KB) → java | 312 (302) | 8.16 (8.04) | 8.50 (8.20) | 37× | 1.0× | 175.8 / 9.2 / 9.2 |
+| github-events (82 KB) → py | 297 (292) | 6.54 (6.45) | 6.53 (6.34) | 45× | 1.0× | 175.3 / 8.3 / 8.4 |
+| github-events (82 KB) → swift | 284 (279) | 6.36 (6.24) | 6.31 (6.17) | 45× | 1.0× | 175.1 / 8.5 / 8.5 |
+| github-events (82 KB) → c++ | 303 (294) | 7.69 (7.38) | 7.81 (7.55) | 39× | 1.0× | 175.1 / 9.3 / 9.3 |
 | **schema** | | | | | | |
-| vega-lite.schema (306 KB) → TypeScript | 418 (414) | 61.3 (60.6) | 37.4 (36.9) | 11.2× | 1.6× | 224.2 / 18.7 / 17.0 |
-| vega-lite.schema (306 KB) → C# | 431 (421) | 72.1 (71.1) | 41.2 (39.9) | 10.5× | 1.8× | 226.3 / 21.0 / 19.0 |
+| vega-lite.schema (306 KB) → TypeScript | 439 (431) | 36.4 (36.1) | 38.7 (38.1) | 11× | 0.9× | 223.7 / 16.1 / 16.0 |
+| vega-lite.schema (306 KB) → C# | 463 (450) | 39.4 (39.2) | 43.0 (42.4) | 11× | 0.9× | 226.8 / 18.3 / 18.5 |
 | **graphql** | | | | | | |
-| github.gqlschema (1.2 MB) + query → TypeScript | 245 (242) | 17.1 (16.6) | 9.28 (9.12) | 26.4× | 1.8× | 153.2 / 15.4 / 13.4 |
+| github.gqlschema (1.2 MB) + query → TypeScript | 269 (255) | 8.87 (8.76) | 9.16 (8.90) | 29× | 1.0× | 152.6 / 12.5 / 12.5 |
 | **multi-file** | | | | | | |
-| vega-lite.schema → Java (one file per class) | 489 (479) | 106 (105) | 54.5 (52.6) | 9.0× | 1.9× | 236.3 / 26.0 / 21.8 |
-| pokedex → C++ (multi-source) | 264 (258) | 13.3 (13.1) | 5.30 (5.05) | 49.8× | 2.5× | 160.4 / 9.2 / 8.3 |
+| vega-lite.schema → Java (one file per class) | 504 (498) | 56.2 (55.8) | 55.8 (54.7) | 9.0× | 1.0× | 236.0 / 20.8 / 21.1 |
+| pokedex → C++ (multi-source) | 275 (264) | 4.75 (4.63) | 4.52 (4.37) | 61× | 1.1× | 159.6 / 7.2 / 7.2 |
+
+A second full run an hour later (load average 2.7 to 9 during the CLI
+benchmarks, 14 to 39 during the corpus, 29 to 36 in process) agreed within
+10% on every row but three: `--version` 2.52 ms, tiny JSON 5.77 ms (min
+3.23 ms: half its runs were disturbed) and github-events → go 5.63 ms
+(this run's 6.95 ms is the outlier; its minimum is 5.62 ms). Its corpus
+took 447.8 s against 8.0 s (56×), and in process 325, 116 and 91.9 ms.
+This file and `site/data/benchmarks.json` keep the first run.
 
 ## Golden corpus
 
@@ -90,13 +147,15 @@ time" is the sum of every run's wall time under that load.
 
 | Command | Steps | Wall time (s) | CLI time, summed (s) | Mean per step (ms) | Unexpected exits |
 |---|---:|---:|---:|---:|---:|
-| TypeScript | 11178 | 571.7 | 6846.5 | 612.5 | 0 |
-| Rust (before) | 11178 | 18.4 | 209.8 | 18.8 | 381 |
-| Rust (after) | 11178 | 12.5 | 133.7 | 12.0 | 381 |
+| TypeScript | 11178 | 473.8 | 5672.5 | 507.5 | 0 |
+| Rust (before: Phase 7) | 11178 | 12.5 | 133.7 | 12.0 | 381 |
+| Rust (now) | 11178 | 9.0 | 95.5 | 8.5 | 0 |
 
-The 381 unexpected exits of the Rust CLI are the 381 golden cases outside
-the parity baseline (C/cJSON output, which is landing separately), the
-same before and after.
+The 381 unexpected exits before were the golden cases then outside the
+parity baseline (C/cJSON output, since ported). The load average rose from
+10 to 67 while the corpus ran: TypeScript's 12 jobs are CPU-bound on 12
+cores, and another agent was building at the same time (Phase 7's run, at
+a load of about 10, took 571.7 s for TypeScript).
 
 ## In process
 
@@ -104,24 +163,153 @@ The engine as a library, without process start or file I/O: every JSON
 file in `tests/inputs/json/samples` plus `json/misc/1b409.json` (14 inputs)
 through 8 languages (TypeScript, Rust, Go, C#, Java, Python, Swift, C++),
 112 runs per iteration, with `JSON.parse` semantics as in the JavaScript
-API. "Parse" builds the `JsonInput` (`JSON.parse` and `CompressedJSON`);
+API. "Parse" reads the samples (into running tallies, on the Rust side);
 "engine" is `quicktype_multi_file_sync` (inference, rewrites, naming,
-rendering). Median of three interleaved rounds of 10 iterations each, after
-warm-up (V8 optimizes the TypeScript during three untimed iterations); ms.
+rendering). Median of 10 iterations after warm-up (V8 optimizes the
+TypeScript during three untimed iterations); ms.
 
 | Engine | Total (min) | Parse | Engine | Per run | vs TypeScript |
 |---|---:|---:|---:|---:|---:|
-| TypeScript, warm Node (`xtask/bench/in-process.mjs`) | 369 (340) | 72.5 | 298 | 3.30 | 1.0× |
-| Rust before, system allocator | 288 (283) | 66.7 | 221 | 2.57 | 1.3× |
-| Rust after, system allocator | 199 (190) | 60.1 | 138 | 1.77 | 1.9× |
-| Rust after, mimalloc (the CLI's) | 153 (145) | 51.4 | 102 | 1.37 | 2.4× |
+| TypeScript, warm Node (`xtask/bench/in-process.mjs`) | 342 (331) | 69.2 | 274 | 3.05 | 1.0× |
+| Rust, system allocator | 118 (117) | 22.9 | 95.6 | 1.06 | 2.9× |
+| Rust, mimalloc (the CLI's) | 92.8 (91.7) | 22.5 | 70.3 | 0.83 | 3.7× |
 
-All four write the same 1,206,163 bytes of output per iteration. Before
-this phase, inference-to-rendering ran only 1.35× faster natively than
-warm V8, which is why the WebAssembly engine was no faster than TypeScript
-(see [WebAssembly](#webassembly)). Per input and language, the largest
-gains are where naming dominated: github-events → C++ went from 20.2 ms to
-4.6 ms per run, → Java from 14.5 ms to 4.5 ms (`--per-input`).
+All three write the same 1,206,163 bytes of output per iteration. These
+ran at a load average of 66 to 73; three later interleaved rounds at 4.4
+to 5.5 gave totals of 334 to 350 ms (TypeScript), 116 to 124 ms (system
+allocator) and 92 to 98 ms (mimalloc), so a single-threaded benchmark kept
+its core. Phase 7 left these at 369, 199 and 153 ms ([its own before and
+after](#phase-7-before-and-after)); reading into running tallies (Phase
+8a) and the readers' work since took the Rust side to 98 ms
+([The second phase](#the-second-phase-strings-that-change-nothing-and-keys-by-id)).
+
+## Large inputs
+
+The CLI on inputs of 27 MB to 3 GB (`site/data/big-inputs.json`), on all
+cores (the default) and on one thread (`QUICKTYPE_READ_THREADS=1`, which
+reads every sample in one go), and quicktype's CLI where it finished in
+seconds. `-l ts -o <file>` (the Scryfall cards with `--just-types -t
+Cards`); the commands of each block run in turn, after one untimed run
+each (none for quicktype on the cards); wall time / CPU time (user +
+system) and peak RSS of each run from `wait4`; medians.
+
+| Input | Runs | All cores | One thread | quicktype | Load average |
+|---|---:|---:|---:|---:|---:|
+| generated (40 MB), an object at the top | 15 (5) | 170 / 168 ms, 60.6 MiB | 171 / 169 ms, 60.6 MiB | 2.67 / 3.48 s, 614 MiB | 5.6 (4.1–4.5) |
+| 100k records (26.8 MB) | 11 | 12.2 / 58.1 ms, 19.6 MiB | 30.9 / 29.4 ms, 6.0 MiB | – | 5.6 |
+| 1M records (267 MB) | 11 (3) | 56.7 / 453 ms, 21.5 MiB | 262 / 260 ms, 5.9 MiB | 5.44 / 7.11 s, 1.44 GiB | 5.6 (5.0–5.2) |
+| 60 × generated (40 MB) in one array, 2.6 GB | 3 | 8.38 / 8.37 s, 64.2 MiB | 8.36 / 8.33 s, 63.0 MiB | – | 5.7–5.9 |
+| 10.5 M objects with ~210-character strings, 2.5 GB | 3 | 308 ms / 2.69 s, 21.0 MiB | 1.40 / 1.39 s, 6.0 MiB | – | 5.7 |
+| Scryfall cards (real data), 656 MB | 5 (3) | 284 ms / 1.74 s, 50.1 MiB | 1.43 / 1.43 s, 20.2 MiB | 29.9 / 38.6 s, 3.20 GiB | 5.3–5.5 (4.7–5.3) |
+| the same cards as JSON Lines, 656 MB | 5 | 1.53 / 1.53 s, 20.2 MiB (read in one go) | – | – | 5.3–5.5 |
+| Scryfall cards (real data), every language, 3.0 GB | 3 | 1.35 / 8.15 s, 148 MiB | 6.65 / 6.64 s, 96.2 MiB | – | 5.7–5.8 |
+
+Every command wrote the same output: all cores against one thread on
+every input, quicktype against quickertype on the 40 MB input (`cargo
+xtask bench`), the 100k and 1M records and the 656 MB cards, and the
+cards as JSON Lines against the array. quicktype was not run on the
+2.5 to 3.0 GB inputs.
+
+- **Reading on several threads** pays on the arrays: 4.6× less wall time
+  on the 1M records for 1.7× the CPU time, 4.5× on the text-heavy input,
+  5.0× on the cards and 4.9× on the cards in every language. Peak RSS
+  grows with the threads: each one's read buffers and the tallies of the
+  part it reads (148 against 96 MiB on the 3.0 GB cards, whose places
+  hold many distinct strings).
+- **The 40 MB input** is an object, read in one go either way. The
+  2.6 GB input is read in one go with the default budget: one element's
+  tallies (a map of 209,519 distinct keys) would fill it ([Reading on
+  several threads](#reading-on-several-threads)). It took 8.38 s here
+  against 7.25 s in that section; in a later block (load average 4.6 to
+  4.9), main took 7.80 s and main before the parallel read was merged
+  (`e2e3f3fc9`, which took 7.25 s then) 8.01 s, so the difference is the
+  machine's, not the code's.
+- **Against quicktype**, on real data: the 656 MB of cards take 105× less
+  wall time and 65× less memory (quicktype: 29.9 s and 3.20 GiB; on one
+  thread quickertype still takes 21× less time). On the 1M records,
+  quicktype takes 5.44 s and 1.44 GiB.
+- **JSON Lines** are read in one go: the cards as JSON Lines take what the
+  array takes on one thread.
+
+How each input is made (the scripts are in the repository, the card data
+is not):
+
+- generated (40 MB): `cargo xtask bench` writes
+  `target/bench/generated-large.json`.
+- 100k and 1M records: `generateRulings(100000)` and
+  `generateRulings(1000000)` from
+  `npm/quicktype-core/test/bench/generate.mjs`
+  ([PROFILE-RECORDS.md](PROFILE-RECORDS.md#reproducing)).
+- 2.6 GB: 60 copies of the 40 MB input in one array, as in [Memory on
+  large inputs](#memory-on-large-inputs).
+- text-heavy (2.5 GB, 2,528,770,412 bytes): the script below. The file of
+  the same description in [Memory on large
+  inputs](#memory-on-large-inputs) was made by a script that was not kept,
+  so its numbers are not comparable with these.
+- Scryfall cards (real data): Scryfall's bulk data, "Default Cards"
+  (120,095 cards, 656,501,037 bytes, one card per line) and "All Cards"
+  (551,910 cards in every language, 3,010,396,357 bytes), as of November
+  2026; the JSON Lines copy has the same cards, one per line without the
+  brackets and commas.
+
+```sh
+python3 -c 'import random, sys
+r = random.Random(1)
+w = "the quick brown fox jumps over a lazy dog while seven bright stars glow above quiet hills and rivers run to an open sea".split()
+s = [" ".join(r.choice(w) for _ in range(60))[:208] for _ in range(4096)]
+with open(sys.argv[1], "w") as f:
+    f.write("[")
+    for i in range(10_500_000):
+        f.write(f"{\",\" if i else \"\"}\n{{\"id\":{i},\"text\":\"{s[i % 4096]} {i:x}\"}}")
+    f.write("]\n")' target/bench/text.json
+/usr/bin/time -l target/release/quickertype target/bench/text.json -l ts -o out.ts
+QUICKTYPE_READ_THREADS=1 /usr/bin/time -l target/release/quickertype target/bench/text.json -l ts -o out.ts
+```
+
+## WebAssembly in Chrome
+
+The JS API's WebAssembly engine against quicktype's TypeScript engine,
+warm, in one headless Chrome page (`node --expose-gc
+npm/quicktype-core/test/bench/compare.mjs --browser --again`):
+`addSource`, then `quicktypeMultiFile` to TypeScript, the two engines
+interleaved, medians of 41 runs (21 for 2 MB, 9 for the larger inputs),
+and of those the median of three runs of the benchmark (`site/data/browser.json`).
+Reading + generating = total, then a second run on the same input
+("again"), ms; Chrome's timer steps by 0.1 ms here:
+
+| Input | quickertype | quicktype | × quicktype | Generating only |
+|---|---:|---:|---:|---:|
+| pokedex (82 KB) | 0.50 + 1.10 = 1.60; again 0.80 | 1.20 + 3.50 = 4.70; again 2.20 | 2.9× | 3.2× |
+| generated (2 MB) | 9.10 + 5.10 = 14.1; again 2.70 | 22.4 + 21.7 = 44.0; again 14.6 | 3.1× | 4.3× |
+| generated (20 MB) | 89.1 + 33.0 = 122; again 11.9 | 247 + 159 = 406; again 150 | 3.3× | 4.8× |
+| rulings: 100k records (27 MB) | 46.5 + 6.60 = 53.1; again 0.30 | 79.9 + 76.0 = 156; again 71.8 | 2.9× | 12× |
+| cards: 5k generated cards (22 MB) | 89.7 + 23.5 = 113; again 6.10 | 137 + 235 = 371; again 229 | 3.3× | 10× |
+
+The three runs were within 8% of each other (the first, at a load average
+of 5.6 to 6.1, the slowest). Before, in [Inference from tallies in the
+engine](#inference-from-tallies-in-the-engine) (load average 3 to 4):
+pokedex 2.30 against 5.10, 20 MB 145 against 404, the records 65.8
+against 179. The engine's totals are 16 to 30% lower, after the slab
+allocator, the hashing and the cards' URIs and walk (the sections below).
+
+First runs in a fresh Node.js process (`compare.mjs --cold 7`), which
+compiles the engine first; medians of 7, ms, CPU time of the process in
+parentheses:
+
+| Input | quickertype | quicktype |
+|---|---:|---:|
+| pokedex (82 KB) | 3.90 + 47.3 = 51.1 (130) | 3.79 + 26.0 = 29.5 (46.6) |
+| generated (2 MB) | 26.6 + 45.4 = 71.9 (165) | 38.1 + 54.8 = 93.6 (171) |
+| generated (20 MB) | 148 + 90.7 = 239 (370) | 393 + 246 = 640 (890) |
+| rulings: 100k records (27 MB) | 82.1 + 32.4 = 114 (191) | 125 + 120 = 245 (431) |
+| cards: 5k generated cards (22 MB) | 131 + 72.2 = 202 (343) | 275 + 347 = 625 (821) |
+
+On pokedex the engine's compilation dominates, as before (51.6 against
+28.5 ms in [Inference from tallies in the
+engine](#inference-from-tallies-in-the-engine)); the records' first run
+went from 134 to 114 ms.
+
+The module is 5.21 MiB after `wasm-opt` (`npm run build`).
 
 ## What Phase 7 changed
 
@@ -161,10 +349,58 @@ Considered and left out:
   run, most of it in public types: see [Inference from tallies in the
   engine](#inference-from-tallies-in-the-engine).)
 
+### Phase 7: before and after
+
+Measured on November 13, 2026, before Phase 8a: "before" is `11091954f`
+(the merge of `feat/graphql-input`, where Phase 7 started), "after" is
+`54611ae41`. The machine was shared with other work (load average around
+10); the in-process runs were interleaved in three rounds. The whole CLI
+table of that run is in this file's history
+(`git show 54611ae41:docs/BENCHMARKS.md`).
+
+| | TypeScript | Rust before Phase 7 | Rust after | vs TypeScript | vs before |
+|---|---:|---:|---:|---:|---:|
+| Startup, `--version` | 217 ms | 2.09 ms | 2.26 ms | 96× | 0.9× |
+| Tiny JSON (77 B) | 241 ms | 4.16 ms | 2.83 ms | 85× | 1.5× |
+| Small JSON (pokedex, 82 KB) | 257 ms | 11.7 ms | 4.78 ms | 54× | 2.5× |
+| github-events (82 KB), 8 languages | 271–289 ms | 15.0–31.1 ms | 6.4–9.0 ms | 32–43× | 2.3–3.4× |
+| Large JSON (generated, 40 MB) | 2,621 ms | 595 ms | 319 ms | 8.2× | 1.9× |
+| JSON Schema (vega-lite, 306 KB) → TS | 418 ms | 61.3 ms | 37.4 ms | 11× | 1.6× |
+| Golden corpus, 11,178 CLI runs (wall, 12 jobs) | 571.7 s | 18.4 s | 12.5 s | 46× | 1.5× |
+| In process, 112 runs (engine as a library) | 369 ms (warm Node) | 288 ms | 153 ms | 2.4× | 1.9× |
+| JS API in Chrome, 20 MB JSON (WebAssembly engine, warm; see [WebAssembly](#webassembly)) | 435 ms | 502 ms (main) | 230 ms | 1.9× | 2.2× |
+| Peak RSS, 40 MB input | 625 MiB | 221 MiB | 154 MiB | 4.1× less | 1.4× less |
+| Peak RSS, 2.6 GB input | — | 6.73 GiB | 5.76 GiB | — | 1.2× less |
+
+Wall-time medians. The CLI's lead over TypeScript on small inputs is mostly
+Node's startup (~215 ms); on large inputs and in process it is the engine
+itself, which this phase made about twice as fast. The one regression,
+`--version` (+0.17 ms), is mimalloc's set-up and tear-down; it pays for
+itself as soon as there is any input to read (build with
+`--no-default-features` for the system allocator).
+
+In process, as in [In process](#in-process) (then, "parse" built the
+`JsonInput`: `JSON.parse` and `CompressedJSON`):
+
+| Engine | Total (min) | Parse | Engine | Per run | vs TypeScript |
+|---|---:|---:|---:|---:|---:|
+| TypeScript, warm Node (`xtask/bench/in-process.mjs`) | 369 (340) | 72.5 | 298 | 3.30 | 1.0× |
+| Rust before, system allocator | 288 (283) | 66.7 | 221 | 2.57 | 1.3× |
+| Rust after, system allocator | 199 (190) | 60.1 | 138 | 1.77 | 1.9× |
+| Rust after, mimalloc (the CLI's) | 153 (145) | 51.4 | 102 | 1.37 | 2.4× |
+
+All four write the same 1,206,163 bytes of output per iteration. Before
+this phase, inference-to-rendering ran only 1.35× faster natively than
+warm V8, which is why the WebAssembly engine was no faster than TypeScript
+(see [WebAssembly](#webassembly)). Per input and language, the largest
+gains are where naming dominated: github-events → C++ went from 20.2 ms to
+4.6 ms per run, → Java from 14.5 ms to 4.5 ms (`--per-input`).
+
 ## Memory on large inputs
 
-Two changes target multi-GB inputs (measured separately from the tables
-above, on the same machine):
+Two changes of Phase 7 target multi-GB inputs (measured separately from
+its tables above, on the same machine). Since Phase 8a, the 2.6 GB input
+peaks at 64 MiB instead (see [Large inputs](#large-inputs)).
 
 - **Streaming.** The CLI used to read each JSON sample (a file or standard
   input) whole before parsing it. It now reads chunks (8 KiB at first,
@@ -1874,6 +2110,33 @@ interleaved cycles, with the minimum where the medians were too noisy:
   WebAssembly (one `cfg`).
 - `read: record`, the run, and every phase of pokedex: within ±3%.
 
+**Re-checked** at the benchmark refresh of November 14, 2026 (load
+average 5.3 to 7.4): `fa1218d8c^` (`00078c130`) against `fa1218d8c`, the
+`phases` example (mimalloc, `--features trace`), 15 interleaved rounds of
+21 runs each; the medians of the rounds' medians, and the range of the
+change over the rounds:
+
+| Input | Phase | `fa1218d8c^` | `fa1218d8c` | Change |
+|---|---|---:|---:|---:|
+| rulings (27 MB) | read: commit | 10.87 ms | 11.40 ms | +4.9% (+3.7 to +5.7%) |
+| | read: record | 15.91 ms | 15.99 ms | +0.5% (−0.9 to +1.7%) |
+| | `jsonRead` (record + commit) | 26.80 ms | 27.36 ms | +2.1% (+1.0 to +3.1%) |
+| | the run | 4.35 ms | 4.36 ms | +0.3% (−1.1 to +1.6%) |
+| generated (20 MB) | read: commit | 31.11 ms | 30.36 ms | −2.4% (−6.7 to +1.5%) |
+| | `jsonRead` | 64.02 ms | 63.18 ms | −1.3% (−4.8 to +1.9%) |
+| generated (2 MB) | read: commit | 2.88 ms | 2.83 ms | −1.8% (−7.4 to −0.1%) |
+| | `jsonRead` | 6.09 ms | 5.99 ms | −1.5% (−6.4 to +1.0%) |
+
+The slowdown on the rulings' commit holds: +4.9%, and slower in every one
+of the 15 rounds, which makes reading the rulings natively 2% slower; the
+generated inputs are not slower. It is in the reader the WebAssembly
+engine runs, which interns into the compressed form's string table and
+keeps the `JSON.parse` reader's key table. The CLI's running tallies
+intern into the same kind of string table, but the CLI is not measurably
+affected: built at the same two commits, it took 29.9 and 30.0 ms on the 100k rulings and 86.7 and
+85.4 ms on the 20 MB input (`-l ts`, 15 interleaved runs each). The `cfg`
+above has not been made.
+
 #### Tried and dropped: a 32-bit hasher for WebAssembly
 
 foldhash's design with 32-bit halves ("fold32"). Each step multiplies the
@@ -2152,6 +2415,10 @@ cargo xtask bench --corpus --in-process --json site/data/benchmarks.json
                                       # the playground's numbers, as JSON
 node site/readme-charts.mjs           # the README's charts, from its tables (see README charts)
 
+# Large inputs (site/data/big-inputs.json): on all cores, then on one thread.
+/usr/bin/time -l target/release/quickertype <input> -l ts -o out.ts
+QUICKTYPE_READ_THREADS=1 /usr/bin/time -l target/release/quickertype <input> -l ts -o out.ts
+
 # Before/after: build the older commit in its own worktree and pass it.
 git worktree add ../qt-before 11091954f
 (cd ../qt-before && cargo build --release --bin quicktype)
@@ -2162,6 +2429,8 @@ node --expose-gc npm/quicktype-core/test/bench/compare.mjs             # Node, w
 node npm/quicktype-core/test/bench/compare.mjs --browser               # headless Chrome
 node npm/quicktype-core/test/bench/compare.mjs --browser --cold 5      # first runs
 node npm/quicktype-core/test/bench/compare.mjs --browser --again       # + a second run on each input
+node --expose-gc npm/quicktype-core/test/bench/compare.mjs --browser --again --json   # site/data/browser.json's warm numbers
+node npm/quicktype-core/test/bench/compare.mjs --cold 7 --json                       # and its cold_node numbers
 node npm/quicktype-core/test/bench/compare.mjs --variant main=../main-pkg --variant new=npm/quicktype-core
 (cd npm/quicktype-core && node script/build.mjs --heap-stats)        # + __heapBytes, __heapPeak
 
@@ -2171,9 +2440,9 @@ cargo bench -p quickertype --bench in_process --no-default-features   # system a
 node xtask/bench/in-process.mjs ../quicktype                            # warm TypeScript
 ```
 
-The in-process "before" row was measured by copying
+Phase 7's in-process "before" row was measured by copying
 `crates/quicktype-cli/benches/in_process.rs` (and its `[[bench]]` entry)
-onto `11091954f`; it only uses the public Rust API, which has not changed.
+onto `11091954f`; it only uses the public Rust API, which had not changed.
 
 Notes:
 
@@ -2217,21 +2486,10 @@ charts are drawn from. The README loads them by absolute URL from
 image paths, nor crates.io a relative `srcset`; a README on a package page
 therefore shows `main`'s charts.
 
-They read the README rather than `site/data/benchmarks.json` for now: the
-README's CLI rows are newer than that file (the `cargo xtask bench` run
-in [Reading after the CLI profile](#reading-after-the-cli-profile)), and
-its browser table ([Warm runs in Chrome](#warm-runs-in-chrome-step-by-step))
-is in no data file. Until `benchmarks.json` is measured again, these rows
-differ (quicktype's column, startup and the corpus agree):
-
-| README row | README | `site/data/benchmarks.json` |
-|---|---:|---:|
-| `pokedex.json` (82 KB) → TypeScript | 4.3 ms, 60× | 4.78 ms, 54× |
-| `github-events.json` (82 KB) → 8 languages | 5.6–8.2 ms, 35–50× | 6.35–9.03 ms, 32–43× |
-| GraphQL schema (1.2 MB) and query → TypeScript | 8.9 ms, 28× | 9.28 ms, 26× |
-| JSON Schema (vega-lite, 306 KB) → TypeScript | 36 ms, 11× | 37.4 ms, 11× |
-| Generated JSON (40 MB) → TypeScript | 179 ms, 15× | 319 ms, 8.2× |
-| Peak memory, generated JSON (40 MB) | 62 MiB, 10× less | 177.5 MiB, 3.5× less |
-
-`site/data/big-inputs.json`'s 40 MB row (154.2 MiB) is older than the
-README's too. The benchmarks page shows the data files' numbers.
+They read the README rather than the data files: the README rounds the
+numbers and groups some rows (the eight languages, quicktype's corpus).
+Its CLI rows are those of `site/data/benchmarks.json`, its browser rows
+those of `site/data/browser.json` (warm; the records' "generating the code
+only" row is their `generate_ms`). After the data files are measured
+again, copy the numbers into the README's tables, then regenerate the
+charts.

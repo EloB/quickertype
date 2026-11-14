@@ -61,7 +61,8 @@ section are absolute.
   redirected from one, on Unix) is cut between its elements and read on
   every core, into the same tallies as reading it in one go, so the
   output is the same byte for byte. An array of 1 million records
-  (267 MB) becomes TypeScript types about 4.5 times as fast on 12 cores.
+  (267 MB) becomes TypeScript types about 4.6 times as fast on 12 cores
+  (57 ms instead of 262 ms on an M2 Max).
   The memory the parts read beside each other take is bounded; pipes,
   JSON Lines and smaller files are read in one go as before.
   - quickertype-core: `ParallelOptions` (made from its `Default`) and

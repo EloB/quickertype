@@ -1,7 +1,7 @@
 # quickertype
 
 **quicktype, rewritten in Rust: the same CLI, the same API and the same
-output, byte for byte, up to 96× faster.**
+output, byte for byte, up to 86× faster.**
 
 [![CI](https://github.com/EloB/quickertype/actions/workflows/ci.yml/badge.svg)](https://github.com/EloB/quickertype/actions/workflows/ci.yml)
 [![Playground](https://img.shields.io/badge/playground-try%20it%20in%20the%20browser-6e56cf)](https://elob.github.io/quickertype/app/)
@@ -43,14 +43,15 @@ files. Wall time, median of 10 runs:
 
 | Run | quicktype | quickertype | Faster |
 |---|---:|---:|---:|
-| Startup (`--version`) | 217 ms | 2.3 ms | 96× |
-| `pokedex.json` (82 KB) → TypeScript | 257 ms | 4.3 ms | 60× |
-| `github-events.json` (82 KB) → 8 languages | 271–289 ms | 5.6–8.2 ms | 35–50× |
-| GraphQL schema (1.2 MB) and query → TypeScript | 245 ms | 8.9 ms | 28× |
-| JSON Schema (vega-lite, 306 KB) → TypeScript | 418 ms | 36 ms | 11× |
-| Generated JSON (40 MB) → TypeScript | 2,621 ms | 179 ms | 15× |
-| quicktype's test corpus: 11,178 CLI runs, 12 in parallel | 572 s | 12.5 s | 46× |
-| Peak memory, generated JSON (40 MB) | 625 MiB | 62 MiB | 10× less |
+| Startup (`--version`) | 226 ms | 2.9 ms | 77× |
+| Tiny JSON (77 B) → TypeScript | 244 ms | 2.9 ms | 86× |
+| `pokedex.json` (82 KB) → TypeScript | 266 ms | 4.0 ms | 67× |
+| `github-events.json` (82 KB) → 8 languages | 284–312 ms | 5.9–8.5 ms | 37–49× |
+| GraphQL schema (1.2 MB) and query → TypeScript | 269 ms | 9.2 ms | 29× |
+| JSON Schema (vega-lite, 306 KB) → TypeScript | 439 ms | 39 ms | 11× |
+| Generated JSON (40 MB) → TypeScript | 2,676 ms | 155 ms | 17× |
+| quicktype's test corpus: 11,178 CLI runs, 12 in parallel | 474 s | 9.0 s | 52× |
+| Peak memory, generated JSON (40 MB) | 653 MiB | 61 MiB | 11× less |
 
 <p>
 <picture>
@@ -59,16 +60,18 @@ files. Wall time, median of 10 runs:
 </picture>
 </p>
 
-- **Large files:** a 2.6 GB JSON file becomes TypeScript types at a peak
-  of 60 MiB (14.3 s of CPU time). Memory grows with what is distinct in
-  the JSON, not with its size.
+- **Large files:** a 2.6 GB JSON file becomes TypeScript types in 8.4 s
+  at a peak of 64 MiB; memory grows with what is distinct in the JSON,
+  not with its size. Scryfall cards (real data): 656 MB take 0.28 s and
+  50 MiB, against quicktype's 30 s and 3.2 GiB, and the cards in every
+  language (3.0 GB) take 1.4 s.
 - **Several cores:** a file of 8 MiB or more whose top-level value is an
   array is read on all cores: an array of 1 million records (267 MB)
-  becomes TypeScript types in 50 ms instead of 261 ms on a 12-core
+  becomes TypeScript types in 57 ms instead of 262 ms on a 12-core
   M2 Max, with the same output.
 - **Where the time goes:** on small inputs, most of the difference is
   Node.js's startup (about 215 ms); on large inputs it is the engine. As
-  libraries in a warm process, the native engine is 2.4× faster than
+  libraries in a warm process, the native engine is 3.7× faster than
   quicktype's TypeScript.
 - **In the browser and on npm:** the table is the native CLI's. The
   WebAssembly engine behind quicktype's own API (`addSource`, then
@@ -84,18 +87,18 @@ files. Wall time, median of 10 runs:
 
   | Input | quicktype | quickertype | Faster |
   |---|---:|---:|---:|
-  | `pokedex.json` (82 KB) | 5.1 ms | 2.3 ms | 2.2× |
-  | Generated JSON (20 MB) | 404 ms | 145 ms | 2.8× |
-  | Array of 100k small records (27 MB) | 179 ms | 66 ms | 2.7× |
-  | The same, generating the code only | 96 ms | 8.6 ms | 11× |
+  | `pokedex.json` (82 KB) | 4.7 ms | 1.6 ms | 2.9× |
+  | Generated JSON (20 MB) | 406 ms | 122 ms | 3.3× |
+  | Array of 100k small records (27 MB) | 156 ms | 53 ms | 2.9× |
+  | The same, generating the code only | 76 ms | 6.6 ms | 12× |
 
   A first run also compiles the 5 MiB engine: in a fresh Node process,
-  `pokedex.json` takes 51 ms against quicktype's 28 ms, and the records
-  134 ms against 240 ms.
+  `pokedex.json` takes 51 ms against quicktype's 29 ms, and the records
+  114 ms against 245 ms.
 
-Measured on an Apple M2 Max (12 cores, 64 GiB), macOS 26.6.2, Node.js
-24.16.0, Chrome 157, rustc 1.99.1. Method, every benchmark and how to
-reproduce them:
+Measured on November 14, 2026, on an Apple M2 Max (12 cores, 64 GiB),
+macOS 26.6.2, Node.js 24.16.0, Chrome 157, rustc 1.99.1. Method, every
+benchmark and how to reproduce them:
 [docs/BENCHMARKS.md](docs/BENCHMARKS.md) and the
 [benchmarks page](https://elob.github.io/quickertype/benchmarks.html).
 
