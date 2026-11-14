@@ -486,8 +486,12 @@ impl Plan {
         }
         let ranges = usize::try_from(size.div_ceil(range)).ok()?;
         // No more threads than the ranges give PARTS_PER_THREAD each (more
-        // would wait for work, and the default budget grows with them).
+        // would wait for work, and the default budget grows with them); a
+        // single one would only add the scan to reading in one go.
         let threads = threads.min(ranges.div_ceil(PARTS_PER_THREAD));
+        if threads < 2 {
+            return None;
+        }
         Some(Plan {
             range,
             ranges,
@@ -1355,6 +1359,13 @@ mod tests {
         (result, how)
     }
 
+    /// Whether a sample of `len` bytes is read on several threads with
+    /// ranges of `range` (as small samples' ranges are): with more than
+    /// PARTS_PER_THREAD ranges, at least two threads read, 1 sample whole.
+    fn on_threads(len: usize, range: usize) -> usize {
+        usize::from(len.div_ceil(range) > PARTS_PER_THREAD)
+    }
+
     fn options(threads: usize, range: usize) -> ParallelOptions {
         ParallelOptions {
             threads,
@@ -1436,7 +1447,12 @@ mod tests {
                         "{range} {:?}",
                         String::from_utf8_lossy(bytes)
                     );
-                    assert_eq!(how.whole, 1, "{range} {:?}", String::from_utf8_lossy(bytes));
+                    assert_eq!(
+                        how.whole,
+                        on_threads(bytes.len(), range),
+                        "{range} {:?}",
+                        String::from_utf8_lossy(bytes)
+                    );
                 }
             }
         }
@@ -1493,7 +1509,7 @@ mod tests {
         // Every way: the broken arrays fail in the first part (read again
         // from the start), or in a later one (the rest in one go).
         assert!(
-            total.whole > 0 && total.in_part > 100 && total.again > 10,
+            total.whole > 0 && total.in_part > 50 && total.again > 0,
             "{total:?}"
         );
         // Not arrays: read in one go.
@@ -1628,7 +1644,8 @@ mod tests {
             for threads in [2, 3] {
                 let (result, how) = read_with(&config, bytes.as_bytes(), options(threads, range));
                 assert_eq!(result, expected, "ranges of {range}, {threads} threads");
-                assert_eq!(how.whole, 1, "ranges of {range}, {threads} threads");
+                let whole = on_threads(bytes.len(), range);
+                assert_eq!(how.whole, whole, "ranges of {range}, {threads} threads");
             }
         }
     }
