@@ -142,8 +142,8 @@ pub(crate) struct StringTally {
     /// Whether some string here is not interned (the `$ref` check).
     pub(crate) not_interned: bool,
     /// What `with_enums` and `without_enums` are known to absorb, as bits
-    /// (see [`add_unrestricted_once`]); only the walk over a compressed
-    /// form sets them, and a merge keeps them true.
+    /// (see [`add_unrestricted_once`]), which the values' combinations
+    /// set; a merge keeps those of both tallies.
     absorbed: [u32; 2],
 }
 
@@ -332,6 +332,41 @@ fn take_combined(
 }
 
 impl StringTally {
+    /// What an interned string (`Tag.InternedString`) adds besides its
+    /// case: an unrestricted string, without enum inference.
+    fn add_interned(&mut self) -> Result<()> {
+        add_unrestricted_once(&mut self.without_enums, &mut self.absorbed[1])
+    }
+
+    /// A string too long to intern (`Tag.UninternedString`).
+    fn add_uninterned(&mut self) -> Result<()> {
+        self.not_interned = true;
+        add_unrestricted_once(&mut self.with_enums, &mut self.absorbed[0])?;
+        add_unrestricted_once(&mut self.without_enums, &mut self.absorbed[1])
+    }
+
+    /// A string of a transformed kind without attribute producer
+    /// (`Tag.StringFormat`).
+    fn add_string_format(&mut self, kind: TypeKind) -> Result<()> {
+        self.not_interned = true;
+        add_transformation_once(&mut self.with_enums, &mut self.absorbed[0], kind)?;
+        add_transformation_once(&mut self.without_enums, &mut self.absorbed[1], kind)
+    }
+
+    /// A string of a transformed kind with an attribute producer (`uri`,
+    /// `Tag.TransformedString`): the producer's attributes, then the kind.
+    fn add_transformed_string(
+        &mut self,
+        kind: TypeKind,
+        attributes: &TypeAttributes,
+    ) -> Result<()> {
+        self.not_interned = true;
+        add_produced(&mut self.with_enums, attributes)?;
+        add_transformation_once(&mut self.with_enums, &mut self.absorbed[0], kind)?;
+        add_produced(&mut self.without_enums, attributes)?;
+        add_transformation_once(&mut self.without_enums, &mut self.absorbed[1], kind)
+    }
+
     /// The fallible part of appending `other`'s strings after these: the
     /// combined attributes, computed without changing anything.
     fn combined_with(&self, other: &StringTally) -> Result<Combined> {
@@ -355,6 +390,10 @@ impl StringTally {
             without_enums,
         );
         self.not_interned |= other.not_interned;
+        // What either combination absorbs, their union does.
+        for (absorbed, other) in self.absorbed.iter_mut().zip(other.absorbed) {
+            *absorbed |= other;
+        }
     }
 }
 
@@ -1060,27 +1099,17 @@ impl<'c> CompressedTally<'c> {
                         *entry.or_insert(0) += 1;
                     }
                 }
-                add_unrestricted_once(&mut strings.without_enums, &mut strings.absorbed[1])?;
+                strings.add_interned()?;
                 return Ok(true);
             }
             Value::UninternedString => {
                 // `TallyBuilder::add_uninterned`.
-                let strings = Self::strings(tallies, node)?;
-                strings.not_interned = true;
-                add_unrestricted_once(&mut strings.with_enums, &mut strings.absorbed[0])?;
-                add_unrestricted_once(&mut strings.without_enums, &mut strings.absorbed[1])?;
+                Self::strings(tallies, node)?.add_uninterned()?;
                 return Ok(true);
             }
             Value::StringFormat(kind) => {
                 // `TallyBuilder::add_string_format`.
-                let strings = Self::strings(tallies, node)?;
-                strings.not_interned = true;
-                add_transformation_once(&mut strings.with_enums, &mut strings.absorbed[0], kind)?;
-                add_transformation_once(
-                    &mut strings.without_enums,
-                    &mut strings.absorbed[1],
-                    kind,
-                )?;
+                Self::strings(tallies, node)?.add_string_format(kind)?;
                 return Ok(true);
             }
             Value::TransformedString(index) => {
@@ -1097,16 +1126,7 @@ impl<'c> CompressedTally<'c> {
                     return Ok(false);
                 };
                 let attributes = producer(text);
-                let strings = Self::strings(tallies, node)?;
-                strings.not_interned = true;
-                add_produced(&mut strings.with_enums, &attributes)?;
-                add_transformation_once(&mut strings.with_enums, &mut strings.absorbed[0], kind)?;
-                add_produced(&mut strings.without_enums, &attributes)?;
-                add_transformation_once(
-                    &mut strings.without_enums,
-                    &mut strings.absorbed[1],
-                    kind,
-                )?;
+                Self::strings(tallies, node)?.add_transformed_string(kind, &attributes)?;
                 return Ok(true);
             }
             Value::Object(index) => {
@@ -1356,7 +1376,7 @@ impl<'a> TallyBuilder<'a> {
         let id = self.tallies.strings.intern_text(s);
         let strings = self.strings_mut(node)?;
         *strings.cases.entry(id).or_insert(0) += 1;
-        add_unrestricted(&mut strings.without_enums)?;
+        strings.add_interned()?;
         self.value_done();
         Ok(())
     }
@@ -1364,10 +1384,7 @@ impl<'a> TallyBuilder<'a> {
     /// A string too long to intern (`Tag.UninternedString`).
     fn add_uninterned(&mut self) -> Result<()> {
         let node = self.destination()?;
-        let strings = self.strings_mut(node)?;
-        strings.not_interned = true;
-        add_unrestricted(&mut strings.with_enums)?;
-        add_unrestricted(&mut strings.without_enums)?;
+        self.strings_mut(node)?.add_uninterned()?;
         self.value_done();
         Ok(())
     }
@@ -1376,10 +1393,7 @@ impl<'a> TallyBuilder<'a> {
     /// (`Tag.StringFormat`).
     fn add_string_format(&mut self, kind: TypeKind) -> Result<()> {
         let node = self.destination()?;
-        let strings = self.strings_mut(node)?;
-        strings.not_interned = true;
-        add_transformation(&mut strings.with_enums, kind)?;
-        add_transformation(&mut strings.without_enums, kind)?;
+        self.strings_mut(node)?.add_string_format(kind)?;
         self.value_done();
         Ok(())
     }
@@ -1392,12 +1406,8 @@ impl<'a> TallyBuilder<'a> {
         attributes: &TypeAttributes,
     ) -> Result<()> {
         let node = self.destination()?;
-        let strings = self.strings_mut(node)?;
-        strings.not_interned = true;
-        add_produced(&mut strings.with_enums, attributes)?;
-        add_transformation(&mut strings.with_enums, kind)?;
-        add_produced(&mut strings.without_enums, attributes)?;
-        add_transformation(&mut strings.without_enums, kind)?;
+        self.strings_mut(node)?
+            .add_transformed_string(kind, attributes)?;
         self.value_done();
         Ok(())
     }

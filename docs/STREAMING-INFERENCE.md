@@ -166,7 +166,13 @@ transformation the string types already allow (or that unrestricted
 types absorb), and adding URI attributes whose protocol and extension are
 already in the combined sets. In each case the union returns the same
 value with the same key order, so skipping it is exact; it makes the work
-per string value a lookup instead of a set merge.
+per string value a lookup instead of a set merge. Bits per tally
+(`StringTally::absorbed`) then skip the lookup too: combining only ever
+adds to the string types (their union is unrestricted if either is, and
+unites the transformations), so once they absorb unrestricted strings or
+a transformation, they always do, and the bit set when it was first
+added says so for every later value. A merge keeps the bits of both
+tallies, since what either combination absorbs, their union does.
 
 `StringTally::without_enums` is the same combination as it is without
 enum inference, where every interned string also adds `unrestricted`.
@@ -370,17 +376,11 @@ where reading gives each sample a tree and merges them, which is the
 same tree (`merging_trees_is_reading_on`). The tallies are therefore the
 ones reading the samples gives, and everything above applies.
 
-Two differences cannot be observed. A key or case is known by its index
+One difference cannot be observed: a key or case is known by its index
 in the form's string table, not in a table of the tallies' own; every
 text is there once, as `internString` interns it, but `"__proto__"`,
 which gets a new index each time and so is known by its text (the walk
-takes the first such index for all). And per-tally bits record what the
-combined string attributes absorb already (unrestricted string types,
-each transformation), which the shortcuts of [Other
-strings](#other-strings-combined-attributes) look up for every value:
-combining only ever adds to them, so once a value is absorbed every
-later one like it is, and the bits skip only combinations those lookups
-would skip, without looking.
+takes the first such index for all).
 
 The walk declines what no reader makes: an object or array reached a
 second time (shared, or a cycle), an object key that is not an interned
