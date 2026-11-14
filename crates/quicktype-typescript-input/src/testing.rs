@@ -13,7 +13,10 @@ thread_local! {
 
 /// Also asks the compiler every question the session answers itself (the
 /// JSDoc it knows cannot exist, a property's declared type) and panics when
-/// the compiler's answer differs.
+/// the compiler's answer differs. Inherited documentation is TypeScript
+/// 5.9's, which TypeScript 7 does not give; it is built from compiler
+/// answers and the syntax tree only, and the differential corpus checks it
+/// against the recorded reference.
 pub fn verify_local_answers(on: bool) {
     VERIFY.with(|v| v.set(on));
 }

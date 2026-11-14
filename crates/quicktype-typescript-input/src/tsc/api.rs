@@ -241,6 +241,8 @@ pub enum Query {
     IsDefaultLibrary(String),
     /// `typeToTypeNode(type, undefined, flags)`.
     TypeToTypeNode(u64, u32),
+    /// `getPropertyOfType(type, name)`.
+    PropertyOfType(u64, String),
 }
 
 impl Query {
@@ -269,6 +271,7 @@ impl Query {
             Query::ConstantValue(_) => "getConstantValue",
             Query::IsDefaultLibrary(_) => "getSourceFileMetadata",
             Query::TypeToTypeNode(..) => "typeToTypeNode",
+            Query::PropertyOfType(..) => "getPropertyOfType",
         }
     }
 }
@@ -590,6 +593,9 @@ impl Session {
                 self.payload(&format!("\"location\":{}", quote(h)))
             }
             Query::IsDefaultLibrary(path) => self.payload(&format!("\"file\":{}", quote(path))),
+            Query::PropertyOfType(id, name) => {
+                self.payload(&format!("\"type\":{id},\"name\":{}", quote(name)))
+            }
         }
     }
 
@@ -647,6 +653,7 @@ impl Session {
             | Query::AliasSymbolOfType(_)
             | Query::ParentOfSymbol(_)
             | Query::AliasedSymbol(_)
+            | Query::PropertyOfType(..)
             | Query::SymbolAt(_) => {
                 let v: Option<SymbolResponse> = parse_json(method, bytes)?;
                 Answer::Symbol(v.map(|r| self.symbol_from(r)))
@@ -1097,6 +1104,11 @@ impl Session {
     /// `getPropertiesOfType`.
     pub fn properties_of_type(&self, t: &Type) -> Result<Vec<Rc<Symbol>>> {
         self.get(Query::PropertiesOfType(t.id))
+    }
+
+    /// `getPropertyOfType(type, name)`.
+    pub fn property_of_type(&self, t: &Type, name: &str) -> Result<Option<Rc<Symbol>>> {
+        self.get(Query::PropertyOfType(t.id, name.to_owned()))
     }
 
     /// `getIndexInfosOfType`.

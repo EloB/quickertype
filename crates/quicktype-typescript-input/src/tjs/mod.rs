@@ -133,6 +133,8 @@ pub struct Generator<'s> {
     index_cache: HashMap<u64, Option<Rc<Type>>>,
     order: order::CreationOrder,
     main_files: Vec<String>,
+    /// TypeScript 5.9 documentation comments by symbol (`comments`).
+    docs: std::cell::RefCell<HashMap<(u64, comments::Accessors), Vec<comments::Part>>>,
 }
 
 /// `table[key]` on one of typescript-json-schema's keyword tables, which are
@@ -223,6 +225,7 @@ impl<'s> Generator<'s> {
             fqn_cache: HashMap::new(),
             index_cache: HashMap::new(),
             order,
+            docs: Default::default(),
             main_files: user_files
                 .iter()
                 .filter(|f| !f.is_declaration_file())

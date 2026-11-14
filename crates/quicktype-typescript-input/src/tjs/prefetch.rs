@@ -23,6 +23,7 @@ use crate::tsc::generated::{
     object_flags as of, symbol_flags as sf, syntax_kind as sk, type_flags as tf,
 };
 
+use super::comments::{comment_nodes_are_known, super_type_nodes};
 use super::{
     NO_TRUNCATION, NODE_BUILDER_IN_TYPE_ALIAS, NODE_BUILDER_NO_TRUNCATION, USE_FULLY_QUALIFIED_TYPE,
 };
@@ -71,6 +72,8 @@ pub fn warm(s: &Session, files: &[Node], types: &[Rc<Type>], symbols: &[Rc<Symbo
         seen_types: HashSet::new(),
         seen_symbols: HashSet::new(),
         asked_parents: HashSet::new(),
+        bases: Vec::new(),
+        doc_wanted: HashSet::new(),
     };
     let mut reached: Vec<Reached> = types
         .iter()
@@ -104,6 +107,11 @@ struct Walk<'s> {
     seen_symbols: HashSet<u64>,
     /// Parent handles already asked for (many symbols share a parent).
     asked_parents: HashSet<u64>,
+    /// `getPropertyOfType` queries for inherited documentation, asked in
+    /// the current batch.
+    bases: Vec<Query>,
+    /// Base members whose documentation the generator reads.
+    doc_wanted: HashSet<u64>,
 }
 
 impl Walk<'_> {
@@ -243,10 +251,12 @@ impl Walk<'_> {
             self.symbol_queries(sym, &mut queries);
         }
         s.prefetch(queries)?;
+        let mut inherited_from = Vec::new();
+        self.reach_bases(&mut inherited_from);
 
         // What the answers reach, and the properties to fetch.
         let mut next: Vec<Reached> = Vec::new();
-        let mut next_symbols: Vec<Rc<Symbol>> = Vec::new();
+        let mut next_symbols: Vec<Rc<Symbol>> = inherited_from;
         let mut with_properties = Vec::new();
         let mut signatures = Vec::new();
         let mut arguments = Vec::new();
@@ -367,6 +377,7 @@ impl Walk<'_> {
             }
         }
         s.prefetch(queries)?;
+        self.reach_bases(&mut next_symbols);
         for p in properties {
             if let Some(Some(t)) = s.cached(&Query::TypeOfSymbol(p.id)) {
                 next.push(Reached { t, member: false });
@@ -390,6 +401,71 @@ impl Walk<'_> {
         Ok((next, next_symbols))
     }
 
+    /// What the generator asks to render a symbol's documentation as
+    /// TypeScript 5.9 does (`comments`): nothing when its JSDoc has text;
+    /// for a member of a class or interface without, the property of its
+    /// name on each super type (whose answers [`Walk::reach_bases`] follows);
+    /// TypeScript 7's rendering for a library symbol reached that way, and
+    /// for declarations whose documentation TypeScript 5.9 reads elsewhere.
+    fn documentation_queries(&mut self, sym: &Rc<Symbol>, out: &mut Vec<Query>) {
+        let from_lib = sym
+            .declarations
+            .first()
+            .and_then(|d| self.in_default_library(&d.path));
+        if from_lib == Some(true) {
+            if self.doc_wanted.contains(&sym.id) {
+                out.push(Query::DocumentationComment(sym.id));
+            }
+            return;
+        }
+        let decls: Option<Vec<Node>> = sym.declarations.iter().map(|d| self.s.loaded(d)).collect();
+        let Some(decls) = decls else {
+            out.push(Query::DocumentationComment(sym.id));
+            return;
+        };
+        let documented = decls
+            .iter()
+            .any(|d| d.js_doc().last().is_some_and(Node::has_comment));
+        if documented {
+            return;
+        }
+        if !decls.iter().all(comment_nodes_are_known) {
+            out.push(Query::DocumentationComment(sym.id));
+            return;
+        }
+        for decl in &decls {
+            let mut container = decl.parent();
+            if container
+                .as_ref()
+                .is_some_and(|c| c.kind() == sk::Constructor)
+            {
+                container = container.and_then(|c| c.parent());
+            }
+            let Some(container) = container else { continue };
+            for node in super_type_nodes(&container) {
+                let base = self
+                    .s
+                    .cached::<Option<Rc<Type>>>(&Query::TypeAt(node.handle()));
+                if let Some(Some(base)) = base {
+                    let q = Query::PropertyOfType(base.id, sym.name.clone());
+                    out.push(q.clone());
+                    self.bases.push(q);
+                }
+            }
+        }
+    }
+
+    /// The base members the last batch's `getPropertyOfType` answers named,
+    /// whose documentation the generator reads next.
+    fn reach_bases(&mut self, next: &mut Vec<Rc<Symbol>>) {
+        for q in std::mem::take(&mut self.bases) {
+            if let Some(Some(base)) = self.s.cached::<Option<Rc<Symbol>>>(&q) {
+                self.doc_wanted.insert(base.id);
+                next.push(base);
+            }
+        }
+    }
+
     /// The questions about a newly found symbol: its JSDoc, members and
     /// parent.
     fn symbol_queries(&mut self, sym: &Rc<Symbol>, out: &mut Vec<Query>) {
@@ -397,22 +473,7 @@ impl Walk<'_> {
             return;
         }
         out.push(Query::JsDocTags(sym.id));
-        // The generator asks for the documentation comment of a symbol
-        // outside the libraries when its declarations have none to read.
-        let from_lib = sym
-            .declarations
-            .first()
-            .and_then(|d| self.in_default_library(&d.path));
-        if from_lib != Some(true) {
-            let documented = sym.declarations.iter().any(|d| {
-                self.s
-                    .loaded(d)
-                    .is_some_and(|decl| decl.js_doc().iter().any(Node::has_comment))
-            });
-            if !documented {
-                out.push(Query::DocumentationComment(sym.id));
-            }
-        }
+        self.documentation_queries(sym, out);
         if sym.flags & sf::TypeLiteral != 0 {
             out.push(Query::MembersOfSymbol(sym.id));
         }

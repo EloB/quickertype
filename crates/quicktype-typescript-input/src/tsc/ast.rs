@@ -434,6 +434,18 @@ impl Node {
         }
     }
 
+    /// The `token` of a heritage clause: `ExtendsKeyword` or
+    /// `ImplementsKeyword`.
+    pub fn token(&self) -> Option<u32> {
+        (self.kind() == sk::HeritageClause).then(|| {
+            if (self.data() >> 24) & 0x1 != 0 {
+                sk::ImplementsKeyword
+            } else {
+                sk::ExtendsKeyword
+            }
+        })
+    }
+
     /// `ModifierFlags` of the node's own `modifiers`.
     pub fn modifier_flags(&self) -> u32 {
         self.named_list("modifiers")
