@@ -1040,6 +1040,15 @@ impl KeyId for u32 {
     }
 }
 
+/// A key as [`TallyBuilder::set_key`] counts it: `"__proto__"`, which is
+/// counted apart, or another key, known by its text (the stream reader's)
+/// or by its index in the string table (the `JSON.parse` reader's).
+enum ReadKey<'a> {
+    Proto,
+    Text(KeyText<'a>),
+    Index(u32),
+}
+
 /// A key known by its text (a reader's), found in the string table (and
 /// added to it) only when it is not the key expected.
 struct KeyText<'a> {
@@ -1712,16 +1721,18 @@ impl<'a> TallyBuilder<'a> {
         }
     }
 
-    /// What [`JsonSink::set_property_key`] does: counts `key` in the
-    /// current object, and makes its value's node where the next value
-    /// goes. Takes only the fields it needs, so that `key` can be borrowed
-    /// from another (the reader's key table,
-    /// [`JsonSink::set_property_key_read`]).
+    /// `setPropertyKey(key)`, for both readers' keys: counts `key` in the
+    /// current object (`is_ref` if it is `"$ref"`), and makes its value's
+    /// node where the next value goes. Takes only the fields it needs, so
+    /// that a key can be borrowed from another (the string table, for
+    /// [`KeyText`]). Inlined into both, which then keep only their kinds of
+    /// key.
+    #[inline(always)]
     fn set_key(
         tallies: &mut Tallies,
-        strings: &mut Strings,
         frames: &mut [Frame],
-        key: &str,
+        key: ReadKey<'_>,
+        is_ref: bool,
     ) -> Result<()> {
         let Some(Frame::Object {
             node,
@@ -1732,13 +1743,13 @@ impl<'a> TallyBuilder<'a> {
         else {
             return panic("Setting a key outside an object");
         };
-        let (child, following) = if key == "__proto__" {
-            (tallies.add_proto_key(*node)?, *next_key)
-        } else {
-            tallies.add_key(*node, KeyText { strings, text: key }, *next_key)?
+        let (child, following) = match key {
+            ReadKey::Proto => (tallies.add_proto_key(*node)?, *next_key),
+            ReadKey::Text(key) => tallies.add_key(*node, key, *next_key)?,
+            ReadKey::Index(key) => tallies.add_key(*node, key, *next_key)?,
         };
         *value = Some(child);
-        *expecting_ref = key == "$ref";
+        *expecting_ref = is_ref;
         *next_key = following;
         Ok(())
     }
@@ -1853,7 +1864,15 @@ impl JsonSink for TallyBuilder<'_> {
     }
 
     fn set_property_key(&mut self, key: &str) -> Result<()> {
-        Self::set_key(self.tallies, self.strings, &mut self.frames, key)
+        let read = if key == "__proto__" {
+            ReadKey::Proto
+        } else {
+            ReadKey::Text(KeyText {
+                strings: self.strings,
+                text: key,
+            })
+        };
+        Self::set_key(self.tallies, &mut self.frames, read, key == "$ref")
     }
 
     fn finish_object(&mut self) -> Result<()> {
@@ -1914,30 +1933,12 @@ impl JsonSink for TallyBuilder<'_> {
     /// ([`StringReaderState::key_index`]), and the key expected next is
     /// matched by that id, without comparing texts.
     fn set_property_key_read(&mut self, id: u32) -> Result<()> {
-        let TallyBuilder {
-            tallies,
-            strings,
-            string_reader,
-            frames,
-            ..
-        } = self;
-        let Some(Frame::Object {
-            node,
-            value,
-            expecting_ref,
-            next_key,
-        }) = frames.last_mut()
-        else {
-            return panic("Setting a key outside an object");
+        let read = match self.string_reader.key_index(id, self.strings) {
+            Some(key) => ReadKey::Index(key),
+            None => ReadKey::Proto,
         };
-        let (child, following) = match string_reader.key_index(id, strings) {
-            Some(key) => tallies.add_key(*node, key, *next_key)?,
-            None => (tallies.add_proto_key(*node)?, *next_key),
-        };
-        *value = Some(child);
-        *expecting_ref = string_reader.key_text(id) == "$ref";
-        *next_key = following;
-        Ok(())
+        let is_ref = self.string_reader.key_text(id) == "$ref";
+        Self::set_key(self.tallies, &mut self.frames, read, is_ref)
     }
 
     /// Frees the failed sample's tree: the tallies are as they were before
