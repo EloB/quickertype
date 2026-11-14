@@ -50,11 +50,25 @@ files. Wall time, median of 10 runs:
   Node.js's startup (about 215 ms); on large inputs it is the engine. As
   libraries in a warm process, the native engine is 2.4× faster than
   quicktype's TypeScript.
-- **In the browser and on npm:** the WebAssembly engine is being optimized;
-  these numbers are for the native CLI and make no claim about it.
+- **In the browser and on npm:** the table is the native CLI's. The
+  WebAssembly engine behind quicktype's own API (`addSource`, then
+  `quicktypeMultiFile` to TypeScript), warm in headless Chrome, against
+  quicktype's TypeScript engine in the same page:
+
+  | Input | quicktype | quickertype | Faster |
+  |---|---:|---:|---:|
+  | `pokedex.json` (82 KB) | 5.1 ms | 2.3 ms | 2.2× |
+  | Generated JSON (20 MB) | 404 ms | 145 ms | 2.8× |
+  | Array of 100k small records (27 MB) | 179 ms | 66 ms | 2.7× |
+  | The same, generating the code only | 96 ms | 8.6 ms | 11× |
+
+  A first run also compiles the 5 MiB engine: in a fresh Node process,
+  `pokedex.json` takes 51 ms against quicktype's 28 ms, and the records
+  134 ms against 240 ms.
 
 Measured on an Apple M2 Max (12 cores, 64 GiB), macOS 26.6.2, Node.js
-24.16.0, rustc 1.99.1. Method, every benchmark and how to reproduce them:
+24.16.0, Chrome 157, rustc 1.99.1. Method, every benchmark and how to
+reproduce them:
 [docs/BENCHMARKS.md](docs/BENCHMARKS.md) and the
 [benchmarks page](https://elob.github.io/quickertype/benchmarks.html).
 

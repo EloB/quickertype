@@ -348,6 +348,9 @@ pub(crate) struct Strings {
     /// Indexes into `spans`, hashed by text; only looked up.
     indexes: HashTable<u32>,
     hasher: BuildHasher,
+    /// Whether a text other than `"__proto__"` is in the table more than
+    /// once (only an imported table can have that).
+    duplicates: bool,
 }
 
 impl Strings {
@@ -357,6 +360,7 @@ impl Strings {
             spans: Vec::new(),
             indexes: HashTable::new(),
             hasher: BuildHasher::default(),
+            duplicates: false,
         }
     }
 
@@ -417,7 +421,9 @@ impl Strings {
     /// the first with its text (and not `"__proto__"`).
     fn import(&mut self, s: &str) -> u32 {
         let hash = self.hasher.hash_one(s);
-        let findable = s != "__proto__" && self.find_hashed(s, hash).is_none();
+        let is_proto = s == "__proto__";
+        let findable = !is_proto && self.find_hashed(s, hash).is_none();
+        self.duplicates |= !is_proto && !findable;
         self.append(s, findable.then_some(hash))
     }
 
@@ -452,6 +458,7 @@ impl Strings {
                 spans,
                 indexes,
                 hasher,
+                ..
             } = self;
             let text = |i: u32| {
                 let span = spans[i as usize];
@@ -605,6 +612,19 @@ impl CompressedJson {
 
     fn string_at(&self, index: u32) -> Result<&str> {
         defined(self.strings.get(index as usize))
+    }
+
+    /// String `index` of the string table.
+    pub(crate) fn string(&self, index: u32) -> Option<&str> {
+        self.strings.get(index as usize)
+    }
+
+    /// Whether every text but `"__proto__"` is in the string table at most
+    /// once, so that a string is known by its index: always for samples
+    /// read here, as in TypeScript, whose `internString` interns every
+    /// text once but `"__proto__"`; for imported tables, if they are such.
+    pub(crate) fn unique_strings(&self) -> bool {
+        !self.strings.duplicates
     }
 
     /// `getObjectForValue(v)`: the object's key/value pairs, in the order

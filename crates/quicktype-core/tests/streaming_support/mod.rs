@@ -1,8 +1,9 @@
-//! Runs generated inputs through both ways of inferring JSON types, running
-//! tallies and quicktype's compressed form, and compares everything that
-//! comes out: each source's error, the type graph right after inference
-//! (all types in index order, with every attribute) for several inference
-//! flags, and a whole run for a language and an option set.
+//! Runs generated inputs through the ways of inferring JSON types, running
+//! tallies, tallies of the compressed form and quicktype's compressed form
+//! value by value (the reference), and compares everything that comes out:
+//! each source's error, the type graph right after inference (all types in
+//! index order, with every attribute) for several inference flags, and a
+//! whole run for a language and an option set.
 
 pub mod generator;
 
@@ -82,17 +83,74 @@ fn sample(s: &generator::Sample, seed: u64) -> JsonSample {
     }
 }
 
+/// A way of inferring the types of a case.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Inference {
+    /// quicktype's: from the compressed form, value by value (the
+    /// reference).
+    Reference,
+    /// From running tallies, counted while the samples are read (the
+    /// CLI's).
+    RunningTallies,
+    /// From tallies of the compressed form the readers made, made when the
+    /// types are inferred: the WebAssembly engine's, for the samples it
+    /// read (`JsonInput::from_shared`).
+    CompressedTallies,
+    /// The same of that form's tables, exported and imported again: the
+    /// WebAssembly engine's, for the tables of a JavaScript
+    /// `CompressedJSON` (`JsonInput::from_compressed`).
+    ImportedTables,
+}
+
+/// Which ways of inferring are compared with the reference.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Path {
+    /// Running tallies (the CLI's).
+    RunningTallies,
+    /// Tallies of the compressed form, as the readers made it and as
+    /// imported tables (the WebAssembly engine's).
+    CompressedTallies,
+    /// All of them.
+    All,
+}
+
+impl Path {
+    /// The ways of inferring compared with the reference.
+    fn tested(self) -> &'static [Inference] {
+        match self {
+            Path::RunningTallies => &[Inference::RunningTallies],
+            Path::CompressedTallies => &[Inference::CompressedTallies, Inference::ImportedTables],
+            Path::All => &[
+                Inference::RunningTallies,
+                Inference::CompressedTallies,
+                Inference::ImportedTables,
+            ],
+        }
+    }
+
+    /// The path named `name` (`running`, `compressed` or `all`).
+    pub fn named(name: &str) -> Option<Path> {
+        match name {
+            "running" => Some(Path::RunningTallies),
+            "compressed" => Some(Path::CompressedTallies),
+            "all" => Some(Path::All),
+            _ => None,
+        }
+    }
+}
+
 /// The JSON input for `case`, and what each `add_source` returned; it
-/// infers from running tallies or not as `tallies` says, or as
-/// `JsonInput::new` chooses (`QUICKTYPE_INFERENCE`).
+/// infers as `inference` says, or as `JsonInput::new` chooses
+/// (`QUICKTYPE_INFERENCE`).
 fn input(
     case: &Case,
     lang: &dyn TargetLanguage,
     renderer_options: &RendererOptions,
-    tallies: Option<bool>,
+    inference: Option<Inference>,
 ) -> (JsonInput, Vec<String>) {
     let mut input = json_input_for_target_language(lang, case.handle_refs, renderer_options);
-    if let Some(tallies) = tallies {
+    if let Some(inference) = inference {
+        let tallies = inference == Inference::RunningTallies;
         input.set_tally_inference(tallies).expect("no sources yet");
         assert_eq!(input.tally_inference(), tallies);
     }
@@ -110,6 +168,22 @@ fn input(
             description: source.description.clone(),
         });
         results.push(format!("{result:?}"));
+    }
+    match inference {
+        Some(Inference::Reference) => input.set_tally_compressed(false),
+        Some(Inference::CompressedTallies) => input.set_tally_compressed(true),
+        Some(Inference::ImportedTables) => {
+            let (tables, top_levels) = input.to_compressed().expect("the compressed form");
+            input = JsonInput::from_compressed(
+                &tables,
+                case.handle_refs,
+                lang.date_time_recognizer(),
+                top_levels,
+            )
+            .expect("its own tables");
+            input.set_tally_compressed(true);
+        }
+        Some(Inference::RunningTallies) | None => {}
     }
     (input, results)
 }
@@ -204,15 +278,15 @@ fn graph(lang: &dyn TargetLanguage, input: &mut InputData, flags: GraphFlags) ->
 }
 
 /// A whole run of `lang` with the CLI flags `option_set`, inferring as
-/// `tallies` says (see [`input`]).
+/// `inference` says (see [`input`]).
 pub fn run(
     case: &Case,
     lang: &'static dyn TargetLanguage,
     option_set: &str,
-    tallies: Option<bool>,
+    inference: Option<Inference>,
 ) -> (Vec<String>, Result<MultiFileRenderResult, String>) {
     let renderer_options = RendererOptions::new();
-    let (input, sources) = input(case, lang, &renderer_options, tallies);
+    let (input, sources) = input(case, lang, &renderer_options, inference);
     let mut input_data = InputData::new();
     input_data.add_input(input);
     let mut options = Options::new(lang, input_data);
@@ -266,55 +340,71 @@ pub struct Stats {
 }
 
 /// Compares the sources' results and the graphs of `case` read for
-/// `lang`, for each of `flags`.
+/// `lang`, for each of `flags`, inferred the ways of `path` and as the
+/// reference.
 fn compare_graphs(
     case: &Case,
     lang: &dyn TargetLanguage,
     flags: &[GraphFlags],
     stats: &mut Stats,
+    path: Path,
 ) -> Result<(), String> {
     let renderer_options = RendererOptions::new();
-    let (tallied, tallied_sources) = input(case, lang, &renderer_options, Some(true));
-    let (reference, reference_sources) = input(case, lang, &renderer_options, Some(false));
-    if tallied_sources != reference_sources {
-        return Err(format!(
-            "add_source differs\n  tallies:   {tallied_sources:?}\n  reference: {reference_sources:?}"
-        ));
+    let (reference, reference_sources) =
+        input(case, lang, &renderer_options, Some(Inference::Reference));
+    let mut tested = Vec::new();
+    for &inference in path.tested() {
+        let (input, sources) = input(case, lang, &renderer_options, Some(inference));
+        if sources != reference_sources {
+            return Err(format!(
+                "add_source differs\n  {inference:?}: {sources:?}\n  reference: {reference_sources:?}"
+            ));
+        }
+        let mut data = InputData::new();
+        data.add_input(input);
+        tested.push((inference, data));
     }
     stats.source_errors += reference_sources
         .iter()
         .filter(|r| r.starts_with("Err"))
         .count() as u64;
-    let mut tallied_data = InputData::new();
-    tallied_data.add_input(tallied);
     let mut reference_data = InputData::new();
     reference_data.add_input(reference);
     for &flags in flags {
         if std::env::var_os("QUICKTYPE_STREAMING_TRACE").is_some() {
             eprintln!("  graph {} {flags:?}", lang.name());
         }
-        let a = graph(lang, &mut tallied_data, flags);
         let b = graph(lang, &mut reference_data, flags);
-        if a != b {
-            return Err(format!(
-                "graphs differ ({}, {flags:?})\n  tallies:   {a}\n  reference: {b}",
-                lang.name()
-            ));
+        for (inference, data) in &mut tested {
+            let a = graph(lang, data, flags);
+            if a != b {
+                return Err(format!(
+                    "graphs differ ({}, {flags:?})\n  {inference:?}: {a}\n  reference: {b}",
+                    lang.name()
+                ));
+            }
+            stats.graphs += 1;
         }
-        stats.graphs += 1;
     }
     Ok(())
 }
 
-/// Compares whole runs of `case` with `lang` and `option_set`.
+/// Compares whole runs of `case` with `lang` and `option_set`, inferred
+/// the ways of `path` and as the reference.
 fn compare_run(
     case: &Case,
     lang: &'static dyn TargetLanguage,
     option_set: &str,
     stats: &mut Stats,
+    path: Path,
 ) -> Result<(), String> {
     if case.handle_refs {
-        let (input, _) = input(case, lang, &RendererOptions::new(), Some(false));
+        let (input, _) = input(
+            case,
+            lang,
+            &RendererOptions::new(),
+            Some(Inference::Reference),
+        );
         let mut data = InputData::new();
         data.add_input(input);
         let flags = GraphFlags {
@@ -333,17 +423,19 @@ fn compare_run(
     if std::env::var_os("QUICKTYPE_STREAMING_TRACE").is_some() {
         eprintln!("  run {} {option_set}", lang.name());
     }
-    let a = run(case, lang, option_set, Some(true));
-    let b = run(case, lang, option_set, Some(false));
-    if a != b {
-        return Err(format!(
-            "{} {option_set} differs\n  tallies:   {a:?}\n  reference: {b:?}",
-            lang.name()
-        ));
-    }
-    stats.runs += 1;
-    if b.1.is_err() {
-        stats.failed_runs += 1;
+    let b = run(case, lang, option_set, Some(Inference::Reference));
+    for &inference in path.tested() {
+        let a = run(case, lang, option_set, Some(inference));
+        if a != b {
+            return Err(format!(
+                "{} {option_set} differs\n  {inference:?}: {a:?}\n  reference: {b:?}",
+                lang.name()
+            ));
+        }
+        stats.runs += 1;
+        if b.1.is_err() {
+            stats.failed_runs += 1;
+        }
     }
     Ok(())
 }
@@ -360,9 +452,9 @@ pub struct Effort {
     pub runs_every: u64,
 }
 
-/// Compares both ways of inferring for the case of `seed`: `Err` describes
-/// the first difference.
-pub fn check(seed: u64, limits: Limits, effort: Effort) -> Result<Stats, String> {
+/// Compares the ways of inferring of `path` with the reference for the
+/// case of `seed`: `Err` describes the first difference.
+pub fn check(seed: u64, limits: Limits, effort: Effort, path: Path) -> Result<Stats, String> {
     let case = generator::case(seed, limits);
     let mut rng = Rng::new(seed ^ 0x5EED_C4EC);
     let mut stats = Stats::default();
@@ -387,7 +479,8 @@ pub fn check(seed: u64, limits: Limits, effort: Effort) -> Result<Stats, String>
             no_date_times: rng.chance(20),
         })
         .collect();
-    compare_graphs(&case, lang, &flags, &mut stats).map_err(|e| format!("seed {seed}: {e}"))?;
+    compare_graphs(&case, lang, &flags, &mut stats, path)
+        .map_err(|e| format!("seed {seed}: {e}"))?;
 
     // Whole runs.
     let runs = if seed % effort.runs_every.max(1) == 0 {
@@ -408,15 +501,16 @@ pub fn check(seed: u64, limits: Limits, effort: Effort) -> Result<Stats, String>
             // to do with inference.
             option_set = "--no-combine-classes";
         }
-        compare_run(&case, lang, option_set, &mut stats)
+        compare_run(&case, lang, option_set, &mut stats, path)
             .map_err(|e| format!("seed {seed}: {e}"))?;
     }
     Ok(stats)
 }
 
-/// Compares `case` thoroughly: the graphs for all combinations of the
-/// inference flags, every language of [`LANGUAGES`] with the default
-/// options, and every option set of [`OPTION_SETS`].
+/// Compares `case` thoroughly, every way of inferring with the reference:
+/// the graphs for all combinations of the inference flags, every language
+/// of [`LANGUAGES`] with the default options, and every option set of
+/// [`OPTION_SETS`].
 pub fn check_all(case: &Case) -> Result<Stats, String> {
     let mut stats = Stats::default();
     let flags: Vec<GraphFlags> = (0..16)
@@ -429,13 +523,13 @@ pub fn check_all(case: &Case) -> Result<Stats, String> {
             no_date_times: i & 8 != 0,
         })
         .collect();
-    compare_graphs(case, language("typescript"), &flags, &mut stats)?;
+    compare_graphs(case, language("typescript"), &flags, &mut stats, Path::All)?;
     for name in LANGUAGES {
-        compare_run(case, language(name), "", &mut stats)?;
+        compare_run(case, language(name), "", &mut stats, Path::All)?;
     }
     for (i, option_set) in OPTION_SETS.iter().enumerate() {
         let lang = language(LANGUAGES[i % LANGUAGES.len()]);
-        compare_run(case, lang, option_set, &mut stats)?;
+        compare_run(case, lang, option_set, &mut stats, Path::All)?;
     }
     Ok(stats)
 }
@@ -455,8 +549,8 @@ pub fn on_cli_stack<T: Send>(f: impl FnOnce() -> T + Send) -> T {
     })
 }
 
-/// Compares `case` cheaply: the graphs for two settings of the inference
-/// flags and one whole run.
+/// Compares `case` cheaply, every way of inferring with the reference: the
+/// graphs for two settings of the inference flags and one whole run.
 pub fn check_light(case: &Case) -> Result<Stats, String> {
     let mut stats = Stats::default();
     let flags = [false, true].map(|maps| GraphFlags {
@@ -467,10 +561,16 @@ pub fn check_light(case: &Case) -> Result<Stats, String> {
         all_optional: false,
         no_date_times: false,
     });
-    compare_graphs(case, language("typescript"), &flags, &mut stats)?;
+    compare_graphs(case, language("typescript"), &flags, &mut stats, Path::All)?;
     // Combining classes compares classes pairwise, which is slow on a deep
     // chain of classes (on both paths) and has nothing to do with inference.
-    compare_run(case, language("go"), "--no-combine-classes", &mut stats)?;
+    compare_run(
+        case,
+        language("go"),
+        "--no-combine-classes",
+        &mut stats,
+        Path::All,
+    )?;
     Ok(stats)
 }
 
@@ -479,7 +579,12 @@ pub fn check_light(case: &Case) -> Result<Stats, String> {
 /// flags.
 pub fn graph_text(case: &Case) -> String {
     let lang = language("typescript");
-    let (input, sources) = input(case, lang, &RendererOptions::new(), Some(true));
+    let (input, sources) = input(
+        case,
+        lang,
+        &RendererOptions::new(),
+        Some(Inference::RunningTallies),
+    );
     if let Some(failed) = sources.iter().find(|result| result.starts_with("Err")) {
         return format!("error adding a source: {failed}");
     }
@@ -499,8 +604,9 @@ pub fn graph_text(case: &Case) -> String {
     )
 }
 
-/// Checks `count` seeds from `start` on `jobs` threads; returns the totals
-/// or the differences.
+/// Checks `count` seeds from `start` on `jobs` threads, the ways of
+/// inferring of `path` against the reference; returns the totals or the
+/// differences.
 pub fn check_many(
     start: u64,
     count: u64,
@@ -508,6 +614,7 @@ pub fn check_many(
     limits: Limits,
     effort: Effort,
     progress: bool,
+    path: Path,
 ) -> Result<Stats, Vec<String>> {
     use std::sync::Mutex;
     use std::sync::atomic::{AtomicU64, Ordering};
@@ -530,7 +637,7 @@ pub fn check_many(
                         if trace {
                             eprintln!("seed {seed}");
                         }
-                        match check(seed, limits, effort) {
+                        match check(seed, limits, effort, path) {
                             Ok(stats) => {
                                 let mut t = totals.lock().unwrap();
                                 t.graphs += stats.graphs;

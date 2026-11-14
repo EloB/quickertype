@@ -17,8 +17,10 @@ harness (last section) that runs both paths on generated inputs.
 
 The path that infers from `CompressedJSON` (`input/compressed_json.rs`,
 `input/inference.rs`) stays as it was. It is the reference the tallies are
-tested against, and the path of `JsonInput::from_compressed`, the tables
-the WebAssembly engine receives from the npm facade.
+tested against. The WebAssembly engine keeps its inputs in that compressed
+form, which quicktype's API can ask for at any time, and infers from
+tallies made of it when a run starts ([Tallies of a compressed
+form](#tallies-of-a-compressed-form)).
 
 ## What TypeScript computes
 
@@ -327,6 +329,68 @@ an input that infers from tallies does not have: there it is an error,
 and an input that is to be exported is made with
 `set_tally_inference(false)` before its sources are added.
 
+## Tallies of a compressed form
+
+The WebAssembly engine reads the samples of a JavaScript `JSONInput` into
+a `CompressedJson` as they are added, and keeps that form for every run
+that uses the input (`JsonInput::from_shared`); samples TypeScript read
+arrive as the tables of a JavaScript `CompressedJSON`
+(`JsonInput::from_compressed`). The form has to stay: quicktype's API can
+ask for a `CompressedJSON`'s tables at any time, and the npm facade then
+fills them from it (`npm/quicktype-core/README.md`, "JSON samples"). Such
+an input infers from tallies made of the form when its types are
+inferred (`tally_compressed` in `input/tallies.rs`): one walk over it,
+then the inference from tallies of the sections above. The tallies of a
+run are freed when its inference ends, so what the engine holds between
+runs, and what its memory limit counts, are as before.
+
+The walk starts at each sample's root, top-level by top-level and sample
+by sample in the order the top-level lists them, and goes depth first,
+each object's entries and each array's elements in order. For each value
+it does what the `TallyBuilder` does for the reader's event that made
+it: a kind for `null`, a boolean or a number; for an object, what
+`pushObjectContext` adds where the object starts, then each entry's key
+as `setPropertyKey` counts it (`__proto__` included) and its value; for
+an array, what `pushArrayContext` adds, then its elements. A string was
+classified by `commitString` when it was read, and its value records how:
+an interned string (a candidate case, or any string under a `$ref` key
+with references handled) is `add_case`, an uninterned one
+`add_uninterned`, a string format `add_string_format` with its kind, and
+a transformed string `add_transformed_string` with the kind and
+attributes of its text, computed with the form's date/time recognizer as
+`Inference.ts` computes them.
+
+So each place's node sees the operations the builder performs while
+reading, in the same order. By the induction of [Places](#places), the
+values at a place are visited in document order: a top-level's samples
+in order, then for each object at a place, in that order, its entries,
+and for each array its elements. A container is tallied where it starts,
+as the builder tallies it. Each top-level's samples go into one tree,
+where reading gives each sample a tree and merges them, which is the
+same tree (`merging_trees_is_reading_on`). The tallies are therefore the
+ones reading the samples gives, and everything above applies.
+
+Two differences cannot be observed. A key or case is known by its index
+in the form's string table, not in a table of the tallies' own; every
+text is there once, as `internString` interns it, but `"__proto__"`,
+which gets a new index each time and so is known by its text (the walk
+takes the first such index for all). And per-tally bits record what the
+combined string attributes absorb already (unrestricted string types,
+each transformation), which the shortcuts of [Other
+strings](#other-strings-combined-attributes) look up for every value:
+combining only ever adds to them, so once a value is absorbed every
+later one like it is, and the bits skip only combinations those lookups
+would skip, without looking.
+
+The walk declines what no reader makes: an object or array reached a
+second time (shared, or a cycle), an object key that is not an interned
+string, a transformed string whose text has no kind or no attribute
+producer, a string table that holds a text twice, a value that is not
+there. Then the input infers from the values one by one, which is the
+reference, so the types are quicktype's either way. Forms the engine
+read, and tables of quicktype's own `CompressedJSON` (which the facade
+requires), have none of these; checking costs a bit per container.
+
 ## TypeBuilder calls
 
 `TallyInference` mirrors `TypeInference` function by function: the same
@@ -369,11 +433,12 @@ raises no errors of its own on valid structure (its checks mirror
 
 ## What is not tallied
 
-Nothing in inference is left on the old path. Only
-`JsonInput::from_compressed` keeps the compressed form: its tables come
-from the TypeScript `CompressedJSON` of the npm facade, so that input
-infers from them, as before. Text samples (`JSON.parse` semantics) are
-recorded whole on the reader's tape, and then tallied like any other.
+Nothing in inference is left on the old path. The inputs that keep the
+compressed form (the WebAssembly engine's, `JsonInput::from_shared` and
+`JsonInput::from_compressed`) infer from tallies of it ([Tallies of a
+compressed form](#tallies-of-a-compressed-form)), unless the walk
+declines it. Text samples (`JSON.parse` semantics) are recorded whole on
+the reader's tape, and then tallied like any other.
 
 ## Choosing the path
 
@@ -384,7 +449,11 @@ benchmarks and every other Rust caller) infers from tallies, unless
 for testing only: there is no CLI option, and `--help` is unchanged.
 `JsonInput::set_tally_inference(bool)` chooses either path explicitly
 before any source is added; the reference path keeps every sample in
-memory, and is the one `to_compressed` needs.
+memory, and is the one `to_compressed` needs. An input that keeps the
+compressed form infers from its values one by one, or from tallies of it
+with `JsonInput::set_tally_compressed(true)`, which `from_shared` and
+`from_compressed` set (and `QUICKTYPE_INFERENCE=compressed-json` does
+not).
 
 ## Memory
 
@@ -484,3 +553,30 @@ of case are still compared.
   documents for `cargo xtask diff --each <dir> -- <args>`, which compares
   our CLI with the TypeScript CLI, guarding against a bug both Rust paths
   share.
+
+The [tallies of a compressed form](#tallies-of-a-compressed-form) are
+checked the same way. Unit tests (`input/tallies.rs`) walk the forms both
+readers made of samples with every kind of value, `__proto__` keys and
+strings (repeated, which only the stream reader keeps), `$ref`s,
+repeated and reordered keys, and compare the tallies with those of
+reading the same samples, also split into top-levels; others hand the
+walk tables no reader makes (an object reached twice, a cycle, a text
+twice in the string table, a transformed string without a kind), which
+it declines, and check that such an input infers what the reference
+infers (`input/inputs.rs`). The harness's `Path::CompressedTallies`
+compares two more ways with the reference, for every seed: the
+compressed form the readers made, tallied (the engine's path for the
+samples it read, `jsonShared`), and its tables exported and imported
+again with `JsonInput::from_compressed` (its path for tables a
+JavaScript `CompressedJSON` built, `json`). `cargo test` checks 3,000
+seeds that way too, and the hand-written cases above run every way
+(`Path::All`).
+
+- `cargo xtask streaming-fuzz --path compressed --seeds 1_000_000` checks
+  the WebAssembly engine's path instead of the CLI's (`--path all` both).
+
+Results when this landed: seeds 0 to 999,999 with `--path compressed`
+found 0 differences in 4,000,000 graphs (two flag combinations per seed,
+each for both ways) and 199,846 whole runs (16,270 failed identically, 77
+skipped for a `$ref` cycle through a union), with 159,927 sources
+failing identically; 544 s on 12 threads.
