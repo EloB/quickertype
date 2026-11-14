@@ -30,6 +30,12 @@ http = ["fs", "dep:ureq", "dep:url", "dep:flate2", "dep:brotli-decompressor"]
 # Records where a run's time goes (`trace`), for measurements; off in
 # every build that ships.
 trace = []
+# On wasm32, seed the hash maps from the JavaScript host's
+# `crypto.getRandomValues` (`support::fast_hash`), as the `quicktype-wasm`
+# bindings do. Needs a JavaScript host with wasm-bindgen glue. Without it,
+# a wasm32 build's maps all share one fixed seed: WebAssembly has no
+# randomness of its own.
+js-host-random = ["dep:wasm-bindgen"]
 
 [dependencies]
 foldhash.workspace = true
@@ -42,6 +48,9 @@ ureq = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
 flate2 = { workspace = true, optional = true }
 brotli-decompressor = { workspace = true, optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { workspace = true, optional = true }
 
 [dev-dependencies]
 flate2.workspace = true

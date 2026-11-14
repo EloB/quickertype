@@ -386,34 +386,16 @@ pub(crate) fn install_clock() {
     trace::set_clock(performance_now);
 }
 
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen]
-extern "C" {
-    /// `crypto.getRandomValues(array)`; throws where there is no `crypto`.
-    #[wasm_bindgen(js_namespace = crypto, js_name = getRandomValues, catch)]
-    fn crypto_get_random_values(array: &mut [u8]) -> Result<(), JsValue>;
-    #[wasm_bindgen(js_namespace = Math, js_name = random)]
-    fn math_random() -> f64;
-}
-
-/// Seeds the engine's hash maps with the host's randomness when the module
-/// starts, before anything makes a map: WebAssembly has none of its own,
-/// and the maps' keys come from the input
-/// (`quicktype_core::support::fast_hash`). Each instance gets its own seed.
+/// When the module starts: takes the hash maps' seed from
+/// `crypto.getRandomValues` (`quicktype_core::support::fast_hash`; the first
+/// map would take it otherwise), so that a host without it fails here, with
+/// an error naming it, rather than in a run.
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
-fn seed_hash_maps() {
-    let mut bytes = [0u8; 16];
-    let entropy = match crypto_get_random_values(&mut bytes) {
-        Ok(()) => u128::from_le_bytes(bytes),
-        // A host without `crypto` (Node before 19). `Math.random` is weaker:
-        // not a cryptographic source, so its seed could be predictable, but
-        // it still differs from instance to instance.
-        Err(_) => (0..4).fold(0, |n, _| {
-            n << 32 | u128::from((math_random() * 4_294_967_296.0) as u32)
-        }),
-    };
-    quicktype_core::support::fast_hash::seed([entropy as u64, (entropy >> 64) as u64]);
+fn module_start() {
+    if let Err(message) = quicktype_core::support::fast_hash::init() {
+        wasm_bindgen::throw_str(&message);
+    }
 }
 
 /// The spans recorded since the last call (`quicktype_core::trace`), one

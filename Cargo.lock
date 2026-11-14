@@ -416,6 +416,7 @@ dependencies = [
  "stacker",
  "ureq",
  "url",
+ "wasm-bindgen",
 ]
 
 [[package]]

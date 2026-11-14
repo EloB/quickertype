@@ -75,13 +75,17 @@ section are absolute.
 
 ### Fixed
 
-- The JavaScript API's WebAssembly engine seeded its hash maps the same in
-  every instance, because WebAssembly has no randomness of its own; whoever
-  knew the seed could craft JSON keys that make reading quadratic. The JSON
-  reader's string and key tables and the engine's other foldhash maps are
-  now seeded per instance from `crypto.getRandomValues` (`Math.random`
-  where there is no `crypto`). The `IndexMap`s and `IndexSet`s that use
-  `std`'s SipHash are not covered yet (docs/BENCHMARKS.md, "Hash seeds in
+- Partly fixed: the JavaScript API's WebAssembly engine seeded its hash
+  maps the same in every instance, because WebAssembly has no randomness of
+  its own, and whoever knows the seed can craft keys that collide. Now the
+  JSON reader's string and key tables and the engine's other `fast_hash`
+  maps take their seed from `crypto.getRandomValues`, per instance. An
+  engine on a host without `crypto.getRandomValues` fails to load, with an
+  error naming it. Not fixed yet: the `IndexMap`s and `IndexSet`s on
+  `std`'s `RandomState` (class properties, enum and string cases,
+  `JsonValue` objects) still have fixed keys in WebAssembly, so crafted
+  property names can still slow inference there. They follow in
+  `fix/seeded-index-maps` (docs/BENCHMARKS.md, "Hash seeds in
   WebAssembly").
 
 ## [0.1.0] - 2026-11-13

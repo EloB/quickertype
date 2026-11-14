@@ -1368,20 +1368,22 @@ module that hashed `"abc"` gave the same value in every fresh Node
 process. `std`'s `RandomState` (SipHash) has the same problem: it builds
 its keys from the address of a stack byte and of a fresh `Box`.
 
-Now the engine seeds its maps when the module starts, before anything
-makes a map (`#[wasm_bindgen(start)]` in `crates/quicktype-wasm`).
-- The entropy is 16 bytes from `crypto.getRandomValues`. Where there is
-  no `crypto` (Node before 19), it uses `Math.random`, which is weaker
-  but still differs between instances.
-- `quicktype_core::support::fast_hash::seed` turns those bytes into
-  foldhash's shared seed and the start of a sequence. The sequence gives
-  each map its own seed.
-- A debug build panics if a map was made before the seed was set.
-- Making a map's seed is a call (`RandomState::default` is not inlined):
-  maps are made in hundreds of places. Inlined, the seeding made the
-  engine 9.8 KB larger; out of line, the engine is 4.2 KB smaller than
-  before (5,444,207 bytes against 5,448,495), and no phase moved by more
-  than 0.5%.
+Now the engine's maps take their seed from the JavaScript host, with
+quickertype-core's `js-host-random` feature, which the bindings turn on:
+- The entropy is 16 bytes from `crypto.getRandomValues`, taken once,
+  when the first map is made. `fast_hash` turns it into foldhash's shared
+  seed and the start of a sequence, which gives each map its own seed.
+- The bindings take it earlier, when the module starts
+  (`#[wasm_bindgen(start)]`). On a host without `crypto.getRandomValues`
+  the start fails with an error that names it, and the facade runs on
+  TypeScript instead (or throws that error, with the WebAssembly engine
+  forced). Every host the package supports has it: Node 20 and later,
+  browsers and workers.
+- Making a map's seed is a call (`RandomState::default` is not inlined),
+  because maps are made in hundreds of places. Inlined, the seeding made
+  the engine 9.8 KB larger. Out of line, the engine is 4.0 KB smaller
+  than before (5,444,370 bytes against 5,448,495), and no phase moved by
+  more than 0.5%.
 
 Covered: the JSON reader's string and key tables, the `fast_hash`
 `HashMap`s and `HashSet`s, and the tallies' `IndexMap`s.
@@ -1389,8 +1391,9 @@ Covered: the JSON reader's string and key tables, the `fast_hash`
 Not covered yet:
 - The `IndexMap`s and `IndexSet`s that use `std`'s `RandomState`. Many of
   them hold names from the input (class properties, enum and string
-  cases, `JsonValue` objects). `std` has no way to seed them, so they need
-  to move to `fast_hash`'s hasher.
+  cases, `JsonValue` objects), so in WebAssembly crafted property names
+  can still slow inference. `std` has no way to seed them; they move to
+  `fast_hash`'s hasher in `fix/seeded-index-maps`.
 - In dependencies, regex-automata's maps. Their keys are capture names of
   the engine's own patterns, and the lazy DFA's states, which the input
   only selects among. saphyr-parser hashes nothing.
@@ -1417,10 +1420,11 @@ multiply on it when it finishes. In WebAssembly that is costly:
 
 The reader's string and key tables hash one whole string at a time, so
 they do not need the marker. They now hash with
-`fast_hash::hash_str`: foldhash's `write` and `finish` only. This is
-exactly what foldhash's own `write_str` does with its `nightly` feature;
-`write` mixes the length in. The seed and the quality are foldhash's
-(see the quality notes below).
+`fast_hash::StrHasher::hash_str`: foldhash's `write` and `finish` only.
+This is exactly what foldhash's own `write_str` does with its `nightly`
+feature; `write` mixes the length in. `StrHasher` hashes strings in this
+one way only, so a table cannot mix its hashes with `hash_one`'s. The
+seed and the quality are foldhash's (see the quality notes below).
 
 Warm runs in headless Chrome, medians in ms, before and after this
 change (both with the seeding above), interleaved in one page. There
@@ -1469,7 +1473,9 @@ interleaved cycles, with the minimum where the medians were too noisy:
   100,000 UUIDs) is 4–7% faster with `write` and `finish`. A build that
   hashed with `hash_one` through the same function did not show the
   slowdown, so the cause is not clear; it may be how the code is laid
-  out.
+  out. **To re-check** on a quiet machine at the next benchmark refresh:
+  if the slowdown holds, `hash_str` should use `write` alone only in
+  WebAssembly (one `cfg`).
 - `read: record`, the run, and every phase of pokedex: within ±3%.
 
 #### Tried and dropped: a 32-bit hasher for WebAssembly
