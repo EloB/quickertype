@@ -1473,8 +1473,9 @@ pub(crate) fn read_sample_into<S: JsonSink>(
     match sample {
         String(text) | StringLines(text) => parse_string_into(sink, &text, framing),
         Stream(bytes) | StreamLines(bytes) => parse_stream_into(sink, &bytes, framing),
-        // (In one go: the tallies read a large top-level array on several
-        // threads, `JsonInput`'s `tally_samples`.)
+        // (In one go: the tallies read a large top-level array, or large
+        // JSON Lines, on several threads, in `JsonInput::add_source_sync`
+        // with `inputs::read_stream_into`.)
         Reader(reader) | ReaderLines(reader) => match reader.take() {
             Some(stream) => parse_stream_reader_into(sink, &mut *stream.into_reader(), framing),
             None => Err(ParseError::Read(crate::input::inputs::already_read(

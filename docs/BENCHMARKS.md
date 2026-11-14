@@ -927,6 +927,14 @@ instructions they did on main, 0.5% fewer (1M records from a pipe:
 4.685–4.693 billion, main 4.708–4.712), and arrays the instructions they
 did (4.437 billion, main 4.437–4.438).
 
+A stray `{`, `[` or `[[` before the 1M records' lines, an error on line
+1 that reading in one go reports at once: 5.4 / 5.3 ms against main's
+3.9 / 2.9 (medians of 15, load average 5.3 to 5.6): only the ranges that
+start in the first MiB are scanned (`FIRST_LINE_MAX`; 4.1 MiB here), and
+the file is read in one go.
+Without that bound they were scanned until half the budget (5.6 / 14.9
+ms; with a 1 GiB budget, all 266 MB: 17.0 / 119 ms, now 5.8 / 5.6).
+
 ## Profiling
 
 ```sh

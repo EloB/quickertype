@@ -444,6 +444,15 @@ const PROBE_LEN: u64 = 64 << 10;
 /// times as slow; see docs/BENCHMARKS.md.)
 const MAX_RATIO: f64 = 8.0;
 
+/// How near its start JSON Lines must have a line feed between two values
+/// to be read on several threads; otherwise they are read in one go. A
+/// first value longer than this is rare, and a stray `[` or `{` at the
+/// start, which leaves no line feed at depth 0 anywhere (an error reading
+/// in one go reports at once), would otherwise have the ranges scanned
+/// until a part as long as the budget allows (half of it). Arrays have no
+/// such bound: their first element may be that long.
+const FIRST_LINE_MAX: u64 = 1 << 20;
+
 impl Default for ParallelOptions {
     /// As many threads as the machine runs at once, ranges of
     /// [`DEFAULT_RANGE`] bytes for samples of [`DEFAULT_MIN_LEN`] or more,
@@ -629,11 +638,17 @@ impl Plan {
 enum Outcome {
     /// The sample's tree: all of it was read.
     Whole(NodeId),
-    /// The tree of its first parts, where the rest begins (after a comma
-    /// between the top-level array's elements, or a line feed between JSON
-    /// Lines' values) and the line feeds before it (JSON Lines'): the rest
-    /// is to be read in one go, on into that tree.
-    InPart(NodeId, u64, u64),
+    /// The tree of its first parts: the rest is to be read in one go, on
+    /// into that tree.
+    InPart {
+        tree: NodeId,
+        /// Where the rest begins: after a comma between the top-level
+        /// array's elements, or a line feed between JSON Lines' values.
+        from: u64,
+        /// The line feeds before `from` (JSON Lines'; none are counted in
+        /// arrays).
+        feeds: u64,
+    },
 }
 
 /// Reads `sample`, framed as `framing` says, into `tallies`, as reading it
@@ -652,7 +667,7 @@ pub(crate) fn read_sample(
             sample.seek_to_end();
             Ok(tree)
         }
-        Some(Outcome::InPart(tree, from, feeds)) => {
+        Some(Outcome::InPart { tree, from, feeds }) => {
             count_read(|r| r.in_part += 1);
             let mut builder =
                 TallyBuilder::in_array(tallies, config, tree).map_err(ParseError::Quicktype)?;
@@ -745,16 +760,13 @@ fn read(
     // The parts' tree stands if the file did not change while it was read
     // (its length and time of last change): the rest, if any, is read from
     // where the parts end, and reading in one go reads the file as it is.
-    // (The parts' tree always has the array's elements; JSON Lines' parts
-    // may all be blank lines.)
+    // (The parts' tree always has the array's elements, JSON Lines' too:
+    // a part of blank lines only has an items node with nothing in it.)
     if let Some(outcome) = outcome {
         let tree = match outcome {
-            Outcome::Whole(tree) | Outcome::InPart(tree, ..) => tree,
+            Outcome::Whole(tree) | Outcome::InPart { tree, .. } => tree,
         };
-        let has_elements = tallies
-            .tallies
-            .node(tree)
-            .is_ok_and(|n| n.items.is_some() || framing == Framing::Lines);
+        let has_elements = tallies.tallies.node(tree).is_ok_and(|n| n.items.is_some());
         if has_elements && sample.source.stamp().ok() == Some(stamp) {
             return Some(outcome);
         }
@@ -1099,6 +1111,26 @@ impl Reading<'_> {
         })
     }
 
+    /// The line feeds an appended part adds to those before the next part:
+    /// the `part_feeds` it holds and the one after it (JSON Lines'; none
+    /// are counted in arrays).
+    fn feeds_through(&self, part_feeds: u64) -> u64 {
+        match self.framing {
+            Framing::Value => 0,
+            Framing::Lines => part_feeds + 1,
+        }
+    }
+
+    /// How far JSON Lines are scanned for their first split, while `parts`
+    /// is empty (see [`FIRST_LINE_MAX`]); `u64::MAX` once there is one, and
+    /// for arrays.
+    fn first_line(&self, parts: &[Part]) -> u64 {
+        match self.framing {
+            Framing::Lines if parts.is_empty() => self.start.saturating_add(FIRST_LINE_MAX),
+            _ => u64::MAX,
+        }
+    }
+
     /// What the parts are split at.
     fn separator(&self) -> Separator {
         match self.framing {
@@ -1256,7 +1288,11 @@ impl Reading<'_> {
                     feeds| {
             let from = parts[..appended].last().and_then(|p| p.to);
             match (root, from) {
-                (Some(root), Some(split)) => Some(Outcome::InPart(root, split + 1, feeds)),
+                (Some(tree), Some(split)) => Some(Outcome::InPart {
+                    tree,
+                    from: split + 1,
+                    feeds,
+                }),
                 (Some(root), None) => {
                     running.tallies.free_tree(root);
                     None
@@ -1269,13 +1305,15 @@ impl Reading<'_> {
             // Summaries a few ranges past those formed into parts; while
             // parts wait to be given out (whose number the budget bounds),
             // not much past the next; and not past where a stretch without
-            // a split ends the reading (below).
+            // a split ends the reading (below), for JSON Lines without a
+            // split yet FIRST_LINE_MAX from the start.
             let limit = parts
                 .get(dispatched)
                 .map_or(u64::MAX, |next| {
                     next.from.saturating_add(parts_ahead as u64 * self.range)
                 })
-                .min(next_from.saturating_add((budget as f64 / (2.0 * ratio)) as u64 + self.range));
+                .min(next_from.saturating_add((budget as f64 / (2.0 * ratio)) as u64 + self.range))
+                .min(self.first_line(&parts));
             while summarized < n
                 && summarized < formed + 2 * threads + 2
                 && self.bounds(summarized).0 < limit
@@ -1339,6 +1377,12 @@ impl Reading<'_> {
                 self.len
             };
             let stretch = scanned.saturating_sub(next_from) as f64;
+            // JSON Lines whose first line feed between values is not within
+            // FIRST_LINE_MAX of the start: in one go, scanned no further.
+            // (Of the parts formed now: the first may just have been.)
+            if !all_formed && scanned >= self.first_line(&parts) {
+                return None;
+            }
             if !all_formed && stretch * ratio * 2.0 > budget as f64 {
                 if parts.is_empty() {
                     return None;
@@ -1384,7 +1428,7 @@ impl Reading<'_> {
                     }
                 });
                 appended += 1;
-                feeds += part_feeds + 1;
+                feeds += self.feeds_through(part_feeds);
                 dispatched = appended;
                 (probed, probe_bytes) = (probed + part_len(&part), probe_bytes + bytes);
                 if probed >= plan.probe || (all_formed && appended == parts.len()) {
@@ -1488,7 +1532,7 @@ impl Reading<'_> {
                         root = Some(into);
                         held.remove(&appended);
                         appended += 1;
-                        feeds += part_feeds + 1;
+                        feeds += self.feeds_through(part_feeds);
                     }
                 }
                 // A job that panicked panics here, as reading in one go
@@ -1528,7 +1572,8 @@ mod tests {
     use super::*;
     use crate::date_time::DefaultDateTimeRecognizer;
     use crate::input::compressed_json_from_stream::parse_stream_into;
-    use crate::input::json_split::tests::{Rng, random_json, random_lines};
+    use crate::input::json_split::Separator;
+    use crate::input::json_split::tests::{Rng, bytewise_separators, random_json, random_lines};
 
     fn config(handle_refs: bool) -> CompressedJson {
         CompressedJson::with_int64_range(Box::new(DefaultDateTimeRecognizer), handle_refs)
@@ -2177,19 +2222,24 @@ mod tests {
         let mut rng = Rng(777);
         let config = config(true);
         let mut total = ParallelReads::default();
+        // Samples with line feeds in values (at depth 1 and more).
+        let mut spanning = 0;
         for round in 0..400 {
             let mut bytes = random_lines(&mut rng, 1 + round % 60);
+            let feeds = bytes.iter().filter(|&&b| b == b'\n').count();
+            spanning += usize::from(feeds > bytewise_separators(&bytes, Separator::LINES).len());
             // Sometimes a byte order mark, or broken: a stray bracket, cut,
-            // two values on a line, a value replaced by something that is
-            // not one, a raw line feed in a string, a byte order mark on a
-            // later line.
+            // two values on a line (or one line feed fewer between them), a
+            // value replaced by something that is not one, a raw line feed
+            // in a string, a byte order mark on a later line.
             let last = |bytes: &[u8], b: u8| bytes.iter().rposition(|&c| c == b);
+            let last_split = |bytes: &[u8]| bytewise_separators(bytes, Separator::LINES).pop();
             match round % 10 {
                 3 => bytes.insert(rng.below(bytes.len().min(20) + 1), b'}'),
                 4 => bytes = [&b"\xef\xbb\xbf"[..], &bytes].concat(),
                 5 => bytes.truncate(rng.below(bytes.len())),
                 6 => {
-                    if let Some(at) = last(&bytes, b'\n') {
+                    if let Some(at) = last_split(&bytes) {
                         bytes[at] = b' ';
                     }
                 }
@@ -2204,7 +2254,7 @@ mod tests {
                     }
                 }
                 9 => {
-                    if let Some(at) = last(&bytes, b'\n') {
+                    if let Some(at) = last_split(&bytes) {
                         bytes.splice(at + 1..at + 1, *b"\xef\xbb\xbf");
                     }
                 }
@@ -2229,6 +2279,7 @@ mod tests {
             total.whole > 500 && total.in_part > 50 && total.again > 0,
             "{total:?}"
         );
+        assert!(spanning > 200, "{spanning} samples with values over lines");
     }
 
     /// JSON Lines split at every point between lines: strings with line
@@ -2336,6 +2387,46 @@ mod tests {
             expected.as_ref().is_err_and(|e| e.starts_with("line 3: ")),
             "{expected:?}"
         );
+    }
+
+    /// JSON Lines without a line feed between values within FIRST_LINE_MAX
+    /// of their start (a stray `{` or `[` first, which leaves none at
+    /// depth 0, or a first value that long) are read in one go after
+    /// scanning no more than that; a first value a little shorter does not
+    /// stop them.
+    #[test]
+    fn json_lines_without_an_early_split_are_read_in_one_go() {
+        let config = config(false);
+        let record = r#"{"id":1,"name":"abc","tags":["x","y"]}"#;
+        let lines = vec![record; 60_000].join("\n");
+        let value = |n: usize| format!("{{\"a\":[{}]}}", vec!["1"; n].join(","));
+        let half = FIRST_LINE_MAX as usize / 2;
+        let range = 64 << 10;
+        for (name, bytes, again) in [
+            ("{", format!("{{{lines}"), true),
+            ("[[", format!("[[\n{lines}"), true),
+            ("long", format!("{}\n{lines}", value(half + 1_000)), true),
+            (
+                "shorter",
+                format!("{}\n{lines}", value(half - 50_000)),
+                false,
+            ),
+        ] {
+            let bytes = bytes.as_bytes();
+            let (result, how) = read_as(&config, bytes, options(4, range), Framing::Lines);
+            assert_eq!(
+                result,
+                in_one_go_as(&config, bytes, Framing::Lines),
+                "{name}"
+            );
+            let scanned = SCANNED.with(Cell::get);
+            if again {
+                assert_eq!(how.again, 1, "{name}: {how:?}");
+                assert!(scanned <= FIRST_LINE_MAX, "{name}: {scanned} bytes scanned");
+            } else {
+                assert_eq!(how.whole, 1, "{name}: {how:?}");
+            }
+        }
     }
 
     /// JSON Lines go the ways arrays go: values all longer than a part the

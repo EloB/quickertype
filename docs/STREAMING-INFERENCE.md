@@ -463,8 +463,9 @@ most 65,536 of them, whatever the options ask for; at most 1,024 threads
 read, and as many as the ranges give four each. Read in one go, as
 before: samples under 8 MiB, samples that would have fewer than two
 threads, JSON samples whose top-level is not an array, arrays whose
-first element is longer than a part the budget would read beside others
-(JSON Lines whose first value is), standard input from a pipe or a
+first element is longer than a part the budget would read beside others,
+JSON Lines without a line feed between two values in their first MiB
+(below), standard input from a pipe or a
 terminal (it cannot be read at offsets, and reading it ahead would hold
 it in memory), standard input on Windows (a console or a pipe is not
 told from a file as surely there), text samples (`JSON.parse`
@@ -558,8 +559,9 @@ ranges, budget and fallbacks, but split between its lines:
   start for the first part, to its end for the last) are read as JSON
   Lines, the array of their values, into tallies of their own
   (`compressed_json_from_stream::parse_lines_part_into`). A part may hold
-  nothing but blank lines; only the first may start with a byte order
-  mark, which reading in one go skips only there. Each part also counts
+  nothing but blank lines; only the first may skip a byte order mark at
+  its start, as reading in one go does only there (anywhere else the
+  tokenizer fails on it, as reading in one go does). Each part also counts
   the line feeds it holds (the tokenizer counts them anyway, for the line
   of an error).
 - **Why it is exact.** Reading JSON Lines, the tokenizer is between
@@ -572,8 +574,8 @@ ranges, budget and fallbacks, but split between its lines:
   that two values are not on one line asks whether a line feed came
   since the last value, and one did at every part's start. The parts'
   trees are arrays of their values; one of blank lines only is an empty
-  array, which appends nothing (it adds the `array` kind the sample's
-  root has, and no items).
+  array, which appends nothing (the `array` kind the sample's root has,
+  and an items node with nothing in it).
 - **Errors.** When a part does not read, the rest is read in one go from
   the line feed after the parts appended
   (`compressed_json_from_stream::parse_lines_rest_into`, the tokenizer
@@ -583,9 +585,17 @@ ranges, budget and fallbacks, but split between its lines:
   in one go names (the line its value starts on). A first part that
   fails, whose lines may not have been counted, makes the whole sample
   read in one go from its start.
-- **Speed.** A sample read in one go is read as before: the rest reader
-  is an instance of the JSON Lines loop of its own (`run_lines` takes the
-  rest mode as a constant).
+- **The first split.** JSON Lines whose first line feed between values
+  is not within 1 MiB of the start (`FIRST_LINE_MAX`) are read in one
+  go, scanned no further than the ranges that start in that MiB. A first value that long is rare,
+  and a stray `[` or `{` at the start, which leaves no line feed at depth
+  0 anywhere (an error reading in one go reports at once), would
+  otherwise have the ranges scanned until a part as long as the budget
+  allows: half of it, or all of a large file with a large budget.
+- **Speed.** A sample read in one go is read as before: whether the JSON
+  Lines loop opens the array and may skip a byte order mark are
+  constants (`run_lines::<_, OPEN, BOM>`), so the whole sample's instance
+  is the loop it was, and the first part's is the same instance.
 
 ### Testing it
 
