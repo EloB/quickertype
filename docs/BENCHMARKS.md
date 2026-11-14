@@ -1164,6 +1164,202 @@ fewer than 60 times (`__memoryGrowths`). Converting the output back to
 JavaScript (`TextDecoder`, then slicing lines) stays under 1% of a run,
 even for 490 KB of Java.
 
+### Small blocks from slabs
+
+On small inputs, the engine took 2–3.5 times as long as native code in
+each phase (pokedex: 1.99 ms in Chrome against 0.72 ms natively). On large
+inputs the ratio was the usual 1.2–1.6. A profile of pokedex put about a
+sixth of the time in dlmalloc (`malloc`, `free`, `insert_large_chunk`,
+`unlink_chunk`). The allocator matters natively too: with the system
+allocator instead of mimalloc, pokedex takes 33% longer.
+
+A run makes many small allocations. Pokedex makes 14,500 allocations and
+1,300 reallocations; 98% of the allocations are 256 bytes or less, and 47%
+are 8 bytes or less. The 2 MB input makes 82,000, and 89% of them are 32
+bytes or less. dlmalloc merges each freed chunk with its free neighbours
+and files the result in a bin (sorted trees from 256 bytes up), and the
+next allocation takes it apart again.
+
+The engine's allocator (`crates/quicktype-wasm/src/allocator.rs`) now
+takes blocks of up to 256 bytes from slabs. A slab is 64 KiB from dlmalloc,
+aligned to 64 KiB and cut into blocks of one size, a multiple of 8. A freed
+block goes on its slab's free list, and the next allocation of that size
+takes it from there. An empty slab goes to a pool that every size takes
+from. The pool keeps the 32 lowest-addressed slabs and gives the rest back
+to dlmalloc. Larger blocks still go to dlmalloc.
+
+Warm runs in Chrome, two builds (`--trace`) interleaved in one
+cross-origin isolated page. Each figure is a median of 61 runs (21 for 2
+MB, 11 for 20 MB and the records), in ms, with the range over two pages:
+
+| Input | dlmalloc | Slabs | Change |
+|---|---:|---:|---:|
+| tiny, `{"a":1}` | 0.63–0.66 | 0.61–0.63 | −4 to −5% |
+| kitchen-sink (1 KB) | 1.36–1.37 | 1.22–1.25 | −8 to −10% |
+| spotify-album (3.5 KB) | 1.54–1.55 | 1.37–1.38 | −11% |
+| pokedex (82 KB) | 2.07–2.10 | 1.84–1.87 | −11% |
+| github-events (82 KB) | 5.28–5.39 | 4.42–4.45 | −16 to −18% |
+| reddit (133 KB) | 2.86–2.88 | 2.48–2.54 | −12 to −14% |
+| us-senators (155 KB) | 3.17–3.18 | 2.80–2.83 | −11 to −12% |
+| generated (2 MB) | 18.2–19.7 | 17.3–17.7 | −5 to −10% |
+| generated (20 MB) | 162.8 | 158.8–160.1 | −2% |
+| 27 MB records | 61.6–61.9 | 62.2–62.8 | +1% |
+
+The gain is in the passes after reading. Reading allocates little. Pokedex,
+phase by phase, in ms, against native code (mimalloc):
+
+| Phase | dlmalloc | Slabs | Native |
+|---|---:|---:|---:|
+| read: record + commit | 0.345–0.350 | 0.345 | 0.216 |
+| tally the form | 0.240–0.245 | 0.225 | 0.135 |
+| infer | 0.160–0.165 | 0.135 | 0.073 |
+| rewrites | 0.320–0.330 | 0.270–0.275 | 0.125 |
+| gather names | 0.075–0.080 | 0.070 | 0.023 |
+| render | 0.390–0.395 | 0.320 | 0.158 |
+| rest of the run (mostly dropping the type graph) | 0.045 | 0.020 | – |
+
+On github-events, the rewrites took 1.35 ms against 1.155–1.165 ms,
+gather names 0.710–0.715 against 0.565, and render 1.485–1.500 against
+1.155–1.170. Reading the 27 MB records, which is most of their run, took
+about 1% longer in both pages (`read: commit`, 22.5–22.6 ms against 22.8
+ms).
+
+Whole runs, release builds, TypeScript in the same page (`compare.mjs
+--browser`, whose timer has 100 µs steps; two pages):
+
+| Input | dlmalloc | Slabs | TypeScript |
+|---|---:|---:|---:|
+| pokedex | 2.30–2.40 | 2.00–2.20 | 4.90–5.60 |
+| generated (2 MB) | 17.8–18.4 | 17.0–17.5 | 47.8–49.8 |
+| generated (20 MB) | 157–163 | 153–158 | 435–454 |
+| 27 MB records | 59.8–61.6 | 60.0–61.4 | 174–183 |
+
+**Memory.** The engine keeps forms and tallies between runs, and its
+memory never shrinks. An allocator that holds on to memory, or scatters
+what it keeps, makes the memory grow over a session. Each test made 200
+consecutive runs over a seeded mix of the inputs above. Of every 32 runs,
+about 28 were on the seven small samples, 2 on the 2 MB input and 1 each on
+the 20 MB input and the records. The test either kept no input alive
+between runs or kept the last four (their forms and tallies stay in the
+engine). It recorded the pages after every run, and each build had its own
+instance in the same page.
+
+| Build | High-water against dlmalloc | Highest |
+|---|---|---:|
+| dlmalloc | 1 | 3,361 pages (210 MiB) |
+| Slabs (16 pairs) | 0.72–1.36, median 1.00 | 3,763 pages (235 MiB) |
+| Free lists in front of dlmalloc (dropped, below; 8 pairs) | 1.00–1.69, median 1.5 | 4,041 pages (253 MiB) |
+
+The 16 pairs are 4 seeds, with no inputs or 4 kept, for builds with and
+without `--trace`. The figures jump because the memory grows by a quarter
+at a time (see [Large outputs](#large-outputs)), and a small change in
+layout decides whether one more step is taken. With dlmalloc alone, a build
+with `--heap-stats` ended 1.32 times as high as a build without it on one
+sequence. After a single small run, both allocators hold the same memory
+(509 and 512 pages). Blocks of 8 bytes take 8 bytes in a slab, against 16
+in dlmalloc. After the 20 MB input in the phase runs above, the slab build
+held 4,036 and 2,864 pages, against dlmalloc's 4,127 and 3,616.
+
+The module grows by 14,262 bytes, from 5,448,495 to 5,462,757. Compressed,
+it shrinks: 1,935,299 to 1,934,803 bytes with `gzip -9`, and 1,272,256 to
+1,271,316 with `brotli -q 11`.
+
+Tried and dropped:
+
+- **Free lists in front of dlmalloc**, one per size up to 256 bytes,
+  carved from 64 KiB blocks and never given back. This was as fast as the
+  slabs, but a block freed at one size could serve no other, and over 200
+  mixed runs the memory grew up to 1.69 times as far.
+- **Other limits for small blocks**: 128, 512 and 1,024 bytes were within
+  1–2% of 256.
+- **Other pools**: keeping each size's last empty slab plus 16 more, or
+  giving every empty slab back to dlmalloc at once. They were as fast, and
+  no better on memory.
+- **talc 5.1** (`WasmDynamicTalc`, under the same growing ahead). It was
+  no faster on small inputs, as it had been no faster on large ones: pokedex
+  2.21 ms against dlmalloc's 2.20, github-events 5.55 against 5.47.
+- **rlsf 0.2** (TLSF, `GlobalTlsf`): 5–9% slower than dlmalloc (pokedex
+  2.32 ms, github-events 5.94).
+
+**What is left.** A profile of github-events (an unoptimized build with
+names) shows where the rest of the time goes.
+
+- **Render** takes a quarter of the run. Allocating, growing and dropping
+  values take 23% of it, `String::clone` 5% and `Serializer::serialize` 8%. The UTF-16
+  conversions (`units_to_string`, `utf16_string_escape`,
+  `utf16_legalize_characters`) take 9%, and hashing 5%.
+- **Gather names** takes 13% of the run. SipHash (std's `RandomState`)
+  takes 17% of that, mostly for `IndexSet<String>` inserts. Rehashing
+  sets as they grow takes 8%, and cloning sets and strings 10%.
+- **The rewrites**: SipHash takes about 17%, `sorted_property_refs` 7%, and
+  `compare_utf16` 4%.
+- **Naming** (`assign_names`): `String::clone` takes 11%, cloning
+  `IndexMap<String, ()>` 5%, and formatting 9%.
+- **The facade** seeds a Mersenne Twister for every run (`initTypeNames`
+  in `preRun`, through `Chance`), which takes 1% of a pokedex run.
+
+**Stack segments.** On WebAssembly, every outermost call of
+`support::recursion::guard` or `grow_stack` allocates a 4 MiB stack
+segment from the heap and frees it afterwards. stacker cannot know where
+the main stack ends on `wasm32-unknown-unknown`, so outside a segment it
+always grows. A tiny run allocates 10 segments, pokedex 52 and the 2 MB
+input 79. A build that skips the segment while the main 16 MiB stack has
+room was no faster. It did start smaller: 342 pages after the first run,
+against 509.
+
+### Tiering and V8's code cache
+
+A warm small run still spends part of its time in code that V8 has not
+optimized. V8 compiles each function with its baseline compiler (Liftoff)
+on the first call. It compiles the function again with its optimizing
+compiler (TurboFan) once the function has used up a budget of executed
+code (`--wasm-tiering-budget`, 13,000,000 in Node 24's V8). A function that
+a run calls only a few times stays on Liftoff for many runs. With
+`--no-wasm-dynamic-tiering`, which optimizes everything, tiny went from
+0.49 to 0.38 ms and pokedex from 2.04 to 1.77 ms. That is 13–22% of a warm
+small run.
+
+The test used headless Chrome 157 and two launches of one browser
+profile. Each launch loaded a page that compiled the engine with
+`compileStreaming` from a cacheable response (`Cache-Control: immutable`
+and an ETag). The page ran tiny and pokedex 30 times each, then stayed
+idle for 5 s. V8's trace events (CDP tracing, categories `v8.wasm` and
+`disabled-by-default-v8.wasm.detailed`) show what V8 compiled and cached.
+
+- **The HTTP cache helps.** The second launch read the module from the
+  HTTP cache, and compiling took 21–27 ms against 29–63 ms on the first.
+  The site already compiles with `compileStreaming` from a content-hashed
+  file name, so returning visitors get this.
+- **V8's code cache was never written.** Chrome caches the TurboFan code of
+  modules compiled with `compileStreaming` (128 KB or more), keyed by their
+  URL. In these sessions V8 compiled 788 functions with Liftoff, ran about
+  95 TurboFan jobs, and serialized nothing. V8 writes the cache in two
+  cases: when a megabyte of TurboFan code has accumulated
+  (`--wasm-caching-hard-threshold`), or when it compiles TurboFan code again
+  after 2 s without any (`--wasm-caching-timeout-ms`). One burst of small
+  runs meets neither condition. A later run meets the second only if it
+  gets more functions optimized.
+- **Forcing the cache does not help.** With `--wasm-caching-timeout-ms=0`,
+  V8 serialized the module 52 times (32 MB on disk), and the second launch
+  deserialized it (`wasm.Deserialize`). Even so, the second launch again
+  compiled 788 functions with Liftoff and ran about 95 TurboFan jobs, and
+  its runs took as long: in both launches, runs 2 to 12 took 0.4–1.0 ms on
+  tiny and 2.0–2.7 ms on pokedex.
+- **The page controls nothing else.** Eager optimization
+  (`--no-wasm-dynamic-tiering`), the tiering budget and compilation hints
+  (`--experimental-wasm-compilation-hints`, off by default) are V8 flags.
+  What helps is what the site and the facade already do: keep one
+  instance for the whole session. When an instance traps, the facade
+  replaces it with a new instance of the same compiled module, which shares
+  the code V8 has already optimized.
+
+The first run on a fresh page (tiny) took 16–17 ms in either launch, and
+the first pokedex run after it 22–24 ms. Most of that is the engine's
+one-time set-up (about 13 ms; see [Cold runs](#cold-runs-27-mb-records))
+and compiling, with Liftoff, the functions that a run calls for the first
+time. Warm-up runs would hide this cost, but they are not used: the site
+compares engines, and warming only one of them would not be fair.
+
 ## Reproducing
 
 ```sh
