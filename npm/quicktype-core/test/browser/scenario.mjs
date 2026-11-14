@@ -42,6 +42,27 @@ export async function smoke(qt, stats) {
     schemaData.addInput(schema);
     const schemaRun = await qt.quicktypeMultiFile({ lang: "kotlin", inputData: schemaData });
     engines.push({ wasm: stats.wasm, ts: stats.ts });
+    // JSON samples the engine read as they were added.
+    const samplesRead = stats.samplesRead;
+
+    // JSON Lines (quickertype-core's addition, `jsonLines`), after the
+    // steps above: a string, bytes with a byte order mark and CRLF, and a
+    // bad line's error (on the TypeScript engine in the "ts" variant).
+    const linesText = `${sample}\n\n{"name": "Bo", "pets": ["cat"]}\n`;
+    const linesBytes = new TextEncoder().encode(`\u{feff}${linesText.replaceAll("\n", "\r\n")}`);
+    const linesRun = (samples) => {
+        const lines = qt.jsonInputForTargetLanguage("go");
+        lines.addSourceSync({ name: "People", samples, jsonLines: true });
+        const linesData = new qt.InputData();
+        linesData.addInput(lines);
+        return qt.quicktypeMultiFileSync({ lang: "go", inputData: linesData }).get("stdout").lines;
+    };
+    let linesError;
+    try {
+        qt.jsonInputForTargetLanguage("go").addSourceSync({ name: "Bad", samples: ['{}\n{"a": }\n'], jsonLines: true });
+    } catch (e) {
+        linesError = e.message;
+    }
 
     return {
         outputs: {
@@ -50,9 +71,9 @@ export async function smoke(qt, stats) {
             annotations: asyncRun.annotations.map((a) => [a.annotation.message, a.span.start.line]),
             secondSync,
             schemaRun: [...schemaRun].map(([name, r]) => [name, r.lines]),
+            jsonLines: { string: linesRun([linesText]), bytes: linesRun([linesBytes]), error: linesError },
         },
         engines,
-        // JSON samples the engine read as they were added.
-        samplesRead: stats.samplesRead,
+        samplesRead,
     };
 }
