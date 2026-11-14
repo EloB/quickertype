@@ -1311,10 +1311,17 @@ impl Reading<'_> {
                     // A failed merge changes nothing, and frees what it was
                     // given.
                     Some(so_far) => {
-                        if running.tallies.merge(so_far, tree).is_err() {
-                            return rest(running, Some(so_far), &parts, appended);
+                        let (into, from) = (so_far, tree);
+                        // (The fault merges the tree so far into this one.)
+                        #[cfg(any(test, feature = "test-support"))]
+                        let (into, from) = match plan.fault {
+                            Some(Fault::Prepend) => (from, into),
+                            None => (into, from),
+                        };
+                        if running.tallies.merge(into, from).is_err() {
+                            return rest(running, Some(into), &parts, appended);
                         }
-                        so_far
+                        into
                     }
                 });
                 appended += 1;
@@ -1736,8 +1743,9 @@ mod tests {
         let bytes = format!("[{}]", elements.join(","));
         let mut options = options(4, 200);
         options.budget = Some(1 << 20);
-        // The second part, the first read elsewhere, is read last.
-        SLOW_PART.with(|s| s.set(Some((1, std::time::Duration::from_millis(300)))));
+        // The fourth part, the first read elsewhere (after the three the
+        // reading thread measures the trees by), is read last.
+        SLOW_PART.with(|s| s.set(Some((3, std::time::Duration::from_millis(300)))));
         let (result, how) = read_with(&config, bytes.as_bytes(), options);
         SLOW_PART.with(|s| s.set(None));
         assert_eq!(result, in_one_go(&config, bytes.as_bytes()));
