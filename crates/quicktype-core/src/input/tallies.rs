@@ -1765,8 +1765,9 @@ impl<'a> TallyBuilder<'a> {
     }
 
     /// `commitString`'s classification of `s`, a string at `node` that is
-    /// not a reference, and what it adds there.
-    fn add_string(&mut self, node: NodeId, s: &str) -> Result<()> {
+    /// not a reference, and what it adds there; `absorbs` is whether the
+    /// strings there absorb every string ([`Tallies::absorbs_strings`]).
+    fn add_string(&mut self, node: NodeId, s: &str, absorbs: bool) -> Result<()> {
         match infer_transformed_string_type_kind_for_string(s, self.config.date_time_recognizer()) {
             Some(kind) => match transformed_string_type_attributes_producer(kind) {
                 Some(producer) => self
@@ -1781,7 +1782,7 @@ impl<'a> TallyBuilder<'a> {
             // counted where the strings absorb it (`Tallies::add_case`), so
             // it need not be interned there.
             None if s.len() <= 64 || (s.len() <= 192 && utf16::len(s) <= 64) => {
-                if self.tallies.absorbs_strings(node)? {
+                if absorbs {
                     Ok(())
                 } else {
                     self.add_case(node, s)
@@ -1827,8 +1828,13 @@ impl JsonSink for TallyBuilder<'_> {
         let node = self.destination()?;
         if self.config.handle_refs() && expecting_ref {
             self.add_case(node, s)?;
-        } else if may_have_attributes(s) || !self.tallies.absorbs_strings(node)? {
-            self.add_string(node, s)?;
+        } else {
+            // Looked up once for the string: whether to classify it, and
+            // whether a case needs interning.
+            let absorbs = self.tallies.absorbs_strings(node)?;
+            if !absorbs || may_have_attributes(s) {
+                self.add_string(node, s, absorbs)?;
+            }
         }
         self.value_done();
         Ok(())
