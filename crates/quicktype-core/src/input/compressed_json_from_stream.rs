@@ -185,17 +185,16 @@ struct Tokenizer<'r, W> {
     /// The read buffer: it starts small and doubles up to the chunk size,
     /// so that small samples do not pay for a full chunk.
     buffer: Vec<u8>,
+    /// The most bytes read at a time, and how far into the window `index`
+    /// must be for the text before it to be dropped
+    /// ([`discard_consumed`](Self::discard_consumed)). `usize::MAX` for a
+    /// sample in memory, which reads nothing and keeps its text.
     chunk_size: usize,
     at_end: bool,
     /// The error that ended the input early, if a read failed.
     read_error: Option<ParseError>,
     text: W,
     index: usize,
-    /// How far into the window `index` must be for the text before it to
-    /// be dropped ([`discard_consumed`](Self::discard_consumed)): the chunk
-    /// size when streaming, and never (`usize::MAX`) for a sample in
-    /// memory, which keeps its text.
-    discard_at: usize,
 }
 
 /// The tokenizer's text: a sample in memory (`&str`, or the `String` it
@@ -255,12 +254,11 @@ impl<'r, W: Window> Tokenizer<'r, W> {
             reader: None,
             decoder: utf8::Decoder::new(),
             buffer: Vec::new(),
-            chunk_size: 0,
+            chunk_size: usize::MAX,
             at_end: true,
             read_error: None,
             text,
             index: 0,
-            discard_at: usize::MAX,
         }
     }
 
@@ -282,7 +280,6 @@ impl<'r> Tokenizer<'r, String> {
             read_error: None,
             text: String::new(),
             index: 0,
-            discard_at: chunk_size,
         }
     }
 }
@@ -386,7 +383,7 @@ impl<W: Window> Tokenizer<'_, W> {
     /// memory keeps its text). One comparison per token.
     #[inline]
     fn discard_consumed(&mut self) {
-        if self.index >= self.discard_at {
+        if self.index >= self.chunk_size {
             self.discard();
         }
     }
