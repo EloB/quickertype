@@ -10,8 +10,10 @@
 //! only ASCII digits, the `regex` crate's would match any Unicode digit.
 
 /// `DateTimeRecognizer`: decides which strings are dates, times and
-/// date-times.
-pub trait DateTimeRecognizer {
+/// date-times. A recognizer decides from the string alone, and is shared
+/// by the threads that read a large file (the CLI reads one on several):
+/// hence `Send + Sync`.
+pub trait DateTimeRecognizer: Send + Sync {
     /// Whether `s` is a date (`2020-01-31`).
     fn is_date(&self, s: &str) -> bool;
     /// Whether `s` is a time (`10:00:00Z`).
@@ -30,14 +32,6 @@ pub trait DateTimeRecognizer {
     fn rejects_uuids(&self) -> bool {
         false
     }
-
-    /// A recognizer that decides exactly as this one does, to read samples
-    /// on other threads (the CLI reads a large file on several). `None`,
-    /// the default, keeps the reading on one thread. The built-in
-    /// recognizers return a copy of themselves.
-    fn thread_copy(&self) -> Option<Box<dyn DateTimeRecognizer + Send>> {
-        None
-    }
 }
 
 /// `DAYS`: the days per month, with February at 29 (no leap-year check).
@@ -49,10 +43,6 @@ const DAYS: [u32; 13] = [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 pub struct DefaultDateTimeRecognizer;
 
 impl DateTimeRecognizer for DefaultDateTimeRecognizer {
-    fn thread_copy(&self) -> Option<Box<dyn DateTimeRecognizer + Send>> {
-        Some(Box::new(*self))
-    }
-
     fn is_date(&self, s: &str) -> bool {
         default_is_date(s)
     }

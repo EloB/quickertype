@@ -101,10 +101,6 @@ fn is_leap_year(year: u32) -> bool {
 pub struct KotlinDateTimeRecognizer;
 
 impl DateTimeRecognizer for KotlinDateTimeRecognizer {
-    fn thread_copy(&self) -> Option<Box<dyn DateTimeRecognizer + Send>> {
-        Some(Box::new(*self))
-    }
-
     fn is_date(&self, s: &str) -> bool {
         if !default_is_date(s) {
             return false;

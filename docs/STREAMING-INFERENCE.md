@@ -460,10 +460,10 @@ a part the budget would read beside others, standard input from a pipe or
 a terminal (it cannot be read at offsets, and reading it ahead would hold
 it in memory), standard input on Windows (a console or a pipe is not told
 from a file as surely there), text samples (`JSON.parse` semantics),
-streams the Rust API hands in (`SampleReader::new`), the WebAssembly
-engine, and date/time recognizers other than the built-in ones, which may
-not be copied to other threads (`DateTimeRecognizer::thread_copy`); and
-if the system will not start the threads.
+streams the Rust API hands in (`SampleReader::new`) and the WebAssembly
+engine; and if the system will not start the threads. (A date/time
+recognizer decides from the string alone and is `Send + Sync`: the
+threads share the sample's.)
 
 ### Why it is exact
 

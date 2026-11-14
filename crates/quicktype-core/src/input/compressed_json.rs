@@ -39,6 +39,7 @@ use std::cell::{Cell, RefCell};
 use std::fmt;
 use std::io::Read;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use hashbrown::HashTable;
 use quicktype_js_compat::json::{self, JsonValue};
@@ -281,7 +282,8 @@ enum PendingKey {
 /// One instance holds all samples of a [`JsonInput`](crate::input::inputs::JsonInput):
 /// they share the string table.
 pub struct CompressedJson {
-    date_time_recognizer: Box<dyn DateTimeRecognizer>,
+    /// (Shared with the forms of the threads that read a large sample.)
+    date_time_recognizer: Arc<dyn DateTimeRecognizer>,
     handle_refs: bool,
     supported_integer_range: Option<IntegerRange>,
     root_value: Option<Value>,
@@ -605,6 +607,20 @@ impl CompressedJson {
         handle_refs: bool,
         supported_integer_range: Option<IntegerRange>,
     ) -> Self {
+        Self::with_shared_recognizer(
+            Arc::from(date_time_recognizer),
+            handle_refs,
+            supported_integer_range,
+        )
+    }
+
+    /// [`new`](Self::new) with a recognizer shared with other forms (those
+    /// of the threads that read a large sample).
+    pub(crate) fn with_shared_recognizer(
+        date_time_recognizer: Arc<dyn DateTimeRecognizer>,
+        handle_refs: bool,
+        supported_integer_range: Option<IntegerRange>,
+    ) -> Self {
         CompressedJson {
             date_time_recognizer,
             handle_refs,
@@ -652,6 +668,12 @@ impl CompressedJson {
     /// `dateTimeRecognizer`.
     pub fn date_time_recognizer(&self) -> &dyn DateTimeRecognizer {
         self.date_time_recognizer.as_ref()
+    }
+
+    /// The recognizer, to share with the forms of other threads.
+    #[cfg(not(target_family = "wasm"))]
+    pub(crate) fn shared_date_time_recognizer(&self) -> Arc<dyn DateTimeRecognizer> {
+        Arc::clone(&self.date_time_recognizer)
     }
 
     /// `handleRefs`.

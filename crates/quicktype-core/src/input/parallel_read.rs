@@ -644,8 +644,7 @@ pub(crate) fn read_sample(
 }
 
 /// Reads `sample` into `tallies` on several threads, if it is a large
-/// top-level array and `config`'s date/time recognizer can be copied to
-/// other threads. `None` leaves `tallies` as they were (but for the text
+/// top-level array. `None` leaves `tallies` as they were (but for the text
 /// of keys and strings), and the sample is to be read in one go.
 fn read(
     sample: &PositionalSample,
@@ -656,14 +655,12 @@ fn read(
     let len = stamp.0;
     let plan = Plan::new(sample.options, len.checked_sub(sample.start)?)?;
     let configs = (0..plan.threads)
-        .map(|_| {
-            Some(ThreadConfig {
-                recognizer: config.date_time_recognizer().thread_copy()?,
-                handle_refs: config.handle_refs(),
-                integer_range: config.supported_integer_range().cloned(),
-            })
+        .map(|_| ThreadConfig {
+            recognizer: config.shared_date_time_recognizer(),
+            handle_refs: config.handle_refs(),
+            integer_range: config.supported_integer_range().cloned(),
         })
-        .collect::<Option<Vec<_>>>()?;
+        .collect::<Vec<_>>();
     // The top-level value must be an array.
     let (open, b) = first_byte(&sample.source, sample.start, len)?;
     if b != b'[' {
@@ -746,17 +743,21 @@ fn first_byte(source: &Positional, mut at: u64, end: u64) -> Option<(u64, u8)> {
     None
 }
 
-/// What a thread needs to read as `config` reads: a copy of its date/time
-/// recognizer, its `$ref` handling and integer range.
+/// What a thread needs to read as `config` reads: its date/time
+/// recognizer (shared), its `$ref` handling and integer range.
 struct ThreadConfig {
-    recognizer: Box<dyn DateTimeRecognizer + Send>,
+    recognizer: std::sync::Arc<dyn DateTimeRecognizer>,
     handle_refs: bool,
     integer_range: Option<crate::support::integer_range::IntegerRange>,
 }
 
 impl ThreadConfig {
     fn into_compressed_json(self) -> CompressedJson {
-        CompressedJson::new(self.recognizer, self.handle_refs, self.integer_range)
+        CompressedJson::with_shared_recognizer(
+            self.recognizer,
+            self.handle_refs,
+            self.integer_range,
+        )
     }
 }
 

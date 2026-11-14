@@ -24,10 +24,6 @@ pub const MAX_SAMELINE_PROPERTIES: usize = 4;
 pub struct SwiftDateTimeRecognizer;
 
 impl DateTimeRecognizer for SwiftDateTimeRecognizer {
-    fn thread_copy(&self) -> Option<Box<dyn DateTimeRecognizer + Send>> {
-        Some(Box::new(*self))
-    }
-
     fn is_date(&self, s: &str) -> bool {
         default_is_date(s)
     }
