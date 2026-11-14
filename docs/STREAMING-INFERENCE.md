@@ -422,16 +422,16 @@ with references handled) is `add_case`, an uninterned one
 `add_uninterned`, a string format `add_string_format` with its kind, and
 a transformed string `add_uri` with the protocol and extension of its
 text (`uri_inference_parts`, of which `uriInferenceAttributesProducer`
-makes its attributes). A transformed string is a `uri`: `commitString`
-records a string as one only for a kind with an attribute producer, with
-the form's date/time recognizer, and `uri` is the only such kind. That
-holds for a form the readers made; for imported tables
-(`CompressedJson::uris_classified`), the walk recognizes the kind from
-the text as `Inference.ts` does (once for a text that recurs, which has
-one index: the walk keeps the kinds of the last 256 by index), and
-declines a string without a kind or without an attribute producer. The
-builder tallies a URI it reads with the same `add_uri`, after
-classifying it. These are the very handlers the builder
+makes its attributes; a URI urijs' parser has to read, which recurs
+under one index, is parsed once while the walk keeps the last 256 by
+index). A transformed string is a `uri`: `commitString` records a string
+as one only for a kind with an attribute producer, with the form's
+date/time recognizer, and `uri` is the only such kind. Imported tables
+are checked as their values are decoded: one that is not a `uri` to the
+form's recognizer (a string without a kind or without an attribute
+producer, on which `Inference.ts` fails) makes the walk decline the form
+(`CompressedJson::transformed_are_uris`). The builder tallies a URI it
+reads with the same `add_uri`, after classifying it. These are the very handlers the builder
 calls for the reader's events (`Tallies::add_kind`, `add_case`,
 `add_object`, `add_array`, `add_key`, `add_proto_key` and the others,
 which take the node of the place and a string id): the builder finds the

@@ -1209,11 +1209,13 @@ What this shows:
 - **Copying the text in** has no native counterpart. On the records it is
   a fifth of the run. `TextEncoder.encodeInto` turns a Latin-1 string
   into UTF-8 at about 2.2 GB/s, and a two-byte string (any non-Latin-1
-  character: pokedex has ♀ and ♂) at about 0.7 GB/s. For a two-byte
-  string, the glue also reallocates its buffer to three times the rest of
-  the text at the first non-ASCII character. Chrome offers no faster way
-  to get a string into WebAssembly memory. A sample's bytes can skip it
-  (below).
+  character: pokedex has ♀ and ♂) at about 0.7 GB/s. The glue encodes
+  into a buffer of the string's UTF-16 length, and only if the UTF-8 does
+  not fit there does it reallocate, for the rest that did not fit, at 3
+  bytes per unit: a few hundred kilobytes for 100 MB of mostly ASCII text,
+  so the copy takes about the text's UTF-8 length in memory. Chrome offers
+  no faster way to get a string into WebAssembly memory. A sample's bytes
+  skip the encoding (below), which saves its time, not memory.
 - **The engine's own phases run at 1.2–1.8× native** on 2 MB and up,
   which is ordinary for WebAssembly. `rustc --print cfg --target
   wasm32-unknown-unknown` (1.99) gives bulk memory, multi-value, mutable
@@ -1836,11 +1838,12 @@ walk reads them back.
 
 The changes, one commit each:
 
-1. A plain URI (`http://`, `https://` or `ftp://`, a host without `@`,
-   `:` or `[`, no backslash, tab or line break before the query) is read
-   in one pass over a table of the bytes that matter, which finds the
-   path's last dot on the way; every other URI goes to urijs' parser, as
-   before. A test compares the two on 200,000 random strings of the
+1. A plain URI (`http://`, `https://` or `ftp://`, a host without `@`
+   or `[` and with at most a decimal port that urijs accepts, no
+   backslash, tab or line break before the query) is read in one pass
+   over a table of the bytes that matter, which finds the path's last
+   dot on the way; every other URI goes to urijs' parser, as before (and
+   the walk keeps the parts of the last 256 it parsed, by string index). A test compares the two on 200,000 random strings of the
    characters that matter to urijs, and `cargo xtask diff` against
    TypeScript quicktype gave identical output for 600 documents of URIs
    of every shape and 30 of generated cards (JSON Schema, which shows the
@@ -1848,14 +1851,16 @@ The changes, one commit each:
    the cards in all 27 languages).
 2. The tallies take a URI's protocol and extension, borrowed from its
    text, and make its attributes only when the place lacks one of them.
-3. The walk takes a transformed string of a form its readers made as a
-   `uri` (the one kind with an attribute producer) instead of recognizing
-   its kind again; imported tables are still checked.
+3. The walk takes every transformed string as a `uri` (the one kind with
+   an attribute producer) instead of recognizing its kind again: a reader
+   makes only those, and imported tables are checked once, as their
+   values are decoded.
 4. `is_uri` looks for braces byte by byte instead of decoding every
    character of the URI (the read's commit pass and the CLI).
-5. The `JSON.parse` reader's tape: 8 bytes a node instead of 12, and no
-   room left from its doubling while the tape is committed (see the
-   memory below).
+5. The `JSON.parse` reader's tape: 8 bytes a node instead of 12 (a
+   string longer than a node's 28 bits of length has it in a side
+   table), and no large room left from its doubling while the tape is
+   committed (see the memory below).
 
 The differential suite has two new sample groups (URIs of every shape,
 and generated cards) to 9 languages; `cargo xtask streaming-fuzz --path
@@ -1955,9 +1960,7 @@ build) was 286 MiB, reached at the end of the read's commit pass:
 The text, a string here, is copied with wasm-bindgen's `encodeInto` into
 a buffer of the string's UTF-16 length; only what does not fit is
 reallocated at 3 bytes per unit, which on these cards is a few hundred
-kilobytes, so the copy costs about 1× the text in memory (and not three
-times the rest of the text from the first non-ASCII character: that was
-an older glue's way). After the read, the form alone is held (91 MiB),
+kilobytes, so the copy costs about 1× the text in memory. After the read, the form alone is held (91 MiB),
 and a run adds 7 MiB (the tallies are 1.2 MiB). The WebAssembly memory
 also keeps what the allocator freed and the quarter it added when it grew
 (`allocator.rs` at the time). The peak, and the memory at the end, of one
