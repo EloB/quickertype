@@ -38,7 +38,6 @@
 #[cfg(test)]
 use std::cell::Cell;
 use std::fmt;
-use std::rc::Rc;
 
 use indexmap::IndexMap;
 use quicktype_js_compat::utf16;
@@ -560,17 +559,14 @@ pub(crate) struct Node {
     pub(crate) object: Option<Box<ObjectTally>>,
 }
 
-/// The nodes of all tallies of a JSON input, and the text of their keys
-/// and string cases.
+/// The nodes of all tallies of a JSON input. Keys and string cases are
+/// string ids, whose text is in a string table beside them: the
+/// [`RunningTallies`]' own, or the compressed form's for the tallies of a
+/// compressed form ([`tally_compressed`]).
 pub(crate) struct Tallies {
     nodes: Vec<Node>,
     /// Nodes no tree uses any more, for reuse.
     free: Vec<NodeId>,
-    strings: Strings,
-    /// For the tallies of a compressed form ([`tally_compressed`]): that
-    /// form, whose string table holds the keys and cases instead of
-    /// `strings`.
-    texts: Option<Rc<CompressedJson>>,
     /// Emptied string and object tallies, for reuse: each sample is read
     /// into a tree of its own, which merging empties. Boxed as the nodes
     /// hold them, so that reusing one moves a pointer.
@@ -578,12 +574,46 @@ pub(crate) struct Tallies {
     spare_strings: Vec<Box<StringTally>>,
     #[allow(clippy::vec_box)]
     spare_objects: Vec<Box<ObjectTally>>,
-    /// What the `JSON.parse` reader keeps between samples.
-    string_reader: StringReaderState,
     /// Makes the next [`merge`](Self::merge) fail after planning this many
     /// steps (for tests).
     #[cfg(test)]
     pub(crate) fail_merge_at: Cell<Option<usize>>,
+}
+
+/// The running tallies of a JSON input's samples (see [`TallyBuilder`]),
+/// and the text of their keys and string cases.
+pub(crate) struct RunningTallies {
+    pub(crate) tallies: Tallies,
+    /// The text of the keys and string cases, by the ids the tallies know
+    /// them by.
+    pub(crate) strings: Strings,
+    /// What the `JSON.parse` reader keeps between samples.
+    string_reader: StringReaderState,
+}
+
+impl RunningTallies {
+    pub(crate) fn new() -> Self {
+        RunningTallies {
+            tallies: Tallies::new(),
+            strings: Strings::new(),
+            string_reader: StringReaderState::default(),
+        }
+    }
+
+    /// The tree at `node` with keys and cases as text (for tests).
+    #[cfg(test)]
+    pub(crate) fn dump(&self, node: NodeId) -> String {
+        self.tallies.dump(&self.strings, node)
+    }
+}
+
+impl fmt::Debug for RunningTallies {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RunningTallies")
+            .field("tallies", &self.tallies)
+            .field("strings", &self.strings.len())
+            .finish_non_exhaustive()
+    }
 }
 
 /// One pair of places [`Tallies::merge`] joins: the values at `from` are
@@ -599,7 +629,6 @@ impl fmt::Debug for Tallies {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Tallies")
             .field("nodes", &(self.nodes.len() - self.free.len()))
-            .field("strings", &self.strings.len())
             .finish_non_exhaustive()
     }
 }
@@ -621,11 +650,8 @@ impl Tallies {
         Tallies {
             nodes: Vec::new(),
             free: Vec::new(),
-            strings: Strings::new(),
-            texts: None,
             spare_strings: Vec::new(),
             spare_objects: Vec::new(),
-            string_reader: StringReaderState::default(),
             #[cfg(test)]
             fail_merge_at: Cell::new(None),
         }
@@ -636,32 +662,21 @@ impl Tallies {
         defined(self.nodes.get(id as usize))
     }
 
-    /// The text of the key or string case `id`.
-    pub(crate) fn text(&self, id: u32) -> Result<&str> {
-        match &self.texts {
-            Some(cjson) => defined(cjson.string(id)),
-            None => defined(self.strings.get(id as usize)),
-        }
-    }
-
     /// The number of nodes in use (for tests).
     #[cfg(test)]
     pub(crate) fn live_nodes(&self) -> usize {
         self.nodes.len() - self.free.len()
     }
 
-    /// The tree at `node` with keys and cases as text, independent of node
-    /// numbers (for tests).
+    /// The tree at `node` with keys and cases as their text in `strings`,
+    /// independent of node numbers (for tests).
     #[cfg(test)]
-    pub(crate) fn dump(&self, node: NodeId) -> String {
+    pub(crate) fn dump(&self, strings: &Strings, node: NodeId) -> String {
+        let text = |id: u32| strings.get(id as usize).unwrap();
         let n = self.node(node).unwrap();
         let mut out = format!("{:?}", n.kinds);
         if let Some(s) = &n.strings {
-            let cases: Vec<(&str, u64)> = s
-                .cases
-                .iter()
-                .map(|(&id, &c)| (self.text(id).unwrap(), c))
-                .collect();
+            let cases: Vec<(&str, u64)> = s.cases.iter().map(|(&id, &c)| (text(id), c)).collect();
             out += &format!(
                 " strings{cases:?} {:?} {:?} {}",
                 s.with_enums, s.without_enums, s.not_interned
@@ -672,18 +687,18 @@ impl Tallies {
             for (&id, k) in &o.keys {
                 out += &format!(
                     "{:?}×{}: {}, ",
-                    self.text(id).unwrap(),
+                    text(id),
                     k.count,
-                    self.dump(k.node)
+                    self.dump(strings, k.node)
                 );
             }
             if let Some(p) = o.proto {
-                out += &format!("__proto__: {}", self.dump(p));
+                out += &format!("__proto__: {}", self.dump(strings, p));
             }
             out += "}";
         }
         if let Some(items) = n.items {
-            out += &format!(" items [{}]", self.dump(items));
+            out += &format!(" items [{}]", self.dump(strings, items));
         }
         out
     }
@@ -822,14 +837,15 @@ const PROTO: u8 = 2;
 /// (the WebAssembly engine keeps its inputs in that form, which quicktype's
 /// API can ask for at any time), made in one walk over it when their types
 /// are inferred. Returns the tallies, whose keys and cases are the
-/// compressed form's strings, and each top-level's tree; `Ok(None)` if the
+/// compressed form's strings ([`CompressedJson::strings`]), and each
+/// top-level's tree; `Ok(None)` if the
 /// values are not as a reader makes them (see [`CompressedTally`]), where
 /// only inference from the values themselves is exact. An error is one
 /// tallying raises (as reading the samples would have), not a decline:
 /// it is the run's. See `docs/STREAMING-INFERENCE.md`, "Tallies of a
 /// compressed form".
 pub(crate) fn tally_compressed<'c>(
-    cjson: &Rc<CompressedJson>,
+    cjson: &CompressedJson,
     top_levels: impl IntoIterator<Item = &'c [Value]>,
 ) -> Result<Option<(Tallies, Vec<NodeId>)>> {
     // A string is known by its index, but for `"__proto__"`, which is
@@ -838,7 +854,6 @@ pub(crate) fn tally_compressed<'c>(
         return Ok(None);
     }
     let mut tallies = Tallies::new();
-    tallies.texts = Some(Rc::clone(cjson));
     let mut walk = CompressedTally::new(cjson);
     let mut roots = Vec::new();
     for samples in top_levels {
@@ -1213,6 +1228,9 @@ enum Frame {
 /// Appending a sample to others is [`Tallies::merge`]'s job.
 pub(crate) struct TallyBuilder<'a> {
     tallies: &'a mut Tallies,
+    /// The text of the keys and cases.
+    strings: &'a mut Strings,
+    string_reader: &'a mut StringReaderState,
     /// The reading configuration: date/time recognizer, `$ref` handling,
     /// integer range.
     config: &'a CompressedJson,
@@ -1224,9 +1242,16 @@ pub(crate) struct TallyBuilder<'a> {
 
 impl<'a> TallyBuilder<'a> {
     /// A builder that reads samples as `config` reads them.
-    pub(crate) fn new(tallies: &'a mut Tallies, config: &'a CompressedJson) -> Self {
+    pub(crate) fn new(running: &'a mut RunningTallies, config: &'a CompressedJson) -> Self {
+        let RunningTallies {
+            tallies,
+            strings,
+            string_reader,
+        } = running;
         TallyBuilder {
             tallies,
+            strings,
+            string_reader,
             config,
             root: None,
             frames: Vec::new(),
@@ -1373,7 +1398,7 @@ impl<'a> TallyBuilder<'a> {
     /// An interned string (`Tag.InternedString`).
     fn add_case(&mut self, s: &str) -> Result<()> {
         let node = self.destination()?;
-        let id = self.tallies.strings.intern_text(s);
+        let id = self.strings.intern_text(s);
         let strings = self.strings_mut(node)?;
         *strings.cases.entry(id).or_insert(0) += 1;
         strings.add_interned()?;
@@ -1477,13 +1502,8 @@ impl JsonSink for TallyBuilder<'_> {
     }
 
     fn set_property_key(&mut self, key: &str) -> Result<()> {
-        let Tallies {
-            nodes,
-            free,
-            strings,
-            ..
-        } = &mut *self.tallies;
-        let set = Self::tally_key(&self.frames, nodes, free, strings, key)?;
+        let Tallies { nodes, free, .. } = &mut *self.tallies;
+        let set = Self::tally_key(&self.frames, nodes, free, self.strings, key)?;
         self.key_set(set, key == "$ref");
         Ok(())
     }
@@ -1546,21 +1566,15 @@ impl JsonSink for TallyBuilder<'_> {
     }
 
     fn string_reader(&mut self) -> &mut StringReaderState {
-        &mut self.tallies.string_reader
+        self.string_reader
     }
 
     fn set_property_key_read(&mut self, id: u32) -> Result<()> {
         // The key is the reader's, borrowed beside the fields it is
         // counted in.
-        let Tallies {
-            nodes,
-            free,
-            strings,
-            string_reader,
-            ..
-        } = &mut *self.tallies;
-        let key = string_reader.key_text(id);
-        let set = Self::tally_key(&self.frames, nodes, free, strings, key)?;
+        let Tallies { nodes, free, .. } = &mut *self.tallies;
+        let key = self.string_reader.key_text(id);
+        let set = Self::tally_key(&self.frames, nodes, free, self.strings, key)?;
         let is_ref = key == "$ref";
         self.key_set(set, is_ref);
         Ok(())
@@ -1596,7 +1610,7 @@ mod tests {
 
     /// Reads `samples` (at least one), each into a tree of its own, and
     /// merges them in order; returns the tree.
-    fn read(tallies: &mut Tallies, config: &CompressedJson, samples: &[&str]) -> NodeId {
+    fn read(tallies: &mut RunningTallies, config: &CompressedJson, samples: &[&str]) -> NodeId {
         let trees: Vec<NodeId> = samples
             .iter()
             .map(|sample| {
@@ -1606,12 +1620,12 @@ mod tests {
             .collect();
         let (&first, rest) = trees.split_first().expect("a sample");
         for &tree in rest {
-            tallies.merge(first, tree).unwrap();
+            tallies.tallies.merge(first, tree).unwrap();
         }
         first
     }
 
-    fn dump(tallies: &Tallies, node: NodeId) -> String {
+    fn dump(tallies: &RunningTallies, node: NodeId) -> String {
         tallies.dump(node)
     }
 
@@ -1648,21 +1662,27 @@ mod tests {
     #[test]
     fn proto_is_listed_at_each_occurrence_with_its_last_value() {
         let config = config(false);
-        let mut tallies = Tallies::new();
+        let mut tallies = RunningTallies::new();
         let root = read(
             &mut tallies,
             &config,
             &[r#"[{"a":1,"__proto__":1,"__proto__":{"x":2},"b":1},{"__proto__":"s","a":2}]"#],
         );
-        let items = tallies.node(root).unwrap().items.unwrap();
-        let object = tallies.node(items).unwrap().object.as_deref().unwrap();
+        let items = tallies.tallies.node(root).unwrap().items.unwrap();
+        let object = tallies
+            .tallies
+            .node(items)
+            .unwrap()
+            .object
+            .as_deref()
+            .unwrap();
         assert_eq!(object.count, 2);
         assert_eq!(
             object.property_names().collect::<Vec<_>>(),
             [(Some(0), 1), (None, 2), (Some(1), 1), (None, 1)]
         );
         assert_eq!(object.keys[0].count, 2);
-        let proto = tallies.node(object.proto.unwrap()).unwrap();
+        let proto = tallies.tallies.node(object.proto.unwrap()).unwrap();
         assert!(proto.kinds.is_empty());
         assert!(proto.strings.is_some());
     }
@@ -1670,23 +1690,23 @@ mod tests {
     #[test]
     fn replaced_proto_values_are_freed() {
         let config = config(false);
-        let mut tallies = Tallies::new();
+        let mut tallies = RunningTallies::new();
         let one = r#"{"__proto__":{"a":{"b":[1]}}}"#;
         let root = read(&mut tallies, &config, &[one]);
-        let after_one = tallies.live_nodes();
+        let after_one = tallies.tallies.live_nodes();
         let more = read(&mut tallies, &config, &[one, one, one]);
-        tallies.merge(root, more).unwrap();
-        assert_eq!(tallies.live_nodes(), after_one);
+        tallies.tallies.merge(root, more).unwrap();
+        assert_eq!(tallies.tallies.live_nodes(), after_one);
         // Also within one sample.
-        let mut within = Tallies::new();
+        let mut within = RunningTallies::new();
         read(
             &mut within,
             &config,
             &[r#"[{"__proto__":{"a":{"b":[1]}},"__proto__":{"a":{"b":[1]}}}]"#],
         );
-        let mut once = Tallies::new();
+        let mut once = RunningTallies::new();
         read(&mut once, &config, &[r#"[{"__proto__":{"a":{"b":[1]}}}]"#]);
-        assert_eq!(within.live_nodes(), once.live_nodes());
+        assert_eq!(within.tallies.live_nodes(), once.tallies.live_nodes());
     }
 
     const SAMPLES: [&str; 4] = [
@@ -1701,17 +1721,21 @@ mod tests {
     #[test]
     fn merging_trees_is_reading_on() {
         let config = config(true);
-        let mut one = Tallies::new();
+        let mut one = RunningTallies::new();
         let root = read(&mut one, &config, &[&format!("[{}]", SAMPLES.join(","))]);
-        let items = one.node(root).unwrap().items.unwrap();
+        let items = one.tallies.node(root).unwrap().items.unwrap();
         for split in 1..SAMPLES.len() {
-            let mut two = Tallies::new();
+            let mut two = RunningTallies::new();
             let a = read(&mut two, &config, &SAMPLES[..split]);
             let b = read(&mut two, &config, &SAMPLES[split..]);
-            two.merge(a, b).unwrap();
+            two.tallies.merge(a, b).unwrap();
             assert_eq!(dump(&two, a), dump(&one, items), "split at {split}");
             // All but the array's node.
-            assert_eq!(two.live_nodes(), one.live_nodes() - 1, "split at {split}");
+            assert_eq!(
+                two.tallies.live_nodes(),
+                one.tallies.live_nodes() - 1,
+                "split at {split}"
+            );
         }
     }
 
@@ -1728,36 +1752,39 @@ mod tests {
             r#"{"a":[2.5,{"b":"http://h/y.png","e":null}],"c":{"d":"y","f":[true],"g":[["s"]]},"__proto__":[1]}"#,
             SAMPLES[2],
         ];
-        let mut expected = Tallies::new();
+        let mut expected = RunningTallies::new();
         let all = read(
             &mut expected,
             &config,
             &[first[0], first[1], second[0], second[1]],
         );
         let steps = {
-            let mut tallies = Tallies::new();
+            let mut tallies = RunningTallies::new();
             let a = read(&mut tallies, &config, &first);
             let b = read(&mut tallies, &config, &second);
-            tallies.plan_merge(a, b).unwrap().len()
+            tallies.tallies.plan_merge(a, b).unwrap().len()
         };
         assert!(steps > 10, "{steps} steps");
         for fail_at in 0..steps {
-            let mut tallies = Tallies::new();
+            let mut tallies = RunningTallies::new();
             let a = read(&mut tallies, &config, &first);
-            let before = (dump(&tallies, a), tallies.live_nodes());
+            let before = (dump(&tallies, a), tallies.tallies.live_nodes());
             let b = read(&mut tallies, &config, &second);
-            tallies.fail_merge_at.set(Some(fail_at));
-            assert!(tallies.merge(a, b).is_err(), "failing at step {fail_at}");
+            tallies.tallies.fail_merge_at.set(Some(fail_at));
+            assert!(
+                tallies.tallies.merge(a, b).is_err(),
+                "failing at step {fail_at}"
+            );
             assert_eq!(
-                (dump(&tallies, a), tallies.live_nodes()),
+                (dump(&tallies, a), tallies.tallies.live_nodes()),
                 before,
                 "failing at step {fail_at}"
             );
             // The tree takes the next merge as if nothing had happened.
             let b = read(&mut tallies, &config, &second);
-            tallies.merge(a, b).unwrap();
+            tallies.tallies.merge(a, b).unwrap();
             assert_eq!(dump(&tallies, a), dump(&expected, all));
-            assert_eq!(tallies.live_nodes(), expected.live_nodes());
+            assert_eq!(tallies.tallies.live_nodes(), expected.tallies.live_nodes());
         }
     }
 
@@ -1768,30 +1795,30 @@ mod tests {
         let config = config(false);
         let good = r#"{"a":[1,{"b":"x"}],"c":"2020-01-01","__proto__":{"q":[]}}"#;
         let broken = r#"{"a":[2.5,{"b":"y","z":[null,{"w":"http://h/a.png"}]}],"c":"q","__proto__":{"p":1},"d":{"e":[[1]]}}"#;
-        let mut expected = Tallies::new();
+        let mut expected = RunningTallies::new();
         let tree = read(&mut expected, &config, &[good]);
-        let expected = (dump(&expected, tree), expected.live_nodes());
+        let expected = (dump(&expected, tree), expected.tallies.live_nodes());
         for cut in 1..broken.len() {
-            let mut tallies = Tallies::new();
+            let mut tallies = RunningTallies::new();
             let mut builder = TallyBuilder::new(&mut tallies, &config);
             assert!(parse_stream_into(&mut builder, &broken.as_bytes()[..cut]).is_err());
             let tree = parse_stream_into(&mut builder, good.as_bytes()).unwrap();
             drop(builder);
             assert_eq!(
-                (dump(&tallies, tree), tallies.live_nodes()),
+                (dump(&tallies, tree), tallies.tallies.live_nodes()),
                 expected,
                 "cut at {cut}"
             );
         }
         // A builder dropped in the middle of a sample frees it too.
-        let mut tallies = Tallies::new();
+        let mut tallies = RunningTallies::new();
         let mut builder = TallyBuilder::new(&mut tallies, &config);
         builder.push_object_context().unwrap();
         builder.set_property_key("a").unwrap();
         builder.push_array_context().unwrap();
         builder.commit_null().unwrap();
         drop(builder);
-        assert_eq!(tallies.live_nodes(), 0);
+        assert_eq!(tallies.tallies.live_nodes(), 0);
     }
 
     /// `JSON.parse` samples emit what the stream reader emits for text both
@@ -1804,16 +1831,16 @@ mod tests {
         ];
         for handle_refs in [false, true] {
             let config = config(handle_refs);
-            let mut streamed = Tallies::new();
+            let mut streamed = RunningTallies::new();
             let root = read(&mut streamed, &config, &samples);
-            let mut parsed = Tallies::new();
+            let mut parsed = RunningTallies::new();
             let trees: Vec<NodeId> = samples
                 .iter()
                 .map(|sample| {
                     parse_string_into(&mut TallyBuilder::new(&mut parsed, &config), sample).unwrap()
                 })
                 .collect();
-            parsed.merge(trees[0], trees[1]).unwrap();
+            parsed.tallies.merge(trees[0], trees[1]).unwrap();
             assert_eq!(dump(&parsed, trees[0]), dump(&streamed, root));
         }
     }
@@ -1838,7 +1865,7 @@ mod tests {
     fn tallying_a_compressed_form_is_reading() {
         for handle_refs in [false, true] {
             let config = config(handle_refs);
-            let mut read_tallies = Tallies::new();
+            let mut read_tallies = RunningTallies::new();
             let expected = read(&mut read_tallies, &config, &WALKED);
             let expected = dump(&read_tallies, expected);
             let mut streamed = self::config(handle_refs);
@@ -1850,21 +1877,21 @@ mod tests {
                 string_roots.push(parsed.parse_string(sample).unwrap());
             }
             // The stream reader keeps what the tallies were read with.
-            let streamed = Rc::new(streamed);
             let (tallies, roots) = tally_compressed(&streamed, [stream_roots.as_slice()])
                 .unwrap()
                 .unwrap();
-            assert_eq!(dump(&tallies, roots[0]), expected, "refs {handle_refs}");
+            let walked = |tallies: &Tallies, root| tallies.dump(streamed.strings(), root);
+            assert_eq!(walked(&tallies, roots[0]), expected, "refs {handle_refs}");
             // Split into top-levels: each its own tree.
             let (first, rest) = stream_roots.split_at(3);
             let (tallies, roots) = tally_compressed(&streamed, [first, rest]).unwrap().unwrap();
-            let mut one = Tallies::new();
+            let mut one = RunningTallies::new();
             let a = read(&mut one, &config, &WALKED[..3]);
             let b = read(&mut one, &config, &WALKED[3..]);
-            assert_eq!(dump(&tallies, roots[0]), dump(&one, a));
-            assert_eq!(dump(&tallies, roots[1]), dump(&one, b));
+            assert_eq!(walked(&tallies, roots[0]), dump(&one, a));
+            assert_eq!(walked(&tallies, roots[1]), dump(&one, b));
             // `JSON.parse` semantics: as reading the text samples.
-            let mut text_tallies = Tallies::new();
+            let mut text_tallies = RunningTallies::new();
             let trees: Vec<NodeId> = WALKED
                 .iter()
                 .map(|sample| {
@@ -1873,14 +1900,13 @@ mod tests {
                 })
                 .collect();
             for &tree in &trees[1..] {
-                text_tallies.merge(trees[0], tree).unwrap();
+                text_tallies.tallies.merge(trees[0], tree).unwrap();
             }
-            let parsed = Rc::new(parsed);
             let (tallies, roots) = tally_compressed(&parsed, [string_roots.as_slice()])
                 .unwrap()
                 .unwrap();
             assert_eq!(
-                dump(&tallies, roots[0]),
+                tallies.dump(parsed.strings(), roots[0]),
                 dump(&text_tallies, trees[0]),
                 "refs {handle_refs}"
             );
@@ -1923,7 +1949,7 @@ mod tests {
             let (objects, arrays) = cjson.counts();
             let root = cjson.decode_value(root, objects, arrays).unwrap();
             assert!(
-                tally_compressed(&Rc::new(cjson), [[root].as_slice()])
+                tally_compressed(&cjson, [[root].as_slice()])
                     .unwrap()
                     .is_none(),
                 "{tables:?}"
@@ -1935,11 +1961,11 @@ mod tests {
             CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &good).unwrap();
         let (objects, arrays) = cjson.counts();
         let root = cjson.decode_value(array, objects, arrays).unwrap();
-        let (tallies, roots) = tally_compressed(&Rc::new(cjson), [[root].as_slice()])
+        let (tallies, roots) = tally_compressed(&cjson, [[root].as_slice()])
             .unwrap()
             .unwrap();
         assert_eq!(
-            dump(&tallies, roots[0]),
+            tallies.dump(cjson.strings(), roots[0]),
             "[array] items [[object] objects 1 [] {\"a\"×1: [integer], }]"
         );
     }
@@ -1950,7 +1976,6 @@ mod tests {
     fn values_that_are_not_there_are_errors() {
         let mut cjson = config(false);
         let root = cjson.parse_stream(br#"[{"a":"x"}]"#).unwrap();
-        let cjson = Rc::new(cjson);
         let (objects, arrays) = cjson.counts();
         let strings = cjson.table_counts().strings as u32;
         for missing in [
@@ -1971,14 +1996,20 @@ mod tests {
     #[test]
     fn string_attributes_combine_once_per_change() {
         let config = config(false);
-        let mut tallies = Tallies::new();
+        let mut tallies = RunningTallies::new();
         let root = read(
             &mut tallies,
             &config,
             &[r#"["2020-01-01","x","http://h/a.PNG","2020-01-02","https://h/b.png","12:00:00Z"]"#],
         );
-        let items = tallies.node(root).unwrap().items.unwrap();
-        let strings = tallies.node(items).unwrap().strings.as_deref().unwrap();
+        let items = tallies.tallies.node(root).unwrap().items.unwrap();
+        let strings = tallies
+            .tallies
+            .node(items)
+            .unwrap()
+            .strings
+            .as_deref()
+            .unwrap();
         let with_enums = strings.with_enums.as_ref().unwrap();
         let st = StringTypesTypeAttributeKind
             .try_get_in_attributes(with_enums)

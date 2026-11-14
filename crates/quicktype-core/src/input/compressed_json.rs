@@ -619,6 +619,12 @@ impl CompressedJson {
         self.strings.get(index as usize)
     }
 
+    /// The string table: the text of the keys and cases of the tallies
+    /// made of this form (see `tallies::tally_compressed`).
+    pub(crate) fn strings(&self) -> &Strings {
+        &self.strings
+    }
+
     /// Whether every text but `"__proto__"` is in the string table at most
     /// once, so that a string is known by its index: always for samples
     /// read here, as in TypeScript, whose `internString` interns every

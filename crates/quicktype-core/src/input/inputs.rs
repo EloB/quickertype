@@ -29,7 +29,7 @@ use super::compressed_json::{
 };
 use super::compressed_json_from_stream::{parse_stream_into, parse_stream_reader_into};
 use super::inference::TypeInference;
-use super::tallies::{NodeId, Tallies, TallyBuilder, tally_compressed};
+use super::tallies::{NodeId, RunningTallies, TallyBuilder, tally_compressed};
 use super::tally_inference::TallyInference;
 use crate::attributes::description::DescriptionTypeAttributeKind;
 use crate::attributes::type_attributes::AttributeKind;
@@ -434,7 +434,7 @@ pub struct JsonInput {
     top_levels: IndexMap<String, JsonTopLevel>,
     /// The running tallies; `None` to keep the samples in the compressed
     /// form.
-    tallies: Option<Tallies>,
+    tallies: Option<RunningTallies>,
     /// Without running tallies: whether the types are inferred from
     /// tallies of the compressed form, made when they are inferred, rather
     /// than from its values one by one (see
@@ -465,7 +465,7 @@ impl JsonInput {
         JsonInput {
             compressed_json: Rc::new(compressed_json),
             top_levels: IndexMap::new(),
-            tallies: (!compressed_json_inference_requested()).then(Tallies::new),
+            tallies: (!compressed_json_inference_requested()).then(RunningTallies::new),
             tally_compressed: false,
             inferred_from: None,
         }
@@ -536,7 +536,7 @@ impl JsonInput {
             return panic("The inference source must be chosen before sources are added");
         }
         if tallies != self.tallies.is_some() {
-            self.tallies = tallies.then(Tallies::new);
+            self.tallies = tallies.then(RunningTallies::new);
         }
         Ok(())
     }
@@ -719,7 +719,7 @@ impl JsonInput {
             };
             drop(builder);
             let added = read.map_err(report).and_then(|tree| match source {
-                Some(source) => tallies.merge(source, tree),
+                Some(source) => tallies.tallies.merge(source, tree),
                 None => {
                     source = Some(tree);
                     Ok(())
@@ -727,7 +727,7 @@ impl JsonInput {
             });
             if let Err(e) = added {
                 if let Some(source) = source {
-                    tallies.free_tree(source);
+                    tallies.tallies.free_tree(source);
                 }
                 return Err(e);
             }
@@ -735,7 +735,7 @@ impl JsonInput {
         let tree = defined(source)?;
         let existing = self.top_levels.get(&name).and_then(|t| t.tally);
         if let Some(existing) = existing {
-            tallies.merge(existing, tree)?;
+            tallies.tallies.merge(existing, tree)?;
         }
         let top_level = self.top_levels.entry(name).or_default();
         top_level.tally = Some(existing.unwrap_or(tree));
@@ -771,18 +771,26 @@ impl JsonInput {
         } else {
             None
         };
+        // The tallies, and the text of their keys and cases.
         let (tallies, compressed_roots, inferred_from) = match (&self.tallies, &compressed_tallies)
         {
-            (Some(tallies), _) => (Some(tallies), None, JsonInference::RunningTallies),
-            (None, Some((tallies, roots))) => {
-                (Some(tallies), Some(roots), JsonInference::CompressedTallies)
-            }
+            (Some(running), _) => (
+                Some((&running.tallies, &running.strings)),
+                None,
+                JsonInference::RunningTallies,
+            ),
+            (None, Some((tallies, roots))) => (
+                Some((tallies, self.compressed_json.strings())),
+                Some(roots),
+                JsonInference::CompressedTallies,
+            ),
             (None, None) => (None, None, JsonInference::CompressedValues),
         };
         self.inferred_from = Some(inferred_from);
         let inference = match tallies {
-            Some(tallies) => Inference::Tallies(TallyInference::new(
+            Some((tallies, strings)) => Inference::Tallies(TallyInference::new(
                 tallies,
+                strings,
                 self.compressed_json.handle_refs(),
                 infer_maps,
                 infer_enums,
@@ -959,7 +967,7 @@ mod tests {
             .iter()
             .map(|(name, t)| (name.clone(), tallies.dump(t.tally.unwrap())))
             .collect();
-        (top_levels, tallies.live_nodes())
+        (top_levels, tallies.tallies.live_nodes())
     }
 
     /// The type graph `input` infers, or the error, for TypeScript.
@@ -1134,7 +1142,7 @@ mod tests {
             input.add_source_sync(source("T", &[A])).unwrap();
             input.add_source_sync(source("U", &[C])).unwrap();
             let tallies = input.tallies.as_ref().unwrap();
-            tallies.fail_merge_at.set(fail_merge_at);
+            tallies.tallies.fail_merge_at.set(fail_merge_at);
             assert!(
                 input.add_source_sync(source("T", samples)).is_err(),
                 "{samples:?} {fail_merge_at:?}"
