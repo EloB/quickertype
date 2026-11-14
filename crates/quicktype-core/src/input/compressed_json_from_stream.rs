@@ -28,13 +28,20 @@
 //! ([`quicktype_js_compat::utf8::Decoder`]: invalid sequences become
 //! U+FFFD, also when a sequence is split between chunks); a byte order mark
 //! is not stripped and is a syntax error, as in the CLI.
+//!
+//! Not in quicktype: the reader also reads JSON Lines
+//! (`Framing::Lines`), as the array of the values on their lines. It
+//! emits the array's events (`pushArrayContext` first, `finishArray` at
+//! the end) around the values, which it reads as whole samples, and
+//! between them expects whitespace with a line feed; it counts the line
+//! feeds as it skips whitespace, for errors (`line 3: …`).
 
 use std::borrow::Cow;
 use std::io::Read;
 
 use quicktype_js_compat::utf8;
 
-use super::compressed_json::{CompressedJson, JsonSink, ParseError, Value};
+use super::compressed_json::{CompressedJson, Framing, JsonSink, ParseError, Value, line_error};
 use super::json_scan::plain_run;
 use crate::input::io::node_io::IoError;
 use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
@@ -82,7 +89,7 @@ impl CompressedJson {
         reader: &mut dyn Read,
         chunk_size: usize,
     ) -> Result<Value, ParseError> {
-        parse_stream_chunked_into(self, reader, chunk_size)
+        parse_stream_chunked_into(self, reader, chunk_size, Framing::Value)
     }
 }
 
@@ -91,11 +98,28 @@ pub(crate) fn parse_stream_into<S: JsonSink>(
     sink: &mut S,
     sample: &[u8],
 ) -> Result<S::Root, ParseError> {
+    parse_stream_framed_into(sink, sample, Framing::Value)
+}
+
+/// [`parse_stream_into`] for JSON Lines ([`Framing::Lines`]): the array of
+/// the sample's values.
+pub(crate) fn parse_stream_lines_into<S: JsonSink>(
+    sink: &mut S,
+    sample: &[u8],
+) -> Result<S::Root, ParseError> {
+    parse_stream_framed_into(sink, sample, Framing::Lines)
+}
+
+fn parse_stream_framed_into<S: JsonSink>(
+    sink: &mut S,
+    sample: &[u8],
+    framing: Framing,
+) -> Result<S::Root, ParseError> {
     // In memory: decode once (borrowing valid UTF-8) and tokenize it
     // as one window.
     match utf8::decode(sample) {
-        Cow::Borrowed(text) => tokenize(sink, Tokenizer::in_memory(text)),
-        Cow::Owned(text) => tokenize(sink, Tokenizer::in_memory(text)),
+        Cow::Borrowed(text) => tokenize(sink, Tokenizer::in_memory(text), framing),
+        Cow::Owned(text) => tokenize(sink, Tokenizer::in_memory(text), framing),
     }
 }
 
@@ -104,23 +128,47 @@ pub(crate) fn parse_stream_reader_into<S: JsonSink>(
     sink: &mut S,
     reader: &mut dyn Read,
 ) -> Result<S::Root, ParseError> {
-    parse_stream_chunked_into(sink, reader, CHUNK_SIZE)
+    parse_stream_chunked_into(sink, reader, CHUNK_SIZE, Framing::Value)
 }
 
-/// [`parse_stream_reader_into`] with chunks of at most `chunk_size` bytes.
+/// [`parse_stream_reader_into`] for JSON Lines ([`Framing::Lines`]): the
+/// array of the stream's values.
+pub(crate) fn parse_stream_lines_reader_into<S: JsonSink>(
+    sink: &mut S,
+    reader: &mut dyn Read,
+) -> Result<S::Root, ParseError> {
+    parse_stream_chunked_into(sink, reader, CHUNK_SIZE, Framing::Lines)
+}
+
+/// [`parse_stream_reader_into`] with chunks of at most `chunk_size` bytes,
+/// framed as `framing` says.
 pub(crate) fn parse_stream_chunked_into<S: JsonSink>(
     sink: &mut S,
     reader: &mut dyn Read,
     chunk_size: usize,
+    framing: Framing,
 ) -> Result<S::Root, ParseError> {
-    tokenize(sink, Tokenizer::streaming(reader, chunk_size))
+    tokenize(sink, Tokenizer::streaming(reader, chunk_size), framing)
 }
 
 fn tokenize<S: JsonSink, W: Window>(
     sink: &mut S,
     mut tokenizer: Tokenizer<'_, W>,
+    framing: Framing,
 ) -> Result<S::Root, ParseError> {
-    let result = tokenizer.run(sink);
+    let result = match framing {
+        Framing::Value => tokenizer.run(sink),
+        Framing::Lines => {
+            tokenizer.lines = Some(Lines::default());
+            match tokenizer.run(sink) {
+                Err(ParseError::Js(e)) => {
+                    let line = tokenizer.lines.as_ref().map_or(1, |l| l.value_line);
+                    Err(line_error(line, &e))
+                }
+                result => result,
+            }
+        }
+    };
     let read_error = tokenizer.read_error.take();
     // A failed read looks like the end of the input to the parser; the
     // read error is what is reported.
@@ -195,6 +243,31 @@ struct Tokenizer<'r, W> {
     read_error: Option<ParseError>,
     text: W,
     index: usize,
+    /// For JSON Lines, where the reading is in them.
+    lines: Option<Lines>,
+}
+
+/// Where the reading of JSON Lines ([`Framing::Lines`]) is. A raw line
+/// feed can only be whitespace (in a string it is an error), so the line
+/// feeds are counted as whitespace is skipped.
+#[derive(Debug)]
+struct Lines {
+    /// The line feeds skipped so far.
+    feeds: usize,
+    /// The line the current value starts on, from 1.
+    value_line: usize,
+    /// How many values have started.
+    values: usize,
+}
+
+impl Default for Lines {
+    fn default() -> Self {
+        Lines {
+            feeds: 0,
+            value_line: 1,
+            values: 0,
+        }
+    }
 }
 
 /// The tokenizer's text: a sample in memory (`&str`, or the `String` it
@@ -242,6 +315,11 @@ fn is_whitespace(b: u8) -> bool {
     matches!(b, b' ' | b'\t' | b'\n' | b'\r')
 }
 
+/// How many line feeds `bytes` holds.
+fn count_line_feeds(bytes: &[u8]) -> usize {
+    bytes.iter().filter(|&&b| b == b'\n').count()
+}
+
 /// A JavaScript `\w` character, for the `\b` after a literal.
 fn is_word(b: u8) -> bool {
     b.is_ascii_alphanumeric() || b == b'_'
@@ -259,6 +337,7 @@ impl<'r, W: Window> Tokenizer<'r, W> {
             read_error: None,
             text,
             index: 0,
+            lines: None,
         }
     }
 
@@ -280,6 +359,7 @@ impl<'r> Tokenizer<'r, String> {
             read_error: None,
             text: String::new(),
             index: 0,
+            lines: None,
         }
     }
 }
@@ -392,16 +472,43 @@ impl<W: Window> Tokenizer<'_, W> {
         }
     }
 
+    /// For JSON Lines, between values (the [`Expect::Done`] state): skips
+    /// to the next value, which must start on a line after the last value
+    /// ends. `Ok(true)` if there is one, `Ok(false)` at the end of the
+    /// input.
+    fn next_line(&mut self) -> Result<bool, ParseError> {
+        let feeds = self.lines.as_ref().map_or(0, |l| l.feeds);
+        self.skip_whitespace();
+        if self.peek().is_none() {
+            return Ok(false);
+        }
+        let Some(lines) = &mut self.lines else {
+            return Ok(false);
+        };
+        lines.value_line = lines.feeds + 1;
+        lines.values += 1;
+        if lines.values > 1 && lines.feeds == feeds {
+            return Err(syntax("Parser cannot parse input: unexpected characters"));
+        }
+        Ok(true)
+    }
+
     /// Skips whitespace, which comes only between tokens: once the window
     /// is all consumed, it is dropped before more is read, so a long run
-    /// of whitespace never accumulates.
+    /// of whitespace never accumulates. For JSON Lines, counts the line
+    /// feeds in it.
     fn skip_whitespace(&mut self) {
         loop {
-            let rest = &self.text().as_bytes()[self.index..];
+            let rest = &self.text.as_ref().as_bytes()[self.index..];
             let n = rest
                 .iter()
                 .position(|&b| !is_whitespace(b))
                 .unwrap_or(rest.len());
+            if n != 0 {
+                if let Some(lines) = &mut self.lines {
+                    lines.feeds += count_line_feeds(&rest[..n]);
+                }
+            }
             self.index += n;
             if self.index < self.text().len() {
                 return;
@@ -430,6 +537,12 @@ impl<W: Window> Tokenizer<'_, W> {
     fn run<S: JsonSink>(&mut self, sink: &mut S) -> Result<S::Root, ParseError> {
         let mut expect = Expect::Value;
         let mut stack: Vec<Parent> = Vec::new();
+        if self.lines.is_some() {
+            // JSON Lines are the array of their values: between values,
+            // the stack is empty and the state is `Done`.
+            sink.push_array_context()?;
+            expect = Expect::Done;
+        }
         loop {
             self.discard_consumed();
             match expect {
@@ -551,6 +664,15 @@ impl<W: Window> Tokenizer<'_, W> {
                         }
                         _ => return Err(syntax("Parser cannot parse input: expected ','")),
                     }
+                }
+                Expect::Done if self.lines.is_some() => {
+                    if self.next_line()? {
+                        expect = Expect::Value;
+                        continue;
+                    }
+                    sink.finish_array()?;
+                    // The `end` event.
+                    return Ok(sink.finish()?);
                 }
                 Expect::Done => {
                     self.skip_whitespace();
@@ -1035,6 +1157,210 @@ mod tests {
         );
         // The instance can read the next sample.
         assert_eq!(r.parse_stream(b"[]"), Ok(Value::Array(0)));
+    }
+
+    /// The documents of `tests/inputs/json/samples` that read as JSON,
+    /// pretty-printed ones (values that span lines) among them.
+    fn sample_documents() -> Vec<String> {
+        let samples = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tests/inputs/json/samples");
+        let mut documents: Vec<String> = std::fs::read_dir(samples)
+            .unwrap()
+            .map(|entry| std::fs::read_to_string(entry.unwrap().path()).unwrap())
+            .filter(|text| read(text).is_ok())
+            .collect();
+        documents.sort();
+        documents.extend(
+            [
+                "1",
+                "-0",
+                "1.0",
+                "\"x\"",
+                "null",
+                "true",
+                "[]",
+                "{}",
+                "[[]]",
+                "{\"a\": [1, 2.5]}",
+            ]
+            .map(str::to_owned),
+        );
+        documents
+    }
+
+    /// `values` as JSON Lines, with `separators` between them in turn and
+    /// `around` before the first and after the last; and as the array of
+    /// them.
+    fn lines_and_array(values: &[String], separators: &[&str], around: &str) -> (String, String) {
+        let mut lines = around.to_owned();
+        for (i, value) in values.iter().enumerate() {
+            if i > 0 {
+                lines.push_str(separators[i % separators.len()]);
+            }
+            lines.push_str(value);
+        }
+        lines.push_str(around);
+        (lines, format!("[{}]", values.join(",")))
+    }
+
+    fn read_lines_chunked(
+        bytes: &[u8],
+        size: usize,
+    ) -> Result<(Value, crate::input::compressed_json::CompressedJsonTables), ParseError> {
+        let mut r = reader(Some(INT64_RANGE.clone()));
+        let value = parse_stream_chunked_into(&mut r, &mut &*bytes, size, Framing::Lines)?;
+        Ok((value, r.to_tables(&[value]).0))
+    }
+
+    /// JSON Lines read as the array of their values: the same root, the
+    /// same tables, in memory and in chunks of any size, whatever the
+    /// separators (line feeds, CRLF, blank and whitespace-only lines).
+    #[test]
+    fn json_lines_read_as_the_array_of_their_values() {
+        let documents = sample_documents();
+        let separators: &[&[&str]] = &[&["\n"], &["\r\n"], &["\n\n", " \n\t", "\r\n \r\n"]];
+        let arounds = ["", "\n", "\r\n\r\n", " \n \n"];
+        for n in [0, 1, 2, documents.len()] {
+            for start in [0, documents.len() / 2] {
+                let values: Vec<String> = documents
+                    .iter()
+                    .cycle()
+                    .skip(start)
+                    .take(n)
+                    .cloned()
+                    .collect();
+                for (i, separators) in separators.iter().enumerate() {
+                    let (lines, array) =
+                        lines_and_array(&values, separators, arounds[(n + i) % arounds.len()]);
+                    let mut r = reader(Some(INT64_RANGE.clone()));
+                    let expected = r
+                        .parse_stream(array.as_bytes())
+                        .map(|v| (v, r.to_tables(&[v]).0));
+                    assert!(expected.is_ok());
+                    let mut r = reader(Some(INT64_RANGE.clone()));
+                    let whole = parse_stream_lines_into(&mut r, lines.as_bytes())
+                        .map(|v| (v, r.to_tables(&[v]).0));
+                    assert_eq!(whole, expected, "{n} values");
+                    for size in [1, 2, 7, 64, 8 * 1024] {
+                        assert_eq!(
+                            read_lines_chunked(lines.as_bytes(), size),
+                            expected,
+                            "chunks of {size}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    /// Errors name the line the bad value starts on, in memory and in
+    /// chunks of any size, however much was dropped from the window.
+    #[test]
+    fn json_lines_errors_name_the_line() {
+        let cases: &[(&str, Option<&str>)] = &[
+            ("", None),
+            (" \n\r\n\t\n", None),
+            (
+                "1 2",
+                Some("line 1: Parser cannot parse input: unexpected characters"),
+            ),
+            (
+                "1\n2 3\n4",
+                Some("line 2: Parser cannot parse input: unexpected characters"),
+            ),
+            (
+                "1\r2",
+                Some("line 1: Parser cannot parse input: unexpected characters"),
+            ),
+            (
+                "{}{}",
+                Some("line 1: Parser cannot parse input: unexpected characters"),
+            ),
+            (
+                "{\"a\":1}\n{\"a\":\n",
+                Some("line 2: Parser has expected a value"),
+            ),
+            (
+                "[1,\n2\n{\"b\":2}\n",
+                Some("line 1: Parser cannot parse input: expected ','"),
+            ),
+            (
+                "\u{feff}{}",
+                Some("line 1: Parser cannot parse input: expected a value"),
+            ),
+            (
+                "1\n\n\r\n x",
+                Some("line 4: Parser cannot parse input: expected a value"),
+            ),
+            (
+                "1\n\"a\nb\"",
+                Some("line 2: Parser cannot parse input: escaped characters"),
+            ),
+            (
+                "{\n\"a\": 1\n}\n[\n\n2,\n]",
+                Some("line 4: Parser cannot parse input: unexpected token ']'"),
+            ),
+            (
+                "1\n\"abc",
+                Some("line 2: Parser has expected a string value"),
+            ),
+        ];
+        for &(input, message) in cases {
+            let mut r = reader(Some(INT64_RANGE.clone()));
+            let whole = parse_stream_lines_into(&mut r, input.as_bytes());
+            assert_eq!(
+                whole.as_ref().err().map(ParseError::message),
+                message,
+                "{input:?}"
+            );
+            if message.is_none() {
+                assert_eq!(r.get_array_for_value(whole.unwrap()).unwrap().len(), 0);
+            }
+            for size in 1..=17 {
+                let chunked = read_lines_chunked(input.as_bytes(), size);
+                assert_eq!(
+                    chunked.err().as_ref().map(ParseError::message),
+                    message,
+                    "{input:?} in {size}"
+                );
+            }
+        }
+        // Far into a large input, past many windows.
+        let mut input = "{\"a\": [1, 2, 3]}\n\n  \r\n".repeat(3_000);
+        input.push_str("{\"a\": [1, 2, 3]\n{\"a\": []}\n");
+        for size in [3, 64, 4096, 1 << 20] {
+            assert_eq!(
+                read_lines_chunked(input.as_bytes(), size)
+                    .unwrap_err()
+                    .message(),
+                "line 9001: Parser cannot parse input: expected ','",
+                "chunks of {size}"
+            );
+        }
+        // A read error is reported as it is, without a line.
+        struct Failing;
+        impl Read for Failing {
+            fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
+                Err(std::io::Error::other("broken"))
+            }
+        }
+        assert_eq!(
+            parse_stream_lines_reader_into(&mut reader(None), &mut Failing),
+            Err(ParseError::Read(QuickTypeError::js_exception(
+                JsErrorName::Error,
+                "broken"
+            )))
+        );
+    }
+
+    /// The array of JSON Lines is one level of nesting, as `[...]` is.
+    #[test]
+    fn json_lines_nest_one_level_deeper() {
+        let n = 100_000;
+        let deep = format!("{}{}", "[".repeat(n), "]".repeat(n));
+        let mut r = reader(None);
+        let value = parse_stream_lines_into(&mut r, format!("{deep}\n{deep}").as_bytes()).unwrap();
+        assert_eq!(r.get_array_for_value(value).unwrap().len(), 2);
     }
 
     #[test]

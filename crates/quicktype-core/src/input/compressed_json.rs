@@ -106,6 +106,62 @@ pub enum JsonSample {
     /// the CLI's stream-json semantics, so that it is never held whole (TS
     /// `CompressedJSONFromStream` on a Node `Readable`).
     Reader(SampleReader),
+    /// [JSON Lines](https://jsonlines.org) text, read as the array of its
+    /// values, each with `JSON.parse` semantics as [`String`](Self::String)
+    /// reads a sample. Not in quicktype, which has no JSON Lines input.
+    ///
+    /// The values are separated by whitespace that holds a line feed (`\n`,
+    /// so also `\r\n`); blank lines and a missing final line feed do not
+    /// matter, and a value may span lines. The sample is equivalent to the
+    /// JSON array `[V1,…,Vn]` of its values `V1`…`Vn`: it gives the same
+    /// types, and the same code. A text without values is `[]`; a text with
+    /// one value is an array of one. Two values on one line are a syntax
+    /// error, whose message, as any syntax error's, starts with the line
+    /// the bad value starts on (`line 3: …`).
+    ///
+    /// ```
+    /// use quicktype_core::{
+    ///     InputData, JsonSample, JsonSourceData, Options, combine_render_results,
+    ///     get_target_language, json_input_for_target_language, quicktype_multi_file_sync,
+    /// };
+    ///
+    /// let typescript = |sample: JsonSample| -> quicktype_core::Result<String> {
+    ///     let lang = get_target_language("typescript")?;
+    ///     let mut input = json_input_for_target_language(lang, false, &Default::default());
+    ///     input.add_source_sync(JsonSourceData {
+    ///         name: "Cards".to_owned(),
+    ///         samples: vec![sample],
+    ///         description: None,
+    ///     })?;
+    ///     let mut input_data = InputData::new();
+    ///     input_data.add_input(input);
+    ///     let files = quicktype_multi_file_sync(Options::new(lang, input_data))?;
+    ///     Ok(combine_render_results(files).lines.join("\n"))
+    /// };
+    /// let lines = typescript(JsonSample::StringLines("{\"id\": 1}\n{\"id\": 2, \"name\": \"x\"}\n".into()))?;
+    /// let array = typescript(JsonSample::String(r#"[{"id": 1}, {"id": 2, "name": "x"}]"#.into()))?;
+    /// assert_eq!(lines, array);
+    /// assert!(lines.contains("export interface Card {"));
+    ///
+    /// let error = typescript(JsonSample::StringLines("{\"id\": 1}\n{\"id\": 2} {}\n".into()));
+    /// assert_eq!(
+    ///     error.unwrap_err().user_message(),
+    ///     "Syntax error in input JSON Cards: line 2: \
+    ///      Unexpected non-whitespace character after JSON at position 20 (line 2 column 11)"
+    /// );
+    /// # Ok::<(), quicktype_core::QuickTypeError>(())
+    /// ```
+    StringLines(String),
+    /// JSON Lines bytes, read as the array of their values with the CLI's
+    /// stream-json semantics, as [`Stream`](Self::Stream) reads a sample
+    /// (see [`StringLines`](Self::StringLines)).
+    StreamLines(Vec<u8>),
+    /// A JSON Lines byte stream, read chunk by chunk as the array of its
+    /// values with the CLI's stream-json semantics, as
+    /// [`Reader`](Self::Reader) reads a sample (see
+    /// [`StringLines`](Self::StringLines)). The CLI reads `.jsonl` and
+    /// `.ndjson` files so.
+    ReaderLines(SampleReader),
 }
 
 /// The byte stream of a [`JsonSample::Reader`]. It is shared, so that a
@@ -932,12 +988,22 @@ impl CompressedJson {
 
     /// Reads one sample with the reader it asks for.
     pub fn parse_sample(&mut self, sample: JsonSample) -> Result<Value, ParseError> {
+        use crate::input::compressed_json_from_stream::{
+            parse_stream_lines_into, parse_stream_lines_reader_into,
+        };
+        let already_read = || ParseError::Read(crate::input::inputs::already_read());
         match sample {
             JsonSample::String(text) => self.parse_string(&text),
             JsonSample::Stream(bytes) => self.parse_stream(&bytes),
             JsonSample::Reader(reader) => match reader.take() {
                 Some(mut stream) => self.parse_stream_reader(&mut *stream),
-                None => Err(ParseError::Read(crate::input::inputs::already_read())),
+                None => Err(already_read()),
+            },
+            JsonSample::StringLines(text) => parse_string_lines_into(self, &text),
+            JsonSample::StreamLines(bytes) => parse_stream_lines_into(self, &bytes),
+            JsonSample::ReaderLines(reader) => match reader.take() {
+                Some(mut stream) => parse_stream_lines_reader_into(self, &mut *stream),
+                None => Err(already_read()),
             },
         }
     }
@@ -1299,6 +1365,28 @@ pub(crate) trait JsonSink {
     fn reset_partial_sample(&mut self);
 }
 
+/// How a sample's text holds its value: as one JSON value, or as [JSON
+/// Lines](https://jsonlines.org), the array of the values on its lines
+/// ([`JsonSample::StringLines`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Framing {
+    /// One JSON value, as quicktype reads every sample.
+    Value,
+    /// JSON Lines: the values are separated by whitespace that holds a line
+    /// feed, and read as the elements of an array that the text does not
+    /// spell (as the readers would read `[V1,…,Vn]`).
+    Lines,
+}
+
+/// The message of a syntax error in JSON Lines: the reader's, after the
+/// line its bad value starts on.
+pub(crate) fn line_error(line: usize, e: &JsException) -> ParseError {
+    ParseError::Js(JsException::new(
+        e.name(),
+        format!("line {line}: {}", e.message()),
+    ))
+}
+
 /// [`CompressedJson::parse_string`] into any [`JsonSink`]: `JSON.parse`,
 /// then `process` the value, read in one pass over the text without
 /// building the value (`from_string`). A sample that is not JSON emits
@@ -1308,7 +1396,24 @@ pub(crate) fn parse_string_into<S: JsonSink>(
     sink: &mut S,
     text: &str,
 ) -> Result<S::Root, ParseError> {
-    match from_string::read_string_sample_into(sink, text, StringSampleLimits::default()) {
+    parse_string_framed_into(sink, text, Framing::Value)
+}
+
+/// [`parse_string_into`] for JSON Lines ([`Framing::Lines`]): the values
+/// as the elements of one array.
+pub(crate) fn parse_string_lines_into<S: JsonSink>(
+    sink: &mut S,
+    text: &str,
+) -> Result<S::Root, ParseError> {
+    parse_string_framed_into(sink, text, Framing::Lines)
+}
+
+fn parse_string_framed_into<S: JsonSink>(
+    sink: &mut S,
+    text: &str,
+    framing: Framing,
+) -> Result<S::Root, ParseError> {
+    match from_string::read_string_sample_into(sink, text, StringSampleLimits::default(), framing) {
         Ok(root) => Ok(root),
         Err(ReadStringError::Parse(e)) => Err(e),
         Err(ReadStringError::Declined(decline)) => Err(ParseError::Quicktype(
@@ -1319,18 +1424,36 @@ pub(crate) fn parse_string_into<S: JsonSink>(
 
 /// `JSON.parse(text)` with the port of V8's parser, then `process` the
 /// value into `sink`: what the one-pass reader falls back on for V8's
-/// error message (and for a text too long for its tape). A sample that
+/// error message (and for a text too long for its tape). JSON Lines are
+/// read with the parser's [`parse_lines`](json::parse::parse_lines), and
+/// their values processed as the elements of an array. A sample that
 /// fails after the parse is forgotten ([`JsonSink::reset_partial_sample`]).
 pub(crate) fn parse_string_value_into<S: JsonSink>(
     sink: &mut S,
     text: &str,
+    framing: Framing,
 ) -> Result<S::Root, ParseError> {
-    let json = json::parse(text).map_err(|e| syntax_error(&e))?;
+    let json = parse_string_value(text, framing)?;
     let result = process(sink, &json).and_then(|()| sink.finish());
     if result.is_err() {
         sink.reset_partial_sample();
     }
     Ok(result?)
+}
+
+/// `JSON.parse(text)` with the port of V8's parser; for JSON Lines, the
+/// array of the values (see [`parse_string_value_into`]).
+fn parse_string_value(text: &str, framing: Framing) -> Result<JsonValue, ParseError> {
+    match framing {
+        Framing::Value => json::parse(text).map_err(|e| syntax_error(&e)),
+        Framing::Lines => match json::parse::parse_lines(text) {
+            Ok(values) => Ok(JsonValue::Array(values)),
+            Err(e) => Err(line_error(
+                e.line,
+                &JsException::new(JsErrorName::SyntaxError, e.error.message()),
+            )),
+        },
+    }
 }
 
 /// `JSON.parse`'s `SyntaxError` for what the port of V8's parser rejected.

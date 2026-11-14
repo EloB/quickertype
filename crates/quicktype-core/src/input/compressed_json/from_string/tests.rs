@@ -67,7 +67,7 @@ fn same(samples: &[&str], range: Option<IntegerRange>, handle_refs: bool) {
     let mut whole = reader(range, handle_refs);
     for sample in samples {
         let a = fast.parse_string(sample);
-        let b = parse_string_value_into(&mut whole, sample);
+        let b = parse_string_value_into(&mut whole, sample, Framing::Value);
         match (&a, &b) {
             (Ok(x), Ok(y)) => {
                 assert_eq!(x, y, "root of {sample:?}");
@@ -579,7 +579,7 @@ fn the_fallback_honors_the_limits() {
         "[1]",
     ] {
         assert_eq!(
-            read_whole(&mut r, text, limits),
+            read_whole(&mut r, text, limits, Framing::Value),
             Err(ReadStringError::Declined(Decline::Unchecked)),
             "{text}"
         );
@@ -587,7 +587,7 @@ fn the_fallback_honors_the_limits() {
     }
     // Not JSON: V8's error, and nothing committed.
     assert_eq!(
-        read_whole(&mut r, "[1,", limits),
+        read_whole(&mut r, "[1,", limits, Framing::Value),
         Err(ReadStringError::Parse(ParseError::Js(
             crate::messages::JsException::new(
                 crate::messages::JsErrorName::SyntaxError,
@@ -600,11 +600,11 @@ fn the_fallback_honors_the_limits() {
     // `process` as it fails.
     let none = StringSampleLimits::default();
     assert_eq!(
-        read_whole(&mut r, r#"["\ud800"]"#, none),
+        read_whole(&mut r, r#"["\ud800"]"#, none, Framing::Value),
         Ok(Value::Array(1))
     );
     assert_eq!(
-        read_whole(&mut r, &arrays(PROCESS_MAX_DEPTH + 1), none),
+        read_whole(&mut r, &arrays(PROCESS_MAX_DEPTH + 1), none, Framing::Value),
         Err(ReadStringError::Parse(ParseError::Quicktype(
             stack_overflow()
         )))
@@ -710,4 +710,160 @@ fn as_deep_as_process_goes() {
     // as in TypeScript.
     let strings = r.to_tables(&[]).0.strings;
     assert!(strings.starts_with(&["v".into(), "k".into(), "n".into(), "s".into()]));
+}
+
+/// Reads each JSON Lines text in `texts` both ways, into one compressed
+/// form each, and compares every outcome and the tables (as [`same`]).
+fn same_lines(texts: &[&str], range: Option<IntegerRange>, handle_refs: bool) {
+    let mut fast = reader(range.clone(), handle_refs);
+    let mut whole = reader(range, handle_refs);
+    for text in texts {
+        let a = super::super::parse_string_lines_into(&mut fast, text);
+        let b = parse_string_value_into(&mut whole, text, Framing::Lines);
+        match (&a, &b) {
+            (Ok(x), Ok(y)) => {
+                assert_eq!(x, y, "root of {text:?}");
+                assert_eq!(dump(&fast, *x), dump(&whole, *y), "value of {text:?}");
+            }
+            (Err(x), Err(y)) => assert_eq!(x, y, "error of {text:?}"),
+            _ => panic!("{text:?}: {a:?} against {b:?}"),
+        }
+        assert_eq!(
+            fast.table_counts(),
+            whole.table_counts(),
+            "tables after {text:?}"
+        );
+    }
+    assert_eq!(fast.to_tables(&[]), whole.to_tables(&[]));
+}
+
+/// JSON Lines are read as the array of their values: random values on
+/// lines (some spanning lines), separated by line feeds, CRLF and blank
+/// lines, give the root and tables of their array, both ways; and
+/// mutations of them, mostly syntax errors, give the same outcome both
+/// ways.
+#[test]
+fn json_lines_like_their_array() {
+    let mut rng = Rng(0x11E5);
+    let separators = ["\n", "\r\n", "\n\n", " \n\t", "\r\n\r\n  "];
+    for round in 0..300 {
+        let mut values = Vec::new();
+        for _ in 0..rng.below(6) {
+            let mut text = String::new();
+            random_value(&mut rng, 0, &mut text);
+            values.push(text);
+        }
+        let mut lines = String::from(["", "\n", " \r\n"][rng.below(3)]);
+        for (i, value) in values.iter().enumerate() {
+            if i > 0 {
+                lines.push_str(separators[rng.below(separators.len())]);
+            }
+            lines.push_str(value);
+        }
+        lines.push_str(["", "\n", "\r\n", "\n\n"][rng.below(4)]);
+        let array = format!("[{}]", values.join(","));
+        let range = [Some(INT64_RANGE.clone()), Some(INT32_RANGE.clone()), None][round % 3].clone();
+        let mut from_lines = reader(range.clone(), round % 2 == 0);
+        let mut from_array = reader(range.clone(), round % 2 == 0);
+        let a = super::super::parse_string_lines_into(&mut from_lines, &lines).unwrap();
+        let b = from_array.parse_string(&array).unwrap();
+        assert_eq!(a, b, "{lines:?}");
+        assert_eq!(dump(&from_lines, a), dump(&from_array, b), "{lines:?}");
+        assert_eq!(
+            from_lines.to_tables(&[a]),
+            from_array.to_tables(&[b]),
+            "{lines:?}"
+        );
+
+        let mut mutated = vec![lines.clone()];
+        for _ in 0..4 {
+            let bytes = lines.as_bytes();
+            if bytes.is_empty() {
+                break;
+            }
+            let at = rng.below(bytes.len());
+            let mut m = bytes.to_vec();
+            match rng.below(3) {
+                0 => {
+                    m.remove(at);
+                }
+                1 => m.insert(at, bytes[at]),
+                _ => {
+                    let replacements = b"{}[]\",:0e-.\\ax \n";
+                    m[at] = replacements[rng.below(replacements.len())];
+                }
+            }
+            if let Ok(m) = String::from_utf8(m) {
+                mutated.push(m);
+            }
+        }
+        let texts: Vec<&str> = mutated.iter().map(String::as_str).collect();
+        same_lines(&texts, range, round % 2 == 0);
+    }
+}
+
+/// V8's messages, after the line the bad value starts on, with positions
+/// counted in the whole text.
+#[test]
+fn json_lines_errors() {
+    let error = |text: &str| {
+        super::super::parse_string_lines_into(&mut reader(None, false), text)
+            .unwrap_err()
+            .message()
+            .to_owned()
+    };
+    assert_eq!(
+        error("1\n2 3"),
+        "line 2: Unexpected non-whitespace character after JSON at position 4 (line 2 column 3)"
+    );
+    assert_eq!(
+        error("{\"a\":1}\n{\"a\":\n"),
+        "line 2: Unexpected end of JSON input"
+    );
+    assert_eq!(
+        error("{\"a\": 1}\n\n{\"a\": 1,}\n"),
+        "line 3: Expected double-quoted property name in JSON at position 18 (line 3 column 9)"
+    );
+    assert_eq!(
+        error("\u{feff}{}"),
+        "line 1: Unexpected token '\u{feff}', \"\u{feff}{}\" is not valid JSON"
+    );
+    assert_eq!(
+        super::super::parse_string_lines_into(&mut reader(None, false), "1\n2 3"),
+        Err(ParseError::Js(crate::messages::JsException::new(
+            crate::messages::JsErrorName::SyntaxError,
+            "line 2: Unexpected non-whitespace character after JSON at position 4 (line 2 column 3)"
+        )))
+    );
+}
+
+/// The array of JSON Lines counts as one level of nesting for the limits
+/// and for `process`'s depth, as `[...]` does.
+#[test]
+fn json_lines_nest_one_level_deeper() {
+    let limits = StringSampleLimits {
+        max_depth: Some(3),
+        lone_surrogates: true,
+    };
+    let read = |text: &str| {
+        let mut r = reader(None, false);
+        read_string_sample_into(&mut r, text, limits, Framing::Lines).map(|_| ())
+    };
+    assert_eq!(read("[[1]]\n[]"), Ok(()));
+    assert_eq!(
+        read("[[[1]]]\n[]"),
+        Err(ReadStringError::Declined(Decline::TooDeep))
+    );
+    let arrays = |n: usize| format!("{}{}", "[".repeat(n), "]".repeat(n));
+    let m = PROCESS_MAX_DEPTH;
+    let mut r = reader(None, false);
+    assert!(super::super::parse_string_lines_into(&mut r, &arrays(m - 1)).is_ok());
+    assert_eq!(
+        super::super::parse_string_lines_into(&mut r, &format!("1\n{}", arrays(m))),
+        Err(ParseError::Quicktype(stack_overflow()))
+    );
+    assert_eq!(
+        r.parse_string(&format!("[1,{}]", arrays(m))),
+        Err(ParseError::Quicktype(stack_overflow()))
+    );
 }

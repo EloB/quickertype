@@ -26,8 +26,12 @@ use indexmap::{IndexMap, IndexSet};
 
 use super::compressed_json::{
     CompressedJson, CompressedJsonTables, JsonSample, ParseError, Value, parse_string_into,
+    parse_string_lines_into,
 };
-use super::compressed_json_from_stream::{parse_stream_into, parse_stream_reader_into};
+use super::compressed_json_from_stream::{
+    parse_stream_into, parse_stream_lines_into, parse_stream_lines_reader_into,
+    parse_stream_reader_into,
+};
 use super::inference::TypeInference;
 use super::tallies::{
     FormTallies, KeptTallies, NodeId, RunningTallies, Tallies, TallyBuilder, tally_compressed,
@@ -751,6 +755,12 @@ impl JsonInput {
                 JsonSample::Stream(bytes) => parse_stream_into(&mut builder, &bytes),
                 JsonSample::Reader(reader) => match reader.take() {
                     Some(mut stream) => parse_stream_reader_into(&mut builder, &mut *stream),
+                    None => Err(ParseError::Read(already_read())),
+                },
+                JsonSample::StringLines(text) => parse_string_lines_into(&mut builder, &text),
+                JsonSample::StreamLines(bytes) => parse_stream_lines_into(&mut builder, &bytes),
+                JsonSample::ReaderLines(reader) => match reader.take() {
+                    Some(mut stream) => parse_stream_lines_reader_into(&mut builder, &mut *stream),
                     None => Err(ParseError::Read(already_read())),
                 },
             };
