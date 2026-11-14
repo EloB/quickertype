@@ -1229,7 +1229,7 @@ impl Tallies {
     /// the same order, and a key found there is counted without a lookup.
     /// Returns the node of the key's value and the index of the key
     /// expected next.
-    #[inline]
+    #[inline(always)]
     pub(crate) fn add_key(
         &mut self,
         node: NodeId,
@@ -1875,11 +1875,35 @@ impl JsonSink for TallyBuilder<'_> {
         self.string_reader
     }
 
+    /// A key of the reader's key table: its id in the string table is
+    /// found once per key and remembered by the reader
+    /// ([`StringReaderState::key_index`]), and the key expected next is
+    /// matched by that id, without comparing texts.
     fn set_property_key_read(&mut self, id: u32) -> Result<()> {
-        // The key is the reader's, borrowed beside the fields it is
-        // counted in.
-        let key = self.string_reader.key_text(id);
-        Self::set_key(self.tallies, self.strings, &mut self.frames, key)
+        let TallyBuilder {
+            tallies,
+            strings,
+            string_reader,
+            frames,
+            ..
+        } = self;
+        let Some(Frame::Object {
+            node,
+            value,
+            expecting_ref,
+            next_key,
+        }) = frames.last_mut()
+        else {
+            return panic("Setting a key outside an object");
+        };
+        let (child, following) = match string_reader.key_index(id, strings) {
+            Some(key) => tallies.add_key(*node, key, *next_key)?,
+            None => (tallies.add_proto_key(*node)?, *next_key),
+        };
+        *value = Some(child);
+        *expecting_ref = string_reader.key_text(id) == "$ref";
+        *next_key = following;
+        Ok(())
     }
 
     /// Frees the failed sample's tree: the tallies are as they were before

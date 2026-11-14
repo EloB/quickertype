@@ -364,7 +364,11 @@ emits the tape into a `JsonSink` in `Object.getOwnPropertyNames` order,
 the events `process` would emit for the parsed value. The same function
 (`parse_string_into`) fills a `CompressedJson` on the reference path and a
 `TallyBuilder` here, so the tallies receive exactly the events the
-compressed form is built from. Nothing of the sample is kept.
+compressed form is built from. Nothing of the sample is kept. Keys
+arrive as ids of the reader's key table; the builder counts each by its
+index in the tallies' string table, which the reader finds once per key
+and remembers (`StringReaderState::key_index`), as the walk over a
+compressed form counts keys by index.
 
 `JsonInput::to_compressed` exports samples in the compressed form, which
 an input that infers from tallies does not have: there it is an error,

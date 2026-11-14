@@ -282,6 +282,14 @@ impl StringReaderState {
         self.keys.get(id)
     }
 
+    /// The index of key `id` in `strings`, interned the first time and
+    /// remembered by its id from then on, as [`intern_key`](Self::intern_key)
+    /// finds it; `None` for `"__proto__"`, which is not in the key table.
+    /// Each key's text is in `strings` once.
+    pub(crate) fn key_index(&mut self, id: u32, strings: &mut Strings) -> Option<u32> {
+        (id != PROTO).then(|| self.intern_key(id, strings))
+    }
+
     /// `makeString(key)` for key `id`: its index in `strings`, interned the
     /// first time (`"__proto__"` every time).
     pub(super) fn intern_key(&mut self, id: u32, strings: &mut Strings) -> u32 {
