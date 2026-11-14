@@ -120,7 +120,9 @@ mod seeded {
     }
 
     impl Default for RandomState {
-        #[inline]
+        // Not inlined: maps are made in hundreds of places, and a call is
+        // cheap next to making one.
+        #[inline(never)]
         fn default() -> Self {
             RandomState::with_seeds(SEEDS.get_or_init(|| Seeds::new(UNSEEDED)))
         }

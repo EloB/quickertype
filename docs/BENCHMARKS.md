@@ -1377,6 +1377,11 @@ makes a map (`#[wasm_bindgen(start)]` in `crates/quicktype-wasm`).
   foldhash's shared seed and the start of a sequence. The sequence gives
   each map its own seed.
 - A debug build panics if a map was made before the seed was set.
+- Making a map's seed is a call (`RandomState::default` is not inlined):
+  maps are made in hundreds of places. Inlined, the seeding made the
+  engine 9.8 KB larger; out of line, the engine is 4.2 KB smaller than
+  before (5,444,207 bytes against 5,448,495), and no phase moved by more
+  than 0.5%.
 
 Covered: the JSON reader's string and key tables, the `fast_hash`
 `HashMap`s and `HashSet`s, and the tallies' `IndexMap`s.
