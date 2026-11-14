@@ -1,7 +1,9 @@
 // Keeps src/ a verbatim copy of quicktype's packages/quicktype-core/src,
 // except for Run.ts (which hands eligible runs to the WebAssembly engine),
 // input/CompressedJSON.ts (whose `CompressedJSONFromString.parseSync` lets
-// the engine read JSON samples) and src/native/ (the bridge).
+// the engine read JSON samples, and decodes samples given as bytes),
+// input/Inputs.ts (whose `jsonInputForTargetLanguage` is typed to take
+// them) and src/native/ (the bridge).
 //
 //   node script/sync-upstream.mjs [--check | --accept] [QUICKTYPE_CHECKOUT]
 //
@@ -10,8 +12,8 @@
 // are copied over (and files that no longer exist upstream are removed);
 // with --check, differences are listed and the exit code is 1 if there
 // are any. Either way, if upstream changed one of the files src/native
-// depends on (their hashes are in src/native/UPSTREAM.json: Run.ts and
-// input/CompressedJSON.ts, which are modified here, and the files whose
+// depends on (their hashes are in src/native/UPSTREAM.json: Run.ts,
+// input/CompressedJSON.ts and input/Inputs.ts, which are modified here, and the files whose
 // internals the bridge reads), the script says so and exits 1: port the
 // change to a modified file by hand, review the bridge, then record the
 // new hashes with --accept.
@@ -51,7 +53,7 @@ function listFiles(root, relative = "") {
 }
 
 // Files that are modified here.
-const modified = [path.join("src", "Run.ts"), path.join("src", "input", "CompressedJSON.ts")];
+const modified = [path.join("src", "Run.ts"), path.join("src", "input", "CompressedJSON.ts"), path.join("src", "input", "Inputs.ts")];
 
 // Files that are ours, not upstream's.
 const local = (file) => modified.includes(file) || file.startsWith(path.join("src", "native") + path.sep);

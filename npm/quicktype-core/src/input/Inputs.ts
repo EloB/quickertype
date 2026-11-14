@@ -207,7 +207,7 @@ export function jsonInputForTargetLanguage(
     languages?: TargetLanguage[],
     handleJSONRefs = false,
     rendererOptions: Record<string, unknown> = {},
-): JSONInput<string> {
+): JSONInput<string | Uint8Array> {
     if (typeof targetLanguage === "string") {
         targetLanguage = defined(languageNamed(targetLanguage, languages));
     }

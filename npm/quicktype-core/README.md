@@ -28,6 +28,32 @@ inputData.addInput(input);
 const { lines } = await quicktype({ inputData, lang: "typescript" });
 ```
 
+### JSON samples as bytes
+
+The JSON inputs of `jsonInputForTargetLanguage` also take a sample as its
+UTF-8 bytes: a `Uint8Array`, or a Node.js `Buffer`. This is an addition to
+quicktype-core's API. A sample given as bytes is the text that
+`new TextDecoder().decode(bytes)` gives, which is also what a browser's
+`file.text()` gives for a file: a leading byte order mark is not part of
+the text, and every sequence that is not UTF-8 becomes U+FFFD. The engine
+reads the bytes as they are, without a JavaScript string in between. A
+string sample has to be decoded into a string first, then encoded again
+into the engine's memory.
+
+```ts
+import * as fs from "node:fs";
+import { jsonInputForTargetLanguage } from "quickertype-core";
+
+const input = jsonInputForTargetLanguage("typescript");
+await input.addSource({ name: "Cards", samples: [fs.readFileSync("cards.json")] });
+```
+
+In a browser, use `new Uint8Array(await file.arrayBuffer())`. Bytes can
+also hold a file too large to be a JavaScript string, which in V8 is about
+2^29 UTF-16 code units. The bytes are read when `addSource` is called, so
+changing them afterwards changes nothing. On the TypeScript engine (see
+below), the bytes are decoded first, then parsed with `JSON.parse`.
+
 `require("quickertype-core")` works too. The package matches `quicktype-core`
 24.0.0 at quicktype commit
 [`c39af7d3`](https://github.com/glideapps/quicktype/tree/c39af7d303b025280e2668a1b2d29913093593c9)
@@ -42,11 +68,14 @@ The rest of this file is about how the package works and how to build it.
 ## How it works
 
 `src/` is quicktype's `packages/quicktype-core/src` at the commit in
-`src/native/UPSTREAM.json`, byte for byte, except two files: `Run.ts`,
+`src/native/UPSTREAM.json`, byte for byte, except three files: `Run.ts`,
 which after `preRun()` hands the run to the engine (`src/native/bridge.ts`)
-when the engine can do it exactly, and `input/CompressedJSON.ts`, whose
+when the engine can do it exactly; `input/CompressedJSON.ts`, whose
 `CompressedJSONFromString.parseSync` lets the engine read a JSON sample
-before parsing it itself (see [JSON samples](#json-samples)). Everything
+before parsing it itself (see [JSON samples](#json-samples)), and decodes
+a sample given as bytes; and `input/Inputs.ts`, whose
+`jsonInputForTargetLanguage` is typed to take such samples (see [JSON
+samples as bytes](#json-samples-as-bytes)). Everything
 else before the run stays in TypeScript, so inputs are collected, schema
 text parsed (JSON, then YAML) and files and URLs read exactly as before.
 Each run is **one call** into `crates/quicktype-wasm`, carrying the JSON
@@ -114,9 +143,12 @@ class without own properties whose methods are still the ones that class
 had then; a valid integer range: all checked at its first sample; for the
 later ones, that its prototype, the number of its own properties, its
 methods and its configuration are unchanged) and a string sample that is
-well-formed UTF-16, while the engine is compiled
-(see below) and not forced off, that is **one engine call per sample**:
-`jsonRead(id, text)` reads the text with the port's `JSON.parse`-semantics
+well-formed UTF-16 (or a sample given as bytes), while the engine is
+compiled (see below) and not forced off, that is **one engine call per
+sample**: `jsonRead(id, text)` (`jsonReadBytes(id, bytes)` for bytes,
+which reads them as UTF-8 after a leading byte order mark, and leaves
+bytes that are not UTF-8 to the facade, which decodes them as
+`TextDecoder` does and calls `jsonRead`) reads the text with the port's `JSON.parse`-semantics
 reader (`CompressedJson::read_string_sample` in quicktype-core: V8's
 grammar, own-property order, the last of duplicate keys) into a compressed
 form held in WebAssembly memory, one per `CompressedJSON` (`id`, made by

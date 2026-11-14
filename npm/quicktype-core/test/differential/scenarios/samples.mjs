@@ -7,6 +7,8 @@
 // engine leaves to TypeScript (deep nesting, string roots, lone
 // surrogates).
 
+import { jsonSample } from "../packages.mjs";
+
 function scenario(name, run, lang) {
     return { id: `samples/${name}`, category: "samples", group: "samples", lang, run };
 }
@@ -173,6 +175,66 @@ export function scenarios() {
             scenario(`${name}, sync`, (qt) => addThenRun(qt, "rust", named, { sync: true }), "rust"),
             scenario(`${name}, tables read before the run`, (qt) => addThenRun(qt, "typescript", named, { tablesFirst: true }), "typescript"),
         );
+    }
+
+    // The same samples as bytes for this package (in its several forms),
+    // their text for the reference.
+    const utf8 = (text) => new TextEncoder().encode(text);
+    class Bytes extends Uint8Array {}
+    const views = {
+        Uint8Array: (b) => b,
+        Buffer: (b) => Buffer.from(b),
+        "a Uint8Array subclass": (b) => Bytes.from(b),
+        "a view at an offset": (b) => {
+            const buffer = new Uint8Array(b.length + 9).fill(0xff);
+            buffer.set(b, 5);
+            return buffer.subarray(5, 5 + b.length);
+        },
+    };
+    for (const [name, sources] of Object.entries(groups)) {
+        for (const [view, make] of Object.entries(views)) {
+            for (const [lang, sync] of [["typescript", false], ["rust", true]]) {
+                list.push(
+                    scenario(
+                        `${name}, as bytes (${view}) → ${lang}${sync ? ", sync" : ""}`,
+                        (qt, ctx) =>
+                            addThenRun(
+                                qt,
+                                lang,
+                                sources.map((samples, i) => [i === 0 ? "TopLevel" : `Other${i}`, samples.map((t) => jsonSample(ctx, utf8(t), make))]),
+                                { sync },
+                            ),
+                        lang,
+                    ),
+                );
+            }
+        }
+    }
+
+    // Bytes that are more than the UTF-8 of a string: a byte order mark,
+    // which is not part of the text; bytes that are not UTF-8, which become
+    // U+FFFD (as `TextDecoder` replaces them); nothing at all.
+    const bom = [0xef, 0xbb, 0xbf];
+    const byteCases = {
+        "a byte order mark": [[...bom, ...utf8('{"a": [1, "é"]}')], [...bom, ...bom, ...utf8("[]")], [...bom]],
+        "bytes that are not UTF-8": [
+            [...utf8('{"a": "x'), 0xff, 0xc3, 0x28, 0xe2, 0x82, ...utf8('", "b": ["'), 0xed, 0xa0, 0x80, ...utf8('"]}')],
+            [...utf8('{"k'), 0x80, ...utf8('": 1, "k\u{fffd}": 2}')],
+            [...utf8('["'), 0xf4, 0x90, 0x80, 0x80, 0xc0, 0xaf, ...utf8('", 1]')],
+        ],
+        "not UTF-8 and not JSON": [[...utf8("[1, "), 0xff, ...utf8("]")]],
+        "an empty buffer": [[]],
+    };
+    for (const [name, cases] of Object.entries(byteCases)) {
+        for (const [i, bytes] of cases.entries()) {
+            for (const sync of [false, true]) {
+                list.push(
+                    scenario(`${name} ${i}${sync ? ", sync" : ""}`, (qt, ctx) =>
+                        addThenRun(qt, "typescript", [["Bytes", [jsonSample(ctx, new Uint8Array(bytes)), "[1]"]]], { sync }),
+                    ),
+                );
+            }
+        }
     }
 
     for (const [i, bad] of invalid.entries()) {

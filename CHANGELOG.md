@@ -15,6 +15,18 @@ section are absolute.
 
 ## [Unreleased]
 
+### Added
+
+- quickertype-core (npm): the JSON inputs of `jsonInputForTargetLanguage`
+  take a sample as its UTF-8 bytes too (a `Uint8Array` or a Node.js
+  `Buffer`, e.g. `fs.readFileSync(path)`), read as the text
+  `new TextDecoder().decode(bytes)` gives: without a leading byte order
+  mark, with U+FFFD for what is not UTF-8. The WebAssembly engine reads
+  the bytes as they are, without decoding them into a JavaScript string
+  and encoding that again into its memory: in Chrome, a run on a 27 MB
+  array of records takes 48 instead of 57 ms, and a 656 MB file, too large
+  to be a JavaScript string, can be read.
+
 ### Changed
 
 - The JavaScript API's WebAssembly engine keeps the tallies a run inferred

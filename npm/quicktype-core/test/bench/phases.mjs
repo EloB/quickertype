@@ -4,7 +4,10 @@
 // benchmark inputs and a tiny one. Needs an engine built with `--trace`:
 //
 //   node script/build.mjs --trace
-//   node test/bench/phases.mjs [--only REGEX] [--rounds N] [--json] [--package DIR]
+//   node test/bench/phases.mjs [--only REGEX] [--rounds N] [--bytes] [--json] [--package DIR]
+//
+// With --bytes, each sample is given as its UTF-8 bytes (a Uint8Array, made
+// before the clock starts) instead of a string.
 //
 // The page is cross-origin isolated, so that `performance.now()` has 5 µs
 // steps rather than 100 µs. The native counterpart, the same phases of the
@@ -32,6 +35,7 @@ const option = (name) => {
 const packageRoot = path.resolve(option("--package") ?? path.join(here, "..", ".."));
 const only = option("--only") === undefined ? undefined : new RegExp(option("--only"));
 const fixedRounds = option("--rounds") === undefined ? undefined : Number(option("--rounds"));
+const bytes = args.includes("--bytes");
 const inputs = [["tiny (7 B)", () => '{"a":1}'], ...benchInputs]
     .filter(([name]) => only === undefined || only.test(name))
     .map(([name, make]) => ({ name, text: make() }));
@@ -52,7 +56,8 @@ try {
     const glue = engineSync();
     if (glue === undefined) throw new Error("the engine did not load");
     if (!crossOriginIsolated) throw new Error("the page is not cross-origin isolated");
-    const inputs = await (await fetch("/inputs.json")).json();
+    const encoder = new TextEncoder();
+    const inputs = (await (await fetch("/inputs.json")).json()).map(({ name, text }) => ({ name, text: ${bytes} ? encoder.encode(text) : text }));
     const fixed = ${fixedRounds ?? "undefined"};
     const rounds = (length) => fixed ?? (length > 10_000_000 ? 11 : length > 1_000_000 ? 21 : 61);
     out.textContent = JSON.stringify({ results: await measurePhases(qt, glue, inputs, rounds) });

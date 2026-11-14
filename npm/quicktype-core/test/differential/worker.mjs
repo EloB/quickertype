@@ -43,9 +43,9 @@ const results = [];
 for (let i = Number(shard); i < list.length; i += Number(shards)) {
     const s = list[i];
     if (filter !== undefined && !filter.test(s.id)) continue;
-    const expected = await withTimeout(capture(reference.wrap(() => s.run(reference.qt, ctx))));
+    const expected = await withTimeout(capture(reference.wrap(() => s.run(reference.qt, { ...ctx, ours: false }))));
     const before = { ...ours.stats, unsupportedBy: { ...ours.stats.unsupportedBy } };
-    const actual = await withTimeout(capture(ours.wrap(() => s.run(ours.qt, ctx))));
+    const actual = await withTimeout(capture(ours.wrap(() => s.run(ours.qt, { ...ctx, ours: true }))));
     const wasmRuns = ours.stats.wasm - before.wasm;
     const tsRuns = ours.stats.ts - before.ts;
     const declined = ours.stats.unsupported - before.unsupported;

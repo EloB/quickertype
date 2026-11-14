@@ -2,8 +2,8 @@
 // TypeScript on the engine, warm, and where each run's time went. The
 // engine's own phases come from its trace (`__trace()`, a `--trace` build),
 // read once after each run; the boundary is timed around the glue's calls
-// (`jsonRead`, `start`, `poll`), wrapped from outside, so the facade has no
-// marks of its own.
+// (`jsonRead` or `jsonReadBytes`, `start`, `poll`), wrapped from outside, so
+// the facade has no marks of its own.
 
 const median = (values) => {
     const sorted = [...values].sort((a, b) => a - b);
@@ -44,14 +44,15 @@ export const rewritePasses = [
 ];
 
 /**
- * Measures `inputs` (`{ name, text }`) on the engine `glue` of package
+ * Measures `inputs` (`{ name, text }`, the text a string or its bytes) on
+ * the engine `glue` of package
  * `qt`: the medians, in ms, of each phase over `rounds(length)` runs after
  * three warm-up runs.
  */
 export async function measurePhases(qt, glue, inputs, rounds) {
     if (typeof glue.__trace !== "function") throw new Error("the engine is not a --trace build");
     const calls = [];
-    for (const fn of ["jsonRead", "start", "poll"]) {
+    for (const fn of ["jsonRead", "jsonReadBytes", "start", "poll"]) {
         const original = glue[fn];
         glue[fn] = function (...args) {
             const start = now();
@@ -91,16 +92,20 @@ export async function measurePhases(qt, glue, inputs, rounds) {
                 return c[0];
             };
             const sum = (span) => spans.filter((s) => s.name === span).reduce((a, s) => a + s.end - s.start, 0);
-            const read = the("jsonRead");
+            // The sample's read: of its text, or of its bytes.
+            const reads = calls.filter((x) => x.fn === "jsonRead" || x.fn === "jsonReadBytes");
+            if (reads.length !== 1) throw new Error(`${name}: ${reads.length} reads`);
+            const read = reads[0];
             const start = the("start");
             const polls = calls.filter((x) => x.fn === "poll");
             const inRust = spans.find((s) => s.name === "jsonRead");
             const passes = rewritePasses.reduce((a, p) => a + sum(p), 0);
             const v = {
                 "read: copy in": inRust.start - read.start,
+                "read: check UTF-8": sum("read: check UTF-8"),
                 "read: record": sum("read: record"),
                 "read: commit": sum("read: commit"),
-                "read: rest of jsonRead": read.end - inRust.start - sum("read: record") - sum("read: commit"),
+                "read: rest of jsonRead": read.end - inRust.start - sum("read: check UTF-8") - sum("read: record") - sum("read: commit"),
                 "read: facade": s1 - s0 - (read.end - read.start),
                 "run: facade, encodeRun": start.start - s1,
                 "run: decode request": sum("decode request"),

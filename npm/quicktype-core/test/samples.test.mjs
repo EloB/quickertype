@@ -1035,3 +1035,110 @@ test("an engine that takes no more inputs or runs declines them and stays", asyn
     assert.equal(engineStats.wasm, before.wasm + 1);
 });
 
+
+// Samples given as bytes (a `Uint8Array`, a Node.js `Buffer`): the UTF-8
+// text `new TextDecoder().decode(bytes)` gives, without a leading byte order
+// mark and with U+FFFD for what is not UTF-8, read by the engine straight
+// from the bytes (or by TypeScript after decoding them).
+const utf8 = (text) => new TextEncoder().encode(text);
+class Bytes extends Uint8Array {}
+
+/** `bytes` at a non-zero offset of a larger buffer, between other bytes. */
+function offsetView(bytes) {
+    const buffer = new Uint8Array(bytes.length + 13);
+    buffer.fill(0xff);
+    buffer.set(bytes, 7);
+    return new Uint8Array(buffer.buffer, 7, bytes.length);
+}
+
+const byteForms = {
+    Uint8Array: (b) => b,
+    Buffer: (b) => Buffer.from(b),
+    "a Uint8Array subclass": (b) => Bytes.from(b),
+    "a view at a non-zero byteOffset": offsetView,
+};
+
+test("samples given as bytes are read as their UTF-8 text, by the engine", async () => {
+    for (const lang of ["typescript", "kotlin", "rust"]) {
+        const groups = Object.entries(samples);
+        const expected = await inMode("ts", async () => inside(await addAll(lang, groups)));
+        const expectedRun = await inMode("ts", async () => [...(await run(await addAll(lang, plainGroups, { sync: true }), lang))]);
+        for (const [form, make] of Object.entries(byteForms)) {
+            const asBytes = (list) => list.map((text) => make(utf8(text)));
+            const before = { ...engineStats };
+            const input = await addAll(lang, groups.map(([name, list]) => [name, asBytes(list)]));
+            assert.ok(engineStats.samplesRead > before.samplesRead, form);
+            assert.deepEqual(inside(input), expected, `${lang}, ${form}`);
+            // On TypeScript too.
+            const ts = await inMode("ts", async () => inside(await addAll(lang, groups.map(([name, list]) => [name, asBytes(list)]))));
+            assert.deepEqual(ts, expected, `${lang}, ${form}, TypeScript`);
+
+            const plain = plainGroups.map(([name, list]) => [name, asBytes(list)]);
+            const before2 = { ...engineStats };
+            const sync = await addAll(lang, plain, { sync: true });
+            assert.equal(engineStats.samplesRead, before2.samplesRead + plain.flatMap(([, l]) => l).length);
+            assert.deepEqual([...(await run(sync, lang))], expectedRun, `${lang}, ${form}, run`);
+            assert.equal(engineStats.tablesFilled, before2.tablesFilled);
+        }
+    }
+
+    noLeases();
+});
+
+test("bytes: a byte order mark, bytes that are not UTF-8, an empty buffer", async () => {
+    const decoded = (bytes) => new TextDecoder().decode(bytes);
+    const cases = [
+        // A byte order mark is not part of the text (as a string, it is not
+        // JSON: `JSON.parse` rejects U+FEFF).
+        new Uint8Array([0xef, 0xbb, 0xbf, ...utf8('{"bom": [1, "é"]}')]),
+        // Only one is.
+        new Uint8Array([0xef, 0xbb, 0xbf, 0xef, 0xbb, 0xbf, ...utf8("{}")]),
+        // Not UTF-8: each maximal invalid subpart becomes U+FFFD.
+        new Uint8Array([...utf8('{"a": "x'), 0xff, 0xc3, 0x28, 0xe2, 0x82, ...utf8('", "b": ["'), 0xed, 0xa0, 0x80, ...utf8('"]}')]),
+        // A key that is not UTF-8, and one that is the same after decoding.
+        new Uint8Array([...utf8('{"k'), 0x80, ...utf8('": 1, "k\u{fffd}": 2}')]),
+        // Not UTF-8 outside a string: not JSON either way.
+        new Uint8Array([...utf8("[1, "), 0xff, ...utf8("]")]),
+        // Empty, and only a byte order mark.
+        new Uint8Array([]),
+        new Uint8Array([0xef, 0xbb, 0xbf]),
+    ];
+    for (const bytes of cases) {
+        const text = decoded(bytes);
+        for (const sync of [false, true]) {
+            const attempt = (sample) => async () => {
+                const input = qt.jsonInputForTargetLanguage("rust");
+                const add = { name: "Bytes", samples: [sample, "[1]"] };
+                const failed = await outcome(async () => (sync ? input.addSourceSync(add) : input.addSource(add)));
+                const state = inside(input);
+                return { failed, state, result: failed.error === undefined ? [...(await run(input, "rust"))] : undefined };
+            };
+            const expected = await inMode("ts", attempt(text));
+            assert.deepEqual(await attempt(bytes)(), expected, `${[...bytes]} ${sync}`);
+            assert.deepEqual(await inMode("ts", attempt(bytes)), expected, `${[...bytes]} ${sync}, TypeScript`);
+        }
+    }
+
+    noLeases();
+});
+
+test("bytes changed after addSource change nothing", async () => {
+    const bytes = utf8('{"a": [1, {"b": "c"}]}');
+    const input = qt.jsonInputForTargetLanguage("typescript");
+    await input.addSource({ name: "T", samples: [bytes] });
+    const expected = await inMode("ts", async () => [...(await run(await addAll("typescript", [["T", ['{"a": [1, {"b": "c"}]}']]]), "typescript"))]);
+    bytes.fill(0x20);
+    assert.deepEqual([...(await run(input, "typescript"))], expected);
+    // Nor do they when the instance fails: the samples TypeScript reads
+    // again then are a copy.
+    const kept = utf8('{"x": true, "y": "\u00e9"}');
+    const input2 = qt.jsonInputForTargetLanguage("typescript");
+    await input2.addSource({ name: "T", samples: [kept] });
+    kept.fill(0x20);
+    const glue = engine.engineSync();
+    assert.throws(() => glue.__panicForTests(), WebAssembly.RuntimeError);
+    engine.discardEngine(glue);
+    const before = engineStats.tablesFilled;
+    assert.deepEqual(inside(input2), await inMode("ts", async () => inside(await addAll("typescript", [["T", ['{"x": true, "y": "\u00e9"}']]]))));
+    assert.equal(engineStats.tablesFilled, before + 1);
+});
