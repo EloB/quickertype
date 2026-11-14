@@ -7,11 +7,11 @@
 //                                         or unknown, or the README does not
 //                                         show it (site/test/smoke.mjs runs this)
 //
-// The rows come from the README for now: its CLI rows are newer than
-// site/data/benchmarks.json (see docs/BENCHMARKS.md, "README charts"), and
-// its browser table is in no data file. Reading them is one step
-// (`readmeRows`); the charts are drawn from the rows alone (`chartsFor`), so
-// moving to the data file means writing rows from it instead.
+// The rows come from the README, which rounds and groups the numbers of
+// site/data/benchmarks.json and browser.json (see docs/BENCHMARKS.md,
+// "README charts"). Reading them is one step (`readmeRows`); the charts are
+// drawn from the rows alone (`chartsFor`), so drawing them from the data
+// files would mean writing rows from those instead.
 //
 // Every chart is drawn twice, for light and dark backgrounds, and the README
 // shows them with <picture>: GitHub picks the one for its theme, crates.io

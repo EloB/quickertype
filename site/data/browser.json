@@ -1,0 +1,179 @@
+{
+  "format": 1,
+  "date": "2026-11-14",
+  "machine": "Apple M2 Max, 12 cores, 64 GiB, macOS 26.6.2",
+  "browser": "Chrome 157.0.8103.78, headless",
+  "node": "v24.16.0",
+  "commit": "4cf135e28392f5185aed4faff225f7c4956a9b9d",
+  "command": "node --expose-gc npm/quicktype-core/test/bench/compare.mjs --browser --again --json",
+  "how": "addSource, then quicktypeMultiFile to TypeScript, warm, both engines in one page and interleaved; the medians of 41 runs (21 for the 2 MB input, 9 for the larger ones), and the median of three runs of the benchmark. again_ms is a second run on the same input. Chrome's timer has 0.1 ms steps here.",
+  "load_average": "3.6 to 5.9",
+  "warm": [
+    {
+      "input": "pokedex (82 KB)",
+      "runs": 41,
+      "quicktype": {
+        "read_ms": 1.2,
+        "generate_ms": 3.5,
+        "total_ms": 4.7,
+        "again_ms": 2.2
+      },
+      "quickertype": {
+        "read_ms": 0.5,
+        "generate_ms": 1.1,
+        "total_ms": 1.6,
+        "again_ms": 0.8
+      }
+    },
+    {
+      "input": "generated (2 MB)",
+      "runs": 21,
+      "quicktype": {
+        "read_ms": 22.4,
+        "generate_ms": 21.7,
+        "total_ms": 44,
+        "again_ms": 14.6
+      },
+      "quickertype": {
+        "read_ms": 9.1,
+        "generate_ms": 5.1,
+        "total_ms": 14.1,
+        "again_ms": 2.7
+      }
+    },
+    {
+      "input": "generated (20 MB)",
+      "runs": 9,
+      "quicktype": {
+        "read_ms": 247,
+        "generate_ms": 159,
+        "total_ms": 406,
+        "again_ms": 150
+      },
+      "quickertype": {
+        "read_ms": 89.1,
+        "generate_ms": 33,
+        "total_ms": 122,
+        "again_ms": 11.9
+      }
+    },
+    {
+      "input": "rulings (27 MB, 100k records)",
+      "runs": 9,
+      "quicktype": {
+        "read_ms": 79.9,
+        "generate_ms": 76,
+        "total_ms": 156,
+        "again_ms": 71.8
+      },
+      "quickertype": {
+        "read_ms": 46.5,
+        "generate_ms": 6.6,
+        "total_ms": 53.1,
+        "again_ms": 0.3
+      }
+    },
+    {
+      "input": "cards (22 MB, 5k records)",
+      "runs": 9,
+      "quicktype": {
+        "read_ms": 137,
+        "generate_ms": 235,
+        "total_ms": 371,
+        "again_ms": 229
+      },
+      "quickertype": {
+        "read_ms": 89.7,
+        "generate_ms": 23.5,
+        "total_ms": 113,
+        "again_ms": 6.1
+      }
+    }
+  ],
+  "cold_node": {
+    "command": "node npm/quicktype-core/test/bench/compare.mjs --cold 7 --json",
+    "how": "the first run in a fresh Node.js process, which compiles the engine first; medians of 7, CPU time of the process in cpu_ms",
+    "inputs": [
+      {
+        "input": "pokedex (82 KB)",
+        "runs": 7,
+        "quicktype": {
+          "read_ms": 3.79,
+          "generate_ms": 26,
+          "total_ms": 29.5,
+          "cpu_ms": 46.6
+        },
+        "quickertype": {
+          "read_ms": 3.9,
+          "generate_ms": 47.3,
+          "total_ms": 51.1,
+          "cpu_ms": 130
+        }
+      },
+      {
+        "input": "generated (2 MB)",
+        "runs": 7,
+        "quicktype": {
+          "read_ms": 38.1,
+          "generate_ms": 54.8,
+          "total_ms": 93.6,
+          "cpu_ms": 171
+        },
+        "quickertype": {
+          "read_ms": 26.5,
+          "generate_ms": 45.4,
+          "total_ms": 71.9,
+          "cpu_ms": 165
+        }
+      },
+      {
+        "input": "generated (20 MB)",
+        "runs": 7,
+        "quicktype": {
+          "read_ms": 393,
+          "generate_ms": 246,
+          "total_ms": 640,
+          "cpu_ms": 890
+        },
+        "quickertype": {
+          "read_ms": 148,
+          "generate_ms": 90.7,
+          "total_ms": 239,
+          "cpu_ms": 370
+        }
+      },
+      {
+        "input": "rulings (27 MB, 100k records)",
+        "runs": 7,
+        "quicktype": {
+          "read_ms": 125,
+          "generate_ms": 120,
+          "total_ms": 245,
+          "cpu_ms": 431
+        },
+        "quickertype": {
+          "read_ms": 82.1,
+          "generate_ms": 32.4,
+          "total_ms": 114,
+          "cpu_ms": 191
+        }
+      },
+      {
+        "input": "cards (22 MB, 5k records)",
+        "runs": 7,
+        "quicktype": {
+          "read_ms": 275,
+          "generate_ms": 347,
+          "total_ms": 625,
+          "cpu_ms": 821
+        },
+        "quickertype": {
+          "read_ms": 131,
+          "generate_ms": 72.2,
+          "total_ms": 202,
+          "cpu_ms": 343
+        }
+      }
+    ]
+  }
+}

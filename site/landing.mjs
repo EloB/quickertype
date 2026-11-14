@@ -13,10 +13,10 @@
 //   tests/fuzz-regressions, fuzz/fuzz_targets and the streaming fuzzer's
 //   default (xtask/src/streaming.rs); the Rust tests (#[test] in crates/);
 // * what runs where and when: .github/workflows (ci, fuzz, roundtrip, pages);
-// * speed and memory: site/data/benchmarks.json and big-inputs.json, as the
-//   benchmarks page reads them (site/benchmarks.mjs), and the WebAssembly
-//   engine in Chrome from the one table in docs/BENCHMARKS.md that has them
-//   (they are in no data file yet);
+// * speed and memory: site/data/benchmarks.json, big-inputs.json and
+//   browser.json (the WebAssembly engine in Chrome), read and checked as the
+//   benchmarks page reads them (site/benchmarks.mjs); the sizes the page
+//   gives are those in the benchmarks' names;
 // * the example at the top: an excerpt of quicktype's pokedex.json sample,
 //   generated when the page is built by both of quickertype-core's engines
 //   (quicktype's TypeScript one and the WebAssembly one), which must agree
@@ -31,7 +31,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { formatMiB, formatMs, named, speedFacts, times } from "./benchmarks.mjs";
+import { formatMiB, formatMs, named, seconds, sizeIn, speedFacts, times } from "./benchmarks.mjs";
 import { columnChart, legend, pairChart, pairRows, startIds, tableView, valueRows } from "./charts.mjs";
 import { quicktypeReference } from "./reference.mjs";
 import { highlight } from "./src/highlight.js";
@@ -40,7 +40,6 @@ import { escapeHtml as e } from "./src/html.js";
 const siteRoot = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.join(siteRoot, "..");
 export const quicktypeFile = path.join(siteRoot, "data", "quicktype.json");
-const benchmarksDoc = path.join(repositoryRoot, "docs", "BENCHMARKS.md");
 
 const repository = "https://github.com/EloB/quickertype";
 /** Where the page links, besides itself. */
@@ -244,30 +243,14 @@ export function rustTestFacts() {
 
 /**
  * The WebAssembly engine against quicktype's TypeScript engine, warm in
- * headless Chrome: docs/BENCHMARKS.md's one table of them (the "After" and
- * "TypeScript" totals, ms), and the Chrome version its method names.
+ * headless Chrome: site/data/browser.json (checked by readBenchmarks), the
+ * totals of reading and generating, ms, and Chrome's major version.
  */
-export function browserFacts(file = benchmarksDoc) {
-    const doc = fs.readFileSync(file, "utf8");
-    const head = "| Input | Before | After | TypeScript | After vs TypeScript, generating |";
-    const lines = doc.split("\n");
-    const at = lines.indexOf(head);
-    if (at < 0 || lines.indexOf(head, at + 1) >= 0) throw new Error(`${short(file)}: not one table headed ${head}`);
-    if (lines[at - 2] !== "Warm, headless Chrome:") throw new Error(`${short(file)}: the table headed ${head} is no longer under "Warm, headless Chrome:"`);
-    const total = (cell, where) => {
-        const n = Number(/=\s*([\d.]+)$/.exec(cell)?.[1]);
-        if (!(n > 0)) throw new Error(`${short(file)}: ${where}: "${cell}" is not "a + b = total"`);
-        return n;
+export function browserFacts(browser) {
+    return {
+        rows: browser.warm.map((r) => ({ input: r.input, ours: r.quickertype.total_ms, theirs: r.quicktype.total_ms })),
+        chrome: /^Chrome (\d+)/.exec(browser.browser)[1],
     };
-    const rows = [];
-    for (let i = at + 2; lines[i]?.startsWith("|"); i++) {
-        const [input, , after, typescript] = lines[i].slice(1, -1).split("|").map((c) => c.trim());
-        rows.push({ input, ours: total(after, input), theirs: total(typescript, input) });
-    }
-    if (rows.length === 0) throw new Error(`${short(file)}: the table headed ${head} has no rows`);
-    const chrome = /Chrome (\d+)[\d.]* \(headless\)/.exec(lines.slice(Math.max(0, at - 30), at).join("\n"))?.[1];
-    if (chrome === undefined) throw new Error(`${short(file)}: no "Chrome N (headless)" in the method above the table headed ${head}`);
-    return { rows, chrome };
 }
 
 // ---------------------------------------------------------------------------
@@ -385,7 +368,7 @@ export async function landingFacts({ qt, engineStats, languages, bench }) {
         workflows: workflowFacts(),
         fuzz: fuzzFacts(),
         rust: rustTestFacts(),
-        browser: browserFacts(),
+        browser: browserFacts(bench.browser),
         bench: bench.bench,
         big: bench.big,
         speed: speedFacts(bench.bench),
@@ -453,7 +436,7 @@ function raceHtml(bench) {
     const lane = (kind, name, ms) =>
         `<div class="lane ${kind}"><span class="lane-name">${name}</span><span class="lane-track" aria-hidden="true"><span class="lane-bar"></span></span><span class="lane-time">${formatMs(ms)}</span></div>`;
     return `<figure class="race" aria-labelledby="race-title">
-<figcaption id="race-title">One run of the CLI, <code>pokedex.json</code> (82 KB) to TypeScript: <b>${stat("race-speedup", Number((row.typescript.median_ms / row.rust.median_ms).toFixed(1)), times(row.typescript.median_ms / row.rust.median_ms))} faster</b></figcaption>
+<figcaption id="race-title">One run of the CLI, <code>pokedex.json</code> (${e(sizeIn(named.pokedex))}) to TypeScript: <b>${stat("race-speedup", Number((row.typescript.median_ms / row.rust.median_ms).toFixed(1)), times(row.typescript.median_ms / row.rust.median_ms))} faster</b></figcaption>
 ${lane("theirs", "quicktype", row.typescript.median_ms)}
 ${lane("ours", "quickertype", row.rust.median_ms)}
 </figure>`;
@@ -488,7 +471,9 @@ export function landingPageHtml(facts, images) {
     const pokedex = cli(named.pokedex);
     const corpus = bench.corpus.results;
     const report = big.reports[0];
-    const largest = big.measured.inputs.reduce((a, b) => (b.peak_rss_mib > a.peak_rss_mib ? b : a));
+    // The largest input measured here, and the largest quicktype was timed on too.
+    const largest = big.measured.inputs.reduce((a, b) => (b.bytes > a.bytes ? b : a));
+    const against = big.measured.inputs.filter((i) => i.quicktype !== undefined).reduce((a, b) => (a === undefined || b.bytes > a.bytes ? b : a), undefined);
     const contributorsUrl = `${repo.url}/graphs/contributors`;
     const licenseUrl = `${repo.url}/blob/${repo.default_branch}/LICENSE`;
 
@@ -606,14 +591,22 @@ ${tableView("Recorded cases in tests/golden, by what they cover", ["Kind", "Case
 <p class="more">And on every deploy, headless Chrome runs this site's playground on both engines and compares its output with the CLI's. The rules that keep the output identical, and the known gaps: <a href="${landingLinks.parity}">docs/PARITY.md</a>.</p>
 </section>`;
 
-    const small = ["--version", named.pokedex, "github-events (82 KB) → ts", "github.gqlschema (1.2 MB) + query → TypeScript", "vega-lite.schema (306 KB) → TypeScript"];
-    const pretty = {
-        "--version": "Start-up (--version)",
-        [named.pokedex]: "pokedex.json (82 KB) to TypeScript",
-        "github-events (82 KB) → ts": "github-events.json (82 KB) to TypeScript",
-        "github.gqlschema (1.2 MB) + query → TypeScript": "GraphQL schema (1.2 MB) and query to TypeScript",
-        "vega-lite.schema (306 KB) → TypeScript": "JSON Schema (vega-lite, 306 KB) to TypeScript",
+    // The runs the speed section shows, found in the data by what they run,
+    // and how it words them, with the size their benchmark's name gives.
+    const shown = (pattern) => {
+        const found = bench.cli.filter((r) => pattern.test(r.name));
+        if (found.length !== 1) throw new Error(`site/data/benchmarks.json: the landing page shows one benchmark matching ${pattern}, and it has ${found.length}`);
+        return found[0].name;
     };
+    const wording = [
+        [named.startup, () => "Start-up (--version)"],
+        [named.pokedex, (size) => `pokedex.json (${size}) to TypeScript`],
+        [shown(/^github-events \([^)]*\) → ts$/), (size) => `github-events.json (${size}) to TypeScript`],
+        [shown(/^github\.gqlschema \([^)]*\) \+ query → TypeScript$/), (size) => `GraphQL schema (${size}) and query to TypeScript`],
+        [shown(/^vega-lite\.schema \([^)]*\) → TypeScript$/), (size) => `JSON Schema (vega-lite, ${size}) to TypeScript`],
+    ];
+    const small = wording.map(([name]) => name);
+    const pretty = Object.fromEntries(wording.map(([name, say]) => [name, say(name === named.startup ? undefined : sizeIn(name))]));
     const runChart = pairRows({
         rows: small.map((name) => {
             const r = cli(name);
@@ -622,7 +615,7 @@ ${tableView("Recorded cases in tests/golden, by what they cover", ["Kind", "Case
         format: formatMs,
         what: "wall time",
     });
-    const memoryRows = [named.startup, named.pokedex, "generated (40 MB) → TypeScript"];
+    const memoryRows = [named.startup, named.pokedex, named.large];
     const memoryChart = pairRows({
         rows: memoryRows.map((name) => {
             const r = cli(name);
@@ -665,7 +658,11 @@ ${
               more: true,
           })
 }
-<p class="fineprint">${report === undefined ? "" : `${e(report.source)} `}Measured here: ${stat("big-size", largest.size)} of JSON (${e(largest.description)}) in ${stat("big-seconds", largest.seconds, `${largest.seconds} s`)}, at a peak of ${stat("big-memory", largest.peak_rss_mib, formatMiB(largest.peak_rss_mib))}.</p>
+<p class="fineprint">${report === undefined ? "" : `${e(report.source)} `}Measured here: ${stat("big-size", largest.size)} of JSON (${e(largest.description)}) in ${stat("big-seconds", largest.seconds, seconds(largest.seconds))}, at a peak of ${stat("big-memory", largest.peak_rss_mib, formatMiB(largest.peak_rss_mib))}.${
+    against === undefined
+        ? ""
+        : ` On ${stat("against-size", against.size)} (${e(against.description)}), quicktype took ${stat("against-quicktype-seconds", against.quicktype.seconds, seconds(against.quicktype.seconds))} and ${stat("against-quicktype-memory", against.quicktype.peak_rss_mib, formatMiB(against.quicktype.peak_rss_mib))}; quickertype ${stat("against-seconds", against.seconds, seconds(against.seconds))} and ${stat("against-memory", against.peak_rss_mib, formatMiB(against.peak_rss_mib))}.`
+}</p>
 </figure>`;
     const speedSection = `<section id="speed" class="speed" aria-labelledby="speed-title">
 <h2 id="speed-title">Up to ${speed.upTo}× faster, in a fraction of the memory</h2>
@@ -687,7 +684,7 @@ ${legend()}
 ${memoryChart}
 ${tableView("Peak resident memory of one CLI run", ["Run", "quicktype", "quickertype", "Less"], memoryRows.map((name) => {
     const r = cli(name);
-    return [pretty[name] ?? name, formatMiB(r.typescript.peak_rss_mib), formatMiB(r.rust.peak_rss_mib), times(r.typescript.peak_rss_mib / r.rust.peak_rss_mib)];
+    return [pretty[name] ?? name.replace(" → ", " to "), formatMiB(r.typescript.peak_rss_mib), formatMiB(r.rust.peak_rss_mib), times(r.typescript.peak_rss_mib / r.rust.peak_rss_mib)];
 }))}
 </figure>
 <figure class="chart" aria-labelledby="corpus-title">
@@ -701,7 +698,7 @@ ${corpusPair}
 <figure class="chart" aria-labelledby="browser-title">
 <figcaption id="browser-title">In the browser: the WebAssembly engine, how many times faster than quicktype's, warm in Chrome ${e(browser.chrome)}</figcaption>
 ${browserChart}
-${tableView("Warm runs in headless Chrome, reading plus generating, ms (docs/BENCHMARKS.md)", ["Input", "quicktype", "quickertype", "Faster"], browser.rows.map((r) => [r.input, formatMs(r.theirs), formatMs(r.ours), times(r.theirs / r.ours)]))}
+${tableView("Warm runs in headless Chrome, reading plus generating, ms (site/data/browser.json)", ["Input", "quicktype", "quickertype", "Faster"], browser.rows.map((r) => [r.input, formatMs(r.theirs), formatMs(r.ours), times(r.theirs / r.ours)]))}
 <p class="fineprint">Both engines run inside the page, so neither starts a process: the gap is the engines'. From <a href="${landingLinks.benchmarksDoc}">docs/BENCHMARKS.md</a>.</p>
 </figure>
 ${bigFiles}

@@ -1,9 +1,10 @@
 // The playground's benchmark numbers: site/data/benchmarks.json (written by
-// `cargo xtask bench --json`) and site/data/big-inputs.json (multi-GB
-// inputs, measured by hand, and a user's report). Checked here, summed up
-// for the playground's headline, and rendered as the benchmarks page, at
-// build time: the page needs no script. Used by site/build.mjs and
-// site/test/smoke.mjs.
+// `cargo xtask bench --json`), site/data/big-inputs.json (large inputs,
+// measured by hand, and a user's report) and site/data/browser.json (the
+// WebAssembly engine in Chrome, from npm/quicktype-core's compare.mjs).
+// Checked here, summed up for the playground's headline, and rendered as
+// the benchmarks page, at build time: the page needs no script. Used by
+// site/build.mjs, site/landing.mjs and site/test/smoke.mjs.
 //
 // Every claim the pages make comes from the data. The build refuses data
 // that would make a summary claim false (the headline says the CLI is
@@ -32,6 +33,7 @@ import { escapeHtml } from "./src/html.js";
 const siteRoot = path.dirname(fileURLToPath(import.meta.url));
 export const benchmarksFile = path.join(siteRoot, "data", "benchmarks.json");
 export const bigInputsFile = path.join(siteRoot, "data", "big-inputs.json");
+export const browserFile = path.join(siteRoot, "data", "browser.json");
 
 const repository = "https://github.com/EloB/quickertype";
 export const links = {
@@ -48,6 +50,7 @@ export const links = {
 export const named = {
     startup: "--version",
     pokedex: "pokedex (82 KB) → TypeScript",
+    large: "generated (40 MB) → TypeScript",
     memory: [
         "--version",
         "pokedex (82 KB) → TypeScript",
@@ -205,11 +208,23 @@ export function checkBigInputs(data, file = bigInputsFile) {
     ok(isObject(data) && data.format === 1, "format", "must be 1");
     const m = data.measured;
     ok(isObject(m) && isDate(m.date) && text(m.machine) && sha(m.commit) && text(m.how), "measured", "needs date, machine, commit and how");
+    ok(m.load_average === undefined || text(m.load_average), "measured.load_average", "must be a string if given");
     ok(Array.isArray(m.inputs) && m.inputs.length > 0, "measured.inputs", "must be a non-empty array");
+    // A run of one tool on one input: its wall time and peak memory, its CPU time if measured.
+    const run = (r, at) => {
+        ok(isObject(r) && positive(r.seconds) && positive(r.peak_rss_mib), at, "needs seconds and peak_rss_mib");
+        ok(r.cpu_seconds === undefined || positive(r.cpu_seconds), at, "cpu_seconds must be positive if given");
+    };
     m.inputs.forEach((input, i) => {
         const at = `measured.inputs[${i}]`;
         ok(text(input.name) && text(input.description) && text(input.size), at, "needs name, description and size");
-        ok(positive(input.seconds) && positive(input.peak_rss_mib), at, "needs seconds and peak_rss_mib");
+        ok(Number.isInteger(input.bytes) && input.bytes > 0, at, "needs bytes (the input's size in bytes)");
+        ok(input.args === undefined || text(input.args), at, "args must be a string if given");
+        ok(input.runs === undefined || (Number.isInteger(input.runs) && input.runs > 0), at, "runs must be a positive integer if given");
+        run(input, at);
+        // On one thread (the sample read in one go), and quicktype's CLI on the same input, where measured.
+        if (input.one_thread !== undefined) run(input.one_thread, `${at}.one_thread`);
+        if (input.quicktype !== undefined) run(input.quicktype, `${at}.quicktype`);
     });
     ok(Array.isArray(data.reports), "reports", "must be an array");
     data.reports.forEach((report, i) => {
@@ -220,7 +235,43 @@ export function checkBigInputs(data, file = bigInputsFile) {
     return data;
 }
 
-/** Both files, read and checked, and what the build should point out in them (`warnings`). */
+/**
+ * site/data/browser.json, checked: the WebAssembly engine against
+ * quicktype's TypeScript engine, warm in headless Chrome (`warm`: reading,
+ * generating and both, ms, medians), and their first runs in a fresh Node.js
+ * process (`cold_node`, if given). The landing page says the engine is
+ * faster in the browser, so data where it is not is refused.
+ */
+export function checkBrowser(data, file = browserFile) {
+    const ok = (condition, where, what) => check(condition, file, where, what);
+    ok(isObject(data) && data.format === 1, "format", "must be 1");
+    ok(isDate(data.date) && text(data.machine) && sha(data.commit) && text(data.command) && text(data.how), "the file", "needs date, machine, commit, command and how");
+    ok(typeof data.browser === "string" && /^Chrome \d+/.test(data.browser), "browser", 'must be "Chrome N…"');
+    ok(data.load_average === undefined || text(data.load_average), "load_average", "must be a string if given");
+    const times = (r, at, keys) => {
+        ok(isObject(r), at, "is missing");
+        for (const key of keys) ok(positive(r[key]), at, `needs ${key}`);
+        ok(r.again_ms === undefined || positive(r.again_ms), at, "again_ms must be positive if given");
+        ok(r.cpu_ms === undefined || positive(r.cpu_ms), at, "cpu_ms must be positive if given");
+    };
+    const rows = (list, where, keys) => {
+        ok(Array.isArray(list) && list.length > 0, where, "must be a non-empty array");
+        list.forEach((row, i) => {
+            const at = `${where}[${i}]`;
+            ok(text(row.input) && Number.isInteger(row.runs) && row.runs > 0, at, "needs input and runs");
+            for (const id of ["quicktype", "quickertype"]) times(row[id], `${at}.${id} (${row.input})`, keys);
+        });
+    };
+    rows(data.warm, "warm", ["read_ms", "generate_ms", "total_ms"]);
+    data.warm.forEach((row, i) => ok(row.quickertype.total_ms < row.quicktype.total_ms, `warm[${i}] (${row.input})`, "has quickertype as slow or slower: the landing page says it is faster"));
+    if (data.cold_node !== undefined) {
+        ok(isObject(data.cold_node) && text(data.cold_node.command), "cold_node", "needs command");
+        rows(data.cold_node.inputs, "cold_node.inputs", ["total_ms"]);
+    }
+    return data;
+}
+
+/** The three files, read and checked, and what the build should point out in them (`warnings`). */
 export function readBenchmarks() {
     const read = (file) => {
         try {
@@ -230,7 +281,7 @@ export function readBenchmarks() {
         }
     };
     const bench = checkBenchmarks(read(benchmarksFile));
-    return { bench, big: checkBigInputs(read(bigInputsFile)), warnings: benchmarkWarnings(bench) };
+    return { bench, big: checkBigInputs(read(bigInputsFile)), browser: checkBrowser(read(browserFile)), warnings: benchmarkWarnings(bench) };
 }
 
 // ---------------------------------------------------------------------------
@@ -313,6 +364,16 @@ export function formatMs(x) {
     if (x >= 10) return `${x.toFixed(1)} ms`;
     return `${x.toFixed(2)} ms`;
 }
+
+/** The size a benchmark's name gives: "pokedex (82 KB) → TypeScript" → "82 KB". */
+export function sizeIn(name) {
+    const size = /\((?:[^()]*, )?(\d+(?:\.\d+)? [KMG]?B)\)/.exec(name)?.[1];
+    if (size === undefined) throw new Problem(`site/data/benchmarks.json: the pages need a size in the benchmark's name, and "${name}" has none`);
+    return size;
+}
+
+/** A time in seconds as the big-files table writes it: "18.8 s", "155 ms". */
+export const seconds = (s) => (s >= 1 ? `${s} s` : formatMs(s * 1000));
 
 export function formatMiB(x) {
     if (x >= 1024) return `${(x / 1024).toFixed(2)} GiB`;
@@ -538,13 +599,15 @@ export function benchmarksPageHtml({ bench, big }) {
     const cli = (name) => bench.cli.find((r) => r.name === name);
     const pokedex = cli(named.pokedex);
     const version = cli(named.startup);
-    const large = cli("generated (40 MB) → TypeScript");
+    const large = cli(named.large);
     const corpus = bench.corpus.results;
     const inProcess = bench.in_process.results;
     const machine = bench.machine;
     const date = longDate(bench.date);
     const report = big.reports[0];
-    const measuredLarge = big.measured.inputs.find((i) => i.name === "generated (40 MB)");
+    // The 40 MB input, measured again for big-inputs.json after this run (only then is it news here).
+    const measuredLarge = big.measured.date > bench.date ? big.measured.inputs.find((i) => large.name.startsWith(`${i.name} `)) : undefined;
+    const bigOneThread = big.measured.inputs.some((i) => i.one_thread !== undefined);
 
     const cliCharts = cliChart(bench);
     const memory = memoryChart(bench);
@@ -575,7 +638,7 @@ export function benchmarksPageHtml({ bench, big }) {
 
     sections.push(`<section id="cli" aria-labelledby="cli-title">
 <h2 id="cli-title">${cliHeading(facts)}</h2>
-<p>One run of the CLI per benchmark: how many times faster${orSlower} quickertype's is, and both times (quicktype → quickertype; medians of ${runs(bench.iterations)}). On small inputs most of quicktype's time is starting Node.js and loading quicktype (<code>--version</code> alone takes ${formatMs(version.results.typescript.median_ms)}); on large ones it is the work itself, which quickertype does ${fasterOrSlower(speedup(large))} on the 40 MB input. "Typical files" are the ${typicalList.length} real-world JSON samples here (${typicalSizes === undefined ? "" : `${typicalSizes}, `}to TypeScript and to ${languageCount} languages): quickertype is ${times(facts.typicalMedian)} faster on the median one.</p>
+<p>One run of the CLI per benchmark: how many times faster${orSlower} quickertype's is, and both times (quicktype → quickertype; medians of ${runs(bench.iterations)}). On small inputs most of quicktype's time is starting Node.js and loading quicktype (<code>--version</code> alone takes ${formatMs(version.results.typescript.median_ms)}); on large ones it is the work itself, which quickertype does ${fasterOrSlower(speedup(large))} on the ${sizeIn(large.name)} input. "Typical files" are the ${typicalList.length} real-world JSON samples here (${typicalSizes === undefined ? "" : `${typicalSizes}, `}to TypeScript and to ${languageCount} languages): quickertype is ${times(facts.typicalMedian)} faster on the median one.</p>
 <figure class="chart" aria-labelledby="cli-chart-title">
 <figcaption id="cli-chart-title">quickertype's CLI, how many times faster${orSlower} than quicktype's</figcaption>
 ${cliCharts.html}
@@ -585,7 +648,7 @@ ${cliCharts.table}
 
     sections.push(`<section id="memory" aria-labelledby="memory-title">
 <h2 id="memory-title">Memory</h2>
-<p>The most memory one run took (peak resident set size). quicktype needs ${formatMiB(version.results.typescript.peak_rss_mib)} before it reads any input (<code>--version</code>), so on small files it takes ${Math.round(pokedexMemory)} times what quickertype does. On the 40 MB input it took ${formatMiB(large.results.typescript.peak_rss_mib)} against quickertype's ${formatMiB(large.results.rust.peak_rss_mib)} in this run${
+<p>The most memory one run took (peak resident set size). quicktype needs ${formatMiB(version.results.typescript.peak_rss_mib)} before it reads any input (<code>--version</code>), so on small files it takes ${Math.round(pokedexMemory)} times what quickertype does. On the ${sizeIn(large.name)} input it took ${formatMiB(large.results.typescript.peak_rss_mib)} against quickertype's ${formatMiB(large.results.rust.peak_rss_mib)} in this run${
         measuredLarge === undefined
             ? ""
             : `; a later change brought quickertype down to ${formatMiB(measuredLarge.peak_rss_mib)} there (${times(large.results.typescript.peak_rss_mib / measuredLarge.peak_rss_mib)} less, see <a href="#big-files">big files</a>)`
@@ -634,10 +697,19 @@ ${pairChart({
 ${reportChart}
 <figure class="chart" aria-labelledby="big-table-title">
 <figcaption id="big-table-title">quickertype on large inputs, measured here</figcaption>
-<table class="plain"><thead><tr><th scope="col">Input</th><th scope="col" class="num">Time</th><th scope="col" class="num">Peak memory</th></tr></thead><tbody>${big.measured.inputs
-        .map((i) => `<tr><th scope="row">${e(i.size)}: ${e(i.description)}</th><td class="num">${i.seconds >= 1 ? `${i.seconds} s` : formatMs(i.seconds * 1000)}</td><td class="num">${formatMiB(i.peak_rss_mib)}</td></tr>`)
+<table class="plain"><thead><tr><th scope="col">Input</th><th scope="col" class="num">Time</th><th scope="col" class="num">Peak memory</th>${
+        bigOneThread ? '<th scope="col" class="num">On one thread</th>' : ""
+    }<th scope="col" class="num">quicktype</th></tr></thead><tbody>${big.measured.inputs
+        .map(
+            (i) =>
+                `<tr><th scope="row">${e(i.size)}: ${e(i.description)}${i.args === undefined ? "" : ` (<code>${e(i.args)}</code>)`}</th><td class="num">${seconds(i.seconds)}</td><td class="num">${formatMiB(i.peak_rss_mib)}</td>${
+                    bigOneThread ? `<td class="num">${i.one_thread === undefined ? "–" : `${seconds(i.one_thread.seconds)}, ${formatMiB(i.one_thread.peak_rss_mib)}`}</td>` : ""
+                }<td class="num">${i.quicktype === undefined ? "not timed" : `${seconds(i.quicktype.seconds)}, ${formatMiB(i.quicktype.peak_rss_mib)}`}</td></tr>`,
+        )
         .join("")}</tbody></table>
-<p class="fineprint">${e(big.measured.machine)}, ${e(longDate(big.measured.date))}, commit <a href="${links.commit(big.measured.commit)}"><code>${big.measured.commit.slice(0, 7)}</code></a>: ${e(big.measured.how)} quicktype was not timed on the 2.6 GB inputs.</p>
+<p class="fineprint">${e(big.measured.machine)}, ${e(longDate(big.measured.date))}, commit <a href="${links.commit(big.measured.commit)}"><code>${big.measured.commit.slice(0, 7)}</code></a>${
+        big.measured.load_average === undefined ? "" : `, load average ${e(big.measured.load_average)}`
+    }: ${e(big.measured.how)}</p>
 </figure>
 </section>`);
 

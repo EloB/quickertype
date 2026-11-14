@@ -135,12 +135,13 @@ import {
     links as benchLinks,
     named as benchNamed,
     readBenchmarks,
+    seconds as bigSeconds,
     speedFacts,
     speedupText,
     times as speedup,
 } from "../benchmarks.mjs";
 import { fuzzFacts, landingLinks, readQuicktype, workflowFacts } from "../landing.mjs";
-import { chartProblems, chartUrl, readmeFile } from "../readme-charts.mjs";
+import { chartProblems, chartUrl, readmeFile, readmeRows } from "../readme-charts.mjs";
 import { quicktypeReference } from "../reference.mjs";
 import { serve } from "./serve.mjs";
 
@@ -453,11 +454,23 @@ const speedNow = speedFacts(benchmarkData.bench);
     const real = pageFor(() => {});
     assert.equal(real.h2, `Every CLI run, ${speedNow.upTo}× to ${speedup(speedNow.lowest)} faster`);
     assert.deepEqual([real.slower, real.warnings], [[], []], "the real data: slower benchmarks, warnings");
-    assert.match(real.tile, /^faster per CLI run at most \(--version, start-up alone\); about \d+× on typical files$/);
+    // The tile names the benchmark with the largest speed-up, and what it measures.
+    const topMeasures = speedNow.upToRow.name === benchNamed.startup ? "start-up alone" : speedNow.upToRow.group === "startup" ? "mostly start-up" : undefined;
+    if (topMeasures !== undefined) assert.equal(real.tile, `faster per CLI run at most (${speedNow.upToRow.name}, ${topMeasures}); about ${speedNow.typical}× on typical files`);
+    assert.match(real.tile, /^faster per CLI run at most \(.+, [^,]+\); about \d+× on typical files$/);
     assert.equal(real.caption, `CLI wall time per run, median of ${benchmarkData.bench.iterations} runs after one warm-up`);
     const rustCorpus = benchmarkData.bench.corpus.results.rust;
-    assert.deepEqual(real.exits, [`${rustCorpus.unexpected_exits.toLocaleString("en-US")} of quickertype's ${rustCorpus.steps.toLocaleString("en-US")} runs exited unexpectedly. ${rustCorpus.unexpected_exits_note}`]);
+    assert.deepEqual(
+        real.exits,
+        rustCorpus.unexpected_exits === 0
+            ? []
+            : [`${rustCorpus.unexpected_exits.toLocaleString("en-US")} of quickertype's ${rustCorpus.steps.toLocaleString("en-US")} runs exited unexpectedly. ${rustCorpus.unexpected_exits_note}`],
+    );
     assert.deepEqual(real.warn, []);
+    // Unexpected exits with a note: the number and the note.
+    const explained = pageFor((d) => Object.assign(d.corpus.results.rust, { unexpected_exits: 381, unexpected_exits_note: "They are the cases outside the parity baseline." }));
+    assert.deepEqual(explained.exits, [`381 of quickertype's ${rustCorpus.steps.toLocaleString("en-US")} runs exited unexpectedly. They are the cases outside the parity baseline.`]);
+    assert.deepEqual(explained.warnings, []);
 
     // A benchmark below 1×: shown as slower (heading, bar, label, table), and pointed out.
     const senators = "us-senators (155 KB) → TypeScript";
@@ -490,9 +503,12 @@ const speedNow = speedFacts(benchmarkData.bench);
     assert.equal(sevenRuns.caption, "CLI wall time per run, median of 7 runs after one warm-up");
     assert.match(sevenRuns.cli, /medians of 7 runs\)/);
     // Unexpected exits without a note: the number, plainly, as a warning; none: nothing.
-    const unexplained = pageFor((d) => delete d.corpus.results.rust.unexpected_exits_note);
-    assert.deepEqual(unexplained.warn, [`Warning: ${rustCorpus.unexpected_exits.toLocaleString("en-US")} of quickertype's ${rustCorpus.steps.toLocaleString("en-US")} runs exited unexpectedly.`]);
-    assert.deepEqual(unexplained.warnings, [`site/data/benchmarks.json: corpus.results.rust: ${rustCorpus.unexpected_exits} unexpected exits, and no unexpected_exits_note saying why`]);
+    const unexplained = pageFor((d) => {
+        d.corpus.results.rust.unexpected_exits = 381;
+        delete d.corpus.results.rust.unexpected_exits_note;
+    });
+    assert.deepEqual(unexplained.warn, [`Warning: 381 of quickertype's ${rustCorpus.steps.toLocaleString("en-US")} runs exited unexpectedly.`]);
+    assert.deepEqual(unexplained.warnings, ["site/data/benchmarks.json: corpus.results.rust: 381 unexpected exits, and no unexpected_exits_note saying why"]);
     assert.deepEqual(pageFor((d) => (d.corpus.results.rust.unexpected_exits = 0)).exits, []);
     // A Linux machine as `cargo xtask bench --json` describes one, without its memory.
     const linux = pageFor((d) => (d.machine = { cpu: "aarch64, CPU part 0xd0c", cores: "64", os: "Linux 6.1.0-18-arm64" }));
@@ -501,7 +517,9 @@ const speedNow = speedFacts(benchmarkData.bench);
     const why = "--bin runs /usr/local/bin/quickertype, which is not in the target directory of a git work tree";
     const unknownCommit = pageFor((d) => Object.assign(d.commits, { quickertype: null, quickertype_modified: null, quickertype_source: why }));
     assert.equal(unknownCommit.quickertype, `not known: ${why}`);
-    assert.ok(!unknownCommit.html.includes(benchmarkData.bench.commits.quickertype), "the unknown commit is linked");
+    // (big-inputs.json may name the same commit, in its own section.)
+    const method = unknownCommit.html.slice(unknownCommit.html.indexOf('<section id="method"'));
+    assert.ok(!method.includes(benchmarkData.bench.commits.quickertype), "the unknown commit is linked");
     console.log("ok: the page says what the data holds: the tile's benchmark, the number of runs, unexpected exits (with the note, or as a warning), a machine as far as it was recorded, an unknown commit");
 }
 
@@ -517,12 +535,17 @@ const speedNow = speedFacts(benchmarkData.bench);
         return readme.replace(from, to);
     };
     const stale = (chart) => [`docs/assets/charts/${chart}-light.svg does not show the README's numbers`, `docs/assets/charts/${chart}-dark.svg does not show the README's numbers`];
-    assert.deepEqual(chartProblems(edited("| 2.3 ms | 96× |", "| 2.3 ms | 97× |")), stale("cli-speed"));
-    assert.deepEqual(chartProblems(edited("| 62 MiB | 10× less |", "| 31 MiB | 20× less |")), stale("cli-memory"));
-    assert.deepEqual(chartProblems(edited("| 2.3 ms | 2.2× |", "| 2.3 ms | 2.3× |")), stale("browser-speed"));
+    // The README's own cells, edited: the first CLI row's ratio, the memory row (the CLI table's last) and the first browser row's ratio.
+    const rows = readmeRows(readme);
+    const [firstRun, memoryRow, firstBrowser] = [rows.cli[0], rows.cli.at(-1), rows.browser[0]];
+    const cells = (row) => `| ${row.ours} | ${row.ratio.text}${row.ratio.less ? " less" : ""} |`;
+    assert.ok(memoryRow.ratio.less, "the CLI table's last row is the memory row");
+    assert.deepEqual(chartProblems(edited(cells(firstRun), `| ${firstRun.ours} | ${firstRun.ratio.low + 1}× |`)), stale("cli-speed"));
+    assert.deepEqual(chartProblems(edited(cells(memoryRow), `| ${memoryRow.ours} | ${memoryRow.ratio.low * 2}× less |`)), stale("cli-memory"));
+    assert.deepEqual(chartProblems(edited(cells(firstBrowser), `| ${firstBrowser.ours} | ${(firstBrowser.ratio.low + 0.1).toFixed(1)}× |`)), stale("browser-speed"));
     assert.deepEqual(chartProblems(edited(` srcset="${chartUrl("browser-speed-dark.svg")}"`, "")), [`README.md does not show browser-speed's dark chart (srcset="${chartUrl("browser-speed-dark.svg")}")`]);
     assert.throws(() => chartProblems(edited("| Run | quicktype | quickertype | Faster |", "| Run | quicktype | quickertype | Speed-up |")), /^Error: README\.md, the CLI's table: the header is /);
-    assert.throws(() => chartProblems(edited("| 10× less |", "| a tenth |")), /"a tenth" is not a ratio/);
+    assert.throws(() => chartProblems(edited(cells(memoryRow), `| ${memoryRow.ours} | a tenth |`)), /"a tenth" is not a ratio/);
     console.log("ok: the README's charts show its tables' numbers; a number changed without them, a chart it does not show and a table in another shape are caught");
 }
 
@@ -2538,7 +2561,12 @@ try {
         assert.deepEqual(pageNow.corpus, [`${data.corpus.results.typescript.wall_s} s`, `${data.corpus.results.rust.wall_s} s`], "the corpus chart");
         assert.deepEqual(
             pageNow.big.map((cells) => cells.slice(1)),
-            big.measured.inputs.map((i) => [i.seconds >= 1 ? `${i.seconds} s` : formatBenchMs(i.seconds * 1000), formatMiB(i.peak_rss_mib)]),
+            big.measured.inputs.map((i) => [
+                bigSeconds(i.seconds),
+                formatMiB(i.peak_rss_mib),
+                ...(big.measured.inputs.some((x) => x.one_thread !== undefined) ? [i.one_thread === undefined ? "–" : `${bigSeconds(i.one_thread.seconds)}, ${formatMiB(i.one_thread.peak_rss_mib)}`] : []),
+                i.quicktype === undefined ? "not timed" : `${bigSeconds(i.quicktype.seconds)}, ${formatMiB(i.quicktype.peak_rss_mib)}`,
+            ]),
             "the big inputs",
         );
         assert.deepEqual(pageNow.report, [big.reports[0].quicktype, big.reports[0].quickertype], "the user's report");
@@ -2724,7 +2752,9 @@ try {
         const cliRow = (name) => bench.cli.find((r) => r.name === name).results;
         const version = cliRow(benchNamed.startup);
         const pokedexRun = cliRow(benchNamed.pokedex);
-        const largest = benchmarkData.big.measured.inputs.reduce((a, b) => (b.peak_rss_mib > a.peak_rss_mib ? b : a));
+        const bigInputs = benchmarkData.big.measured.inputs;
+        const largest = bigInputs.reduce((a, b) => (b.bytes > a.bytes ? b : a));
+        const timedBoth = bigInputs.filter((i) => i.quicktype !== undefined).sort((a, b) => b.bytes - a.bytes)[0];
         const n = (v) => [String(v), v.toLocaleString("en-US")];
         const spaced = (v, text) => [String(v), text.replaceAll(" ", " ")];
         const expected = {
@@ -2755,8 +2785,17 @@ try {
             "corpus-quicktype": spaced(bench.corpus.results.typescript.wall_s, `${bench.corpus.results.typescript.wall_s} s`),
             "corpus-quickertype": spaced(bench.corpus.results.rust.wall_s, `${bench.corpus.results.rust.wall_s} s`),
             "big-size": spaced(largest.size, largest.size),
-            "big-seconds": spaced(largest.seconds, `${largest.seconds} s`),
+            "big-seconds": spaced(largest.seconds, bigSeconds(largest.seconds)),
             "big-memory": spaced(largest.peak_rss_mib, formatMiB(largest.peak_rss_mib)),
+            ...(timedBoth === undefined
+                ? {}
+                : {
+                      "against-size": spaced(timedBoth.size, timedBoth.size),
+                      "against-quicktype-seconds": spaced(timedBoth.quicktype.seconds, bigSeconds(timedBoth.quicktype.seconds)),
+                      "against-quicktype-memory": spaced(timedBoth.quicktype.peak_rss_mib, formatMiB(timedBoth.quicktype.peak_rss_mib)),
+                      "against-seconds": spaced(timedBoth.seconds, bigSeconds(timedBoth.seconds)),
+                      "against-memory": spaced(timedBoth.peak_rss_mib, formatMiB(timedBoth.peak_rss_mib)),
+                  }),
         };
         assert.equal(workflows.ci.os.join(), "Linux,macOS,Windows", "CI's operating systems");
 
