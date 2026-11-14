@@ -350,32 +350,26 @@ impl<W: Window> Tokenizer<'_, W> {
         self.byte(0)
     }
 
-    /// Advances past the bytes for which `p` holds.
+    /// Advances to the end of a run: `run_end(window, index)` says where
+    /// the run that starts at `index` ends in the window. Where the window
+    /// ends first, it reads more and goes on from there.
     #[inline]
-    fn skip(&mut self, p: impl Fn(u8) -> bool) {
+    fn skip_run(&mut self, run_end: impl Fn(&[u8], usize) -> usize) {
         loop {
-            let rest = &self.text().as_bytes()[self.index..];
-            let n = rest.iter().position(|&b| !p(b)).unwrap_or(rest.len());
-            self.index += n;
+            self.index = run_end(self.text().as_bytes(), self.index);
             if self.index < self.text().len() || !self.fill() {
                 return;
             }
         }
     }
 
-    /// Advances past string characters that need no escape handling: to
-    /// the next `"`, `\` or control character
-    /// ([`is_string_stop`](super::json_scan::is_string_stop)), eight
-    /// bytes at a time ([`plain_run`]). Where the window ends first, it
-    /// reads more and goes on, as [`skip`](Self::skip) does.
+    /// Advances past the bytes for which `p` holds.
     #[inline]
-    fn skip_plain(&mut self) {
-        loop {
-            self.index = plain_run(self.text().as_bytes(), self.index);
-            if self.index < self.text().len() || !self.fill() {
-                return;
-            }
-        }
+    fn skip(&mut self, p: impl Fn(u8) -> bool) {
+        self.skip_run(|bytes, start| {
+            let rest = &bytes[start..];
+            start + rest.iter().position(|&b| !p(b)).unwrap_or(rest.len())
+        });
     }
 
     /// Drops the text before the current position, between tokens, once
@@ -581,8 +575,10 @@ impl<W: Window> Tokenizer<'_, W> {
     /// left, and `expected a string value` at the end of the input.
     fn string(&mut self) -> Result<Token, ParseError> {
         let start = self.index;
-        // The common case: no escapes up to the closing quote.
-        self.skip_plain();
+        // The common case: no escapes up to the closing quote. The run of
+        // characters that need no escape handling ends at the next `"`,
+        // `\` or control character, found eight bytes at a time.
+        self.skip_run(plain_run);
         if self.peek() == Some(b'"') {
             let end = self.index;
             self.index += 1;
@@ -637,7 +633,7 @@ impl<W: Window> Tokenizer<'_, W> {
                 0..0x20 => return Err(syntax("Parser cannot parse input: escaped characters")),
                 _ => {
                     let start = self.index;
-                    self.skip_plain();
+                    self.skip_run(plain_run);
                     let run = &self.text()[start..self.index];
                     match &mut units {
                         Some(units) => units.extend(run.encode_utf16()),
