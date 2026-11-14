@@ -85,7 +85,7 @@ of the committed differential corpus (`tests/corpus`, including 30 `order-*` pro
 | `prop.links.type.types` (internal, in `required`) | — | ≈ if `flags & Transient`, use the union members of `getTypeOfSymbol` |
 | `type.flags/objectFlags/id/aliasSymbol/aliasTypeArguments/types/value/intrinsicName/texts/target` | TypeResponse + `getTypesOfType`, `getAliasSymbolOfType`, `getTargetOfType`, … | ✔. The flag numbers differ from TS 5: use TS 7's enums. A `true` literal has `value:true` and no `intrinsicName`. TS 7 also gives enum types an `aliasSymbol` (harmless here) |
 | union/intersection **constituent order** | `getTypesOfType` | **✗** TS 7 sorts object constituents by symbol name, TS 5 by creation id (§5.3) |
-| tuple `target.labeledElementDeclarations/minLength/hasRestElement/fixedLength` | `elementFlags`, `fixedLength` | ≈ labels via `typeToTypeNode` (`NamedTupleMember`) |
+| tuple `target.labeledElementDeclarations/minLength/hasRestElement/fixedLength` | `elementFlags`, `fixedLength` | ≈ labels from the user file's `TupleType` node (the name's full text, comments included), else via `typeToTypeNode` (`NamedTupleMember`) |
 | `type.members` (resolved members, numeric-index branch) | — | ≈ `getMembersOfSymbol` |
 | `clazzType.mapper.target`, `IndexedAccess.objectType.members` (index-signature-of-`T[K]` branch) | — | ✗ internal and rare; needs `getObjectTypeOfType` + `getPropertyOfType` (untested) |
 | `ts.getCombinedModifierFlags(node)` | AST modifiers | ✔ |
@@ -412,7 +412,14 @@ with `@inheritDoc`. TS 7's `getDocumentationComment` inherits only for members w
 JSDoc of a declaration, `@overload` tags of earlier ones, an `@inheritDoc` tag's comment, a parameter's `@param`), and
 the bases through `getTypeAtLocation` of the heritage clauses' types and `getPropertyOfType`. TS 7's rendering is used
 for declarations whose comments TS 5.9 finds elsewhere (a variable's statement) and for base members in library files.
-Tags are never inherited: typescript-json-schema calls `getJsDocTags()` without a checker.
+Tags are never inherited: typescript-json-schema calls `getJsDocTags()` without a checker. The checker's public
+`getPropertyOfType` escapes the name, so `__x` is found; a symbol-keyed member (`__@iterator@N`) is not, and neither is
+a private name (whose result would not show: a class lists its own and its base's `#x`, and the base's comes last).
+A static member looks on the base's static side (`getTypeOfSymbol` of its symbol). Declaration-less symbols (members of
+mapped types, `Record`, a class's `prototype`) have no documentation in TS 5.9 but a tuple element's label, which
+typescript-json-schema never asks for; the port asks TS 7, which answers "" for them. The prefetch follows the same
+`DocPlan` (`tjs/comments`) as the generator, so it asks the base lookups' questions in advance; the
+`inherited_documentation_is_prefetched` test checks that it foresees all of them.
 
 **Testing.** `tests/differential.rs` runs every case of `tests/corpus` through the port and compares schema string,
 name, uris and stderr lines with `expected.json`, recorded from the reference by `xtask/typescript-input/record.mjs`
