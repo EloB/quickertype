@@ -608,6 +608,16 @@ impl Reading<'_> {
         self.ready.notify_all();
     }
 
+    /// A scan job waiting, if any (for the reading thread, which does no
+    /// tallies but its first part's).
+    fn take_scan(&self) -> Option<Job> {
+        let mut queue = self.queue.lock().unwrap_or_else(|e| e.into_inner());
+        if queue.closed {
+            return None;
+        }
+        queue.scans.pop_front()
+    }
+
     fn next_job(&self) -> Option<Job> {
         let mut queue = self.queue.lock().unwrap_or_else(|e| e.into_inner());
         loop {
@@ -625,14 +635,18 @@ impl Reading<'_> {
     fn work(&self, config: CompressedJson, results: &mpsc::Sender<Done>) {
         let mut buffer = vec![0u8; SCAN_PIECE];
         while let Some(job) = self.next_job() {
-            let done = match job {
-                Job::Summarize(k) => Done::Summary(k, self.summarize(k, &mut buffer)),
-                Job::Split(k, state) => Done::Split(k, self.split(k, state, &mut buffer)),
-                Job::Tally(i, part) => Done::Part(i, self.tally(part, &config)),
-            };
-            if results.send(done).is_err() {
+            if results.send(self.run(job, &config, &mut buffer)).is_err() {
                 break;
             }
+        }
+    }
+
+    /// Does `job`, reading as `config` reads.
+    fn run(&self, job: Job, config: &CompressedJson, buffer: &mut [u8]) -> Done {
+        match job {
+            Job::Summarize(k) => Done::Summary(k, self.summarize(k, buffer)),
+            Job::Split(k, state) => Done::Split(k, self.split(k, state, buffer)),
+            Job::Tally(i, part) => Done::Part(i, self.tally(part, config)),
         }
     }
 
@@ -800,6 +814,7 @@ impl Reading<'_> {
         // The largest ratio of tree to text seen (of parts long enough).
         let mut ratio: f64 = 1.0;
         let mut root: Option<NodeId> = None;
+        let mut buffer = vec![0u8; SCAN_PIECE];
         // Whether the fault swapped the first parts given out.
         let mut swapped = false;
         // Jobs given out and not done yet.
@@ -937,7 +952,15 @@ impl Reading<'_> {
                 return rest(running, root, &parts, appended);
             }
             pending -= 1;
-            match results.recv() {
+            // While no result is in, this thread scans too.
+            let done = match results.try_recv() {
+                Err(mpsc::TryRecvError::Empty) => match self.take_scan() {
+                    Some(job) => Ok(self.run(job, config, &mut buffer)),
+                    None => results.recv().map_err(|_| ()),
+                },
+                done => done.map_err(|_| ()),
+            };
+            match done {
                 Ok(Done::Summary(k, Ok(summary))) => summaries[k] = Some(summary),
                 Ok(Done::Split(k, Ok(found))) => splits[k] = Split::Found(found),
                 Ok(Done::Part(i, Some(tree))) => {
