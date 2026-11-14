@@ -294,6 +294,6 @@ fn json_lines_errors() {
     );
     assert_eq!(
         error(JsonSample::StringLines(text.to_owned())),
-        "Syntax error in input JSON Cards: line 2: Unexpected non-whitespace character after JSON at position 18 (line 2 column 10)"
+        "Syntax error in input JSON Cards: line 2: Unexpected non-whitespace character after JSON at position 18"
     );
 }

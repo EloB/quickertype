@@ -2,8 +2,8 @@
 //! JSON reader on it (`CompressedJson::parse_string`), on arbitrary text.
 //! What parses must survive `JSON.stringify` and parse again to the same
 //! value. As JSON Lines (`JsonSample::StringLines`), the reader must accept
-//! what the port's `parse_lines` accepts, and fail with a syntax error
-//! where it fails.
+//! what the port's `parse_lines` accepts (after a byte order mark, which
+//! the reader drops), and fail with its syntax error where it fails.
 
 #![no_main]
 
@@ -31,7 +31,8 @@ fuzz_target!(|data: &[u8]| {
     let _ = cjson.parse_string(&text);
 
     if flags & 2 != 0 {
-        let lines = json::parse::parse_lines(&text);
+        // The reader drops a byte order mark before JSON Lines.
+        let lines = json::parse::parse_lines(text.strip_prefix('\u{feff}').unwrap_or(&text));
         match cjson.parse_sample(JsonSample::StringLines(text)) {
             Ok(_) => assert!(lines.is_ok(), "the reader accepts what parse_lines rejects"),
             Err(ParseError::Js(e)) => {

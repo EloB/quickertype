@@ -712,13 +712,19 @@ fn as_deep_as_process_goes() {
     assert!(strings.starts_with(&["v".into(), "k".into(), "n".into(), "s".into()]));
 }
 
+/// [`parse_string_framed_into`](super::super::parse_string_framed_into)
+/// for JSON Lines.
+fn parse_lines_into(cjson: &mut CompressedJson, text: &str) -> Result<Value, ParseError> {
+    super::super::parse_string_framed_into(cjson, text, Framing::Lines)
+}
+
 /// Reads each JSON Lines text in `texts` both ways, into one compressed
 /// form each, and compares every outcome and the tables (as [`same`]).
 fn same_lines(texts: &[&str], range: Option<IntegerRange>, handle_refs: bool) {
     let mut fast = reader(range.clone(), handle_refs);
     let mut whole = reader(range, handle_refs);
     for text in texts {
-        let a = super::super::parse_string_lines_into(&mut fast, text);
+        let a = parse_lines_into(&mut fast, text);
         let b = parse_string_value_into(&mut whole, text, Framing::Lines);
         match (&a, &b) {
             (Ok(x), Ok(y)) => {
@@ -765,7 +771,7 @@ fn json_lines_like_their_array() {
         let range = [Some(INT64_RANGE.clone()), Some(INT32_RANGE.clone()), None][round % 3].clone();
         let mut from_lines = reader(range.clone(), round % 2 == 0);
         let mut from_array = reader(range.clone(), round % 2 == 0);
-        let a = super::super::parse_string_lines_into(&mut from_lines, &lines).unwrap();
+        let a = parse_lines_into(&mut from_lines, &lines).unwrap();
         let b = from_array.parse_string(&array).unwrap();
         assert_eq!(a, b, "{lines:?}");
         assert_eq!(dump(&from_lines, a), dump(&from_array, b), "{lines:?}");
@@ -803,18 +809,23 @@ fn json_lines_like_their_array() {
 }
 
 /// V8's messages, after the line the bad value starts on, with positions
-/// counted in the whole text.
+/// counted in the whole text and without V8's line and column (which
+/// would count a carriage return as a line break).
 #[test]
 fn json_lines_errors() {
     let error = |text: &str| {
-        super::super::parse_string_lines_into(&mut reader(None, false), text)
+        parse_lines_into(&mut reader(None, false), text)
             .unwrap_err()
             .message()
             .to_owned()
     };
     assert_eq!(
         error("1\n2 3"),
-        "line 2: Unexpected non-whitespace character after JSON at position 4 (line 2 column 3)"
+        "line 2: Unexpected non-whitespace character after JSON at position 4"
+    );
+    assert_eq!(
+        error("1\r2"),
+        "line 1: Unexpected non-whitespace character after JSON at position 2"
     );
     assert_eq!(
         error("{\"a\":1}\n{\"a\":\n"),
@@ -822,19 +833,30 @@ fn json_lines_errors() {
     );
     assert_eq!(
         error("{\"a\": 1}\n\n{\"a\": 1,}\n"),
-        "line 3: Expected double-quoted property name in JSON at position 18 (line 3 column 9)"
+        "line 3: Expected double-quoted property name in JSON at position 18"
+    );
+    // A byte order mark is dropped at the start (positions count without
+    // it), and only there.
+    assert_eq!(
+        error("\u{feff}{\"a\": 1,}"),
+        "line 1: Expected double-quoted property name in JSON at position 8"
     );
     assert_eq!(
-        error("\u{feff}{}"),
+        error("\u{feff}\u{feff}{}"),
         "line 1: Unexpected token '\u{feff}', \"\u{feff}{}\" is not valid JSON"
     );
     assert_eq!(
-        super::super::parse_string_lines_into(&mut reader(None, false), "1\n2 3"),
+        parse_lines_into(&mut reader(None, false), "1\n2 3"),
         Err(ParseError::Js(crate::messages::JsException::new(
             crate::messages::JsErrorName::SyntaxError,
-            "line 2: Unexpected non-whitespace character after JSON at position 4 (line 2 column 3)"
+            "line 2: Unexpected non-whitespace character after JSON at position 4"
         )))
     );
+    let mut r = reader(None, false);
+    let value = parse_lines_into(&mut r, "\u{feff}{\"a\": 1}\n").unwrap();
+    let mut array = reader(None, false);
+    let expected = array.parse_string(r#"[{"a": 1}]"#).unwrap();
+    assert_eq!(dump(&r, value), dump(&array, expected));
 }
 
 /// The array of JSON Lines counts as one level of nesting for the limits
@@ -857,9 +879,9 @@ fn json_lines_nest_one_level_deeper() {
     let arrays = |n: usize| format!("{}{}", "[".repeat(n), "]".repeat(n));
     let m = PROCESS_MAX_DEPTH;
     let mut r = reader(None, false);
-    assert!(super::super::parse_string_lines_into(&mut r, &arrays(m - 1)).is_ok());
+    assert!(parse_lines_into(&mut r, &arrays(m - 1)).is_ok());
     assert_eq!(
-        super::super::parse_string_lines_into(&mut r, &format!("1\n{}", arrays(m))),
+        parse_lines_into(&mut r, &format!("1\n{}", arrays(m))),
         Err(ParseError::Quicktype(stack_overflow()))
     );
     assert_eq!(

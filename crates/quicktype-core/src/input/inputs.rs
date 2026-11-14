@@ -25,12 +25,7 @@ use std::sync::OnceLock;
 use indexmap::{IndexMap, IndexSet};
 
 use super::compressed_json::{
-    CompressedJson, CompressedJsonTables, JsonSample, ParseError, Value, parse_string_into,
-    parse_string_lines_into,
-};
-use super::compressed_json_from_stream::{
-    parse_stream_into, parse_stream_lines_into, parse_stream_lines_reader_into,
-    parse_stream_reader_into,
+    CompressedJson, CompressedJsonTables, JsonSample, ParseError, Value, read_sample_into,
 };
 use super::inference::TypeInference;
 use super::tallies::{
@@ -750,20 +745,7 @@ impl JsonInput {
         let mut source: Option<NodeId> = None;
         for sample in samples {
             let mut builder = TallyBuilder::new(tallies, &self.compressed_json);
-            let read = match sample {
-                JsonSample::String(text) => parse_string_into(&mut builder, &text),
-                JsonSample::Stream(bytes) => parse_stream_into(&mut builder, &bytes),
-                JsonSample::Reader(reader) => match reader.take() {
-                    Some(mut stream) => parse_stream_reader_into(&mut builder, &mut *stream),
-                    None => Err(ParseError::Read(already_read())),
-                },
-                JsonSample::StringLines(text) => parse_string_lines_into(&mut builder, &text),
-                JsonSample::StreamLines(bytes) => parse_stream_lines_into(&mut builder, &bytes),
-                JsonSample::ReaderLines(reader) => match reader.take() {
-                    Some(mut stream) => parse_stream_lines_reader_into(&mut builder, &mut *stream),
-                    None => Err(ParseError::Read(already_read())),
-                },
-            };
+            let read = read_sample_into(&mut builder, sample);
             drop(builder);
             let added = read.map_err(report).and_then(|tree| match source {
                 Some(source) => tallies.tallies.merge(source, tree),
@@ -996,11 +978,12 @@ impl Input for JsonInput {
     }
 }
 
-/// The error for a [`JsonSample::Reader`] read a second time.
-pub(crate) fn already_read() -> QuickTypeError {
-    QuickTypeError::internal(
-        "This JsonSample::Reader's stream was already read; a SampleReader can be read once",
-    )
+/// The error for a [`JsonSample::Reader`] or [`JsonSample::ReaderLines`]
+/// (`variant`) read a second time.
+pub(crate) fn already_read(variant: &str) -> QuickTypeError {
+    QuickTypeError::internal(format!(
+        "This JsonSample::{variant}'s stream was already read; a SampleReader can be read once"
+    ))
 }
 
 /// `messageParseError(name, description, e)`.

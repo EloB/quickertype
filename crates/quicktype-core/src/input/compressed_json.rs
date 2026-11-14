@@ -111,13 +111,16 @@ pub enum JsonSample {
     /// reads a sample. Not in quicktype, which has no JSON Lines input.
     ///
     /// The values are separated by whitespace that holds a line feed (`\n`,
-    /// so also `\r\n`); blank lines and a missing final line feed do not
-    /// matter, and a value may span lines. The sample is equivalent to the
-    /// JSON array `[V1,…,Vn]` of its values `V1`…`Vn`: it gives the same
-    /// types, and the same code. A text without values is `[]`; a text with
-    /// one value is an array of one. Two values on one line are a syntax
-    /// error, whose message, as any syntax error's, starts with the line
-    /// the bad value starts on (`line 3: …`).
+    /// so also `\r\n`; a carriage return alone does not end a line); blank
+    /// lines and a missing final line feed do not matter, a value may span
+    /// lines, and a byte order mark may come first. The sample is
+    /// equivalent to the JSON array `[V1,…,Vn]` of its values `V1`…`Vn`: it
+    /// gives the same types, and the same code. A text without values is
+    /// `[]`; a text with one value is an array of one. Two values on one
+    /// line are a syntax error. A syntax error's message is the reader's
+    /// after the line the bad value starts on (`line 3: …`); `JSON.parse`'s
+    /// positions count in the text after the byte order mark, and its
+    /// `(line L column C)` is left out.
     ///
     /// ```
     /// use quicktype_core::{
@@ -147,7 +150,7 @@ pub enum JsonSample {
     /// assert_eq!(
     ///     error.unwrap_err().user_message(),
     ///     "Syntax error in input JSON Cards: line 2: \
-    ///      Unexpected non-whitespace character after JSON at position 20 (line 2 column 11)"
+    ///      Unexpected non-whitespace character after JSON at position 20"
     /// );
     /// # Ok::<(), quicktype_core::QuickTypeError>(())
     /// ```
@@ -988,24 +991,7 @@ impl CompressedJson {
 
     /// Reads one sample with the reader it asks for.
     pub fn parse_sample(&mut self, sample: JsonSample) -> Result<Value, ParseError> {
-        use crate::input::compressed_json_from_stream::{
-            parse_stream_lines_into, parse_stream_lines_reader_into,
-        };
-        let already_read = || ParseError::Read(crate::input::inputs::already_read());
-        match sample {
-            JsonSample::String(text) => self.parse_string(&text),
-            JsonSample::Stream(bytes) => self.parse_stream(&bytes),
-            JsonSample::Reader(reader) => match reader.take() {
-                Some(mut stream) => self.parse_stream_reader(&mut *stream),
-                None => Err(already_read()),
-            },
-            JsonSample::StringLines(text) => parse_string_lines_into(self, &text),
-            JsonSample::StreamLines(bytes) => parse_stream_lines_into(self, &bytes),
-            JsonSample::ReaderLines(reader) => match reader.take() {
-                Some(mut stream) => parse_stream_lines_reader_into(self, &mut *stream),
-                None => Err(already_read()),
-            },
-        }
+        read_sample_into(self, sample)
     }
 
     /// `CompressedJSONFromString.parseSync(input)`: `JSON.parse`, then
@@ -1387,6 +1373,35 @@ pub(crate) fn line_error(line: usize, e: &JsException) -> ParseError {
     ))
 }
 
+/// [`CompressedJson::parse_sample`] into any [`JsonSink`]: reads `sample`
+/// with the reader and the framing it asks for.
+pub(crate) fn read_sample_into<S: JsonSink>(
+    sink: &mut S,
+    sample: JsonSample,
+) -> Result<S::Root, ParseError> {
+    use crate::input::compressed_json_from_stream::{
+        parse_stream_framed_into, parse_stream_reader_framed_into,
+    };
+    use JsonSample::{Reader, ReaderLines, Stream, StreamLines, String, StringLines};
+    let framing = match &sample {
+        String(_) | Stream(_) | Reader(_) => Framing::Value,
+        StringLines(_) | StreamLines(_) | ReaderLines(_) => Framing::Lines,
+    };
+    match sample {
+        String(text) | StringLines(text) => parse_string_framed_into(sink, &text, framing),
+        Stream(bytes) | StreamLines(bytes) => parse_stream_framed_into(sink, &bytes, framing),
+        Reader(reader) | ReaderLines(reader) => match reader.take() {
+            Some(mut stream) => parse_stream_reader_framed_into(sink, &mut *stream, framing),
+            None => Err(ParseError::Read(crate::input::inputs::already_read(
+                match framing {
+                    Framing::Value => "Reader",
+                    Framing::Lines => "ReaderLines",
+                },
+            ))),
+        },
+    }
+}
+
 /// [`CompressedJson::parse_string`] into any [`JsonSink`]: `JSON.parse`,
 /// then `process` the value, read in one pass over the text without
 /// building the value (`from_string`). A sample that is not JSON emits
@@ -1399,16 +1414,10 @@ pub(crate) fn parse_string_into<S: JsonSink>(
     parse_string_framed_into(sink, text, Framing::Value)
 }
 
-/// [`parse_string_into`] for JSON Lines ([`Framing::Lines`]): the values
-/// as the elements of one array.
-pub(crate) fn parse_string_lines_into<S: JsonSink>(
-    sink: &mut S,
-    text: &str,
-) -> Result<S::Root, ParseError> {
-    parse_string_framed_into(sink, text, Framing::Lines)
-}
-
-fn parse_string_framed_into<S: JsonSink>(
+/// [`parse_string_into`] framed as `framing` says: with
+/// [`Framing::Lines`], the JSON Lines text's values as the elements of
+/// one array.
+pub(crate) fn parse_string_framed_into<S: JsonSink>(
     sink: &mut S,
     text: &str,
     framing: Framing,

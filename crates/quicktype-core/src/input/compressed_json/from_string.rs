@@ -65,8 +65,9 @@
 //! JSON Lines ([`Framing::Lines`], not in quicktype) are recorded as the
 //! array of their values: an array node that the text does not spell,
 //! whose elements are the values, which must be separated by whitespace
-//! with a line feed. The port of V8's parser reads them for the error
-//! message too ([`parse_lines`](quicktype_js_compat::json::parse::parse_lines)).
+//! with a line feed. A byte order mark before them is dropped first. The
+//! port of V8's parser reads them for the error message too
+//! ([`parse_lines`](quicktype_js_compat::json::parse::parse_lines)).
 
 use hashbrown::HashTable;
 use quicktype_js_compat::json::is_array_index;
@@ -1136,6 +1137,12 @@ pub(crate) fn read_string_sample_into<S: JsonSink>(
     limits: StringSampleLimits,
     framing: Framing,
 ) -> Result<S::Root, ReadStringError> {
+    // JSON Lines may start with a byte order mark, which is not part of
+    // the text (nor of its positions).
+    let text = match framing {
+        Framing::Value => text,
+        Framing::Lines => text.strip_prefix('\u{feff}').unwrap_or(text),
+    };
     if u32::try_from(text.len()).is_err() {
         // Too long for the tape's offsets: read the value whole.
         return read_whole(sink, text, limits, framing);

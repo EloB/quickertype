@@ -1892,6 +1892,9 @@ impl JsonSink for TallyBuilder<'_> {
         Ok(())
     }
 
+    // Inlined into the stream reader's loops, JSON's and JSON Lines' alike
+    // (see `literal` in `compressed_json_from_stream.rs`).
+    #[inline(always)]
     fn finish_array(&mut self) -> Result<()> {
         match self.frames.pop() {
             Some(Frame::Array { .. }) => {
@@ -1902,6 +1905,7 @@ impl JsonSink for TallyBuilder<'_> {
         }
     }
 
+    #[inline(always)]
     fn finish(&mut self) -> Result<NodeId> {
         if !self.frames.is_empty() {
             return panic("Finished with contexts present");
