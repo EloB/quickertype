@@ -31,7 +31,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { formatMiB, formatMs, named, seconds, sizeIn, speedFacts, times } from "./benchmarks.mjs";
+import { formatMiB, formatMs, inputSize, named, seconds, sizeIn, speedFacts, times } from "./benchmarks.mjs";
 import { columnChart, legend, pairChart, pairRows, startIds, tableView, valueRows } from "./charts.mjs";
 import { quicktypeReference } from "./reference.mjs";
 import { highlight } from "./src/highlight.js";
@@ -591,19 +591,15 @@ ${tableView("Recorded cases in tests/golden, by what they cover", ["Kind", "Case
 <p class="more">And on every deploy, headless Chrome runs this site's playground on both engines and compares its output with the CLI's. The rules that keep the output identical, and the known gaps: <a href="${landingLinks.parity}">docs/PARITY.md</a>.</p>
 </section>`;
 
-    // The runs the speed section shows, found in the data by what they run,
-    // and how it words them, with the size their benchmark's name gives.
-    const shown = (pattern) => {
-        const found = bench.cli.filter((r) => pattern.test(r.name));
-        if (found.length !== 1) throw new Error(`site/data/benchmarks.json: the landing page shows one benchmark matching ${pattern}, and it has ${found.length}`);
-        return found[0].name;
-    };
+    // The runs the speed section shows (checkBenchmarks refuses data without
+    // one of them), and how it words them, with the size their benchmark's
+    // name gives.
     const wording = [
         [named.startup, () => "Start-up (--version)"],
         [named.pokedex, (size) => `pokedex.json (${size}) to TypeScript`],
-        [shown(/^github-events \([^)]*\) → ts$/), (size) => `github-events.json (${size}) to TypeScript`],
-        [shown(/^github\.gqlschema \([^)]*\) \+ query → TypeScript$/), (size) => `GraphQL schema (${size}) and query to TypeScript`],
-        [shown(/^vega-lite\.schema \([^)]*\) → TypeScript$/), (size) => `JSON Schema (vega-lite, ${size}) to TypeScript`],
+        [named.githubEvents, (size) => `github-events.json (${size}) to TypeScript`],
+        [named.graphql, (size) => `GraphQL schema (${size}) and query to TypeScript`],
+        [named.schema, (size) => `JSON Schema (vega-lite, ${size}) to TypeScript`],
     ];
     const small = wording.map(([name]) => name);
     const pretty = Object.fromEntries(wording.map(([name, say]) => [name, say(name === named.startup ? undefined : sizeIn(name))]));
@@ -658,10 +654,10 @@ ${
               more: true,
           })
 }
-<p class="fineprint">${report === undefined ? "" : `${e(report.source)} `}Measured here: ${stat("big-size", largest.size)} of JSON (${e(largest.description)}) in ${stat("big-seconds", largest.seconds, seconds(largest.seconds))}, at a peak of ${stat("big-memory", largest.peak_rss_mib, formatMiB(largest.peak_rss_mib))}.${
+<p class="fineprint">${report === undefined ? "" : `${e(report.source)} `}Measured here: ${stat("big-size", largest.bytes, inputSize(largest.bytes))} of JSON (${e(largest.description)}) in ${stat("big-seconds", largest.seconds, seconds(largest.seconds))}, at a peak of ${stat("big-memory", largest.peak_rss_mib, formatMiB(largest.peak_rss_mib))}.${
     against === undefined
         ? ""
-        : ` On ${stat("against-size", against.size)} (${e(against.description)}), quicktype took ${stat("against-quicktype-seconds", against.quicktype.seconds, seconds(against.quicktype.seconds))} and ${stat("against-quicktype-memory", against.quicktype.peak_rss_mib, formatMiB(against.quicktype.peak_rss_mib))}; quickertype ${stat("against-seconds", against.seconds, seconds(against.seconds))} and ${stat("against-memory", against.peak_rss_mib, formatMiB(against.peak_rss_mib))}.`
+        : ` On ${stat("against-size", against.bytes, inputSize(against.bytes))} (${e(against.description)}), quicktype took ${stat("against-quicktype-seconds", against.quicktype.seconds, seconds(against.quicktype.seconds))} and ${stat("against-quicktype-memory", against.quicktype.peak_rss_mib, formatMiB(against.quicktype.peak_rss_mib))}; quickertype ${stat("against-seconds", against.seconds, seconds(against.seconds))} and ${stat("against-memory", against.peak_rss_mib, formatMiB(against.peak_rss_mib))}.`
 }</p>
 </figure>`;
     const speedSection = `<section id="speed" class="speed" aria-labelledby="speed-title">

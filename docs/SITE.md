@@ -52,8 +52,9 @@ The build fails rather than show a number it cannot read, and refuses
 
 Every speed and memory figure on the landing page and the benchmarks page
 comes from three files, which `site/benchmarks.mjs` checks before the build
-writes anything. Refreshing the numbers means remaking them (how each input
-is made and measured: [BENCHMARKS.md](BENCHMARKS.md)):
+writes anything, and which the build publishes beside the pages
+(`data/`). Refreshing the numbers means remaking them (how each input is
+made and measured: [BENCHMARKS.md](BENCHMARKS.md)):
 
 - `site/data/benchmarks.json`: written by `cargo xtask bench --corpus
   --in-process --json site/data/benchmarks.json`; then `note` (the load
@@ -62,14 +63,17 @@ is made and measured: [BENCHMARKS.md](BENCHMARKS.md)):
 - `site/data/big-inputs.json`: large inputs, timed by hand (wall time, CPU
   time and peak RSS of each run): on all cores, the default; on one thread
   (`one_thread`, with `QUICKTYPE_READ_THREADS=1`); and quicktype's CLI where
-  it was timed too (`quicktype`). `bytes` is the input's size, and the
-  landing page names the largest input and the largest that quicktype ran
-  on. `reports` holds what users reported, which was not measured here.
+  it was timed too (`quicktype`). `bytes` is the input's size: the pages
+  show it to three significant figures, so an input has no size of its
+  own to disagree with it. The landing page names the largest input and
+  the largest that quicktype ran on. `reports` holds what users reported,
+  which was not measured here.
 - `site/data/browser.json`: the WebAssembly engine against quicktype's
   TypeScript engine, from `node --expose-gc
   npm/quicktype-core/test/bench/compare.mjs --browser --again --json`
   (warm, in headless Chrome) and `compare.mjs --cold 7 --json` (first runs
-  in a fresh Node.js process), the medians copied over.
+  in a fresh Node.js process), each median rounded from the raw output
+  to three significant figures.
 
 The README's tables are not read from these files: after a refresh, copy
 the numbers into them and redraw their charts (`node
