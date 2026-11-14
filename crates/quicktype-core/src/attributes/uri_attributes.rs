@@ -12,6 +12,7 @@ use indexmap::IndexSet;
 use quicktype_js_compat::json::JsonValue;
 use quicktype_js_compat::sort::sort_strings;
 
+use crate::attributes::string_types::URI_PREFIXES;
 use crate::attributes::type_attributes::{SchemaObject, set_schema_property};
 use crate::ty::transformed_string_type::TypeKind;
 
@@ -119,53 +120,75 @@ static PATH_BYTES: [u8; 256] = {
     table
 };
 
+/// Whether `port`, what follows the colon of a URI's host, is one urijs'
+/// `ensureValidPort` accepts and [`plain_uri`] reads: none (`h:`), or 1 to
+/// 5 decimal digits for a number from 1 to 65535. `Number("0080")` is 80,
+/// which prints as an integer, so leading zeros are fine. Every other port,
+/// valid (`0x50`, `8e1`, ` 80`) or not (`0`, `65536`), is left to urijs'
+/// parser.
+fn plain_port(port: &[u8]) -> bool {
+    port.is_empty()
+        || (port.len() <= 5
+            && port.iter().all(u8::is_ascii_digit)
+            && (1..=65_535).contains(&port.iter().fold(0u32, |n, &d| n * 10 + u32::from(d - b'0'))))
+}
+
 /// The protocol, path and path extension `new URI(s)` and `pathExtension`
 /// find in `s`, without building the URI, for the URIs whose parse is
-/// plain: `http://`, `https://` or `ftp://` (as the `uri` kind's pattern
-/// spells them), then a host without user info, port or brackets, a path,
-/// a query and a fragment. Anything else is `None`, for urijs' parser: a
-/// slash right after the protocol (which its rewrite of the protocol
-/// drops), a backslash, tab or line break before the query (which it
-/// turns into a slash or removes), or a `@`, `:` or `[` in the host (user
-/// info, a port that may be invalid, an IPv6 address).
+/// plain: one of the `uri` kind's prefixes ([`URI_PREFIXES`], as its
+/// pattern spells them), then a host without user info or brackets, with
+/// at most a port that is plain ([`plain_port`]), a path, a query and a
+/// fragment. Anything else is `None`, for urijs' parser: a slash right
+/// after the protocol (which its rewrite of the protocol drops), a
+/// backslash, tab or line break before the query (which it turns into a
+/// slash or removes), a `@` or `[` in the host (user info, an IPv6
+/// address), a second `:` there (where urijs takes the host for an IPv6
+/// address), or another port.
 ///
 /// For the others, `URI.parse` cuts the fragment at the first `#` and the
 /// query at the first `?` before it, leaves `https://` as it is in its
 /// protocol rewrite, takes the protocol up to the first `:` and the
 /// authority after `//`, finds no user info (no `@` before the first
-/// slash), and takes the host up to the first slash (no `:` in it, so no
-/// port, whatever colons the path has) and the path from there, `/` if
-/// there is none: which is what this does, in one pass that also finds the
-/// path's last dot. The extension (`/^.+(\.[^./\\]+)$/`) is from that dot
-/// on, if it is not the path's first character, has a character after it
-/// and no slash, and no line terminator comes before it: none can in an
-/// ASCII path here, and a path that is not ASCII is left to
-/// [`path_extension`].
+/// slash), takes the host up to the first slash and splits it at its one
+/// colon, if any, into a name and a port that `ensureValidPort` accepts
+/// (whatever colons the path has), and takes the path from the host's
+/// slash, `/` if there is none: which is what this does, in one pass that
+/// also finds the path's last dot. The extension (`/^.+(\.[^./\\]+)$/`) is
+/// from that dot on, if it is not the path's first character, has a
+/// character after it and no slash, and no line terminator comes before
+/// it: none can in an ASCII path here, and a path that is not ASCII is left
+/// to [`path_extension`].
 fn plain_uri(s: &str) -> Option<(&'static str, &str, Option<&str>)> {
-    let (protocol, rest) = if let Some(rest) = s.strip_prefix("https://") {
-        ("https", rest)
-    } else if let Some(rest) = s.strip_prefix("http://") {
-        ("http", rest)
-    } else {
-        ("ftp", s.strip_prefix("ftp://")?)
-    };
+    let (prefix, rest) = URI_PREFIXES
+        .iter()
+        .find_map(|&p| Some((p, s.strip_prefix(p)?)))?;
+    // Without its `://`.
+    let protocol = &prefix[..prefix.len() - 3];
     let bytes = rest.as_bytes();
     // The host.
     let mut i = 0;
-    loop {
+    let mut colon = None;
+    let host_end = loop {
         match bytes.get(i) {
-            None | Some(b'#' | b'?') => return Some((protocol, "/", None)),
             Some(b'/') if i == 0 => return None,
-            Some(b'/') => break,
+            None | Some(b'/' | b'#' | b'?') => break i,
+            Some(b':') if colon.is_none() => colon = Some(i),
             Some(b'@' | b':' | b'[' | b'\\' | b'\t' | b'\n' | b'\r') => return None,
-            Some(_) => i += 1,
+            Some(_) => {}
         }
+        i += 1;
+    };
+    if colon.is_some_and(|c| !plain_port(&bytes[c + 1..host_end])) {
+        return None;
+    }
+    if bytes.get(host_end) != Some(&b'/') {
+        return Some((protocol, "/", None));
     }
     // The path, from its first slash.
-    let start = i;
+    let start = host_end;
     let mut dot = start;
     let mut ascii = true;
-    i += 1;
+    i = start + 1;
     while let Some(&b) = bytes.get(i) {
         match PATH_BYTES[b as usize] {
             ORDINARY => {}
@@ -188,22 +211,36 @@ fn plain_uri(s: &str) -> Option<(&'static str, &str, Option<&str>)> {
     Some((protocol, path, extension))
 }
 
-/// `uriInferenceAttributesProducer(s)`'s protocol and path extension of
-/// `s` (see [`UriParts`]); `None` if urijs cannot parse it (an invalid
-/// port), where it makes no attributes. A plain URI ([`plain_uri`]) is
-/// read without urijs' parser, which allocates every part.
-pub(crate) fn uri_inference_parts(s: &str) -> Option<UriParts<'_>> {
-    if let Some((protocol, _, extension)) = plain_uri(s) {
-        return Some(UriParts {
-            protocol: Cow::Borrowed(protocol),
-            extension: extension.map(lowercase),
-        });
-    }
+/// The parts of `s` if it is a plain URI ([`plain_uri`]), read without
+/// urijs' parser; `None` if it is not one.
+pub(crate) fn plain_uri_parts(s: &str) -> Option<UriParts<'_>> {
+    let (protocol, _, extension) = plain_uri(s)?;
+    Some(UriParts {
+        protocol: Cow::Borrowed(protocol),
+        extension: extension.map(lowercase),
+    })
+}
+
+/// The parts urijs' parser finds in `s`, which allocates each of them;
+/// `None` if it cannot parse it (an invalid port), where
+/// `uriInferenceAttributesProducer` makes no attributes.
+pub(crate) fn parsed_uri_parts(s: &str) -> Option<UriParts<'static>> {
     let uri = quicktype_js_compat::uri::Uri::parse(s).ok()?;
     Some(UriParts {
         protocol: Cow::Owned(uri.protocol().to_lowercase()),
         extension: path_extension(uri.path()).map(|e| Cow::Owned(e.to_lowercase())),
     })
+}
+
+/// `uriInferenceAttributesProducer(s)`'s protocol and path extension of
+/// `s` (see [`UriParts`]); `None` if urijs cannot parse it (an invalid
+/// port), where it makes no attributes. A plain URI ([`plain_uri`]) is
+/// read without urijs' parser.
+pub(crate) fn uri_inference_parts(s: &str) -> Option<UriParts<'_>> {
+    match plain_uri_parts(s) {
+        Some(parts) => Some(parts),
+        None => parsed_uri_parts(s),
+    }
 }
 
 /// `uriInferenceAttributesProducer(s)`: the protocol and the (lowercased)
@@ -361,7 +398,8 @@ mod tests {
         let alphabet = [
             "a", "B", ".", ".", "/", "/", "\\", "@", ":", "[", "]", "?", "#", "\t", "\n", "\r",
             "%", "1", "é", "É", "\u{2028}", "-", "J", "pG", ".tar", "%zz", "%C3%A9", " ", "{",
-            "a.", "/.",
+            "a.", "/.", ":8080", ":0", ":65535", ":65536", ":00080", ":1x", ":", ":99999", ":1e1",
+            ":080", "1",
         ];
         let mut seed: u64 = 0x2545_f491_4f6c_dd1d;
         let mut next = |n: usize| {
@@ -371,6 +409,7 @@ mod tests {
             (seed % n as u64) as usize
         };
         let mut plain = 0;
+        let mut ported = 0;
         for _ in 0..200_000 {
             let mut s = prefixes[next(prefixes.len())].to_owned();
             for _ in 0..next(16) {
@@ -378,11 +417,16 @@ mod tests {
             }
             if let Some((_, path, extension)) = plain_uri(&s) {
                 plain += 1;
+                let host = s
+                    .split_once("://")
+                    .map_or("", |(_, r)| r.split(['/', '?', '#']).next().unwrap_or(""));
+                ported += usize::from(host.contains(':'));
                 assert_eq!(extension, path_extension(path), "{s:?}");
             }
             assert_eq!(owned(uri_inference_parts(&s)), parsed_parts(&s), "{s:?}");
         }
         assert!(plain > 20_000, "{plain}");
+        assert!(ported > 1_000, "{ported}");
         for s in [
             "https://cards.example/large/front/0/0/a.jpg?1783943221",
             "https://example.com",
@@ -394,9 +438,42 @@ mod tests {
             "http://a/\u{2028}x.png",
             "http://a/x.PNG#frag\\",
             "http://a/x.É",
+            "http://localhost:8080/api/item.json",
+            "https://h:00443/a.png?x",
+            "http://h:/a.png",
+            "http://:80/a.png",
+            "https://h:65535#f.txt",
+            "https://h:1",
+            "http://h:80/p:q/r.gz",
         ] {
             assert!(plain_uri(s).is_some(), "{s:?}");
             assert_eq!(owned(uri_inference_parts(s)), parsed_parts(s), "{s:?}");
+        }
+    }
+
+    /// Ports: those `ensureValidPort` accepts as plain decimals are read
+    /// without urijs' parser, as it reads them; every other one, valid or
+    /// not, is left to it.
+    #[test]
+    fn ports_read_as_parsed() {
+        for port in [
+            "", "0", "1", "00080", "080", "8080", "65535", "65536", "99999", "123456", "000000",
+            "0x50", "1e1", " 80", "+80", "80.0", "-1", "8a",
+        ] {
+            for s in [
+                format!("http://h:{port}/a.png"),
+                format!("https://h:{port}"),
+                format!("ftp://:{port}?q.png"),
+            ] {
+                let plain = plain_uri(&s).is_some();
+                let decimal = port.len() <= 5
+                    && port.bytes().all(|b| b.is_ascii_digit())
+                    && port
+                        .parse::<u32>()
+                        .map_or(port.is_empty(), |n| (1..=65_535).contains(&n));
+                assert_eq!(plain, decimal, "{s:?}");
+                assert_eq!(owned(uri_inference_parts(&s)), parsed_parts(&s), "{s:?}");
+            }
         }
     }
 

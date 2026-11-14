@@ -269,7 +269,7 @@ fn all_lowercase_hex(w: u64) -> bool {
 
 /// What a `URI` (`/^(https?|ftp):\/\/[^{}]+$/`) starts with. The regex has
 /// no `i` flag, so they match as they are.
-const URI_PREFIXES: [&str; 3] = ["http://", "https://", "ftp://"];
+pub(crate) const URI_PREFIXES: [&str; 3] = ["http://", "https://", "ftp://"];
 
 /// `URI` (`/^(https?|ftp):\/\/[^{}]+$/`). The braces are ASCII, and no
 /// byte of a multi-byte character is, so they are looked for byte by byte:
