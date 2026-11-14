@@ -8,8 +8,8 @@
 //! interprets the same programs with the Rust port and compares the output
 //! byte for byte. Node is not needed to run it.
 
+use quicktype_core::support::fast_hash::HashMap;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::rc::Rc;
@@ -682,7 +682,7 @@ fn run_scenario(text: &str) -> String {
         sink.borrow_mut().push(line.to_owned())
     })));
     let mut interpreter = Interpreter {
-        vars: HashMap::new(),
+        vars: HashMap::default(),
         builder: None,
         graph: None,
         stm: get_no_string_type_mapping(),

@@ -13,9 +13,9 @@
 //! whitespace come from `quicktype-js-compat`; this module adds the shared
 //! object graph, `JSON.parse` and `parseFloat`.
 
+use quicktype_js_compat::hash::HashMap;
 use std::cell::RefCell;
 use std::cmp::Ordering;
-use std::collections::HashMap;
 use std::rc::Rc;
 
 pub use quicktype_js_compat::json::quote;

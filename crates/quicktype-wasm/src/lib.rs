@@ -288,8 +288,8 @@ pub fn settle(id: f64, call_id: u32, ok: bool, value: JsValue) {
 #[wasm_bindgen(js_name = supportsLanguage)]
 pub fn supports_language(name: &str) -> bool {
     thread_local! {
-        static SUPPORTED: RefCell<std::collections::HashMap<String, bool>> =
-            RefCell::new(std::collections::HashMap::new());
+        static SUPPORTED: RefCell<quicktype_js_compat::hash::HashMap<String, bool>> =
+            RefCell::new(quicktype_js_compat::hash::HashMap::default());
     }
     if let Some(known) = SUPPORTED.with(|s| s.borrow().get(name).copied()) {
         return known;

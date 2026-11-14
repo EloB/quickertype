@@ -6,8 +6,8 @@
 //! and `just-types-option.test.ts`. Expected values not taken from the
 //! Vitest tests were checked against quicktype-core's JavaScript API.
 
+use quicktype_core::support::fast_hash::HashSet;
 use std::cell::RefCell;
-use std::collections::HashSet;
 use std::future::Future;
 use std::pin::Pin;
 use std::rc::Rc;

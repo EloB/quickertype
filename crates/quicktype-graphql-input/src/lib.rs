@@ -55,8 +55,8 @@ pub mod graphql;
 pub mod graphql_schema;
 mod js;
 
+use quicktype_js_compat::hash::HashMap;
 use std::cell::RefCell;
-use std::collections::HashMap;
 
 use quicktype_core::attributes::string_types::StringTypes;
 use quicktype_core::attributes::type_attributes::{
@@ -691,7 +691,7 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
         let query_document = graphql::parse(query_string)?;
         let mut query = GqlQuery {
             schema,
-            fragments: HashMap::new(),
+            fragments: HashMap::default(),
             fragments_prototype: None,
             queries: Vec::new(),
             active: RefCell::default(),

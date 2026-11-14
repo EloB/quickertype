@@ -13,7 +13,7 @@
 //! costs a little time, never a different result: every query is a pure
 //! function of the snapshot.
 
-use std::collections::HashSet;
+use quicktype_js_compat::hash::HashSet;
 use std::rc::Rc;
 
 use crate::error::Result;
@@ -69,13 +69,13 @@ pub fn warm(s: &Session, files: &[Node], types: &[Rc<Type>], symbols: &[Rc<Symbo
 
     let mut walk = Walk {
         s,
-        seen_types: HashSet::new(),
-        seen_symbols: HashSet::new(),
-        asked_parents: HashSet::new(),
+        seen_types: HashSet::default(),
+        seen_symbols: HashSet::default(),
+        asked_parents: HashSet::default(),
         lookups: Vec::new(),
-        docs_planned: HashSet::new(),
+        docs_planned: HashSet::default(),
         order_bases: Vec::new(),
-        order_done: HashSet::new(),
+        order_done: HashSet::default(),
     };
     let mut reached: Vec<Reached> = types
         .iter()

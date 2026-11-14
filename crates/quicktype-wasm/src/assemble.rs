@@ -246,8 +246,8 @@ impl Input for HostSchemaInput {
 
 #[cfg(test)]
 mod tests {
+    use quicktype_js_compat::hash::HashMap;
     use std::cell::RefCell;
-    use std::collections::HashMap;
 
     use quicktype_core::internal::block_on;
     use quicktype_core::{

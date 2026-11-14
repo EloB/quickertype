@@ -344,7 +344,7 @@ fn fuzz_regression_file_names_are_portable() {
     let mut all = Vec::new();
     files(&cases_dir(), &cases_dir(), &mut all);
     let mut problems = Vec::new();
-    let mut folded = std::collections::HashMap::new();
+    let mut folded = quicktype_js_compat::hash::HashMap::default();
     for (rel, _) in &all {
         let rel = rel.replace('\\', "/");
         let components: Vec<&str> = rel.split('/').collect();

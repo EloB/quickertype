@@ -7,7 +7,9 @@
 //! requests, exactly like the JavaScript client's object registries.
 
 use std::cell::{Cell, RefCell};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::BTreeMap;
+
+use quicktype_js_compat::hash::{HashMap, HashSet};
 use std::path::Path;
 use std::rc::Rc;
 
@@ -783,7 +785,7 @@ impl Session {
         if !self.pipelining {
             return Ok(());
         }
-        let mut seen = HashSet::new();
+        let mut seen = HashSet::default();
         let mut single = Vec::new();
         let (mut of_symbols, mut at_locations, mut types_at) = (Vec::new(), Vec::new(), Vec::new());
         for q in queries {
