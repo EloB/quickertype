@@ -17,12 +17,14 @@
 //! is in a string (between unescaped quotes), and the depth (the brackets
 //! outside strings). A *range* of the input can be scanned without knowing
 //! the state at its start: whether its first byte is escaped follows from
-//! the backslashes just before it, the quotes in it flip the string state
-//! (so the range's strings are those of one of two cases, starting outside
-//! a string or in one, [`Summary`]), and its brackets change the depth by
-//! the same amount from any depth. Summaries of consecutive ranges then
-//! give the exact state at each range's start, in order, and from there
-//! each range's first comma at depth 1 ([`ScanState::find_split`]).
+//! the backslashes just before it (or, after a long run of them, from the
+//! ranges before it: a summary for each case), the quotes in it flip the
+//! string state (so the range's strings are those of one of two cases,
+//! starting outside a string or in one, [`Summary`]), and its brackets
+//! change the depth by the same amount from any depth. Summaries of
+//! consecutive ranges then give the exact state at each range's start, in
+//! order, and from there each range's first comma at depth 1
+//! ([`ScanState::find_split`]).
 
 /// Each byte of a word set to 1.
 const ONES: u64 = u64::from_ne_bytes([1; 8]);
@@ -153,6 +155,9 @@ pub(crate) struct Summary {
     /// Whether the range's first byte is escaped, which the backslashes
     /// before it decide.
     pub(crate) escaped_in: bool,
+    /// Whether the byte after the range is escaped, which the backslashes
+    /// it ends with decide (and, if it is all backslashes, `escaped_in`).
+    pub(crate) escaped_out: bool,
     /// Whether the range has an odd number of unescaped quotes, which
     /// flips the string state.
     pub(crate) odd_quotes: bool,
@@ -182,6 +187,7 @@ impl Summarizer {
         Summarizer {
             summary: Summary {
                 escaped_in,
+                escaped_out: escaped_in,
                 odd_quotes: false,
                 depth_change: [0; 2],
                 lowest: [0; 2],
@@ -242,9 +248,21 @@ impl Summarizer {
         }
     }
 
-    /// The summary of the blocks added.
-    pub(crate) fn finish(mut self) -> Summary {
+    /// The summary of the blocks added, which hold `len` bytes (and then
+    /// padding) that end with `run` backslashes ([`trailing_backslashes`]).
+    pub(crate) fn finish(mut self, len: u64, run: u64) -> Summary {
         self.summary.odd_quotes = self.in_string != 0;
+        // In a run of backslashes every other one escapes the next byte,
+        // counting from the run's start; a run that is the whole range
+        // starts after its first byte if that is escaped.
+        let escaped_in = self.summary.escaped_in;
+        self.summary.escaped_out = if len == 0 {
+            escaped_in
+        } else if run == len {
+            (run - u64::from(escaped_in)) % 2 == 1
+        } else {
+            run % 2 == 1
+        };
         self.summary
     }
 }
@@ -262,12 +280,11 @@ pub(crate) struct ScanState {
 
 impl ScanState {
     /// The state after a range with summary `summary` that starts in this
-    /// state, but for whether the next byte is escaped, which the next
-    /// range's summary says ([`Summary::escaped_in`]).
+    /// state.
     pub(crate) fn after(self, summary: &Summary) -> ScanState {
         let case = usize::from(self.in_string);
         ScanState {
-            escaped: false,
+            escaped: summary.escaped_out,
             in_string: self.in_string != summary.odd_quotes,
             depth: self.depth + summary.depth_change[case],
         }
@@ -325,8 +342,13 @@ impl ScanState {
 /// byte, counting from the run's start. `None` if every byte of `before`
 /// is a backslash and more may precede them.
 pub(crate) fn escaped_after(before: &[u8], at_start: bool) -> Option<bool> {
-    let run = before.iter().rev().take_while(|&&b| b == b'\\').count();
+    let run = trailing_backslashes(before);
     (run < before.len() || at_start).then_some(run % 2 == 1)
+}
+
+/// How many backslashes `bytes` ends with.
+pub(crate) fn trailing_backslashes(bytes: &[u8]) -> usize {
+    bytes.iter().rev().take_while(|&&b| b == b'\\').count()
 }
 
 /// The input as a sequence of blocks: `bytes`, the last block padded
@@ -631,16 +653,11 @@ pub(crate) mod tests {
                 let (from, to) = (pair[0], pair[1]);
                 let exact = bytewise_state(&bytes, from);
                 // Whether the range's first byte is escaped, from the
-                // bytes before it.
+                // bytes before it, and as the ranges before it chain it.
                 let escaped_in = escaped_after(&bytes[..from], true).unwrap();
                 assert_eq!(escaped_in, exact.escaped, "escape at {from}");
-                state.escaped = escaped_in;
                 assert_eq!(state, exact, "state at {from}");
-                let mut summarizer = Summarizer::new(escaped_in);
-                for block in blocks(&bytes[from..to]) {
-                    summarizer.block(&block);
-                }
-                let summary = summarizer.finish();
+                let summary = summarize(&bytes[from..to], escaped_in);
                 let low = state.depth + summary.lowest[usize::from(state.in_string)];
                 for at in from..=to {
                     let depth = bytewise_state(&bytes, at).depth;
@@ -650,6 +667,57 @@ pub(crate) mod tests {
             }
             let end = bytewise_state(&bytes, bytes.len());
             assert_eq!((state.in_string, state.depth), (end.in_string, end.depth));
+        }
+    }
+
+    /// The summary of `bytes`, whose first byte is escaped or not.
+    fn summarize(bytes: &[u8], escaped_in: bool) -> Summary {
+        let mut summarizer = Summarizer::new(escaped_in);
+        for block in blocks(bytes) {
+            summarizer.block(&block);
+        }
+        let run = trailing_backslashes(bytes) as u64;
+        summarizer.finish(bytes.len() as u64, run)
+    }
+
+    /// Long runs of backslashes, cut anywhere: whether each range's first
+    /// byte is escaped follows from the ranges before it (each summarized
+    /// for both cases), as from the bytes before it.
+    #[test]
+    fn escapes_chain_through_runs_of_backslashes() {
+        let mut rng = Rng(4711);
+        for round in 0..400 {
+            // Strings of backslash runs, some escaping a quote.
+            let mut bytes = b"[".to_vec();
+            for i in 0..1 + round % 5 {
+                if i > 0 {
+                    bytes.push(b',');
+                }
+                bytes.push(b'"');
+                for _ in 0..1 + rng.below(3) {
+                    let longest = if rng.below(4) == 0 { 3_000 } else { 200 };
+                    let run = 1 + rng.below(longest);
+                    bytes.extend(std::iter::repeat_n(b'\\', run));
+                    // An odd run escapes the quote after it; after an even
+                    // one comes a bracket, in the string.
+                    bytes.extend_from_slice(if run % 2 == 1 { b"\"x" } else { b"]x" });
+                }
+                bytes.push(b'"');
+            }
+            bytes.push(b']');
+            let mut cuts: Vec<usize> = (0..rng.below(12))
+                .map(|_| rng.below(bytes.len() + 1))
+                .collect();
+            cuts.extend([0, bytes.len()]);
+            cuts.sort_unstable();
+            let mut state = ScanState::default();
+            for pair in cuts.windows(2) {
+                let (from, to) = (pair[0], pair[1]);
+                assert_eq!(state, bytewise_state(&bytes, from), "state at {from}");
+                let both = [false, true].map(|e| summarize(&bytes[from..to], e));
+                state = state.after(&both[usize::from(state.escaped)]);
+            }
+            assert_eq!(state, bytewise_state(&bytes, bytes.len()));
         }
     }
 

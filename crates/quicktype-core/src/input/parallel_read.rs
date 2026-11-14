@@ -43,7 +43,9 @@ use super::compressed_json::{CompressedJson, Framing, ParseError};
 use super::compressed_json_from_stream::{
     is_whitespace, parse_array_rest_into, parse_stream_reader_into,
 };
-use super::json_split::{BLOCK, ScanState, Summarizer, Summary, blocks, escaped_after};
+use super::json_split::{
+    BLOCK, ScanState, Summarizer, Summary, blocks, escaped_after, trailing_backslashes,
+};
 use super::tallies::{NodeId, PortableTree, RunningTallies, TallyBuilder};
 use crate::date_time::DateTimeRecognizer;
 use crate::input::io::node_io::stream_read_error;
@@ -585,13 +587,34 @@ enum Job {
 }
 
 enum Done {
-    Summary(usize, io::Result<Summary>),
+    Summary(usize, io::Result<RangeSummary>),
     Split(usize, io::Result<Option<u64>>),
     /// A part's tree, or `None` if it did not read as the sample's
     /// elements there do.
     Part(usize, Option<PortableTree>),
     /// A job panicked, with this payload; its thread stops.
     Panicked(Box<dyn std::any::Any + Send>),
+}
+
+/// A range's summary, or, where the bytes just before it are all
+/// backslashes, one for each case of its first byte: escaped or not, which
+/// the ranges before it then tell ([`Summary::escaped_out`]). (Looking
+/// further back for where the run starts would read a long run again for
+/// every range in it.)
+#[derive(Clone, Copy)]
+enum RangeSummary {
+    Known(Summary),
+    Either([Summary; 2]),
+}
+
+impl RangeSummary {
+    /// The summary for a range whose first byte is `escaped` or not.
+    fn given(self, escaped: bool) -> Summary {
+        match self {
+            RangeSummary::Known(summary) => summary,
+            RangeSummary::Either(both) => both[usize::from(escaped)],
+        }
+    }
 }
 
 /// The jobs waiting: scans first, which the parts wait for.
@@ -738,14 +761,14 @@ impl Reading<'_> {
         Ok(())
     }
 
-    /// Feeds the bytes from `from` to `to` to `f`, block by block (the last
-    /// one padded with spaces), until it returns a value.
-    fn scan<T>(
+    /// Feeds the bytes from `from` to `to` to `f`, a buffer at a time,
+    /// until it returns a value.
+    fn pieces<T>(
         &self,
         from: u64,
         to: u64,
         buffer: &mut [u8],
-        mut f: impl FnMut(u64, &[u8; BLOCK]) -> Option<T>,
+        mut f: impl FnMut(u64, &[u8]) -> Option<T>,
     ) -> io::Result<Option<T>> {
         let mut at = from;
         while at < to {
@@ -755,41 +778,74 @@ impl Reading<'_> {
             if n < want {
                 return Err(io::ErrorKind::UnexpectedEof.into());
             }
-            for (j, block) in blocks(&buffer[..n]).enumerate() {
-                if let Some(found) = f(at + (j * BLOCK) as u64, &block) {
-                    return Ok(Some(found));
-                }
+            if let Some(found) = f(at, &buffer[..n]) {
+                return Ok(Some(found));
             }
             at += n as u64;
         }
         Ok(None)
     }
 
-    /// Whether the byte at `at` is escaped: by the run of backslashes
-    /// before it, if any.
-    fn escaped_at(&self, at: u64) -> io::Result<bool> {
-        let mut back = 64;
-        loop {
-            let from = at.saturating_sub(back).max(self.start);
-            let mut before = vec![0u8; usize::try_from(at - from).unwrap_or(0)];
-            if self.source.read_at(&mut before, from)? < before.len() {
-                return Err(io::ErrorKind::UnexpectedEof.into());
-            }
-            if let Some(escaped) = escaped_after(&before, from == self.start) {
-                return Ok(escaped);
-            }
-            back *= 16;
-        }
+    /// Feeds the bytes from `from` to `to` to `f`, block by block (the last
+    /// one padded with spaces), until it returns a value.
+    fn scan<T>(
+        &self,
+        from: u64,
+        to: u64,
+        buffer: &mut [u8],
+        mut f: impl FnMut(u64, &[u8; BLOCK]) -> Option<T>,
+    ) -> io::Result<Option<T>> {
+        self.pieces(from, to, buffer, |at, piece| {
+            blocks(piece)
+                .enumerate()
+                .find_map(|(j, block)| f(at + (j * BLOCK) as u64, &block))
+        })
     }
 
-    fn summarize(&self, k: usize, buffer: &mut [u8]) -> io::Result<Summary> {
+    /// Whether the byte at `at` is escaped, by the run of backslashes just
+    /// before it; `None` if the bytes just before it are all backslashes.
+    fn escaped_at(&self, at: u64) -> io::Result<Option<bool>> {
+        let from = at.saturating_sub(BLOCK as u64).max(self.start);
+        let mut before = [0u8; BLOCK];
+        let before = &mut before[..usize::try_from(at - from).unwrap_or(0)];
+        if self.source.read_at(before, from)? < before.len() {
+            return Err(io::ErrorKind::UnexpectedEof.into());
+        }
+        Ok(escaped_after(before, from == self.start))
+    }
+
+    /// Range `k`'s summary: for the case its first byte has, or, where the
+    /// bytes just before it do not tell, for both.
+    fn summarize(&self, k: usize, buffer: &mut [u8]) -> io::Result<RangeSummary> {
         let (from, to) = self.bounds(k);
-        let mut summarizer = Summarizer::new(self.escaped_at(from)?);
-        self.scan::<()>(from, to, buffer, |_, block| {
-            summarizer.block(block);
+        let escaped = self.escaped_at(from)?;
+        let mut summarizer = Summarizer::new(escaped.unwrap_or(false));
+        let mut escaped_one = escaped.is_none().then(|| Summarizer::new(true));
+        // The backslashes the range ends with, so far.
+        let mut run = 0;
+        self.pieces::<()>(from, to, buffer, |_, piece| {
+            let tail = trailing_backslashes(piece);
+            run = if tail == piece.len() {
+                run + tail
+            } else {
+                tail
+            };
+            for block in blocks(piece) {
+                summarizer.block(&block);
+            }
+            if let Some(escaped_one) = &mut escaped_one {
+                for block in blocks(piece) {
+                    escaped_one.block(&block);
+                }
+            }
             None
         })?;
-        Ok(summarizer.finish())
+        let (len, run) = (to - from, run as u64);
+        let summary = summarizer.finish(len, run);
+        Ok(match escaped_one {
+            Some(escaped_one) => RangeSummary::Either([summary, escaped_one.finish(len, run)]),
+            None => RangeSummary::Known(summary),
+        })
     }
 
     fn split(&self, k: usize, mut state: ScanState, buffer: &mut [u8]) -> io::Result<Option<u64>> {
@@ -876,7 +932,7 @@ impl Reading<'_> {
         let threads = options.threads;
         let n = self.ranges;
         let budget = options.budget;
-        let mut summaries: Vec<Option<Summary>> = vec![None; n];
+        let mut summaries: Vec<Option<RangeSummary>> = vec![None; n];
         let mut splits = vec![Split::Unknown; n];
         // The state at the start of the first range not resolved yet.
         let (mut resolved, mut state) = (0, ScanState::default());
@@ -951,10 +1007,11 @@ impl Reading<'_> {
             // Resolve the states in order, and search the ranges that may
             // split.
             while resolved < n {
-                let Some(summary) = summaries[resolved] else {
+                // (Whether the range's first byte is escaped, the state
+                // says, from the ranges before it.)
+                let Some(summary) = summaries[resolved].map(|s| s.given(state.escaped)) else {
                     break;
                 };
-                state.escaped = summary.escaped_in;
                 if state.may_split(&summary) {
                     splits[resolved] = Split::Searching;
                     self.push(Job::Split(resolved, state));
@@ -1468,6 +1525,31 @@ mod tests {
         assert_eq!(how.whole, 1);
         let ahead = AHEAD.with(Cell::get);
         assert!(ahead >= 4, "{ahead} parts given out at once");
+    }
+
+    /// Ranges in long runs of backslashes, whose first byte's escape only
+    /// the ranges before them tell, are read whole on several threads, as
+    /// in one go.
+    #[test]
+    fn runs_of_backslashes_are_read_as_in_one_go() {
+        let config = config(false);
+        let run = |n: usize| "\\".repeat(n);
+        let bytes = format!(
+            r#"[{{"a":"{}"}},{{"a":"{}\""}},"{}",{{"b":1}},"{}x"]"#,
+            run(2_500),
+            run(1_500),
+            run(3_000),
+            run(64),
+        );
+        let expected = in_one_go(&config, bytes.as_bytes());
+        assert!(expected.is_ok(), "{expected:?}");
+        for range in [1, 2, 3, 63, 64, 65, 100, 777, 2_048, 4_999] {
+            for threads in [2, 3] {
+                let (result, how) = read_with(&config, bytes.as_bytes(), options(threads, range));
+                assert_eq!(result, expected, "ranges of {range}, {threads} threads");
+                assert_eq!(how.whole, 1, "ranges of {range}, {threads} threads");
+            }
+        }
     }
 
     /// A reading thread that panics makes the reading panic with its

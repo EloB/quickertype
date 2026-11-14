@@ -395,18 +395,22 @@ it stands, and is left at its end as reading it in one go leaves it.
 
 1. **Ranges.** The file is cut into ranges of 4 MiB, or smaller (down
    to 256 KiB) where that would give each thread fewer than four. In
-   parallel, each range is *summarized*: a scan that knows strings and escapes, 64 bytes
-   at a time (simdjson's first stage, with eight-byte words for SIMD
-   registers, since the workspace has no unsafe code). Whether a range's
-   first byte is escaped follows from the run of backslashes before it.
-   Its unescaped quotes flip the string state, so the bytes in strings are
-   those of one of two cases, the range starting outside a string or in
-   one; the summary keeps, for both, how much deeper the range ends than it
-   starts and a lower bound of the depths in it.
-2. **States.** In order, the summaries give the exact string state and
-   depth at each range's start. Each range whose depths may reach 1 is
-   then searched, in parallel, for its first comma at depth 1 outside
-   strings: a comma between two of the top-level array's elements.
+   parallel, each range is *summarized*: a scan that knows strings and
+   escapes, 64 bytes at a time (simdjson's first stage, with eight-byte
+   words for SIMD registers, since the workspace has no unsafe code).
+   Whether a range's first byte is escaped follows from the backslashes
+   just before it; where the 64 bytes before it are all backslashes, the
+   range is summarized for both cases, and the ranges before it tell
+   which holds (each summary says whether the byte after its range is
+   escaped). Its unescaped quotes flip the string state, so the bytes in
+   strings are those of one of two cases, the range starting outside a
+   string or in one; the summary keeps, for both, how much deeper the
+   range ends than it starts and a lower bound of the depths in it.
+2. **States.** In order, the summaries give the exact escape, string
+   state and depth at each range's start. Each range whose depths may
+   reach 1 is then searched, in parallel, for its first comma at depth 1
+   outside strings: a comma between two of the top-level array's
+   elements.
 3. **Parts.** Between consecutive such commas lie the *parts*, about a
    range each. The first part (from the array's `[` to the first such
    comma) is read on the reading thread, straight into the tallies. The
