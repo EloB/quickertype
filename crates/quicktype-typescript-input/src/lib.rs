@@ -16,6 +16,8 @@
 
 pub mod error;
 pub mod js;
+#[doc(hidden)]
+pub mod testing;
 pub mod tjs;
 pub mod tsc;
 
@@ -95,12 +97,27 @@ pub fn schema_for_typescript_sources_in(
     cwd: &Path,
     tsc_exe: &Path,
 ) -> std::result::Result<Output, Failure> {
-    let (session, files) = open(file_names, cwd, tsc_exe)?;
-    run(&session, file_names, &files)
+    let (session, files) = open(file_names, cwd, tsc_exe, true)?;
+    match run(&session, file_names, &files) {
+        // The compiler called back during a pipelined batch, which the
+        // protocol cannot serve (it has ended): start over, asking every
+        // question one at a time.
+        Err(_) if session.called_back_in_batch() => {
+            drop(session);
+            let (session, files) = open(file_names, cwd, tsc_exe, false)?;
+            run(&session, file_names, &files)
+        }
+        result => result,
+    }
 }
 
 /// The compiler session for `file_names`, and their root file paths.
-fn open(file_names: &[String], cwd: &Path, tsc_exe: &Path) -> Result<(Session, Vec<String>)> {
+fn open(
+    file_names: &[String],
+    cwd: &Path,
+    tsc_exe: &Path,
+    pipelining: bool,
+) -> Result<(Session, Vec<String>)> {
     let case_sensitive = !cfg!(any(target_os = "macos", target_os = "windows"));
     let cwd = normalize(&cwd.to_string_lossy());
     let files = root_files(file_names, &cwd, case_sensitive)
@@ -131,6 +148,7 @@ fn open(file_names: &[String], cwd: &Path, tsc_exe: &Path) -> Result<(Session, V
         Path::new(&cwd),
         &config_path,
         vec![(config_path.clone(), config.to_string())],
+        pipelining,
     )?;
     Ok((session, files))
 }
@@ -632,17 +650,180 @@ mod tests {
         out
     }
 
-    /// The compiler, as the differential test finds it; `None` skips.
     fn compiler() -> Option<std::path::PathBuf> {
-        let crate_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
-        if let Ok(exe) = tsc::locate::locate(crate_dir) {
-            return Some(exe);
+        tsc::locate::for_tests(Path::new(env!("CARGO_MANIFEST_DIR")))
+    }
+
+    /// Every method a batch may send.
+    const BATCHED: &[&str] = &[
+        "getPropertiesOfType",
+        "getIndexInfosOfType",
+        "getBaseTypes",
+        "getTypeArguments",
+        "getTypesOfType",
+        "getAliasTypeArgumentsOfType",
+        "typeToString",
+        "getSymbolOfType",
+        "getAliasSymbolOfType",
+        "getTargetOfType",
+        "getParentOfSymbol",
+        "getMembersOfSymbol",
+        "getAliasedSymbol",
+        "getJsDocTags",
+        "getDocumentationComment",
+        "getTypesOfSymbols",
+        "getTypeOfSymbolAtLocation",
+        "getSymbolsAtLocations",
+        "getTypeAtLocations",
+        "getConstantValue",
+        "getSourceFileMetadata",
+        "typeToTypeNode",
+    ];
+
+    /// Converts `names` in `dir`, with or without pipelining, answering the
+    /// batched requests of the methods in `failing` with errors.
+    fn convert(
+        exe: &Path,
+        dir: &Path,
+        names: &[String],
+        pipelining: bool,
+        failing: &[&'static str],
+    ) -> (String, tsc::channel::Stats) {
+        let (session, files) = open(names, dir, exe, pipelining).unwrap();
+        session.fail_in_batches.borrow_mut().extend(failing);
+        let out = run(&session, names, &files).unwrap();
+        (out.source.schema, session.stats())
+    }
+
+    fn scratch(name: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!("qt-ts-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    /// A batched question the compiler answers with an error is left
+    /// unanswered: the generator asks it itself, as without the prefetch,
+    /// and the prefetch walk sends nothing one at a time on its own.
+    #[test]
+    fn errors_in_batches_change_nothing() {
+        let Some(exe) = compiler() else {
+            eprintln!(
+                "skipped: no TypeScript {} compiler",
+                tsc::generated::TSC_VERSION
+            );
+            return;
+        };
+        testing::verify_local_answers(true);
+        let dir = scratch("batch-errors");
+        std::fs::write(dir.join("typings.ts"), typings(30)).unwrap();
+        let names = vec!["typings.ts".to_owned()];
+        let (expected, _) = convert(&exe, &dir, &names, true, &[]);
+        let (serial, serial_stats) = convert(&exe, &dir, &names, false, &[]);
+        assert_eq!(serial, expected);
+        for method in BATCHED {
+            let (schema, _) = convert(&exe, &dir, &names, true, &[method]);
+            assert_eq!(schema, expected, "{method}");
         }
-        crate_dir.ancestors().find_map(|dir| {
-            let modules = dir.join("quicktype").join("node_modules");
-            let exe = tsc::locate::platform_package_exe(&modules);
-            (exe.is_file() && tsc::locate::has_pinned_version(&exe)).then_some(exe)
-        })
+        let (schema, stats) = convert(&exe, &dir, &names, true, BATCHED);
+        assert_eq!(schema, expected);
+        assert_eq!(stats.round_trips, serial_stats.round_trips);
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A callback during a batch (which none of the queries makes) ends the
+    /// session; the conversion starts over without pipelining.
+    #[test]
+    fn a_callback_in_a_batch_falls_back_to_one_at_a_time() {
+        let Some(exe) = compiler() else {
+            eprintln!(
+                "skipped: no TypeScript {} compiler",
+                tsc::generated::TSC_VERSION
+            );
+            return;
+        };
+        let dir = scratch("batch-callback");
+        std::fs::write(dir.join("typings.ts"), typings(10)).unwrap();
+        let names = vec!["typings.ts".to_owned()];
+        let (expected, _) = convert(&exe, &dir, &names, true, &[]);
+        tsc::channel::FAKE_CALLBACK_IN_NEXT_BATCH.with(|c| c.set(true));
+        let out = schema_for_typescript_sources_in(&names, &dir, &exe).unwrap();
+        assert!(!tsc::channel::FAKE_CALLBACK_IN_NEXT_BATCH.with(|c| c.get()));
+        assert_eq!(out.source.schema, expected);
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// Types from imported files, a package in `node_modules`, re-exports
+    /// and a triple-slash reference: the compiler resolves them all while it
+    /// builds the program, so no query of a batch calls back.
+    #[test]
+    fn imports_resolve_before_the_batches() {
+        let Some(exe) = compiler() else {
+            eprintln!(
+                "skipped: no TypeScript {} compiler",
+                tsc::generated::TSC_VERSION
+            );
+            return;
+        };
+        testing::verify_local_answers(true);
+        let dir = scratch("imports");
+        let write = |path: &str, text: &str| {
+            let path = dir.join(path);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, text).unwrap();
+        };
+        write(
+            "node_modules/pkg/package.json",
+            r#"{ "name": "pkg", "version": "1.0.0", "types": "index.d.ts" }"#,
+        );
+        write(
+            "node_modules/pkg/index.d.ts",
+            "/** A foo. */ export interface Foo { foo: string; bar?: number[] }\n\
+             export declare namespace NS { interface Inner { i: number } }\n",
+        );
+        write(
+            "node_modules/@scope/deep/package.json",
+            r#"{ "name": "@scope/deep", "version": "2.0.0", "types": "lib/index.d.ts" }"#,
+        );
+        write(
+            "node_modules/@scope/deep/lib/index.d.ts",
+            "export interface Deep { level: number; tags: string[] }\n",
+        );
+        write(
+            "other.ts",
+            "/** Other X. */ export interface X { /** @minimum 1 */ a: number; c: { d: number } }\n\
+             export enum Kind { One = \"one\", Two = \"two\" }\n",
+        );
+        write(
+            "reexport.ts",
+            "export * from \"./other\";\nexport { Foo as Renamed } from \"pkg\";\n",
+        );
+        write("ref.d.ts", "interface GlobalThing { g: string }\n");
+        write(
+            "main.ts",
+            "/// <reference path=\"./ref.d.ts\" />\n\
+             import { X, Kind } from \"./other\";\n\
+             import type { Foo, NS } from \"pkg\";\n\
+             import * as o from \"./other\";\n\
+             import { Deep } from \"@scope/deep\";\n\
+             import { Renamed } from \"./reexport\";\n\
+             export interface Main { x: X; kind: Kind; foo: Foo; foos: Foo[] | null; ox: o.X;\n\
+             deep: Deep; inner: NS.Inner; renamed: Renamed; global: GlobalThing;\n\
+             mixed: X | Deep; inline: { f: Foo; d?: Deep } }\n",
+        );
+        let names = vec!["main.ts".to_owned()];
+        let (session, files) = open(&names, &dir, &exe, true).unwrap();
+        let schema = run(&session, &names, &files).unwrap().source.schema;
+        assert_eq!(session.misses(), Default::default());
+        let stats = session.stats();
+        let (serial, _) = convert(&exe, &dir, &names, false, &[]);
+        assert_eq!(schema, serial);
+        assert!(
+            schema.contains("\"Deep\"") && schema.contains("\"NS.Inner\""),
+            "{schema}"
+        );
+        assert!(stats.batches > 0);
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     /// The generator's questions to the compiler go out in a few pipelined
@@ -664,9 +845,11 @@ mod tests {
             let name = format!("typings{n}.ts");
             std::fs::write(dir.join(&name), typings(n)).unwrap();
             let names = vec![name];
-            let (session, files) = open(&names, &dir, &exe).unwrap();
+            let (session, files) = open(&names, &dir, &exe, true).unwrap();
             let out = run(&session, &names, &files).unwrap();
             assert!(out.source.schema.contains("Model9"));
+            // The prefetch foresaw every question the generator asked.
+            assert_eq!(session.misses(), Default::default(), "{n} interfaces");
             let stats = session.stats();
             let requests: u64 = stats.methods.values().map(|m| m.count).sum();
             seen.push((n, requests, stats.round_trips, stats.batches));

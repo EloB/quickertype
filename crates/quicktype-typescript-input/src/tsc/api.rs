@@ -6,8 +6,8 @@
 //! cached by id, and related objects are fetched lazily with `{objectId}`
 //! requests, exactly like the JavaScript client's object registries.
 
-use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use std::cell::{Cell, RefCell};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::Path;
 use std::rc::Rc;
 
@@ -19,12 +19,16 @@ use super::ast::{Node, SourceFile};
 use super::channel::{Channel, VirtualFiles};
 use super::generated::{node_flags, symbol_flags as sf, syntax_kind as sk};
 use crate::error::{Error, Result};
+use crate::js::quote;
+use crate::testing;
 
 /// A node handle: `index.kind.path`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NodeHandle {
     /// Index in the file's binary AST.
     pub index: usize,
+    /// The node's `SyntaxKind`.
+    pub kind: u32,
     /// The file's canonical path.
     pub path: String,
 }
@@ -32,11 +36,18 @@ pub struct NodeHandle {
 impl NodeHandle {
     fn parse(s: &str) -> Option<NodeHandle> {
         let (index, rest) = s.split_once('.')?;
-        let (_kind, path) = rest.split_once('.')?;
+        let (kind, path) = rest.split_once('.')?;
         Some(NodeHandle {
             index: index.parse().ok()?,
+            kind: kind.parse().ok()?,
             path: path.to_owned(),
         })
+    }
+
+    /// The handle as the checker API takes it, as [`Node::handle`] gives it
+    /// for the node (without loading its file).
+    pub fn to_handle(&self) -> String {
+        format!("{}.{}.{}", self.index, self.kind, self.path)
     }
 }
 
@@ -129,7 +140,7 @@ pub struct Type {
 }
 
 /// An index signature of a type.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct IndexInfo {
     /// Key type.
     pub key_type: Rc<Type>,
@@ -232,9 +243,39 @@ pub enum Query {
     TypeToTypeNode(u64, u32),
 }
 
+impl Query {
+    /// The method that asks it on its own.
+    fn method(&self) -> &'static str {
+        match self {
+            Query::PropertiesOfType(_) => "getPropertiesOfType",
+            Query::IndexInfosOfType(_) => "getIndexInfosOfType",
+            Query::BaseTypes(_) => "getBaseTypes",
+            Query::TypeArguments(_) => "getTypeArguments",
+            Query::TypesOfType(_) => "getTypesOfType",
+            Query::AliasTypeArguments(_) => "getAliasTypeArgumentsOfType",
+            Query::TypeToString(..) => "typeToString",
+            Query::SymbolOfType(_) => "getSymbolOfType",
+            Query::AliasSymbolOfType(_) => "getAliasSymbolOfType",
+            Query::TargetOfType(_) => "getTargetOfType",
+            Query::ParentOfSymbol(_) => "getParentOfSymbol",
+            Query::MembersOfSymbol(_) => "getMembersOfSymbol",
+            Query::AliasedSymbol(_) => "getAliasedSymbol",
+            Query::JsDocTags(_) => "getJsDocTags",
+            Query::DocumentationComment(_) => "getDocumentationComment",
+            Query::TypeOfSymbol(_) => "getTypeOfSymbol",
+            Query::TypeOfSymbolAt(..) => "getTypeOfSymbolAtLocation",
+            Query::SymbolAt(_) => "getSymbolAtLocation",
+            Query::TypeAt(_) => "getTypeAtLocation",
+            Query::ConstantValue(_) => "getConstantValue",
+            Query::IsDefaultLibrary(_) => "getSourceFileMetadata",
+            Query::TypeToTypeNode(..) => "typeToTypeNode",
+        }
+    }
+}
+
 /// What a [`Query`] returned.
-#[derive(Clone)]
-enum Answer {
+#[derive(Clone, Debug)]
+pub(crate) enum Answer {
     Types(Vec<Rc<Type>>),
     Symbols(Vec<Rc<Symbol>>),
     IndexInfos(Vec<IndexInfo>),
@@ -245,6 +286,68 @@ enum Answer {
     Constant(Option<LiteralValue>),
     Bool(bool),
     Node(Option<Node>),
+}
+
+impl Answer {
+    /// Whether two answers say the same: the same objects by handle, the
+    /// same text.
+    fn same(&self, other: &Answer) -> bool {
+        let ids =
+            |a: &[Rc<Type>], b: &[Rc<Type>]| a.iter().map(|t| t.id).eq(b.iter().map(|t| t.id));
+        match (self, other) {
+            (Answer::Types(a), Answer::Types(b)) => ids(a, b),
+            (Answer::Symbols(a), Answer::Symbols(b)) => {
+                a.iter().map(|s| s.id).eq(b.iter().map(|s| s.id))
+            }
+            (Answer::Type(a), Answer::Type(b)) => {
+                a.as_ref().map(|t| t.id) == b.as_ref().map(|t| t.id)
+            }
+            (Answer::Symbol(a), Answer::Symbol(b)) => {
+                a.as_ref().map(|s| s.id) == b.as_ref().map(|s| s.id)
+            }
+            (Answer::Text(a), Answer::Text(b)) => a == b,
+            (Answer::Tags(a), Answer::Tags(b)) => {
+                a.len() == b.len()
+                    && a.iter()
+                        .zip(b)
+                        .all(|(x, y)| x.name == y.name && x.text == y.text)
+            }
+            (Answer::Constant(a), Answer::Constant(b)) => a == b,
+            (Answer::Bool(a), Answer::Bool(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
+/// The kinds of value an [`Answer`] holds.
+pub(crate) trait FromAnswer: Sized {
+    fn from_answer(a: Answer) -> Option<Self>;
+}
+
+macro_rules! from_answer {
+    ($($t:ty => $variant:ident),* $(,)?) => {$(
+        impl FromAnswer for $t {
+            fn from_answer(a: Answer) -> Option<Self> {
+                match a {
+                    Answer::$variant(v) => Some(v),
+                    _ => None,
+                }
+            }
+        }
+    )*};
+}
+
+from_answer! {
+    Vec<Rc<Type>> => Types,
+    Vec<Rc<Symbol>> => Symbols,
+    Vec<IndexInfo> => IndexInfos,
+    Option<Rc<Type>> => Type,
+    Option<Rc<Symbol>> => Symbol,
+    String => Text,
+    Vec<JsDocTag> => Tags,
+    Option<LiteralValue> => Constant,
+    bool => Bool,
+    Option<Node> => Node,
 }
 
 /// Most queries a batch merges into one array request.
@@ -263,10 +366,17 @@ pub struct Session {
     files: RefCell<HashMap<String, Rc<SourceFile>>>,
     number_type: RefCell<Option<u64>>,
     answers: RefCell<HashMap<Query, Answer>>,
-}
-
-fn json_string(s: &str) -> String {
-    serde_json::to_string(s).unwrap_or_else(|_| "\"\"".into())
+    /// Whether [`Session::prefetch`] sends anything (off: every question is
+    /// asked when the generator needs it, one at a time).
+    pipelining: bool,
+    /// Set when the prefetch is done: from then on a question the compiler
+    /// has to answer is one the prefetch did not foresee.
+    warmed: Cell<bool>,
+    misses: RefCell<BTreeMap<&'static str, u64>>,
+    /// Methods whose answers in a batch are dropped, as if the compiler had
+    /// answered them with an error.
+    #[cfg(test)]
+    pub(crate) fail_in_batches: RefCell<HashSet<&'static str>>,
 }
 
 /// The `SyntaxKind` in a node handle (`index.kind.path`).
@@ -283,8 +393,15 @@ fn parse_json<T: DeserializeOwned>(method: &str, bytes: &[u8]) -> Result<Option<
 
 impl Session {
     /// Starts the compiler and opens the project `config` (served from
-    /// `files` when it is one of them).
-    pub fn open(exe: &Path, cwd: &Path, config: &str, files: VirtualFiles) -> Result<Session> {
+    /// `files` when it is one of them). With `pipelining` off,
+    /// [`Session::prefetch`] does nothing.
+    pub fn open(
+        exe: &Path,
+        cwd: &Path,
+        config: &str,
+        files: VirtualFiles,
+        pipelining: bool,
+    ) -> Result<Session> {
         let channel = Channel::spawn(exe, cwd, files)?;
         let mut session = Session {
             channel: RefCell::new(channel),
@@ -297,6 +414,11 @@ impl Session {
             files: RefCell::default(),
             number_type: RefCell::default(),
             answers: RefCell::default(),
+            pipelining,
+            warmed: Cell::new(false),
+            misses: RefCell::default(),
+            #[cfg(test)]
+            fail_in_batches: RefCell::default(),
         };
         let init = session.raw_json("initialize", &Json::Null)?;
         session.case_sensitive = init["useCaseSensitiveFileNames"].as_bool().unwrap_or(true);
@@ -311,7 +433,7 @@ impl Session {
         session.prefix = format!(
             "{{\"snapshot\":{},\"project\":{}",
             session.snapshot,
-            json_string(&session.project)
+            quote(&session.project)
         );
         Ok(session)
     }
@@ -324,6 +446,30 @@ impl Session {
     /// What the channel has done so far.
     pub fn stats(&self) -> super::channel::Stats {
         self.channel.borrow().stats()
+    }
+
+    /// Whether the compiler called back during a pipelined batch, which the
+    /// protocol cannot serve: the session is closed, and the conversion has
+    /// to be redone without pipelining.
+    pub fn called_back_in_batch(&self) -> bool {
+        self.channel.borrow().called_back_in_batch()
+    }
+
+    /// Whether [`Session::prefetch`] sends requests.
+    pub fn pipelining(&self) -> bool {
+        self.pipelining
+    }
+
+    /// Marks the prefetch as done; see [`Session::misses`].
+    pub fn finish_prefetch(&self) {
+        self.warmed.set(true);
+    }
+
+    /// The questions asked of the compiler one at a time since
+    /// [`Session::finish_prefetch`], by method: what the prefetch did not
+    /// foresee.
+    pub fn misses(&self) -> BTreeMap<&'static str, u64> {
+        self.misses.borrow().clone()
     }
 
     fn raw(&self, method: &str, params: &Json) -> Result<Vec<u8>> {
@@ -415,53 +561,41 @@ impl Session {
 
     // ---- queries -----------------------------------------------------------
 
-    /// The method and payload that ask `q` on its own.
-    fn request_for(&self, q: &Query) -> (&'static str, Vec<u8>) {
-        let ty = |m, id: &u64| (m, self.payload(&format!("\"type\":{id}")));
-        let object = |m, id: &u64| (m, self.payload(&format!("\"objectId\":{id}")));
-        let symbol = |m, id: &u64| (m, self.payload(&format!("\"symbol\":{id}")));
-        let location = |m, h: &str| (m, self.payload(&format!("\"location\":{}", json_string(h))));
+    /// The payload that asks `q` on its own.
+    fn payload_for(&self, q: &Query) -> Vec<u8> {
         match q {
-            Query::PropertiesOfType(id) => ty("getPropertiesOfType", id),
-            Query::IndexInfosOfType(id) => ty("getIndexInfosOfType", id),
-            Query::BaseTypes(id) => ty("getBaseTypes", id),
-            Query::TypeArguments(id) => ty("getTypeArguments", id),
-            Query::TypeToString(id, None) => ty("typeToString", id),
-            Query::TypeToString(id, Some(f)) => (
-                "typeToString",
-                self.payload(&format!("\"type\":{id},\"flags\":{f}")),
-            ),
-            Query::TypesOfType(id) => object("getTypesOfType", id),
-            Query::AliasTypeArguments(id) => object("getAliasTypeArgumentsOfType", id),
-            Query::SymbolOfType(id) => object("getSymbolOfType", id),
-            Query::AliasSymbolOfType(id) => object("getAliasSymbolOfType", id),
-            Query::TargetOfType(id) => object("getTargetOfType", id),
-            Query::ParentOfSymbol(id) => object("getParentOfSymbol", id),
-            Query::MembersOfSymbol(id) => object("getMembersOfSymbol", id),
-            Query::AliasedSymbol(id) => symbol("getAliasedSymbol", id),
-            Query::JsDocTags(id) => symbol("getJsDocTags", id),
-            Query::DocumentationComment(id) => symbol("getDocumentationComment", id),
-            Query::TypeOfSymbol(id) => symbol("getTypeOfSymbol", id),
-            Query::TypeOfSymbolAt(id, h) => (
-                "getTypeOfSymbolAtLocation",
-                self.payload(&format!("\"symbol\":{id},\"location\":{}", json_string(h))),
-            ),
-            Query::SymbolAt(h) => location("getSymbolAtLocation", h),
-            Query::TypeAt(h) => location("getTypeAtLocation", h),
-            Query::ConstantValue(h) => location("getConstantValue", h),
-            Query::IsDefaultLibrary(path) => (
-                "getSourceFileMetadata",
-                self.payload(&format!("\"file\":{}", json_string(path))),
-            ),
-            Query::TypeToTypeNode(id, f) => (
-                "typeToTypeNode",
-                self.payload(&format!("\"type\":{id},\"flags\":{f}")),
-            ),
+            Query::PropertiesOfType(id)
+            | Query::IndexInfosOfType(id)
+            | Query::BaseTypes(id)
+            | Query::TypeArguments(id)
+            | Query::TypeToString(id, None) => self.payload(&format!("\"type\":{id}")),
+            Query::TypeToString(id, Some(f)) | Query::TypeToTypeNode(id, f) => {
+                self.payload(&format!("\"type\":{id},\"flags\":{f}"))
+            }
+            Query::TypesOfType(id)
+            | Query::AliasTypeArguments(id)
+            | Query::SymbolOfType(id)
+            | Query::AliasSymbolOfType(id)
+            | Query::TargetOfType(id)
+            | Query::ParentOfSymbol(id)
+            | Query::MembersOfSymbol(id) => self.payload(&format!("\"objectId\":{id}")),
+            Query::AliasedSymbol(id)
+            | Query::JsDocTags(id)
+            | Query::DocumentationComment(id)
+            | Query::TypeOfSymbol(id) => self.payload(&format!("\"symbol\":{id}")),
+            Query::TypeOfSymbolAt(id, h) => {
+                self.payload(&format!("\"symbol\":{id},\"location\":{}", quote(h)))
+            }
+            Query::SymbolAt(h) | Query::TypeAt(h) | Query::ConstantValue(h) => {
+                self.payload(&format!("\"location\":{}", quote(h)))
+            }
+            Query::IsDefaultLibrary(path) => self.payload(&format!("\"file\":{}", quote(path))),
         }
     }
 
     /// Decodes the response to `q`.
-    fn parse(&self, q: &Query, method: &str, bytes: &[u8]) -> Result<Answer> {
+    fn parse(&self, q: &Query, bytes: &[u8]) -> Result<Answer> {
+        let method = q.method();
         let types = |v: Option<Vec<TypeResponse>>| {
             Answer::Types(
                 v.unwrap_or_default()
@@ -546,34 +680,51 @@ impl Session {
         })
     }
 
-    /// The answer to `q` when it is known without asking the compiler.
-    fn local_answer(&self, q: &Query) -> Result<Option<Answer>> {
-        Ok(match q {
+    /// Asks the compiler `q` on its own.
+    fn ask(&self, q: &Query) -> Result<Answer> {
+        let payload = self.payload_for(q);
+        let bytes = self.channel.borrow_mut().request(q.method(), &payload)?;
+        self.parse(q, &bytes)
+    }
+
+    /// The answer to `q` when it is known without asking the compiler. Reads
+    /// only what is cached, so it never sends a request.
+    fn local_answer(&self, q: &Query) -> Option<Answer> {
+        match q {
             Query::JsDocTags(id) => {
-                let s = self.symbols.borrow().get(id).cloned();
-                match s {
-                    Some(s) if self.no_jsdoc_tags(&s)? => Some(Answer::Tags(Vec::new())),
-                    _ => None,
-                }
+                let s = self.known_symbol(*id)?;
+                self.no_jsdoc_tags(&s).then(|| Answer::Tags(Vec::new()))
             }
             Query::DocumentationComment(id) => {
-                let s = self.symbols.borrow().get(id).cloned();
-                match s {
-                    Some(s) if self.no_documentation(&s)? => Some(Answer::Text(String::new())),
-                    _ => None,
-                }
+                let s = self.known_symbol(*id)?;
+                self.no_documentation(&s)
+                    .then(|| Answer::Text(String::new()))
             }
             Query::TypeOfSymbolAt(id, h) => {
-                let s = self.symbols.borrow().get(id).cloned();
-                let declared = s.is_some_and(|s| type_at_is_declared_type(&s, h));
-                let answers = self.answers.borrow();
-                match answers.get(&Query::TypeOfSymbol(*id)) {
-                    Some(a @ Answer::Type(Some(_))) if declared => Some(a.clone()),
+                let s = self.known_symbol(*id)?;
+                if !type_at_is_declared_type(&s, h) {
+                    return None;
+                }
+                match self.answers.borrow().get(&Query::TypeOfSymbol(*id)) {
+                    Some(a @ Answer::Type(Some(_))) => Some(a.clone()),
                     _ => None,
                 }
             }
             _ => None,
-        })
+        }
+    }
+
+    /// In verify mode ([`testing::verify_local_answers`]), asks the compiler
+    /// `q` too and panics if it does not answer `local`.
+    fn verify(&self, q: &Query, local: &Answer) -> Result<()> {
+        if testing::verifying() {
+            let real = self.ask(q)?;
+            assert!(
+                local.same(&real),
+                "the session answered {q:?} with {local:?}, the compiler with {real:?}"
+            );
+        }
+        Ok(())
     }
 
     /// The answer to `q`, asking the compiler if it is not known yet.
@@ -581,16 +732,37 @@ impl Session {
         if let Some(a) = self.answers.borrow().get(&q) {
             return Ok(a.clone());
         }
-        let a = match self.local_answer(&q)? {
-            Some(a) => a,
+        let a = match self.local_answer(&q) {
+            Some(a) => {
+                self.verify(&q, &a)?;
+                a
+            }
             None => {
-                let (method, payload) = self.request_for(&q);
-                let bytes = self.channel.borrow_mut().request(method, &payload)?;
-                self.parse(&q, method, &bytes)?
+                if self.warmed.get() {
+                    *self.misses.borrow_mut().entry(q.method()).or_default() += 1;
+                    testing::record_miss(q.method());
+                }
+                self.ask(&q)?
             }
         };
         self.answers.borrow_mut().insert(q, a.clone());
         Ok(a)
+    }
+
+    /// The answer to `q` as a `T`, asking the compiler if it is not known
+    /// yet; an answer of another kind is a protocol error.
+    fn get<T: FromAnswer>(&self, q: Query) -> Result<T> {
+        let method = q.method();
+        T::from_answer(self.answer(q)?).ok_or_else(|| protocol(method, "an answer of another kind"))
+    }
+
+    /// The answer to `q` if it is known; never asks the compiler.
+    pub(crate) fn cached<T: FromAnswer>(&self, q: &Query) -> Option<T> {
+        self.answers
+            .borrow()
+            .get(q)
+            .cloned()
+            .and_then(T::from_answer)
     }
 
     /// Whether `q` is answered already.
@@ -601,8 +773,12 @@ impl Session {
     /// Answers `queries` with one pipelined batch of requests; the ones of
     /// a kind the protocol takes as arrays share array requests. Queries
     /// the compiler answers with an error stay unanswered, so the accessor
-    /// that needs one asks again and reports that error.
+    /// that needs one asks again (and reports that error) as it would
+    /// without the batch. Sends nothing when pipelining is off.
     pub fn prefetch(&self, queries: impl IntoIterator<Item = Query>) -> Result<()> {
+        if !self.pipelining {
+            return Ok(());
+        }
         let mut seen = HashSet::new();
         let mut single = Vec::new();
         let (mut of_symbols, mut at_locations, mut types_at) = (Vec::new(), Vec::new(), Vec::new());
@@ -610,7 +786,8 @@ impl Session {
             if self.knows(&q) || !seen.insert(q.clone()) {
                 continue;
             }
-            if let Some(a) = self.local_answer(&q)? {
+            if let Some(a) = self.local_answer(&q) {
+                self.verify(&q, &a)?;
                 self.answers.borrow_mut().insert(q, a);
                 continue;
             }
@@ -629,12 +806,7 @@ impl Session {
         }
         let mut targets = Vec::new();
         let mut requests = Vec::new();
-        let handles = |hs: &[String]| {
-            hs.iter()
-                .map(|h| json_string(h))
-                .collect::<Vec<_>>()
-                .join(",")
-        };
+        let handles = |hs: &[String]| hs.iter().map(|h| quote(h)).collect::<Vec<_>>().join(",");
         for chunk in of_symbols.chunks(MERGED_BATCH) {
             let ids: Vec<String> = chunk.iter().map(u64::to_string).collect();
             requests.push((
@@ -658,19 +830,26 @@ impl Session {
             targets.push(Target::TypesAt(chunk.to_vec()));
         }
         for q in single {
-            requests.push(self.request_for(&q));
+            requests.push((q.method(), self.payload_for(&q)));
             targets.push(Target::One(q));
         }
         if requests.is_empty() {
             return Ok(());
         }
-        let replies = self.channel.borrow_mut().request_batch(&requests)?;
+        #[allow(unused_mut)]
+        let mut replies = self.channel.borrow_mut().request_batch(&requests)?;
+        #[cfg(test)]
+        for ((method, _), reply) in requests.iter().zip(replies.iter_mut()) {
+            if self.fail_in_batches.borrow().contains(method) {
+                *reply = None;
+            }
+        }
         let mut answers = Vec::new();
         for ((target, (method, _)), reply) in targets.into_iter().zip(&requests).zip(replies) {
             let Some(bytes) = reply else { continue };
             match target {
                 Target::One(q) => {
-                    if let Ok(a) = self.parse(&q, method, &bytes) {
+                    if let Ok(a) = self.parse(&q, &bytes) {
                         answers.push((q, a));
                     }
                 }
@@ -716,57 +895,24 @@ impl Session {
         Ok(())
     }
 
-    fn types_answer(&self, q: Query) -> Result<Vec<Rc<Type>>> {
-        match self.answer(q)? {
-            Answer::Types(v) => Ok(v),
-            _ => Ok(Vec::new()),
-        }
-    }
-
-    fn symbols_answer(&self, q: Query) -> Result<Vec<Rc<Symbol>>> {
-        match self.answer(q)? {
-            Answer::Symbols(v) => Ok(v),
-            _ => Ok(Vec::new()),
-        }
-    }
-
-    fn type_answer(&self, q: Query) -> Result<Option<Rc<Type>>> {
-        match self.answer(q)? {
-            Answer::Type(t) => Ok(t),
-            _ => Ok(None),
-        }
-    }
-
-    fn symbol_answer(&self, q: Query) -> Result<Option<Rc<Symbol>>> {
-        match self.answer(q)? {
-            Answer::Symbol(s) => Ok(s),
-            _ => Ok(None),
-        }
-    }
-
-    fn text_answer(&self, q: Query) -> Result<String> {
-        match self.answer(q)? {
-            Answer::Text(s) => Ok(s),
-            _ => Ok(String::new()),
-        }
-    }
-
     // ---- JSDoc that cannot exist ---------------------------------------------
 
-    /// The declarations of `s` when all of them are in files whose AST the
-    /// client can read without fetching a library file.
-    fn user_declarations(&self, s: &Symbol) -> Result<Option<Vec<Node>>> {
+    /// The declarations of `s`, when all of them are in loaded files that are
+    /// not default libraries (as far as the cache knows).
+    fn user_declarations(&self, s: &Symbol) -> Option<Vec<Node>> {
         if s.declarations.is_empty() {
-            return Ok(None);
+            return None;
         }
-        let mut out = Vec::with_capacity(s.declarations.len());
-        for d in &s.declarations {
-            if self.is_default_library(&d.path)? {
-                return Ok(None);
-            }
-            out.push(self.resolve(d)?);
-        }
-        Ok(Some(out))
+        s.declarations
+            .iter()
+            .map(|d| {
+                let lib = self.cached::<bool>(&Query::IsDefaultLibrary(d.path.clone()));
+                if lib != Some(false) {
+                    return None;
+                }
+                self.loaded(d)
+            })
+            .collect()
     }
 
     /// Whether `getJsDocTags` of `s` is certainly empty. The compiler
@@ -775,9 +921,9 @@ impl Session {
     /// `GetNextJSDocCommentLocation` walks to, which are its ancestors, and
     /// inherits none; so when neither a declaration, nor its initializer,
     /// nor any ancestor carries a JSDoc comment with tags, there are none.
-    fn no_jsdoc_tags(&self, s: &Symbol) -> Result<bool> {
-        let Some(decls) = self.user_declarations(s)? else {
-            return Ok(false);
+    fn no_jsdoc_tags(&self, s: &Symbol) -> bool {
+        let Some(decls) = self.user_declarations(s) else {
+            return false;
         };
         let tagged = |n: &Node| n.js_doc().iter().any(|d| !d.named_list("tags").is_empty());
         for decl in decls {
@@ -785,17 +931,17 @@ impl Session {
                 || (sk::FirstJSDocNode..=sk::LastJSDocNode).contains(&decl.kind())
                 || decl.named("initializer").is_some_and(|i| tagged(&i))
             {
-                return Ok(false);
+                return false;
             }
             let mut node = Some(decl);
             while let Some(n) = node {
                 if tagged(&n) {
-                    return Ok(false);
+                    return false;
                 }
                 node = n.parent();
             }
         }
-        Ok(true)
+        true
     }
 
     /// Whether `getDocumentationComment` of `s` is certainly empty. The
@@ -806,22 +952,22 @@ impl Session {
     /// parameters, type parameters, variables, function-like declarations
     /// and initializers, overloads, and members of classes or interfaces
     /// with base types; none of those may be involved.
-    fn no_documentation(&self, s: &Symbol) -> Result<bool> {
-        let Some(decls) = self.user_declarations(s)? else {
-            return Ok(false);
+    fn no_documentation(&self, s: &Symbol) -> bool {
+        let Some(decls) = self.user_declarations(s) else {
+            return false;
         };
         for decl in decls {
             if decl.flags() & node_flags::Reparsed != 0 {
-                return Ok(false);
+                return false;
             }
             if let Some(last) = decl.js_doc().last() {
                 if last.has_comment() {
-                    return Ok(false);
+                    return false;
                 }
                 continue;
             }
             if decl.named("initializer").is_some() {
-                return Ok(false);
+                return false;
             }
             match decl.kind() {
                 sk::PropertySignature | sk::PropertyDeclaration => {
@@ -832,7 +978,7 @@ impl Session {
                         ) && !p.named_list("heritageClauses").is_empty()
                     });
                     if inherits {
-                        return Ok(false);
+                        return false;
                     }
                 }
                 sk::InterfaceDeclaration
@@ -841,10 +987,10 @@ impl Session {
                 | sk::EnumDeclaration
                 | sk::EnumMember
                 | sk::TypeLiteral => {}
-                _ => return Ok(false),
+                _ => return false,
             }
         }
-        Ok(true)
+        true
     }
 
     // ---- program ---------------------------------------------------------
@@ -878,12 +1024,14 @@ impl Session {
             .ok_or_else(|| protocol("resolve", &h.path))
     }
 
+    /// Resolves a node handle in a file already loaded; never asks.
+    pub(crate) fn loaded(&self, h: &NodeHandle) -> Option<Node> {
+        self.files.borrow().get(&h.path)?.node(h.index)
+    }
+
     /// Whether the file at canonical `path` is a default library file.
     pub fn is_default_library(&self, path: &str) -> Result<bool> {
-        Ok(matches!(
-            self.answer(Query::IsDefaultLibrary(path.to_owned()))?,
-            Answer::Bool(true)
-        ))
+        self.get(Query::IsDefaultLibrary(path.to_owned()))
     }
 
     /// The diagnostics `getPreEmitDiagnostics` collects, unsorted.
@@ -906,7 +1054,7 @@ impl Session {
 
     /// `getSymbolAtLocation`.
     pub fn symbol_at(&self, node: &Node) -> Result<Option<Rc<Symbol>>> {
-        self.symbol_answer(Query::SymbolAt(node.handle()))
+        self.get(Query::SymbolAt(node.handle()))
     }
 
     /// `getSymbolAtLocation` for many nodes in one request.
@@ -915,13 +1063,13 @@ impl Session {
         self.prefetch(handles.iter().cloned().map(Query::SymbolAt))?;
         handles
             .into_iter()
-            .map(|h| self.symbol_answer(Query::SymbolAt(h)))
+            .map(|h| self.get(Query::SymbolAt(h)))
             .collect()
     }
 
     /// `getTypeAtLocation`.
     pub fn type_at(&self, node: &Node) -> Result<Option<Rc<Type>>> {
-        self.type_answer(Query::TypeAt(node.handle()))
+        self.get(Query::TypeAt(node.handle()))
     }
 
     /// `getTypeAtLocation` for many nodes in one request.
@@ -930,33 +1078,30 @@ impl Session {
         self.prefetch(handles.iter().cloned().map(Query::TypeAt))?;
         handles
             .into_iter()
-            .map(|h| self.type_answer(Query::TypeAt(h)))
+            .map(|h| self.get(Query::TypeAt(h)))
             .collect()
     }
 
     /// `getTypeOfSymbol`.
     pub fn type_of_symbol(&self, s: &Symbol) -> Result<Rc<Type>> {
-        self.type_answer(Query::TypeOfSymbol(s.id))?
+        self.get::<Option<Rc<Type>>>(Query::TypeOfSymbol(s.id))?
             .ok_or_else(|| protocol("getTypeOfSymbol", ""))
     }
 
     /// `getTypeOfSymbolAtLocation`.
     pub fn type_of_symbol_at(&self, s: &Symbol, node: &Node) -> Result<Rc<Type>> {
-        self.type_answer(Query::TypeOfSymbolAt(s.id, node.handle()))?
+        self.get::<Option<Rc<Type>>>(Query::TypeOfSymbolAt(s.id, node.handle()))?
             .ok_or_else(|| protocol("getTypeOfSymbolAtLocation", ""))
     }
 
     /// `getPropertiesOfType`.
     pub fn properties_of_type(&self, t: &Type) -> Result<Vec<Rc<Symbol>>> {
-        self.symbols_answer(Query::PropertiesOfType(t.id))
+        self.get(Query::PropertiesOfType(t.id))
     }
 
     /// `getIndexInfosOfType`.
     pub fn index_infos_of_type(&self, t: &Type) -> Result<Vec<IndexInfo>> {
-        match self.answer(Query::IndexInfosOfType(t.id))? {
-            Answer::IndexInfos(v) => Ok(v),
-            _ => Ok(Vec::new()),
-        }
+        self.get(Query::IndexInfosOfType(t.id))
     }
 
     /// `getIndexTypeOfType(t, IndexKind.Number)` of the TS 5 API.
@@ -983,62 +1128,53 @@ impl Session {
 
     /// `getBaseTypes` (empty unless `t` is a class or interface).
     pub fn base_types(&self, t: &Type) -> Result<Vec<Rc<Type>>> {
-        self.types_answer(Query::BaseTypes(t.id))
+        self.get(Query::BaseTypes(t.id))
     }
 
     /// `getTypeArguments`.
     pub fn type_arguments(&self, t: &Type) -> Result<Vec<Rc<Type>>> {
-        self.types_answer(Query::TypeArguments(t.id))
+        self.get(Query::TypeArguments(t.id))
     }
 
     /// `getAliasedSymbol`.
     pub fn aliased_symbol(&self, s: &Symbol) -> Result<Rc<Symbol>> {
-        self.symbol_answer(Query::AliasedSymbol(s.id))?
+        self.get::<Option<Rc<Symbol>>>(Query::AliasedSymbol(s.id))?
             .ok_or_else(|| protocol("getAliasedSymbol", ""))
     }
 
     /// `getConstantValue` of an enum member.
     pub fn constant_value(&self, node: &Node) -> Result<Option<LiteralValue>> {
-        match self.answer(Query::ConstantValue(node.handle()))? {
-            Answer::Constant(v) => Ok(v),
-            _ => Ok(None),
-        }
+        self.get(Query::ConstantValue(node.handle()))
     }
 
     /// `typeToString(type, undefined, flags)`.
     pub fn type_to_string(&self, t: &Type, flags: Option<u32>) -> Result<String> {
-        self.text_answer(Query::TypeToString(t.id, flags))
+        self.get(Query::TypeToString(t.id, flags))
     }
 
     /// `typeToTypeNode(type, undefined, flags)` (`NodeBuilderFlags`), decoded.
     pub fn type_to_type_node(&self, t: &Type, flags: u32) -> Result<Option<Node>> {
-        match self.answer(Query::TypeToTypeNode(t.id, flags))? {
-            Answer::Node(n) => Ok(n),
-            _ => Ok(None),
-        }
+        self.get(Query::TypeToTypeNode(t.id, flags))
     }
 
     /// `getJsDocTags` of a symbol.
     pub fn js_doc_tags(&self, s: &Symbol) -> Result<Vec<JsDocTag>> {
-        match self.answer(Query::JsDocTags(s.id))? {
-            Answer::Tags(v) => Ok(v),
-            _ => Ok(Vec::new()),
-        }
+        self.get(Query::JsDocTags(s.id))
     }
 
     /// `getDocumentationComment` of a symbol (rendered as one string).
     pub fn documentation_comment(&self, s: &Symbol) -> Result<String> {
-        self.text_answer(Query::DocumentationComment(s.id))
+        self.get(Query::DocumentationComment(s.id))
     }
 
     // ---- lazily fetched related objects -----------------------------------
 
     fn related_symbol(&self, q: Query, handle: Option<u64>) -> Result<Option<Rc<Symbol>>> {
         let Some(h) = handle else { return Ok(None) };
-        if let Some(s) = self.symbols.borrow().get(&h) {
-            return Ok(Some(Rc::clone(s)));
+        if let Some(s) = self.known_symbol(h) {
+            return Ok(Some(s));
         }
-        self.symbol_answer(q)
+        self.get(q)
     }
 
     /// `type.getSymbol()`.
@@ -1058,16 +1194,16 @@ impl Session {
 
     /// `symbol.members`, as a list.
     pub fn members_of_symbol(&self, s: &Symbol) -> Result<Vec<Rc<Symbol>>> {
-        self.symbols_answer(Query::MembersOfSymbol(s.id))
+        self.get(Query::MembersOfSymbol(s.id))
     }
 
     /// `type.target`.
     pub fn target_of_type(&self, t: &Type) -> Result<Option<Rc<Type>>> {
         let Some(h) = t.target else { return Ok(None) };
-        if let Some(t) = self.types.borrow().get(&h) {
-            return Ok(Some(Rc::clone(t)));
+        if let Some(t) = self.known_type(h) {
+            return Ok(Some(t));
         }
-        self.type_answer(Query::TargetOfType(t.id))
+        self.get(Query::TargetOfType(t.id))
     }
 
     /// The symbol with handle `id`, if a response has carried it.
@@ -1082,12 +1218,12 @@ impl Session {
 
     /// `type.types` of unions, intersections and template literals.
     pub fn types_of_type(&self, t: &Type) -> Result<Vec<Rc<Type>>> {
-        self.types_answer(Query::TypesOfType(t.id))
+        self.get(Query::TypesOfType(t.id))
     }
 
     /// `type.aliasTypeArguments`.
     pub fn alias_type_arguments(&self, t: &Type) -> Result<Vec<Rc<Type>>> {
-        self.types_answer(Query::AliasTypeArguments(t.id))
+        self.get(Query::AliasTypeArguments(t.id))
     }
 }
 
@@ -1098,7 +1234,7 @@ impl Session {
 /// `exactOptionalPropertyTypes` is set (quicktype never sets it). Here the
 /// location is the declaration of the class, interface or type literal the
 /// property belongs to.
-fn type_at_is_declared_type(s: &Symbol, location: &str) -> bool {
+pub(crate) fn type_at_is_declared_type(s: &Symbol, location: &str) -> bool {
     s.flags & sf::Property != 0
         && s.flags & (sf::ExportValue | sf::Alias) == 0
         && matches!(
