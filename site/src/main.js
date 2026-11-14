@@ -27,6 +27,7 @@ import { hashKeys, hashVersion } from "./hash.js";
 import { highlight } from "./highlight.js";
 import { escapeHtml } from "./html.js";
 import { formatBytes, tooLarge, unreadable } from "./input-file.js";
+import { openAtLoad, panelKey, roomBesideQuery } from "./panel.js";
 
 const languages = __LANGUAGES__;
 const samples = __SAMPLES__;
@@ -36,8 +37,6 @@ const general = __GENERAL__;
 const speed = __SPEED__;
 
 const storageKey = "quickertype.input";
-/** Whether the viewer last opened or closed the options ("open" | "closed"); a convenience, kept in localStorage. */
-const panelKey = "quickertype.options";
 /** Inputs longer than this (in characters; files, in bytes) are not put in the editor or saved. */
 const LARGE = 1_000_000;
 /** Inputs larger than this are not put in the editor even when asked: a text box that large freezes the page. */
@@ -1163,17 +1162,7 @@ function render() {
 // The options panel, the panes on phones, the notes behind an "i"
 
 /** Room for the options beside the output; on a narrower screen they are a drawer over the page. */
-const roomBeside = matchMedia("(min-width: 1200px)");
-/** Room enough for them to be open when the page loads, unless the viewer closed them. */
-const roomToOpen = matchMedia("(min-width: 1280px)");
-
-function savedPanel() {
-    try {
-        return localStorage.getItem(panelKey);
-    } catch {
-        return null;
-    }
-}
+const roomBeside = matchMedia(roomBesideQuery);
 
 function savePanel(open) {
     try {
@@ -1183,10 +1172,14 @@ function savePanel(open) {
     }
 }
 
-/** The panel's state on the page: the toggle's aria-expanded, and the column it takes (body[data-panel]). */
+/**
+ * The panel's state on the page: the toggle's aria-expanded, and the column
+ * it takes (html[data-panel], which the script in index.html's head sets
+ * before the first paint, as openAtLoad says).
+ */
 function renderPanel() {
     const panel = els.optionsPanel;
-    document.body.dataset.panel = !panel.open ? "closed" : panel.matches(":modal") ? "drawer" : "inline";
+    document.documentElement.dataset.panel = !panel.open ? "closed" : panel.matches(":modal") ? "drawer" : "inline";
     els.optionsToggle.setAttribute("aria-expanded", String(panel.open));
 }
 
@@ -1697,9 +1690,8 @@ async function start() {
     renderLanguages();
     renderSamples();
     bind();
-    // The options are open beside the output on a wide screen, unless the viewer closed them (or opened them on a narrower one).
-    const saved = savedPanel();
-    if (roomBeside.matches && (saved === "open" || (saved === null && roomToOpen.matches))) openPanel(false);
+    // Where the script in index.html's head made room for them already.
+    if (openAtLoad()) openPanel(false);
     renderPanel();
     engines.wasm.onBoot = () => render();
     engines.ts.onBoot = () => render();

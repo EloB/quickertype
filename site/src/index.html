@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-panel="closed">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,10 +7,12 @@
 <title>quickertype — quicktype on WebAssembly</title>
 <meta name="description" content="Generate types and converters from JSON or JSON Schema in your browser, with quicktype's own API running on a Rust/WebAssembly engine.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23201d33'/%3E%3Crect x='6' y='9' width='9' height='5' rx='2.5' fill='%23a08cff'/%3E%3Crect x='6' y='18' width='20' height='5' rx='2.5' fill='%236ea8ea'/%3E%3C/svg%3E">
+<!-- Where the options go, before the first paint (src/head.js, inlined by the build). -->
+<script>%HEAD_SCRIPT%</script>
 <link rel="stylesheet" href="%STYLE%">
 <script type="module" src="%MAIN%"></script>
 </head>
-<body data-view="output" data-panel="closed">
+<body data-view="output">
 <header class="masthead">
   <a class="brand" href="./" aria-label="quickertype, reload with defaults">
     <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="7" width="12" height="7" rx="3.5" class="mark-wasm"/><rect x="2" y="18" width="28" height="7" rx="3.5" class="mark-ts"/></svg>

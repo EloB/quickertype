@@ -257,8 +257,9 @@ button.quiet:hover:not(:disabled) {
     background: var(--panel);
 }
 
-/* With the options beside it, the output keeps the larger share. */
-body[data-panel="inline"] .panes {
+/* With the options beside it, the output keeps the larger share. html[data-panel] is
+   set before the first paint (see index.html), so the column is there from the start. */
+:root[data-panel="inline"] .panes {
     grid-template-columns: minmax(0, 5fr) minmax(0, 8fr) var(--inspector);
 }
 
@@ -269,7 +270,7 @@ body[data-panel="inline"] .panes {
         grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
     }
 
-    body[data-input="large"][data-panel="inline"] .panes {
+    :root[data-panel="inline"] body[data-input="large"] .panes {
         grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) var(--inspector);
     }
 }
@@ -484,7 +485,9 @@ body[data-panel="inline"] .panes {
     opacity: 0.75;
 }
 
-.options-toggle[aria-expanded="true"] {
+/* Open (from the first paint, beside the output: see .inspector). */
+.options-toggle[aria-expanded="true"],
+:root[data-panel="inline"] .options-toggle {
     background: var(--track);
     border-color: var(--track);
 }
@@ -1164,7 +1167,9 @@ pre#output:focus-visible {
     min-height: 0;
 }
 
-.inspector[open] {
+/* Beside the output from the first paint, before main.js opens the dialog there. */
+.inspector[open],
+:root[data-panel="inline"] .inspector {
     display: flex;
     flex-direction: column;
 }

@@ -45,7 +45,10 @@
 // narrower window they are a modal drawer (the page behind inert, closed by
 // Escape or a click on its backdrop, not by a drag from or to it); closed by
 // the browser itself, the choice is kept too, while the window's width
-// moving them saves nothing. The comparison's details open with Enter, and stay
+// moving them saves nothing. Their column is there from the first paint,
+// before main.js runs (the script in the head decides it: nothing moves when
+// main.js opens them), and the page runs under a Content-Security-Policy
+// that allows that script by its hash. The comparison's details open with Enter, and stay
 // open, with the focus, as the comparison is drawn again; the notes behind
 // an "i" open with Enter and close with Escape. Phones show one pane at a
 // time, the output first, its code in the first screen, the input a tap
@@ -95,6 +98,7 @@
 
 import assert from "node:assert/strict";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -618,7 +622,7 @@ const panelNow = () =>
         return {
             open: panel.open,
             modal: panel.matches(":modal"),
-            layout: document.body.dataset.panel,
+            layout: document.documentElement.dataset.panel,
             expanded: document.getElementById("options-toggle").getAttribute("aria-expanded"),
             focus: active.id === "options-toggle" ? "toggle" : active === first ? "first" : panel.contains(active) ? "panel " + name(active) : name(active),
             codeWidth: Math.round(document.getElementById("output").getBoundingClientRect().width),
@@ -628,6 +632,38 @@ const panelNow = () =>
 /** Waits for what slides or fades in (not what loops, as a running engine's bar) to be in place. */
 const settledMotion = () =>
     page.evaluate("Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished))");
+
+/**
+ * Loads the playground with main.js held back until the page has painted:
+ * the options' column (html[data-panel]) and the panes' widths at the first
+ * paint, with only the HTML, the stylesheet and the script in the head, and
+ * again once main.js has run and the first run settled (`screenshot`: of the first paint).
+ */
+async function firstPaint(what, screenshot) {
+    const panes = `({
+        panel: document.documentElement.dataset.panel,
+        input: Math.round(document.getElementById("input-pane").getBoundingClientRect().width),
+        output: Math.round(document.getElementById("output-pane").getBoundingClientRect().width),
+    })`;
+    await page.navigate("about:blank", { playground: false });
+    await page.send("Fetch.enable", { patterns: [{ urlPattern: "*/main-*.js" }] });
+    const paused = page.next("Fetch.requestPaused");
+    await page.send("Page.navigate", { url });
+    const { requestId } = await paused;
+    let before;
+    try {
+        await page.waitFor("document.readyState === 'interactive' && performance.getEntriesByName('first-paint').length > 0", `${what}: the first paint`);
+        before = await page.evaluate(`({ ...${panes}, main: "playground" in globalThis })`);
+        if (screenshot !== undefined) await page.screenshot(screenshot);
+    } finally {
+        await page.send("Fetch.continueRequest", { requestId });
+        await page.send("Fetch.disable");
+    }
+    const { main, ...painted } = before;
+    assert.equal(main, false, `${what}: main.js ran before the first paint`);
+    await page.waitFor(`document.readyState === 'complete' && globalThis.playground && ${settled}`, `${what}: the page`);
+    return { before: painted, after: await page.evaluate(panes) };
+}
 
 /** The page is no wider than the window (`what` says where), nothing past its right edge. */
 async function noSidewaysScroll(width, what) {
@@ -1021,7 +1057,7 @@ try {
             footer: box(".credits").height,
             line: box("#meter .meter-line").height,
             details: document.getElementById("meter-details").hidden,
-            panel: document.body.dataset.panel,
+            panel: document.documentElement.dataset.panel,
             panelBeside: box("#options-panel").left >= box("#output-pane").right - 1,
             scrolls: document.documentElement.scrollHeight > innerHeight || document.documentElement.scrollWidth > innerWidth,
         };
@@ -1089,7 +1125,7 @@ try {
     // does a click on its backdrop, and the focus goes back to Options. Open
     // beside the output as the window narrows, they close.
     await page.viewport(1024, 768);
-    await page.waitFor("document.body.dataset.panel === 'closed'", "the options closing as the window narrows");
+    await page.waitFor("document.documentElement.dataset.panel === 'closed'", "the options closing as the window narrows");
     await page.evaluate("document.getElementById('options-toggle').focus()");
     await pressEnter();
     // Measured once it has slid in.
@@ -1147,7 +1183,7 @@ try {
         assert.equal(await savedPanel(), "open", `opened, before ${how}`);
         if (how === "Escape") await pressEscape();
         else await page.evaluate("document.getElementById('options-panel').close()");
-        await page.waitFor("document.body.dataset.panel === 'closed'", `the drawer closed by ${how}`);
+        await page.waitFor("document.documentElement.dataset.panel === 'closed'", `the drawer closed by ${how}`);
         assert.deepEqual(
             { saved: await savedPanel(), focus: (await panelNow()).focus },
             { saved: "closed", focus: "toggle" },
@@ -1162,7 +1198,7 @@ try {
     await page.evaluate("document.getElementById('options-toggle').focus()");
     await pressEnter();
     await page.viewport(1440, 900);
-    await page.waitFor("document.body.dataset.panel === 'inline'", "the drawer moving beside the output as the window widens");
+    await page.waitFor("document.documentElement.dataset.panel === 'inline'", "the drawer moving beside the output as the window widens");
     await settledMotion();
     assert.deepEqual(
         { ...(await panelNow()), codeWidth: undefined, saved: await savedPanel() },
@@ -1170,7 +1206,7 @@ try {
         "the drawer, as the window widens",
     );
     await page.viewport(1024, 768);
-    await page.waitFor("document.body.dataset.panel === 'closed'", "the options closing as the window narrows");
+    await page.waitFor("document.documentElement.dataset.panel === 'closed'", "the options closing as the window narrows");
     await settledMotion();
     assert.deepEqual(
         { ...(await panelNow()), codeWidth: undefined, saved: await savedPanel() },
@@ -1178,10 +1214,68 @@ try {
         "the options beside the output, as the window narrows",
     );
     await page.viewport(1440, 900);
-    await page.waitFor("document.body.dataset.panel === 'closed'", "the options staying closed as the window widens");
+    await page.waitFor("document.documentElement.dataset.panel === 'closed'", "the options staying closed as the window widens");
     await page.evaluate("document.getElementById('options-toggle').click()");
     assert.equal((await panelNow()).layout, "inline", "the options opened again beside the output");
     console.log("ok: at 1024 px the options are a modal drawer: focus in it, the page behind inert; Escape or the backdrop closes it, not a drag from or to it, the focus back on Options; closed by the browser, the choice is kept; the window's width saves nothing");
+
+    // The options' column is decided before the first paint, by the script
+    // in the head, so nothing moves when main.js opens them: the same column
+    // and the same widths at the first paint and after the first run.
+    const setSaved = (value) =>
+        page.evaluate(value === null ? "localStorage.removeItem('quickertype.options')" : `localStorage.setItem('quickertype.options', '${value}')`);
+    const painted = [];
+    for (const [width, height, saved, panel] of [
+        [1440, 900, null, "inline"],
+        [1440, 900, "closed", "closed"],
+        [1240, 800, null, "closed"],
+        [1240, 800, "open", "inline"],
+        [1024, 768, "open", "closed"],
+    ]) {
+        await page.viewport(width, height);
+        await setSaved(saved);
+        const what = `at ${width} px, ${saved === null ? "nothing saved" : `saved ${saved}`}`;
+        const { before, after } = await firstPaint(what, width === 1440 && saved === null ? "layout-first-paint.png" : undefined);
+        assert.deepEqual(before, after, `${what}: the panes at the first paint, and after the first run`);
+        assert.equal(after.panel, panel, `${what}: the options`);
+        painted.push(`${width} px, ${saved ?? "nothing"} saved: ${panel}`);
+    }
+    await page.viewport(1440, 900);
+    await setSaved("open");
+    console.log(`ok: the options' column is there from the first paint, before main.js runs, and nothing moves when it does (${painted.join("; ")})`);
+
+    // The script in the head keeps the page CSP-friendly: under a policy
+    // that allows the site's scripts and that one by its hash (no
+    // 'unsafe-inline'), the page runs as it does without one.
+    const inline = [...(await (await fetch(url)).text()).matchAll(/<script>([^<]*)<\/script>/g)].map((m) => m[1]);
+    assert.equal(inline.length, 1, "inline scripts in index.html");
+    const policy = `script-src 'self' 'sha256-${createHash("sha256").update(inline[0]).digest("base64")}'`;
+    const { identifier: watch } = await page.send("Page.addScriptToEvaluateOnNewDocument", {
+        source: "globalThis.violations = []; addEventListener('securitypolicyviolation', (e) => violations.push(e.violatedDirective + ' ' + e.blockedURI));",
+    });
+    await page.navigate("about:blank", { playground: false });
+    await page.send("Fetch.enable", { patterns: [{ urlPattern: url, requestStage: "Response" }] });
+    const pausedPage = page.next("Fetch.requestPaused");
+    const navigated = page.send("Page.navigate", { url });
+    const { requestId, responseHeaders } = await pausedPage;
+    const { body, base64Encoded } = await page.send("Fetch.getResponseBody", { requestId });
+    await page.send("Fetch.fulfillRequest", {
+        requestId,
+        responseCode: 200,
+        responseHeaders: [...responseHeaders, { name: "Content-Security-Policy", value: policy }],
+        body: base64Encoded ? body : Buffer.from(body).toString("base64"),
+    });
+    await navigated;
+    await page.send("Fetch.disable");
+    await page.waitFor(`document.readyState === 'complete' && globalThis.playground && ${settled}`, "the page under a Content-Security-Policy");
+    const underPolicy = await page.evaluate(
+        "({ violations, panel: document.documentElement.dataset.panel, status: document.body.dataset.status, wasm: playground.engines.wasm.boot.loadError ?? null })",
+    );
+    await page.send("Page.removeScriptToEvaluateOnNewDocument", { identifier: watch });
+    assert.deepEqual(underPolicy, { violations: [], panel: "inline", status: "done", wasm: null }, `the page under "${policy}"`);
+    console.log(`ok: under "${policy}" (the script in the head by its hash) the page runs, nothing blocked`);
+    await page.navigate(url);
+    await page.waitFor(settled, "the first run, the options open again");
 
     // The notes behind an "i": Enter opens one, inside the window; Escape
     // closes it, the focus back on its button.
@@ -2349,7 +2443,7 @@ try {
         // details open, the options open, the input shown.
         await page.evaluate("scrollTo(0, 0)");
         const phone = await page.evaluate(`({
-            panel: document.body.dataset.panel,
+            panel: document.documentElement.dataset.panel,
             view: document.body.dataset.view,
             code: Math.round(document.getElementById("output").getBoundingClientRect().top),
             input: document.getElementById("input-pane").getClientRects().length,
