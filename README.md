@@ -66,9 +66,9 @@ files. Wall time, median of 10 runs:
   50 MiB, against quicktype's 30 s and 3.2 GiB, and the cards in every
   language (3.0 GB) take 1.4 s.
 - **Several cores:** a file of 8 MiB or more whose top-level value is an
-  array is read on all cores: an array of 1 million records (267 MB)
-  becomes TypeScript types in 57 ms instead of 262 ms on a 12-core
-  M2 Max, with the same output.
+  array, or that holds JSON Lines, is read on all cores: an array of 1
+  million records (267 MB) becomes TypeScript types in 57 ms instead of
+  262 ms on a 12-core M2 Max, with the same output.
 - **Where the time goes:** on small inputs, most of the difference is
   starting Node.js and loading quicktype (226 ms for `--version` alone);
   on large inputs it is the engine. As
@@ -215,7 +215,8 @@ byte, in every language and with every option.
 - A syntax error names the line its value starts on: `Error: Syntax error
   in input JSON cards: line 3: Parser cannot parse input: expected ','.`
 - Reading JSON Lines is as fast as reading the array, and as frugal: a
-  file is read as a stream, never held whole.
+  file is read as a stream, never held whole, and a large one (8 MiB or
+  more) on all cores.
 
 Because files named `.jsonl` were JSON to quicktype, a one-line `.jsonl`
 file that gave an object now gives an array of that object, and a

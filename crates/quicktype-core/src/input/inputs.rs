@@ -750,11 +750,15 @@ impl JsonInput {
         for sample in samples {
             let config = &self.compressed_json;
             let read = match sample {
-                // A large top-level array in a file read at offsets, on
-                // several threads as far as it can be.
+                // A large top-level array (or large JSON Lines) in a file
+                // read at offsets, on several threads as far as it can be.
                 JsonSample::Reader(reader) => match reader.take() {
-                    Some(stream) => read_stream_into(tallies, config, stream),
+                    Some(stream) => read_stream_into(tallies, config, stream, Framing::Value),
                     None => Err(ParseError::Read(already_read(Framing::Value))),
+                },
+                JsonSample::ReaderLines(reader) => match reader.take() {
+                    Some(stream) => read_stream_into(tallies, config, stream, Framing::Lines),
+                    None => Err(ParseError::Read(already_read(Framing::Lines))),
                 },
                 sample => read_sample_into(&mut TallyBuilder::new(tallies, config), sample),
             };
@@ -989,22 +993,26 @@ impl Input for JsonInput {
     }
 }
 
-/// Reads a [`JsonSample::Reader`]'s bytes into `tallies`: on several
-/// threads as far as they can be, if they can be read at any offset and
-/// are a large top-level array ([`parallel_read::read_sample`]); in one go
+/// Reads a [`JsonSample::Reader`]'s bytes (a [`JsonSample::ReaderLines`]'
+/// as `framing` says) into `tallies`: on several threads as far as they
+/// can be, if they can be read at any offset and are a large top-level
+/// array or large JSON Lines ([`parallel_read::read_sample`]); in one go
 /// otherwise.
 fn read_stream_into(
     tallies: &mut RunningTallies,
     config: &CompressedJson,
     stream: SampleStream,
+    framing: Framing,
 ) -> Result<NodeId, ParseError> {
     match stream {
         #[cfg(not(target_family = "wasm"))]
-        SampleStream::Positional(sample) => parallel_read::read_sample(sample, tallies, config),
+        SampleStream::Positional(sample) => {
+            parallel_read::read_sample(sample, tallies, config, framing)
+        }
         stream => parse_stream_reader_into(
             &mut TallyBuilder::new(tallies, config),
             &mut *stream.into_reader(),
-            Framing::Value,
+            framing,
         ),
     }
 }

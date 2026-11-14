@@ -1,6 +1,6 @@
 //! Not a quicktype file: where a large top-level JSON array can be split
-//! between its elements, for reading it on several threads
-//! ([`parallel_read`](super::parallel_read)). A scan that knows strings
+//! between its elements, or JSON Lines between their values, for reading
+//! them on several threads ([`parallel_read`](super::parallel_read)). A scan that knows strings
 //! and escapes, 64 bytes at a time: simdjson's first stage, with
 //! eight-byte words where simdjson has SIMD registers (the workspace has
 //! no unsafe code, so no intrinsics).
@@ -24,7 +24,9 @@
 //! change the depth by the same amount from any depth. Summaries of
 //! consecutive ranges then give the exact state at each range's start, in
 //! order, and from there each range's first comma at depth 1
-//! ([`ScanState::find_split`]).
+//! ([`ScanState::find_split`]), or for JSON Lines its first line feed at
+//! depth 0 ([`Separator`]): a raw line feed can only be whitespace, and
+//! outside every value it ends a line between two of them.
 
 /// Each byte of a word set to 1.
 const ONES: u64 = u64::from_ne_bytes([1; 8]);
@@ -113,15 +115,36 @@ fn masks(block: &[u8; BLOCK]) -> Masks {
     m
 }
 
-/// The commas of a block, one bit per byte.
+/// The bytes of a block that are `b`, one bit per byte.
 #[inline(always)]
-fn commas(block: &[u8; BLOCK]) -> u64 {
+fn bytes_equal(block: &[u8; BLOCK], b: u8) -> u64 {
     let (words, _) = block.as_chunks::<8>();
-    let mut commas = 0;
+    let mut found = 0;
     for (i, word) in words.iter().enumerate() {
-        commas |= gather(equal(u64::from_le_bytes(*word), b',')) << (8 * i);
+        found |= gather(equal(u64::from_le_bytes(*word), b)) << (8 * i);
     }
-    commas
+    found
+}
+
+/// What separates the values a sample is split between: a byte outside
+/// strings, at a depth.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Separator {
+    byte: u8,
+    depth: i64,
+}
+
+impl Separator {
+    /// A comma at depth 1: between the elements of a top-level array.
+    pub(crate) const ARRAY: Separator = Separator {
+        byte: b',',
+        depth: 1,
+    };
+    /// A line feed at depth 0: between the values of JSON Lines.
+    pub(crate) const LINES: Separator = Separator {
+        byte: b'\n',
+        depth: 0,
+    };
 }
 
 /// The escaped bytes of a block (each byte right after a backslash that is
@@ -291,17 +314,21 @@ impl ScanState {
     }
 
     /// Whether a range with summary `summary` that starts in this state
-    /// may have a comma at depth 1 (by the bound of its depths).
-    pub(crate) fn may_split(self, summary: &Summary) -> bool {
-        self.depth + summary.lowest[usize::from(self.in_string)] <= 1
+    /// may have `separator` (by the bound of its depths).
+    pub(crate) fn may_split(self, summary: &Summary, separator: Separator) -> bool {
+        self.depth + summary.lowest[usize::from(self.in_string)] <= separator.depth
     }
 
-    /// Scans `block`, which starts in this state, for a comma outside
-    /// strings at depth 1 (one between the top-level array's elements):
-    /// returns its index in the block, or `None` and moves this state past
-    /// the block.
+    /// Scans `block`, which starts in this state, for `separator` outside
+    /// strings at its depth (a comma between the top-level array's
+    /// elements, a line feed between JSON Lines' values): returns its
+    /// index in the block, or `None` and moves this state past the block.
     #[inline]
-    pub(crate) fn find_split(&mut self, block: &[u8; BLOCK]) -> Option<usize> {
+    pub(crate) fn find_split(
+        &mut self,
+        block: &[u8; BLOCK],
+        separator: Separator,
+    ) -> Option<usize> {
         let m = masks(block);
         let mut escape_carry = u64::from(self.escaped);
         let quote = m.quote & !escaped(m.backslash, &mut escape_carry);
@@ -310,12 +337,14 @@ impl ScanState {
         let outside = !inside;
         let (open, close) = (m.open & outside, m.close & outside);
         let (opens, closes) = (i64::from(open.count_ones()), i64::from(close.count_ones()));
-        // Only a block whose depths may reach 1 is looked at comma by comma.
-        if self.depth - closes <= 1 && self.depth + opens >= 1 {
-            let commas = commas(block) & outside;
-            if commas != 0 {
+        // Only a block whose depths may reach the separator's is looked at
+        // separator by separator.
+        let target = separator.depth;
+        if self.depth - closes <= target && self.depth + opens >= target {
+            let separators = bytes_equal(block, separator.byte) & outside;
+            if separators != 0 {
                 let mut depth = self.depth;
-                let mut bits = open | close | commas;
+                let mut bits = open | close | separators;
                 while bits != 0 {
                     let bit = bits & bits.wrapping_neg();
                     bits ^= bit;
@@ -323,7 +352,7 @@ impl ScanState {
                         depth += 1;
                     } else if close & bit != 0 {
                         depth -= 1;
-                    } else if depth == 1 {
+                    } else if depth == target {
                         return Some(bit.trailing_zeros() as usize);
                     }
                 }
@@ -375,37 +404,45 @@ pub(crate) mod tests {
     pub(crate) fn bytewise_state(bytes: &[u8], at: usize) -> ScanState {
         let mut state = ScanState::default();
         for &b in &bytes[..at] {
-            let escaped = state.escaped;
-            state.escaped = !escaped && b == b'\\';
-            if b == b'"' && !escaped {
-                state.in_string = !state.in_string;
-            } else if !state.in_string {
-                match b {
-                    b'[' | b'{' | b'_' | 0x7F => state.depth += 1,
-                    b']' | b'}' | b'Y' | b'y' => state.depth -= 1,
-                    _ => {}
-                }
-            }
+            bytewise_step(&mut state, b);
         }
         state
     }
 
-    /// The commas at depth 1 outside strings, byte by byte.
-    pub(crate) fn bytewise_splits(bytes: &[u8]) -> Vec<usize> {
-        (0..bytes.len())
-            .filter(|&i| {
-                let state = bytewise_state(bytes, i);
-                bytes[i] == b',' && !state.in_string && state.depth == 1
-            })
-            .collect()
+    /// Moves `state` past `b`.
+    fn bytewise_step(state: &mut ScanState, b: u8) {
+        let escaped = state.escaped;
+        state.escaped = !escaped && b == b'\\';
+        if b == b'"' && !escaped {
+            state.in_string = !state.in_string;
+        } else if !state.in_string {
+            match b {
+                b'[' | b'{' | b'_' | 0x7F => state.depth += 1,
+                b']' | b'}' | b'Y' | b'y' => state.depth -= 1,
+                _ => {}
+            }
+        }
     }
 
-    /// The first comma at depth 1 at or after `from`, found block by block
-    /// from the state there; the state after the bytes if there is none.
-    fn scanned_split(bytes: &[u8], from: usize) -> Result<usize, ScanState> {
+    /// The `separator`s outside strings at its depth, byte by byte.
+    pub(crate) fn bytewise_separators(bytes: &[u8], separator: Separator) -> Vec<usize> {
+        let mut state = ScanState::default();
+        let mut found = Vec::new();
+        for (i, &b) in bytes.iter().enumerate() {
+            if b == separator.byte && !state.in_string && state.depth == separator.depth {
+                found.push(i);
+            }
+            bytewise_step(&mut state, b);
+        }
+        found
+    }
+
+    /// The first `separator` at or after `from`, found block by block from
+    /// the state there; the state after the bytes if there is none.
+    fn scanned_split(bytes: &[u8], from: usize, separator: Separator) -> Result<usize, ScanState> {
         let mut state = bytewise_state(bytes, from);
         for (k, block) in blocks(&bytes[from..]).enumerate() {
-            if let Some(i) = state.find_split(&block) {
+            if let Some(i) = state.find_split(&block, separator) {
                 return Ok(from + k * BLOCK + i);
             }
         }
@@ -478,7 +515,10 @@ pub(crate) mod tests {
                 }
                 assert_eq!(m.quote >> at & 1 == 1, b == b'"');
                 assert_eq!(m.backslash >> at & 1 == 1, b == b'\\');
-                assert_eq!(commas(&block) >> at & 1 == 1, b == b',');
+                for separator in *b",\n" {
+                    let found = bytes_equal(&block, separator) >> at & 1 == 1;
+                    assert_eq!(found, b == separator);
+                }
                 // Only that byte.
                 assert!(m.quote.count_ones() + m.backslash.count_ones() <= 1);
                 assert!((m.open | m.close).count_ones() <= 1);
@@ -522,102 +562,150 @@ pub(crate) mod tests {
         }
     }
 
-    /// A random string of bytes that matter to the scan (and a few that do
-    /// not).
+    /// A random string of bytes that matter to the scan, the separators
+    /// included (and a few that do not).
     pub(crate) fn random_bytes(rng: &mut Rng, len: usize) -> Vec<u8> {
-        const ALPHABET: &[u8] = b"\"\"\"\\\\,,,[]{}:a 1Yy_\x7f\xc3";
+        const ALPHABET: &[u8] = b"\"\"\"\\\\,,,\n\n[]{}:a 1Yy_\x7f\xc3\r";
         (0..len)
             .map(|_| ALPHABET[rng.below(ALPHABET.len())])
             .collect()
     }
 
-    /// A random JSON document: an array of elements with strings (escapes,
-    /// brackets and commas in them), nested arrays and objects.
-    pub(crate) fn random_json(rng: &mut Rng, elements: usize) -> Vec<u8> {
-        fn value(rng: &mut Rng, out: &mut Vec<u8>, depth: usize) {
-            match rng.below(if depth > 4 { 3 } else { 6 }) {
-                0 => out.extend_from_slice(b"123"),
-                1 => {
-                    out.push(b'"');
-                    for _ in 0..rng.below(12) {
-                        let pieces: [&[u8]; 14] = [
-                            b"a",
-                            b"\\\"",
-                            b"\\\\",
-                            b"[",
-                            b"]",
-                            b"{",
-                            b"}",
-                            b",",
-                            b"\\n",
-                            b"\\\\\\\"",
-                            b" ",
-                            b"Yy_\x7f",
-                            // Past 64 units: a place that absorbs strings.
-                            b"long text long text long text long text long text long text long ",
-                            "\u{e9}".as_bytes(),
-                        ];
-                        out.extend_from_slice(pieces[rng.below(pieces.len())]);
-                    }
-                    out.push(b'"');
+    /// A random JSON value, `depth` levels deep: strings and keys full of
+    /// quotes, escapes, brackets and commas, nested arrays and objects,
+    /// which now and then span lines (line feeds and CRLF as whitespace in
+    /// them, at depth 1 and more).
+    pub(crate) fn random_value(rng: &mut Rng, out: &mut Vec<u8>, depth: usize) {
+        // Whitespace in arrays and objects, now and then lines.
+        fn space(rng: &mut Rng, out: &mut Vec<u8>) {
+            let spaces: [&[u8]; 6] = [b"", b" ", b"", b"\n", b"\r\n  ", b" \n\t"];
+            out.extend_from_slice(spaces[rng.below(spaces.len())]);
+        }
+        match rng.below(if depth > 4 { 3 } else { 6 }) {
+            0 => out.extend_from_slice(b"123"),
+            1 => {
+                out.push(b'"');
+                for _ in 0..rng.below(12) {
+                    let pieces: [&[u8]; 14] = [
+                        b"a",
+                        b"\\\"",
+                        b"\\\\",
+                        b"[",
+                        b"]",
+                        b"{",
+                        b"}",
+                        b",",
+                        b"\\n",
+                        b"\\\\\\\"",
+                        b" ",
+                        b"Yy_\x7f",
+                        // Past 64 units: a place that absorbs strings.
+                        b"long text long text long text long text long text long text long ",
+                        "\u{e9}".as_bytes(),
+                    ];
+                    out.extend_from_slice(pieces[rng.below(pieces.len())]);
                 }
-                2 => out.extend_from_slice(b"null"),
-                3 => {
-                    out.push(b'[');
-                    for i in 0..rng.below(4) {
-                        if i > 0 {
-                            out.extend_from_slice(b", ");
-                        }
-                        value(rng, out, depth + 1);
+                out.push(b'"');
+            }
+            2 => out.extend_from_slice(b"null"),
+            3 => {
+                out.push(b'[');
+                for i in 0..rng.below(4) {
+                    if i > 0 {
+                        out.push(b',');
                     }
-                    out.push(b']');
+                    space(rng, out);
+                    random_value(rng, out, depth + 1);
                 }
-                _ => {
-                    out.push(b'{');
-                    for i in 0..rng.below(4) {
-                        if i > 0 {
-                            out.push(b',');
-                        }
-                        out.extend_from_slice(b"\"k\\\"\" : ");
-                        value(rng, out, depth + 1);
+                space(rng, out);
+                out.push(b']');
+            }
+            _ => {
+                out.push(b'{');
+                for i in 0..rng.below(4) {
+                    if i > 0 {
+                        out.push(b',');
                     }
-                    out.push(b'}');
+                    space(rng, out);
+                    out.extend_from_slice(b"\"k\\\"\"");
+                    space(rng, out);
+                    out.extend_from_slice(b": ");
+                    random_value(rng, out, depth + 1);
                 }
+                space(rng, out);
+                out.push(b'}');
             }
         }
+    }
+
+    /// A random JSON document: an array of `elements` random values
+    /// ([`random_value`]), between commas, some before a line feed.
+    pub(crate) fn random_json(rng: &mut Rng, elements: usize) -> Vec<u8> {
         let mut out = b" [".to_vec();
         for i in 0..elements {
             if i > 0 {
                 out.extend_from_slice(if rng.below(2) == 0 { b"," } else { b" ,\n" });
             }
-            value(rng, &mut out, 1);
+            random_value(rng, &mut out, 1);
         }
         out.extend_from_slice(b"]\n");
         out
     }
 
+    /// Random JSON Lines of `values` values (some spanning lines), with LF
+    /// and CRLF line breaks, blank and whitespace-only lines, and
+    /// whitespace before and after.
+    pub(crate) fn random_lines(rng: &mut Rng, values: usize) -> Vec<u8> {
+        let breaks: [&[u8]; 5] = [b"\n", b"\r\n", b"\n\n", b" \n\t", b"\r\n \r\n"];
+        let mut out = if rng.below(3) == 0 {
+            b"\n ".to_vec()
+        } else {
+            Vec::new()
+        };
+        for i in 0..values {
+            if i > 0 {
+                out.extend_from_slice(breaks[rng.below(breaks.len())]);
+            }
+            random_value(rng, &mut out, 0);
+        }
+        if rng.below(2) == 0 {
+            out.extend_from_slice(breaks[rng.below(breaks.len())]);
+        }
+        out
+    }
+
     /// From any point and the state there, the scan finds the first comma
-    /// at depth 1, or ends in the state after the bytes.
+    /// at depth 1 (or for JSON Lines, line feed at depth 0), or ends in the
+    /// state after the bytes.
     #[test]
     fn find_split_matches_bytewise() {
         let mut rng = Rng(12345);
+        // Line feeds that split JSON Lines, and those in their values,
+        // which do not.
+        let (mut line_splits, mut deep_line_feeds) = (0, 0);
         for round in 0..1_500 {
-            let bytes = if round % 2 == 0 {
-                random_json(&mut rng, 1 + round % 40)
-            } else {
-                {
+            let (bytes, separator) = match round % 4 {
+                0 => (random_json(&mut rng, 1 + round % 40), Separator::ARRAY),
+                1 => (random_lines(&mut rng, 1 + round % 40), Separator::LINES),
+                _ => {
                     let len = rng.below(300);
-                    random_bytes(&mut rng, len)
+                    let separator = [Separator::ARRAY, Separator::LINES][round % 4 - 2];
+                    (random_bytes(&mut rng, len), separator)
                 }
             };
-            let splits = bytewise_splits(&bytes);
+            let splits = bytewise_separators(&bytes, separator);
+            if separator == Separator::LINES {
+                line_splits += splits.len();
+                deep_line_feeds += bytes.iter().filter(|&&b| b == b'\n').count() - splits.len();
+            }
             for from in 0..=bytes.len() {
                 let expected = match splits.iter().find(|&&s| s >= from) {
                     Some(&s) => Ok(s),
                     None => Err(bytewise_state(&bytes, bytes.len())),
                 };
                 // The padding after the end may take an escape.
-                let got = scanned_split(&bytes, from).map_err(|s| (s.in_string, s.depth));
+                let got =
+                    scanned_split(&bytes, from, separator).map_err(|s| (s.in_string, s.depth));
                 let expected = expected.map_err(|s| (s.in_string, s.depth));
                 assert_eq!(
                     got,
@@ -627,6 +715,10 @@ pub(crate) mod tests {
                 );
             }
         }
+        assert!(
+            line_splits > 1_000 && deep_line_feeds > 1_000,
+            "{line_splits} line feeds between values, {deep_line_feeds} others"
+        );
     }
 
     /// Summaries of ranges, cut anywhere, resolve to the states the bytes

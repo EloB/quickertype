@@ -202,9 +202,15 @@ system) and peak RSS of each run from `wait4`; medians.
 | 60 × generated (40 MB) in one array, 2.62 GB | 3 | 8.38 / 8.37 s, 64.2 MiB | 8.36 / 8.33 s, 63.0 MiB | – | 5.7–5.9 |
 | 10.5 M objects with ~210-character strings, 2.53 GB | 3 | 308 ms / 2.69 s, 21.0 MiB | 1.40 / 1.39 s, 6.0 MiB | – | 5.7 |
 | Scryfall cards (real data), 657 MB | 5 (3) | 284 ms / 1.74 s, 50.1 MiB | 1.43 / 1.43 s, 20.2 MiB | 29.9 / 38.6 s, 3.20 GiB | 5.3–5.5 (4.7–5.3) |
-| the same cards as JSON Lines, 657 MB | 5 | 1.53 / 1.53 s, 20.3 MiB (read in one go) | – | – | 5.3–5.5 |
+| the same cards as JSON Lines, 657 MB | 5 | 292 ms / 1.78 s, 49.7 MiB | 1.42 / 1.41 s, 20.2 MiB | – | 5.5–6.1 |
 | Scryfall cards (real data), every language, 3.01 GB | 3 | 1.35 / 8.15 s, 148 MiB | 6.65 / 6.64 s, 96.2 MiB | – | 5.7–5.8 |
 
+The JSON Lines row was measured when JSON Lines came to be read on
+several threads, in a block of its own against main before that
+(`4cf135e28`, which read them in one go: 1.43 / 1.43 s, 20.3 MiB in
+that block, 1.53 / 1.53 s in this table's) and the array (283 ms / 1.73
+s, 49.5 MiB); see [JSON Lines on several
+threads](#json-lines-on-several-threads).
 Every command wrote the same output: all cores against one thread on
 every input, quicktype against quickertype on the 40 MB input (`cargo
 xtask bench`), the 100k and 1M records and the 657 MB cards, and the
@@ -229,8 +235,9 @@ cards as JSON Lines against the array. quicktype was not run on the
   wall time and 65× less memory (quicktype: 29.9 s and 3.20 GiB; on one
   thread quickertype still takes 21× less time). On the 1M records,
   quicktype takes 5.44 s and 1.44 GiB.
-- **JSON Lines** are read in one go: the cards as JSON Lines take what the
-  array takes on one thread.
+- **JSON Lines** are read on several threads as their array is: the cards
+  as JSON Lines take 292 ms on all cores against the array's 283 ms in
+  the same block, and on one thread what the array takes.
 
 How each input is made (the scripts are in the repository, the card data
 is not):
@@ -816,8 +823,8 @@ as fast as 12). Reading on every core is the first to slow down when
 other work runs: at load average 5 to 8 the builds before the last
 review took 57 to 63 ms on the 1M records. Peak RSS grows by 1.25–1.6 MiB per thread: read
 buffers, the tallies of the part each thread reads, and the allocator's
-per-thread heaps. A pipe (`cat file |`) and JSON Lines are read in one
-go, as before.
+per-thread heaps. A pipe (`cat file |`) is read in one go, as before;
+JSON Lines are read on several threads too ([below](#json-lines-on-several-threads)).
 
 **Where it starts to pay.** The same records, cut to 2–64 MB, read in one
 go (`QUICKTYPE_READ_THREADS=1`) and on 12 threads with every sample split
@@ -897,6 +904,43 @@ that escapes a quote), on 12 threads, medians of 9, load average 4.1:
 (the string is one token, read on one thread). Looking back from each
 range for where the run starts took 130 / 328 ms and 342 MiB (load
 average 23).
+
+### JSON Lines on several threads
+
+A JSON Lines file of 8 MiB or more (and standard input redirected from
+one) is read on several threads as an array is, split at the line feeds
+between its values. The same records as JSON Lines (one compact value
+per line) and as a compact array, `-l ts -o /dev/null`, 12 threads (the
+default), interleaved with main at `4cf135e28` (which reads JSON Lines in
+one go); medians of 11 runs (21 for the smaller inputs, 7 for the
+cards); wall / CPU time in ms and peak RSS; load average 4.6 to
+5.5, another build running:
+
+| Input | Main, JSON Lines | JSON Lines | JSON Lines, `< file` | Array, wall (main / now) |
+|---|---:|---:|---:|---:|
+| 100k records (26.7 MB) | 33.0 / 31.7, 6.0 MiB | **11.9** / 59.3, 19.4 MiB | 11.7 / 58.6, 20.3 MiB | 11.3 / 11.1 |
+| 1M records (266 MB) | 283 / 282, 6.0 MiB | **53.5** / 474, 21.0 MiB | 54.7 / 472, 21.1 MiB | 53.2 / 52.7 |
+| 20k articles, long text (23.4 MB) | 64.3 / 62.8, 19.1 MiB | **23.0** / 104, 36.8 MiB | 23.7 / 105, 37.1 MiB | 22.8 / 22.8 |
+| Scryfall cards (real data), 657 MB (`--just-types`) | 1,437 / 1,434, 20.3 MiB | **293** / 1,791, 49.6 MiB | 290 / 1,781, 49.1 MiB | – / 283 |
+
+JSON Lines take what their array takes, within 1 ms on the records and
+4% on the cards (whose 49 MiB are the tallies of their parts, read beside
+each other). The output is the array's (the cards' is quicktype's for
+their array, byte for byte, from the file, from standard input, from a
+directory, with a byte order mark first), and a broken line, early or
+deep in the cards, is reported on the line reading in one go reports.
+Read in one go (one thread, or a pipe), JSON Lines retire the
+instructions they did on main, 0.5% fewer (1M records from a pipe:
+4.685–4.693 billion, main 4.708–4.712), and arrays the instructions they
+did (4.437 billion, main 4.437–4.438).
+
+A stray `{`, `[` or `[[` before the 1M records' lines, an error on line
+1 that reading in one go reports at once: 5.4 / 5.3 ms against main's
+3.9 / 2.9 (medians of 15, load average 5.3 to 5.6): only the ranges that
+start in the first MiB are scanned (`FIRST_LINE_MAX`; 4.1 MiB here), and
+the file is read in one go.
+Without that bound they were scanned until half the budget (5.6 / 14.9
+ms; with a 1 GiB budget, all 266 MB: 17.0 / 119 ms, now 5.8 / 5.6).
 
 ## Profiling
 

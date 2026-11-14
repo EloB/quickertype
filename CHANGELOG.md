@@ -46,7 +46,8 @@ section are absolute.
   - quickertype-core: `JsonSample::StringLines`, `StreamLines` and
     `ReaderLines`, the JSON Lines forms of `String`, `Stream` and
     `Reader`.
-  - Reading JSON Lines is as fast as reading the same values as an array.
+  - Reading JSON Lines is as fast as reading the same values as an array,
+    a large file on several threads too (below).
 - quickertype-core (npm): the JSON inputs of `jsonInputForTargetLanguage`
   take a sample as its UTF-8 bytes too (a `Uint8Array` or a Node.js
   `Buffer`, e.g. `fs.readFileSync(path)`), read as the text
@@ -63,11 +64,18 @@ section are absolute.
   output is the same byte for byte. An array of 1 million records
   (267 MB) becomes TypeScript types about 4.6 times as fast on 12 cores
   (57 ms instead of 262 ms on an M2 Max).
-  The memory the parts read beside each other take is bounded; pipes,
-  JSON Lines and smaller files are read in one go as before.
+  The memory the parts read beside each other take is bounded; pipes and
+  smaller files are read in one go as before.
+  - JSON Lines too: a JSON Lines file of 8 MiB or more (or standard
+    input redirected from one with `--src-lang jsonl`) is cut between its
+    lines and read so, with the output and the errors of reading it in
+    one go, a bad line reported on the same line. 1 million records as
+    JSON Lines (266 MB) take 54 instead of 283 ms on 12 cores, as long as
+    their array takes.
   - quickertype-core: `ParallelOptions` (made from its `Default`) and
     `Readable::open_sample(options)`, which opens a file so that a large
-    top-level array in it is read on several threads.
+    top-level array in it (as a `JsonSample::Reader`), or large JSON Lines
+    (as a `JsonSample::ReaderLines`), is read on several threads.
 
 ### Changed
 

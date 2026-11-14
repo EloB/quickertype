@@ -139,6 +139,57 @@ pub(crate) fn parse_array_rest_into<S: JsonSink>(
     finish(sink, tokenizer, result)
 }
 
+/// A part of a JSON Lines sample read on several threads: the bytes
+/// between two line feeds outside its values (or the sample's start or
+/// end), read as JSON Lines into `sink` (the array of the part's values),
+/// with a byte order mark skipped only in the `first` part. Also returns
+/// how many line feeds the part holds, which tells the line where the
+/// part after it starts ([`parallel_read`](super::parallel_read)).
+#[cfg(not(target_family = "wasm"))]
+pub(crate) fn parse_lines_part_into<S: JsonSink>(
+    sink: &mut S,
+    reader: &mut dyn Read,
+    first: bool,
+) -> Result<(S::Root, u64), ParseError> {
+    let mut tokenizer = Tokenizer::streaming(reader, CHUNK_SIZE);
+    let mut lines = Lines::default();
+    // (The first part's instance is the whole sample's.)
+    let result = if first {
+        tokenizer.run_lines::<S, true, true>(sink, &mut lines)
+    } else {
+        tokenizer.run_lines::<S, true, false>(sink, &mut lines)
+    };
+    let feeds = lines.feeds as u64;
+    finish(sink, tokenizer, result).map(|root| (root, feeds))
+}
+
+/// [`parse_stream_reader_into`] for the rest of a JSON Lines sample after
+/// a line feed between its values, the sample's `feeds`th: the values that
+/// follow, read as reading the whole sample reads them from there, into a
+/// `sink` that is in the sample's array, with the lines of errors counted
+/// from the sample's start. Reading JSON Lines on several threads reads
+/// the rest after the parts it read so
+/// ([`parallel_read`](super::parallel_read)).
+#[cfg(not(target_family = "wasm"))]
+pub(crate) fn parse_lines_rest_into<S: JsonSink>(
+    sink: &mut S,
+    reader: &mut dyn Read,
+    feeds: u64,
+) -> Result<S::Root, ParseError> {
+    let feeds = usize::try_from(feeds).unwrap_or(usize::MAX);
+    let mut lines = Lines {
+        feeds,
+        value_line: feeds.saturating_add(1),
+        started: false,
+    };
+    let mut tokenizer = Tokenizer::streaming(reader, CHUNK_SIZE);
+    let result = match tokenizer.run_lines::<S, false, false>(sink, &mut lines) {
+        Err(ParseError::Js(e)) => Err(line_error(lines.value_line, &e)),
+        result => result,
+    };
+    finish(sink, tokenizer, result)
+}
+
 /// [`parse_stream_reader_into`] with chunks of at most `chunk_size` bytes.
 pub(crate) fn parse_stream_chunked_into<S: JsonSink>(
     sink: &mut S,
@@ -197,7 +248,7 @@ fn tokenize_lines<S: JsonSink, W: Window>(
     mut tokenizer: Tokenizer<'_, W>,
 ) -> Result<S::Root, ParseError> {
     let mut lines = Lines::default();
-    let result = match tokenizer.run_lines(sink, &mut lines) {
+    let result = match tokenizer.run_lines::<S, true, true>(sink, &mut lines) {
         Err(ParseError::Js(e)) => Err(line_error(lines.value_line, &e)),
         result => result,
     };
@@ -724,17 +775,29 @@ impl<W: Window> Tokenizer<'_, W> {
     /// [`run`](Self::run) for JSON Lines: the array of the values, each
     /// read as a whole sample, which must start on a line after the last
     /// one ends (`Expect::Done` is between values, and the stack is empty
-    /// there). A byte order mark may come first. `lines` says where the
-    /// reading is, for the line of an error.
-    fn run_lines<S: JsonSink>(
+    /// there). `lines` says where the reading is, for the line of an
+    /// error. The array is opened here with `OPEN` (a whole sample, or a
+    /// part of one read on several threads; without it, the rest of such a
+    /// sample after a line feed between its values, whose array `sink` is
+    /// in already), and with `BOM` a byte order mark may come first (at the
+    /// sample's start; anywhere else it is no value, and an error). (Both
+    /// are constants, so that reading a whole sample, `<true, true>`,
+    /// compiles as it did before.)
+    fn run_lines<S: JsonSink, const OPEN: bool, const BOM: bool>(
         &mut self,
         sink: &mut S,
         lines: &mut Lines,
     ) -> Result<S::Root, ParseError> {
         let mut expect = Expect::Done;
         let mut stack: Vec<Parent> = Vec::new();
-        sink.push_array_context()?;
-        if self.byte(0) == Some(0xEF) && self.byte(1) == Some(0xBB) && self.byte(2) == Some(0xBF) {
+        if OPEN {
+            sink.push_array_context()?;
+        }
+        if BOM
+            && self.byte(0) == Some(0xEF)
+            && self.byte(1) == Some(0xBB)
+            && self.byte(2) == Some(0xBF)
+        {
             self.index += 3;
         }
         states!(self, sink, expect, stack, skip: self.skip_line_whitespace(&mut lines.feeds), done: {

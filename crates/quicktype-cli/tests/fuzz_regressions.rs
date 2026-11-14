@@ -2,11 +2,14 @@
 //!
 //! Each `tests/fuzz-regressions/<name>/case.json` was recorded by
 //! `xtask/fuzz/record.mjs` from the reference CLI: a CLI step (`args`
-//! relative to the case directory, reading `in/`), its exit code, and its
-//! stdout, stderr and written files (`cli.stdout`, `cli.stderr`,
-//! `expected/<file>`). This test runs the step with our binary in a fresh
-//! directory holding a copy of `in/` and compares all of it, with the
-//! directory replaced by `{CWD}` as the recorder did. Node is not needed.
+//! relative to the case directory, reading `in/`, and the `env` our side
+//! ran with, if any: the fuzzer's internal variables for reading on
+//! several threads), its exit code, and its stdout, stderr and written
+//! files (`cli.stdout`, `cli.stderr`, `expected/<file>`). This test runs
+//! the step with our binary, with that `env` (a case recorded without one
+//! runs without), in a fresh directory holding a copy of `in/` and
+//! compares all of it, with the directory replaced by `{CWD}` as the
+//! recorder did. Node is not needed.
 //! (The npm differential suite runs the same cases through the JavaScript
 //! API.)
 
@@ -157,6 +160,9 @@ fn check_case(dir: &Path, work: &Path) -> Result<(), String> {
         .env("TZ", "UTC")
         .env_remove("FORCE_COLOR")
         .env_remove("NO_COLOR");
+    for (name, value) in recorded_env(cli) {
+        command.env(name, value);
+    }
     let out = run_with_timeout(command)?;
 
     let expected_exit = cli["exit"].as_i64().unwrap();
@@ -206,6 +212,61 @@ fn check_case(dir: &Path, work: &Path) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+/// The environment variables a recorded CLI step ran our binary with
+/// (`cli.env`, an object of strings); none for a step recorded without.
+fn recorded_env(cli: &Value) -> Vec<(&str, &str)> {
+    cli.get("env")
+        .and_then(Value::as_object)
+        .into_iter()
+        .flatten()
+        .map(|(name, value)| (name.as_str(), value.as_str().unwrap()))
+        .collect()
+}
+
+/// A step recorded with an `env` runs with it: here a JSON Lines file the
+/// variables have read on several threads (seen in a debug build, where
+/// the CLI reports how it read; a release build checks the output only).
+/// One recorded without runs without.
+#[test]
+fn recorded_env_is_replayed() {
+    let root = Path::new(env!("CARGO_TARGET_TMPDIR")).join("fuzz-regressions-env");
+    let _ = fs::remove_dir_all(&root);
+    let case = root.join("case");
+    fs::create_dir_all(case.join("in")).unwrap();
+    let lines: Vec<String> = (0..200)
+        .map(|i| format!(r#"{{"id":{i},"name":"n{}"}}"#, i % 7))
+        .collect();
+    fs::write(case.join("in").join("records.jsonl"), lines.join("\n")).unwrap();
+    let args = ["in/records.jsonl", "--lang", "ts"];
+    let expected = Command::new(BIN)
+        .args(args)
+        .current_dir(&case)
+        .output()
+        .unwrap();
+    assert!(expected.status.success());
+    fs::write(case.join("cli.stdout"), &expected.stdout).unwrap();
+    let report = root.join("report.txt");
+    for env in [true, false] {
+        let mut cli = serde_json::json!({ "args": args, "dirs": [], "exit": 0, "files": [] });
+        if env {
+            cli["env"] = serde_json::json!({
+                "QUICKTYPE_READ_THREADS": "3",
+                "QUICKTYPE_READ_CHUNK": "64",
+                "QUICKTYPE_READ_REPORT": report.to_str().unwrap(),
+            });
+        }
+        let record = serde_json::json!({ "description": "env", "case": {}, "cli": cli });
+        fs::write(case.join("case.json"), record.to_string()).unwrap();
+        let _ = fs::remove_file(&report);
+        check_case(&case, &root.join("work")).unwrap();
+        if cfg!(debug_assertions) {
+            let expected = env.then_some("whole 1 in_part 0 again 0\n");
+            let read = fs::read_to_string(&report).ok();
+            assert_eq!(read.as_deref(), expected, "env {env}");
+        }
+    }
 }
 
 #[test]

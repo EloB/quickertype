@@ -189,7 +189,10 @@ function isOneValue(text) {
  * jsonl` (then all are JSON Lines); one file is sometimes named after the
  * top-level, without `--top-level`. Several top-levels are a directory,
  * where each file's name says what it holds whatever `--src-lang` says,
- * which is none, `json` or `jsonl`. The choices are a function of the
+ * which is none, `json` or `jsonl`. Half the time our binary reads its
+ * files on several threads, with ranges small enough to split them (the
+ * internal variables `QUICKTYPE_READ_THREADS` and `QUICKTYPE_READ_CHUNK`,
+ * which change nothing in the output). The choices are a function of the
  * case and its seed, so a saved case replays them.
  */
 export function jsonlInvocations(kase) {
@@ -279,7 +282,10 @@ export function jsonlInvocations(kase) {
     // Two names that differ only in case would collide on Windows and macOS.
     if (new Set(written.map((f) => f.toLowerCase())).size !== new Set(written).size) return undefined;
     const dirs = kase.cli?.out !== undefined ? [path.dirname(kase.cli.out)] : [];
-    return { ours: { args: oursArgs, files: ours, dirs }, ref: { args: refArgs, files: ref, dirs } };
+    const env = rng.chance(0.5)
+        ? { QUICKTYPE_READ_THREADS: String(rng.range(2, 4)), QUICKTYPE_READ_CHUNK: String(rng.pick([1, 7, 64, 4096])) }
+        : undefined;
+    return { ours: { args: oursArgs, files: ours, dirs, env }, ref: { args: refArgs, files: ref, dirs } };
 }
 
 /**
@@ -364,11 +370,11 @@ function snapshot(dir) {
     return out;
 }
 
-function runProcess(command, args, cwd, timeoutMs) {
+function runProcess(command, args, cwd, timeoutMs, env = {}) {
     return new Promise((resolve) => {
         const child = spawn(command, args, {
             cwd,
-            env: { ...cleanEnv(), TZ: "UTC", NODE_NO_WARNINGS: "1" },
+            env: { ...cleanEnv(), TZ: "UTC", NODE_NO_WARNINGS: "1", ...env },
             stdio: ["ignore", "pipe", "pipe"],
         });
         const stdout = [];
@@ -395,7 +401,8 @@ function cleanEnv() {
 
 /**
  * Runs the CLI invocation with `command` (argv prefix) in a fresh directory
- * and returns { exit, stdout, stderr, files } with the directory replaced by
+ * (with the invocation's `env`, if any, added to the environment) and
+ * returns { exit, stdout, stderr, files } with the directory replaced by
  * {CWD}.
  */
 export async function runCli(command, invocation, timeoutMs = 120_000) {
@@ -407,7 +414,7 @@ export async function runCli(command, invocation, timeoutMs = 120_000) {
             fs.writeFileSync(path.join(dir, file), text);
         }
         const before = snapshot(dir);
-        const r = await runProcess(command[0], [...command.slice(1), ...invocation.args], dir, timeoutMs);
+        const r = await runProcess(command[0], [...command.slice(1), ...invocation.args], dir, timeoutMs, invocation.env);
         const after = snapshot(dir);
         const files = {};
         for (const [f, content] of Object.entries(after)) if (before[f] !== content) files[f] = content;

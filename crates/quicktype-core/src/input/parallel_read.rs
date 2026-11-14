@@ -1,7 +1,8 @@
-//! Not a quicktype file: reading a large top-level JSON array on several
-//! threads, into the same tallies as reading it in one go. The CLI reads
-//! its regular files this way (see `docs/STREAMING-INFERENCE.md`, "Reading
-//! on several threads", for the design and why it is exact).
+//! Not a quicktype file: reading a large top-level JSON array, or large
+//! JSON Lines, on several threads, into the same tallies as reading it in
+//! one go. The CLI reads its regular files this way (see
+//! `docs/STREAMING-INFERENCE.md`, "Reading on several threads", for the
+//! design and why it is exact).
 //!
 //! The sample is cut into ranges of equal size. In parallel, each range is
 //! summarized ([`json_split`](super::json_split)): what its quotes and
@@ -27,6 +28,13 @@
 //! start. That reading then reports exactly what it always reports.
 //! Nothing the scan finds can change a result.
 //!
+//! JSON Lines are read so too, split at the line feeds at depth 0 outside
+//! strings (between two values, as a raw line feed is whitespace): each
+//! part is read as JSON Lines, the array of its values (a byte order mark
+//! skipped only in the first), and gives the line feeds it holds, so the
+//! rest is read on from the line where it starts, with the line of an
+//! error counted as reading in one go counts it.
+//!
 //! The parts read on other threads hold trees of their own, so how many
 //! are under way at once is bounded by the memory their trees take
 //! ([`Reading::coordinate`]): where a single part's would take too much,
@@ -42,10 +50,11 @@ use std::thread;
 
 use super::compressed_json::{CompressedJson, Framing, ParseError};
 use super::compressed_json_from_stream::{
-    is_whitespace, parse_array_rest_into, parse_stream_reader_into,
+    is_whitespace, parse_array_rest_into, parse_lines_part_into, parse_lines_rest_into,
+    parse_stream_reader_into,
 };
 use super::json_split::{
-    BLOCK, ScanState, Summarizer, Summary, blocks, escaped_after, trailing_backslashes,
+    BLOCK, ScanState, Separator, Summarizer, Summary, blocks, escaped_after, trailing_backslashes,
 };
 use super::tallies::{NodeId, PortableTree, RunningTallies, TallyBuilder};
 use crate::date_time::DateTimeRecognizer;
@@ -297,7 +306,8 @@ impl<R: Read + io::Seek> Read for StreamFrom<R> {
     }
 }
 
-/// How a large top-level array in a sample is read on several threads
+/// How a large top-level array (or large JSON Lines) in a sample is read
+/// on several threads
 /// ([`Readable::open_sample`](crate::Readable::open_sample)). The output
 /// does not depend on them. The defaults ([`Default`]) are those of the
 /// CLI, which tests and benchmarks change with internal environment
@@ -434,6 +444,15 @@ const PROBE_LEN: u64 = 64 << 10;
 /// times as slow; see docs/BENCHMARKS.md.)
 const MAX_RATIO: f64 = 8.0;
 
+/// How near its start JSON Lines must have a line feed between two values
+/// to be read on several threads; otherwise they are read in one go. A
+/// first value longer than this is rare, and a stray `[` or `{` at the
+/// start, which leaves no line feed at depth 0 anywhere (an error reading
+/// in one go reports at once), would otherwise have the ranges scanned
+/// until a part as long as the budget allows (half of it). Arrays have no
+/// such bound: their first element may be that long.
+const FIRST_LINE_MAX: u64 = 1 << 20;
+
 impl Default for ParallelOptions {
     /// As many threads as the machine runs at once, ranges of
     /// [`DEFAULT_RANGE`] bytes for samples of [`DEFAULT_MIN_LEN`] or more,
@@ -451,8 +470,9 @@ impl Default for ParallelOptions {
     }
 }
 
-/// A sample of `bytes` (a [`JsonSample::Reader`](crate::JsonSample::Reader)),
-/// read with `options` (for tests and fuzzing).
+/// A sample of `bytes` (for a [`JsonSample::Reader`](crate::JsonSample::Reader)
+/// or [`JsonSample::ReaderLines`](crate::JsonSample::ReaderLines)), read with
+/// `options` (for tests and fuzzing).
 pub fn parallel_sample(bytes: Vec<u8>, options: ParallelOptions) -> crate::SampleReader {
     crate::SampleReader::positional(PositionalSample::memory(bytes, options))
 }
@@ -618,47 +638,62 @@ impl Plan {
 enum Outcome {
     /// The sample's tree: all of it was read.
     Whole(NodeId),
-    /// The tree of its first parts, and where the rest begins, after a
-    /// comma between the top-level array's elements: the rest is to be
-    /// read in one go, on into that tree.
-    InPart(NodeId, u64),
+    /// The tree of its first parts: the rest is to be read in one go, on
+    /// into that tree.
+    InPart {
+        tree: NodeId,
+        /// Where the rest begins: after a comma between the top-level
+        /// array's elements, or a line feed between JSON Lines' values.
+        from: u64,
+        /// The line feeds before `from` (JSON Lines'; none are counted in
+        /// arrays).
+        feeds: u64,
+    },
 }
 
-/// Reads `sample` into `tallies`, as reading it in one go does: on several
-/// threads as far as it can (see the module), and the rest in one go,
-/// which then decides the result (errors included).
+/// Reads `sample`, framed as `framing` says, into `tallies`, as reading it
+/// in one go does: on several threads as far as it can (see the module),
+/// and the rest in one go, which then decides the result (errors
+/// included).
 pub(crate) fn read_sample(
     sample: PositionalSample,
     tallies: &mut RunningTallies,
     config: &CompressedJson,
+    framing: Framing,
 ) -> Result<NodeId, ParseError> {
-    match read(&sample, tallies, config) {
+    match read(&sample, tallies, config, framing) {
         Some(Outcome::Whole(tree)) => {
             count_read(|r| r.whole += 1);
             sample.seek_to_end();
             Ok(tree)
         }
-        Some(Outcome::InPart(tree, from)) => {
+        Some(Outcome::InPart { tree, from, feeds }) => {
             count_read(|r| r.in_part += 1);
             let mut builder =
                 TallyBuilder::in_array(tallies, config, tree).map_err(ParseError::Quicktype)?;
-            parse_array_rest_into(&mut builder, &mut *sample.into_reader_from(from))
+            let rest = &mut *sample.into_reader_from(from);
+            match framing {
+                Framing::Value => parse_array_rest_into(&mut builder, rest),
+                Framing::Lines => parse_lines_rest_into(&mut builder, rest, feeds),
+            }
         }
         None => parse_stream_reader_into(
             &mut TallyBuilder::new(tallies, config),
             &mut *sample.into_reader(),
-            Framing::Value,
+            framing,
         ),
     }
 }
 
 /// Reads `sample` into `tallies` on several threads, if it is a large
-/// top-level array. `None` leaves `tallies` as they were (but for the text
-/// of keys and strings), and the sample is to be read in one go.
+/// top-level array or large JSON Lines (`framing`). `None` leaves
+/// `tallies` as they were (but for the text of keys and strings), and the
+/// sample is to be read in one go.
 fn read(
     sample: &PositionalSample,
     tallies: &mut RunningTallies,
     config: &CompressedJson,
+    framing: Framing,
 ) -> Option<Outcome> {
     let stamp = sample.source.stamp().ok()?;
     let len = stamp.0;
@@ -670,13 +705,18 @@ fn read(
             integer_range: config.supported_integer_range().cloned(),
         })
         .collect::<Vec<_>>();
-    // The top-level value must be an array.
-    let (open, b) = first_byte(&sample.source, sample.start, len)?;
-    if b != b'[' {
-        return None;
-    }
+    // The top-level value must be an array, whose elements the first part
+    // starts with; JSON Lines' first part starts with the sample.
+    let first = match framing {
+        Framing::Value => match first_byte(&sample.source, sample.start, len)? {
+            (open, b'[') => open + 1,
+            _ => return None,
+        },
+        Framing::Lines => sample.start,
+    };
     let reading = Reading {
         source: &sample.source,
+        framing,
         start: sample.start,
         len,
         range: plan.range,
@@ -712,7 +752,7 @@ fn read(
             }
         }
         drop(sender);
-        let outcome = reading.coordinate(open, tallies, config, &results, plan);
+        let outcome = reading.coordinate(first, tallies, config, &results, plan);
         // Whatever is under way is not needed any more.
         close.1 = !matches!(outcome, Some(Outcome::Whole(_)));
         outcome
@@ -720,10 +760,11 @@ fn read(
     // The parts' tree stands if the file did not change while it was read
     // (its length and time of last change): the rest, if any, is read from
     // where the parts end, and reading in one go reads the file as it is.
-    // (The parts' tree always has the array's elements.)
+    // (The parts' tree always has the array's elements, JSON Lines' too:
+    // a part of blank lines only has an items node with nothing in it.)
     if let Some(outcome) = outcome {
         let tree = match outcome {
-            Outcome::Whole(tree) | Outcome::InPart(tree, _) => tree,
+            Outcome::Whole(tree) | Outcome::InPart { tree, .. } => tree,
         };
         let has_elements = tallies.tallies.node(tree).is_ok_and(|n| n.items.is_some());
         if has_elements && sample.source.stamp().ok() == Some(stamp) {
@@ -770,22 +811,23 @@ impl ThreadConfig {
     }
 }
 
-/// A part of the sample: from `from` to the comma at `to` (the next
-/// part's start), or to the end of the sample.
+/// A part of the sample: from `from` to the comma (or line feed) at `to`,
+/// after which the next part starts, or to the end of the sample.
 #[derive(Clone, Copy, Debug)]
 struct Part {
     from: u64,
     to: Option<u64>,
     /// Whether it is the first part, which starts right after the
-    /// array's `[`; every other one starts after a comma.
+    /// array's `[` (JSON Lines': with the sample); every other one starts
+    /// after a comma (a line feed).
     first: bool,
 }
 
 enum Job {
     /// Summarize range `k`.
     Summarize(usize),
-    /// Find the first comma at depth 1 in range `k`, which starts in this
-    /// state.
+    /// Find the first comma at depth 1 (line feed at depth 0) in range
+    /// `k`, which starts in this state.
     Split(usize, ScanState),
     /// Tally part `i`.
     Tally(usize, Part),
@@ -794,9 +836,9 @@ enum Job {
 enum Done {
     Summary(usize, io::Result<RangeSummary>),
     Split(usize, io::Result<Option<u64>>),
-    /// A part's tree, or `None` if it did not read as the sample's
-    /// elements there do.
-    Part(usize, Option<PortableTree>),
+    /// A part's tree and the line feeds it holds (JSON Lines'), or `None`
+    /// if it did not read as the sample's elements there do.
+    Part(usize, Option<(PortableTree, u64)>),
     /// A job panicked, with this payload; its thread stops.
     Panicked(Box<dyn std::any::Any + Send>),
 }
@@ -842,6 +884,8 @@ impl Drop for Closing<'_, '_> {
 /// What the reading threads share.
 struct Reading<'s> {
     source: &'s Positional,
+    /// A top-level array, or JSON Lines.
+    framing: Framing,
     start: u64,
     len: u64,
     range: u64,
@@ -869,7 +913,7 @@ const SCAN_PIECE: usize = 64 << 10;
 enum Split {
     /// Not known yet (or being searched).
     Unknown,
-    /// Its first comma at depth 1, or none.
+    /// Its first comma at depth 1 (line feed at depth 0), or none.
     Found(Option<u64>),
 }
 
@@ -1067,23 +1111,66 @@ impl Reading<'_> {
         })
     }
 
+    /// The line feeds an appended part adds to those before the next part:
+    /// the `part_feeds` it holds and the one after it (JSON Lines'; none
+    /// are counted in arrays).
+    fn feeds_through(&self, part_feeds: u64) -> u64 {
+        match self.framing {
+            Framing::Value => 0,
+            Framing::Lines => part_feeds + 1,
+        }
+    }
+
+    /// How far JSON Lines are scanned for their first split, while `parts`
+    /// is empty (see [`FIRST_LINE_MAX`]); `u64::MAX` once there is one, and
+    /// for arrays.
+    fn first_line(&self, parts: &[Part]) -> u64 {
+        match self.framing {
+            Framing::Lines if parts.is_empty() => self.start.saturating_add(FIRST_LINE_MAX),
+            _ => u64::MAX,
+        }
+    }
+
+    /// What the parts are split at.
+    fn separator(&self) -> Separator {
+        match self.framing {
+            Framing::Value => Separator::ARRAY,
+            Framing::Lines => Separator::LINES,
+        }
+    }
+
     fn split(&self, k: usize, mut state: ScanState, buffer: &mut [u8]) -> io::Result<Option<u64>> {
         let (from, to) = self.bounds(k);
+        let separator = self.separator();
         self.scan(from, to, buffer, |offset, block| {
-            state.find_split(block).map(|i| offset + i as u64)
+            state
+                .find_split(block, separator)
+                .map(|i| offset + i as u64)
         })
     }
 
-    /// Reads `part` as the array of its elements into `running`: its tree,
-    /// or `None` if it does not read as the sample's elements there do (or
-    /// a read fails), which leaves nothing behind.
+    /// Reads `part` as the array of its elements (JSON Lines' values) into
+    /// `running`: its tree and the line feeds it holds (JSON Lines'), or
+    /// `None` if it does not read as the sample's elements there do (or a
+    /// read fails), which leaves nothing behind.
     fn read_part(
         &self,
         part: Part,
         running: &mut RunningTallies,
         config: &CompressedJson,
-    ) -> Option<NodeId> {
+    ) -> Option<(NodeId, u64)> {
         let end = part.to.unwrap_or(self.len);
+        let mut range = RangeReader {
+            reading: self,
+            at: part.from,
+            end,
+        };
+        if self.framing == Framing::Lines {
+            // Any line may be blank, but only the sample's first may start
+            // with a byte order mark.
+            let mut builder = TallyBuilder::new(running, config);
+            return parse_lines_part_into(&mut builder, &mut range, part.first).ok();
+        }
         // Before and after a comma comes a value: the part's array must not
         // be empty (its first byte not `]`, and not nothing), unless it is
         // the whole array.
@@ -1096,29 +1183,27 @@ impl Reading<'_> {
         // `[`, the part, and `]` unless the part runs to the end of the
         // sample (where the array's own `]` is).
         let close: &[u8] = if part.to.is_some() { b"]" } else { b"" };
-        let mut reader = b"["
-            .chain(RangeReader {
-                reading: self,
-                at: part.from,
-                end,
-            })
-            .chain(close);
+        let mut reader = b"[".chain(range).chain(close);
         parse_stream_reader_into(
             &mut TallyBuilder::new(running, config),
             &mut reader,
             Framing::Value,
         )
         .ok()
+        .map(|tree| (tree, 0))
     }
 
-    /// Tallies `part` on this thread, to append elsewhere.
-    fn tally(&self, part: Part, config: &CompressedJson) -> Option<PortableTree> {
+    /// Tallies `part` on this thread, to append elsewhere: its tree and
+    /// the line feeds it holds.
+    fn tally(&self, part: Part, config: &CompressedJson) -> Option<(PortableTree, u64)> {
         let mut running = RunningTallies::new();
-        let tree = self.read_part(part, &mut running, config)?;
+        let (tree, feeds) = self.read_part(part, &mut running, config)?;
         let RunningTallies {
             tallies, strings, ..
         } = running;
-        PortableTree::new(tallies, strings, tree).ok()
+        PortableTree::new(tallies, strings, tree)
+            .ok()
+            .map(|tree| (tree, feeds))
     }
 
     /// The thread that reads the sample: forms the parts as the summaries
@@ -1145,7 +1230,7 @@ impl Reading<'_> {
     /// not at all: the rest is read in one go.
     fn coordinate(
         &self,
-        open: u64,
+        first: u64,
         running: &mut RunningTallies,
         config: &CompressedJson,
         results: &mpsc::Receiver<Done>,
@@ -1159,9 +1244,10 @@ impl Reading<'_> {
         let mut splits = vec![Split::Unknown; n];
         // The state at the start of the first range not resolved yet.
         let (mut resolved, mut state) = (0, ScanState::default());
-        // The first range whose split is not known yet, and the last
-        // split before it (the array's `[` at first).
-        let (mut formed, mut last_split) = (0, open);
+        // The first range whose split is not known yet, and where the part
+        // after the last split before it starts (the first part's start at
+        // first).
+        let (mut formed, mut next_from) = (0, first);
         let mut summarized = 0;
         let mut parts: Vec<Part> = Vec::new();
         let mut all_formed = false;
@@ -1169,7 +1255,7 @@ impl Reading<'_> {
         // appended; the trees waiting to be, and the bytes each part given
         // out holds until it is appended (estimated while it is read).
         let (mut dispatched, mut appended) = (0, 0);
-        let mut waiting: BTreeMap<usize, PortableTree> = BTreeMap::new();
+        let mut waiting: BTreeMap<usize, (PortableTree, u64)> = BTreeMap::new();
         let mut held: BTreeMap<usize, u64> = BTreeMap::new();
         // The largest ratio of tree to text seen (of parts long enough), and
         // the smallest tree.
@@ -1185,38 +1271,49 @@ impl Reading<'_> {
             AHEAD.with(|a| a.set(0));
         }
         let mut root: Option<NodeId> = None;
+        // The line feeds up to where the parts not appended yet begin (each
+        // appended part's, and the one after it).
+        let mut feeds = 0u64;
         let mut buffer = vec![0u8; SCAN_PIECE];
         // Jobs given out and not done yet.
         let mut pending = 0usize;
         let part_len = |part: &Part| part.to.unwrap_or(self.len) - part.from;
-        // The tree so far and where the parts not appended yet begin, to
-        // read the rest in one go (or none, and the tree freed).
-        let rest =
-            |running: &mut RunningTallies, root: Option<NodeId>, parts: &[Part], appended| {
-                let from = parts[..appended].last().and_then(|p| p.to);
-                match (root, from) {
-                    (Some(root), Some(comma)) => Some(Outcome::InPart(root, comma + 1)),
-                    (Some(root), None) => {
-                        running.tallies.free_tree(root);
-                        None
-                    }
-                    (None, _) => None,
+        // The tree so far and where the parts not appended yet begin (and
+        // the line feeds before), to read the rest in one go (or none, and
+        // the tree freed).
+        let rest = |running: &mut RunningTallies,
+                    root: Option<NodeId>,
+                    parts: &[Part],
+                    appended,
+                    feeds| {
+            let from = parts[..appended].last().and_then(|p| p.to);
+            match (root, from) {
+                (Some(tree), Some(split)) => Some(Outcome::InPart {
+                    tree,
+                    from: split + 1,
+                    feeds,
+                }),
+                (Some(root), None) => {
+                    running.tallies.free_tree(root);
+                    None
                 }
-            };
+                (None, _) => None,
+            }
+        };
         loop {
             let before = (summarized, resolved, formed, parts.len(), dispatched);
             // Summaries a few ranges past those formed into parts; while
             // parts wait to be given out (whose number the budget bounds),
             // not much past the next; and not past where a stretch without
-            // a split ends the reading (below).
+            // a split ends the reading (below), for JSON Lines without a
+            // split yet FIRST_LINE_MAX from the start.
             let limit = parts
                 .get(dispatched)
                 .map_or(u64::MAX, |next| {
                     next.from.saturating_add(parts_ahead as u64 * self.range)
                 })
-                .min(
-                    last_split.saturating_add((budget as f64 / (2.0 * ratio)) as u64 + self.range),
-                );
+                .min(next_from.saturating_add((budget as f64 / (2.0 * ratio)) as u64 + self.range))
+                .min(self.first_line(&parts));
             while summarized < n
                 && summarized < formed + 2 * threads + 2
                 && self.bounds(summarized).0 < limit
@@ -1238,7 +1335,7 @@ impl Reading<'_> {
                 let Some(summary) = summaries[resolved].map(|s| s.given(state.escaped)) else {
                     break;
                 };
-                if state.may_split(&summary) {
+                if state.may_split(&summary, self.separator()) {
                     self.push(Job::Split(resolved, state));
                     pending += 1;
                 } else {
@@ -1252,19 +1349,19 @@ impl Reading<'_> {
                 let Split::Found(found) = splits[formed] else {
                     break;
                 };
-                if let Some(comma) = found {
+                if let Some(split) = found {
                     parts.push(Part {
-                        from: last_split + 1,
-                        to: Some(comma),
+                        from: next_from,
+                        to: Some(split),
                         first: parts.is_empty(),
                     });
-                    last_split = comma;
+                    next_from = split + 1;
                 }
                 formed += 1;
             }
             if formed == n && !all_formed {
                 parts.push(Part {
-                    from: last_split + 1,
+                    from: next_from,
                     to: None,
                     first: parts.is_empty(),
                 });
@@ -1279,13 +1376,19 @@ impl Reading<'_> {
             } else {
                 self.len
             };
-            let stretch = scanned.saturating_sub(last_split) as f64;
+            let stretch = scanned.saturating_sub(next_from) as f64;
+            // JSON Lines whose first line feed between values is not within
+            // FIRST_LINE_MAX of the start: in one go, scanned no further.
+            // (Of the parts formed now: the first may just have been.)
+            if !all_formed && scanned >= self.first_line(&parts) {
+                return None;
+            }
             if !all_formed && stretch * ratio * 2.0 > budget as f64 {
                 if parts.is_empty() {
                     return None;
                 }
                 if appended == parts.len() {
-                    return rest(running, root, &parts, appended);
+                    return rest(running, root, &parts, appended, feeds);
                 }
             }
             // The first parts, here, each as a part read elsewhere is (its
@@ -1294,8 +1397,8 @@ impl Reading<'_> {
             // text, before any part is given out.
             while !measured && appended < parts.len() {
                 let part = parts[appended];
-                let Some(tree) = self.tally(part, config) else {
-                    return rest(running, root, &parts, appended);
+                let Some((tree, part_feeds)) = self.tally(part, config) else {
+                    return rest(running, root, &parts, appended, feeds);
                 };
                 let bytes = tree.heap_size() as u64;
                 smallest = if smallest == 0 {
@@ -1304,7 +1407,7 @@ impl Reading<'_> {
                     smallest.min(bytes)
                 };
                 let Ok(tree) = running.tallies.import(&mut running.strings, tree) else {
-                    return rest(running, root, &parts, appended);
+                    return rest(running, root, &parts, appended, feeds);
                 };
                 root = Some(match root {
                     None => tree,
@@ -1319,12 +1422,13 @@ impl Reading<'_> {
                             None => (into, from),
                         };
                         if running.tallies.merge(into, from).is_err() {
-                            return rest(running, Some(into), &parts, appended);
+                            return rest(running, Some(into), &parts, appended, feeds);
                         }
                         into
                     }
                 });
                 appended += 1;
+                feeds += self.feeds_through(part_feeds);
                 dispatched = appended;
                 (probed, probe_bytes) = (probed + part_len(&part), probe_bytes + bytes);
                 if probed >= plan.probe || (all_formed && appended == parts.len()) {
@@ -1333,7 +1437,7 @@ impl Reading<'_> {
                     // (Of PROBE_LEN at least: a smaller sample's first parts
                     // are mostly what any tree holds, a 64 KiB block of text.)
                     if ratio > MAX_RATIO && probed >= PROBE_LEN {
-                        return rest(running, root, &parts, appended);
+                        return rest(running, root, &parts, appended, feeds);
                     }
                 }
             }
@@ -1344,7 +1448,7 @@ impl Reading<'_> {
                     // Too large to read beside others: the rest in one go,
                     // once the parts before it are appended.
                     if appended == dispatched {
-                        return rest(running, root, &parts, appended);
+                        return rest(running, root, &parts, appended, feeds);
                     }
                     break;
                 }
@@ -1367,7 +1471,7 @@ impl Reading<'_> {
             }
             if pending == 0 {
                 debug_assert!(false, "the parallel reading has nothing to wait for");
-                return rest(running, root, &parts, appended);
+                return rest(running, root, &parts, appended, feeds);
             }
             pending -= 1;
             // While no result is in, this thread scans too.
@@ -1381,7 +1485,7 @@ impl Reading<'_> {
             match done {
                 Ok(Done::Summary(k, Ok(summary))) => summaries[k] = Some(summary),
                 Ok(Done::Split(k, Ok(found))) => splits[k] = Split::Found(found),
-                Ok(Done::Part(i, Some(tree))) => {
+                Ok(Done::Part(i, Some((tree, part_feeds)))) => {
                     // The tree holds its bytes until it is appended.
                     let bytes = tree.heap_size() as u64;
                     held.insert(i, bytes);
@@ -1393,11 +1497,11 @@ impl Reading<'_> {
                     if part_len(&parts[i]) >= plan.probe {
                         ratio = ratio.max(bytes as f64 / part_len(&parts[i]) as f64);
                     }
-                    waiting.insert(i, tree);
+                    waiting.insert(i, (tree, part_feeds));
                     // What the trees waiting hold, and the parts under way.
                     #[cfg(test)]
                     HELD.with(|h| {
-                        let parked: u64 = waiting.values().map(|t| t.heap_size() as u64).sum();
+                        let parked: u64 = waiting.values().map(|(t, _)| t.heap_size() as u64).sum();
                         let under_way: u64 = held
                             .iter()
                             .filter(|(k, _)| !waiting.contains_key(k))
@@ -1407,11 +1511,11 @@ impl Reading<'_> {
                         h.set((peak.max(parked + under_way), largest.max(bytes)));
                     });
                     // Append the trees in order.
-                    while let Some(tree) = waiting.remove(&appended) {
+                    while let Some((tree, part_feeds)) = waiting.remove(&appended) {
                         let so_far = root?;
                         let imported = match running.tallies.import(&mut running.strings, tree) {
                             Ok(imported) => imported,
-                            Err(_) => return rest(running, Some(so_far), &parts, appended),
+                            Err(_) => return rest(running, Some(so_far), &parts, appended, feeds),
                         };
                         let (into, from) = (so_far, imported);
                         // (The fault merges the tree so far into this one.)
@@ -1423,11 +1527,12 @@ impl Reading<'_> {
                         // A failed merge changes nothing, and frees what it
                         // was given.
                         if running.tallies.merge(into, from).is_err() {
-                            return rest(running, Some(into), &parts, appended);
+                            return rest(running, Some(into), &parts, appended, feeds);
                         }
                         root = Some(into);
                         held.remove(&appended);
                         appended += 1;
+                        feeds += self.feeds_through(part_feeds);
                     }
                 }
                 // A job that panicked panics here, as reading in one go
@@ -1435,7 +1540,7 @@ impl Reading<'_> {
                 Ok(Done::Panicked(payload)) => std::panic::resume_unwind(payload),
                 // A part that did not read as the sample's elements, a read
                 // that failed, or the threads gone: the rest in one go.
-                _ => return rest(running, root, &parts, appended),
+                _ => return rest(running, root, &parts, appended, feeds),
             }
         }
     }
@@ -1467,7 +1572,8 @@ mod tests {
     use super::*;
     use crate::date_time::DefaultDateTimeRecognizer;
     use crate::input::compressed_json_from_stream::parse_stream_into;
-    use crate::input::json_split::tests::{Rng, random_json};
+    use crate::input::json_split::Separator;
+    use crate::input::json_split::tests::{Rng, bytewise_separators, random_json, random_lines};
 
     fn config(handle_refs: bool) -> CompressedJson {
         CompressedJson::with_int64_range(Box::new(DefaultDateTimeRecognizer), handle_refs)
@@ -1475,12 +1581,17 @@ mod tests {
 
     /// The tree of reading `bytes` in one go, or its error.
     fn in_one_go(config: &CompressedJson, bytes: &[u8]) -> Result<String, String> {
+        in_one_go_as(config, bytes, Framing::Value)
+    }
+
+    /// [`in_one_go`] for a sample framed as `framing` says.
+    fn in_one_go_as(
+        config: &CompressedJson,
+        bytes: &[u8],
+        framing: Framing,
+    ) -> Result<String, String> {
         let mut tallies = RunningTallies::new();
-        let tree = parse_stream_into(
-            &mut TallyBuilder::new(&mut tallies, config),
-            bytes,
-            Framing::Value,
-        );
+        let tree = parse_stream_into(&mut TallyBuilder::new(&mut tallies, config), bytes, framing);
         tree.map(|tree| tallies.dump(tree))
             .map_err(|e| e.message().to_owned())
     }
@@ -1492,10 +1603,20 @@ mod tests {
         bytes: &[u8],
         options: ParallelOptions,
     ) -> (Result<String, String>, ParallelReads) {
+        read_as(config, bytes, options, Framing::Value)
+    }
+
+    /// [`read_with`] for a sample framed as `framing` says.
+    fn read_as(
+        config: &CompressedJson,
+        bytes: &[u8],
+        options: ParallelOptions,
+        framing: Framing,
+    ) -> (Result<String, String>, ParallelReads) {
         let before = parallel_reads();
         let mut tallies = RunningTallies::new();
         let sample = PositionalSample::memory(bytes.to_vec(), options);
-        let result = read_sample(sample, &mut tallies, config)
+        let result = read_sample(sample, &mut tallies, config, framing)
             .map(|tree| {
                 let dump = tallies.dump(tree);
                 tallies.tallies.free_tree(tree);
@@ -1834,7 +1955,7 @@ mod tests {
         };
         let read_whole = |sample: &PositionalSample| {
             let mut tallies = RunningTallies::new();
-            match read(sample, &mut tallies, &config) {
+            match read(sample, &mut tallies, &config, Framing::Value) {
                 Some(Outcome::Whole(tree)) => Ok(tallies.dump(tree)),
                 _ => Err("not read whole".to_owned()),
             }
@@ -1864,7 +1985,7 @@ mod tests {
     /// again in one go from its start, as it is now: whether the parts
     /// after the change find its end (the rest would have been read from
     /// where the parts before end), or all of them read, of the old bytes
-    /// and the new.
+    /// and the new. JSON Lines too.
     #[cfg(all(any(unix, windows), feature = "fs"))]
     #[test]
     fn a_file_that_changes_is_read_again_in_one_go() {
@@ -1875,33 +1996,44 @@ mod tests {
         let elements: Vec<String> = (0..3_000)
             .map(|i| format!(r#"{{"id":{i},"s":"v{}"}}"#, i % 7))
             .collect();
-        let old = format!("[{}]", elements.join(","));
-        let same_length = old.replace(r#""s""#, r#""t""#);
-        for new in [r#"[{"new":true}]"#.to_owned(), same_length] {
-            std::fs::write(&path, &old).unwrap();
-            // Changed long ago, so that writing it now changes the time.
-            let ago = std::time::SystemTime::now() - std::time::Duration::from_secs(60);
-            let file = std::fs::OpenOptions::new().write(true).open(&path).unwrap();
-            file.set_modified(ago).unwrap();
-            drop(file);
-            let sample = PositionalSample {
-                source: Positional::File(SharedFile::new(
-                    std::fs::File::open(&path).unwrap(),
-                    None,
-                )),
-                start: 0,
-                options: options(4, 1_024),
-            };
-            CHANGE_FILE
-                .with(|c| *c.borrow_mut() = Some((3, path.clone(), new.clone().into_bytes())));
-            let before = parallel_reads();
-            let mut tallies = RunningTallies::new();
-            let result = read_sample(sample, &mut tallies, &config)
-                .map(|tree| tallies.dump(tree))
-                .map_err(|e| e.message().to_owned());
-            CHANGE_FILE.with(|c| c.borrow_mut().take());
-            assert_eq!(result, in_one_go(&config, new.as_bytes()), "{new:.40}");
-            assert_eq!(parallel_reads().again - before.again, 1, "{new:.40}");
+        let array = format!("[{}]", elements.join(","));
+        let lines = elements.join("\n");
+        let cases = [
+            (Framing::Value, &array, r#"[{"new":true}]"#),
+            (Framing::Lines, &lines, r#"{"new":true}"#),
+        ];
+        for (framing, old, short) in cases {
+            let same_length = old.replace(r#""s""#, r#""t""#);
+            for new in [short.to_owned(), same_length] {
+                std::fs::write(&path, old).unwrap();
+                // Changed long ago, so that writing it now changes the time.
+                let ago = std::time::SystemTime::now() - std::time::Duration::from_secs(60);
+                let file = std::fs::OpenOptions::new().write(true).open(&path).unwrap();
+                file.set_modified(ago).unwrap();
+                drop(file);
+                let sample = PositionalSample {
+                    source: Positional::File(SharedFile::new(
+                        std::fs::File::open(&path).unwrap(),
+                        None,
+                    )),
+                    start: 0,
+                    options: options(4, 1_024),
+                };
+                CHANGE_FILE
+                    .with(|c| *c.borrow_mut() = Some((3, path.clone(), new.clone().into_bytes())));
+                let before = parallel_reads();
+                let mut tallies = RunningTallies::new();
+                let result = read_sample(sample, &mut tallies, &config, framing)
+                    .map(|tree| tallies.dump(tree))
+                    .map_err(|e| e.message().to_owned());
+                CHANGE_FILE.with(|c| c.borrow_mut().take());
+                assert_eq!(
+                    result,
+                    in_one_go_as(&config, new.as_bytes(), framing),
+                    "{new:.40}"
+                );
+                assert_eq!(parallel_reads().again - before.again, 1, "{new:.40}");
+            }
         }
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -2078,5 +2210,262 @@ mod tests {
         assert_eq!(read_with(&config, bytes, options).0, expected);
         let options = options.with_fault(Fault::Prepend);
         assert_ne!(read_with(&config, bytes, options).0, expected);
+    }
+
+    /// JSON Lines read on several threads read as in one go, their tree or
+    /// their error (with its line), for any range size and number of
+    /// threads: blank and whitespace-only lines, CRLF, values that span
+    /// lines, with or without a last line feed; whole, in part (the rest
+    /// in one go from the line it starts on), or again from the start.
+    #[test]
+    fn json_lines_read_in_parallel_read_in_one_go() {
+        let mut rng = Rng(777);
+        let config = config(true);
+        let mut total = ParallelReads::default();
+        // Samples with line feeds in values (at depth 1 and more).
+        let mut spanning = 0;
+        for round in 0..400 {
+            let mut bytes = random_lines(&mut rng, 1 + round % 60);
+            let feeds = bytes.iter().filter(|&&b| b == b'\n').count();
+            spanning += usize::from(feeds > bytewise_separators(&bytes, Separator::LINES).len());
+            // Sometimes a byte order mark, or broken: a stray bracket, cut,
+            // two values on a line (or one line feed fewer between them), a
+            // value replaced by something that is not one, a raw line feed
+            // in a string, a byte order mark on a later line.
+            let last = |bytes: &[u8], b: u8| bytes.iter().rposition(|&c| c == b);
+            let last_split = |bytes: &[u8]| bytewise_separators(bytes, Separator::LINES).pop();
+            match round % 10 {
+                3 => bytes.insert(rng.below(bytes.len().min(20) + 1), b'}'),
+                4 => bytes = [&b"\xef\xbb\xbf"[..], &bytes].concat(),
+                5 => bytes.truncate(rng.below(bytes.len())),
+                6 => {
+                    if let Some(at) = last_split(&bytes) {
+                        bytes[at] = b' ';
+                    }
+                }
+                7 => {
+                    if let Some(at) = last(&bytes, b'3') {
+                        bytes[at] = b'x';
+                    }
+                }
+                8 => {
+                    if let Some(at) = last(&bytes, b'a') {
+                        bytes[at] = b'\n';
+                    }
+                }
+                9 => {
+                    if let Some(at) = last_split(&bytes) {
+                        bytes.splice(at + 1..at + 1, *b"\xef\xbb\xbf");
+                    }
+                }
+                _ => {}
+            }
+            let expected = in_one_go_as(&config, &bytes, Framing::Lines);
+            for _ in 0..4 {
+                let options = options(2 + rng.below(4), 1 + rng.below(200));
+                let (result, how) = read_as(&config, &bytes, options, Framing::Lines);
+                assert_eq!(
+                    result,
+                    expected,
+                    "{options:?} {:?}",
+                    String::from_utf8_lossy(&bytes)
+                );
+                total.whole += how.whole;
+                total.in_part += how.in_part;
+                total.again += how.again;
+            }
+        }
+        assert!(
+            total.whole > 500 && total.in_part > 50 && total.again > 0,
+            "{total:?}"
+        );
+        assert!(spanning > 200, "{spanning} samples with values over lines");
+    }
+
+    /// JSON Lines split at every point between lines: strings with line
+    /// feeds escaped, brackets and quotes across the ranges, values that
+    /// span lines, blank and whitespace-only lines (parts of nothing but
+    /// them, first or not), CRLF, a byte order mark, with or without a
+    /// last line feed.
+    #[test]
+    fn json_lines_every_split_point() {
+        let config = config(false);
+        let documents: [&[u8]; 9] = [
+            b"{\"a\":1}\n{\"a\":\"x\\ny\"}\n[1,\n 2]\n\n  \n\"s\"\n",
+            b"\xef\xbb\xbf{\"a\":1}\r\n{\"b\":[{\"c\":\"]}\\n\\\"\"}]}\r\n\r\n3",
+            b"\n\n\n1\n2\n\n",
+            b"  {\"a\" :\n [1,\n2]\n}\n\t{\"a\":[]}",
+            b"\"\\\\\"\n\"\\\"\\n\"\n\"x\"",
+            b"\n \n\r\n\t\n",
+            b"\xef\xbb\xbf\n\n{\"a\":[]}\n",
+            b"[1]\n{}\n[]\nnull\ntrue\n-1.5e3\n\"2020-01-01\"\n\"http://h/x.png\"\n",
+            // Places whose strings come to absorb every string partway,
+            // across parts.
+            br#"{"s":"a","t":["b"]}
+{"s":"c"}
+{"s":"long text long text long text long text long text long text long text","t":["d"]}
+{"s":"e","t":["long text long text long text long text long text long text long text","f"]}
+{"s":"https://h/x.png"}
+{"s":"g","t":["2020-01-01","h"]}"#,
+        ];
+        for bytes in documents {
+            let expected = in_one_go_as(&config, bytes, Framing::Lines);
+            assert!(expected.is_ok(), "{:?}", String::from_utf8_lossy(bytes));
+            for range in 1..bytes.len() {
+                for threads in [2, 3] {
+                    let options = options(threads, range);
+                    let (result, how) = read_as(&config, bytes, options, Framing::Lines);
+                    assert_eq!(
+                        result,
+                        expected,
+                        "{range} {:?}",
+                        String::from_utf8_lossy(bytes)
+                    );
+                    assert_eq!(
+                        how.whole,
+                        on_threads(bytes.len(), range),
+                        "{range} {:?}",
+                        String::from_utf8_lossy(bytes)
+                    );
+                }
+            }
+        }
+    }
+
+    /// Whatever the error in JSON Lines and wherever it is (in the first
+    /// part, the last, one between, at a part's end), the error is the one
+    /// reading in one go reports, on the same line.
+    #[test]
+    fn json_lines_errors_are_those_of_reading_in_one_go() {
+        let config = config(false);
+        let documents: [&[u8]; 17] = [
+            b"1\n2\n3 4\n5\n",
+            b"1\n2\n{\"a\":1,}\n4\n",
+            b"1\n2\n[1,\n2,\n]\n4",
+            b"1\n\n\n\"a\nb\"\n2",
+            b"1\n2\n\xef\xbb\xbf3\n",
+            b"\xef\xbb\xbf\xef\xbb\xbf1\n2",
+            b"1\r\n2\r\n}\r\n3",
+            b"1\n2\n{\"a\":[1,2\n",
+            b"1\n2\ntru\n3",
+            b"1\n2\n\"\\x\"\n3",
+            b"1\n2\n\"\x01\"\n3",
+            b"1\n2\n\xff\n3",
+            b"1\n2\n3]\n4",
+            b"{\"a\":1}\n{\"a\":2}}\n{\"a\":3}\n",
+            b"[1,\n2]\n]\n[\n3\n",
+            b"1\n2\n3\n\n  \t",
+            b"1 \n 2 \n\r\n3",
+        ];
+        let mut total = ParallelReads::default();
+        for bytes in documents {
+            let expected = in_one_go_as(&config, bytes, Framing::Lines);
+            for range in 1..bytes.len() {
+                for threads in [2, 4] {
+                    let options = options(threads, range);
+                    let (result, how) = read_as(&config, bytes, options, Framing::Lines);
+                    assert_eq!(
+                        result,
+                        expected,
+                        "{range} {:?}",
+                        String::from_utf8_lossy(bytes)
+                    );
+                    total.whole += how.whole;
+                    total.in_part += how.in_part;
+                    total.again += how.again;
+                }
+            }
+        }
+        assert!(
+            total.whole > 0 && total.in_part > 50 && total.again > 0,
+            "{total:?}"
+        );
+        // The line is the one the failing value starts on, counted from
+        // the sample's start however the parts fell.
+        let expected = in_one_go_as(&config, b"1\n2\n[1,\n2,\n]\n4", Framing::Lines);
+        assert!(
+            expected.as_ref().is_err_and(|e| e.starts_with("line 3: ")),
+            "{expected:?}"
+        );
+    }
+
+    /// JSON Lines without a line feed between values within FIRST_LINE_MAX
+    /// of their start (a stray `{` or `[` first, which leaves none at
+    /// depth 0, or a first value that long) are read in one go after
+    /// scanning no more than that; a first value a little shorter does not
+    /// stop them.
+    #[test]
+    fn json_lines_without_an_early_split_are_read_in_one_go() {
+        let config = config(false);
+        let record = r#"{"id":1,"name":"abc","tags":["x","y"]}"#;
+        let lines = vec![record; 60_000].join("\n");
+        let value = |n: usize| format!("{{\"a\":[{}]}}", vec!["1"; n].join(","));
+        let half = FIRST_LINE_MAX as usize / 2;
+        let range = 64 << 10;
+        for (name, bytes, again) in [
+            ("{", format!("{{{lines}"), true),
+            ("[[", format!("[[\n{lines}"), true),
+            ("long", format!("{}\n{lines}", value(half + 1_000)), true),
+            (
+                "shorter",
+                format!("{}\n{lines}", value(half - 50_000)),
+                false,
+            ),
+        ] {
+            let bytes = bytes.as_bytes();
+            let (result, how) = read_as(&config, bytes, options(4, range), Framing::Lines);
+            assert_eq!(
+                result,
+                in_one_go_as(&config, bytes, Framing::Lines),
+                "{name}"
+            );
+            let scanned = SCANNED.with(Cell::get);
+            if again {
+                assert_eq!(how.again, 1, "{name}: {how:?}");
+                assert!(scanned <= FIRST_LINE_MAX, "{name}: {scanned} bytes scanned");
+            } else {
+                assert_eq!(how.whole, 1, "{name}: {how:?}");
+            }
+        }
+    }
+
+    /// JSON Lines go the ways arrays go: values all longer than a part the
+    /// budget would read beside others are read in one go without scanning
+    /// on, or the rest after a short first one, whose errors are on the
+    /// lines reading in one go gives; a merge out of order is caught.
+    #[test]
+    fn json_lines_go_the_ways_arrays_go() {
+        let config = config(false);
+        let value = format!("{{\"a\":[{}]}}", vec!["1"; 50_000].join(","));
+        let bytes = format!("{value}\n{value}\n{value}\n");
+        let mut options = options(3, 1_000);
+        options.budget = Some(64 << 10);
+        let (result, how) = read_as(&config, bytes.as_bytes(), options, Framing::Lines);
+        assert_eq!(
+            result,
+            in_one_go_as(&config, bytes.as_bytes(), Framing::Lines)
+        );
+        assert_eq!(how.again, 1, "{how:?}");
+        let scanned = SCANNED.with(Cell::get);
+        assert!(
+            scanned < 200_000,
+            "{scanned} of {} bytes scanned",
+            bytes.len()
+        );
+        for short in [
+            format!("{{\"b\":1}}\n{value}\n{value}"),
+            format!("{{\"b\":1}}\n\r\n{value}\n\n{value}\n{{\"c\":}}\n"),
+        ] {
+            let expected = in_one_go_as(&config, short.as_bytes(), Framing::Lines);
+            let (result, how) = read_as(&config, short.as_bytes(), options, Framing::Lines);
+            assert_eq!(result, expected);
+            assert_eq!(how.in_part, 1, "{how:?}");
+        }
+        let bytes = b"{\"z\":0}\n{\"a\":1}\n{\"b\":\"x\"}\n{\"c\":null}";
+        let options = self::options(2, 1);
+        let expected = in_one_go_as(&config, bytes, Framing::Lines);
+        assert_eq!(read_as(&config, bytes, options, Framing::Lines).0, expected);
+        let options = options.with_fault(Fault::Prepend);
+        assert_ne!(read_as(&config, bytes, options, Framing::Lines).0, expected);
     }
 }

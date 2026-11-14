@@ -9,7 +9,9 @@
 //
 // * case.json: the fuzz case (inputs inline; `src`, `lang`, options), a
 //   description, and the CLI step derived from it: `args` (relative to the
-//   case directory) and the reference CLI's `exit` code;
+//   case directory), the `env` our binary runs with, if any (the "jsonl"
+//   mode's internal variables for reading on several threads), and the
+//   reference CLI's `exit` code;
 // * in/: the input files the CLI step reads;
 // * cli.stdout, cli.stderr, and expected/<file> for each file the step
 //   wrote, as the reference CLI produced them (the work directory replaced
@@ -65,6 +67,8 @@ if (jsonl !== undefined || (record.foundIn !== "jsonl" && cliCompatible(kase))) 
     if (typeof result.exit !== "number") throw new Error(`reference CLI: ${result.exit}`);
     for (const [f, text] of invocation.files) files.set(f, Buffer.from(text, "utf8"));
     record.cli = { args: invocation.args, dirs: invocation.dirs, exit: result.exit };
+    // Our binary replays the step with what our side ran with.
+    if (invocation.env !== undefined) record.cli.env = invocation.env;
     if (result.stdout !== "") files.set("cli.stdout", Buffer.from(result.stdout, "latin1"));
     if (result.stderr !== "") files.set("cli.stderr", Buffer.from(result.stderr, "latin1"));
     const written = Object.entries(result.files).map(([f, content]) => [f.split(path.sep).join("/"), content]);
