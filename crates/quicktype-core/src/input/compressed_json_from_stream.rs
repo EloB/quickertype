@@ -152,16 +152,13 @@ pub(crate) fn parse_lines_part_into<S: JsonSink>(
     first: bool,
 ) -> Result<(S::Root, u64), ParseError> {
     let mut tokenizer = Tokenizer::streaming(reader, CHUNK_SIZE);
-    // Elsewhere a byte order mark is not a value: the sample fails there.
-    if !first
-        && tokenizer.byte(0) == Some(0xEF)
-        && tokenizer.byte(1) == Some(0xBB)
-        && tokenizer.byte(2) == Some(0xBF)
-    {
-        return Err(syntax("Parser cannot parse input: unexpected token"));
-    }
     let mut lines = Lines::default();
-    let result = tokenizer.run_lines::<S, false>(sink, &mut lines);
+    // (The first part's instance is the whole sample's.)
+    let result = if first {
+        tokenizer.run_lines::<S, true, true>(sink, &mut lines)
+    } else {
+        tokenizer.run_lines::<S, true, false>(sink, &mut lines)
+    };
     let feeds = lines.feeds as u64;
     finish(sink, tokenizer, result).map(|root| (root, feeds))
 }
@@ -186,7 +183,7 @@ pub(crate) fn parse_lines_rest_into<S: JsonSink>(
         started: false,
     };
     let mut tokenizer = Tokenizer::streaming(reader, CHUNK_SIZE);
-    let result = match tokenizer.run_lines::<S, true>(sink, &mut lines) {
+    let result = match tokenizer.run_lines::<S, false, false>(sink, &mut lines) {
         Err(ParseError::Js(e)) => Err(line_error(lines.value_line, &e)),
         result => result,
     };
@@ -251,7 +248,7 @@ fn tokenize_lines<S: JsonSink, W: Window>(
     mut tokenizer: Tokenizer<'_, W>,
 ) -> Result<S::Root, ParseError> {
     let mut lines = Lines::default();
-    let result = match tokenizer.run_lines::<S, false>(sink, &mut lines) {
+    let result = match tokenizer.run_lines::<S, true, true>(sink, &mut lines) {
         Err(ParseError::Js(e)) => Err(line_error(lines.value_line, &e)),
         result => result,
     };
@@ -778,27 +775,30 @@ impl<W: Window> Tokenizer<'_, W> {
     /// [`run`](Self::run) for JSON Lines: the array of the values, each
     /// read as a whole sample, which must start on a line after the last
     /// one ends (`Expect::Done` is between values, and the stack is empty
-    /// there). A byte order mark may come first. `lines` says where the
-    /// reading is, for the line of an error. With `REST`, the rest of a
-    /// sample read on several threads, after a line feed between its
-    /// values: `sink` is in the array already, and no byte order mark
-    /// comes first. (A constant, so that reading a whole sample compiles
-    /// as it did before.)
-    fn run_lines<S: JsonSink, const REST: bool>(
+    /// there). `lines` says where the reading is, for the line of an
+    /// error. The array is opened here with `OPEN` (a whole sample, or a
+    /// part of one read on several threads; without it, the rest of such a
+    /// sample after a line feed between its values, whose array `sink` is
+    /// in already), and with `BOM` a byte order mark may come first (at the
+    /// sample's start; anywhere else it is no value, and an error). (Both
+    /// are constants, so that reading a whole sample, `<true, true>`,
+    /// compiles as it did before.)
+    fn run_lines<S: JsonSink, const OPEN: bool, const BOM: bool>(
         &mut self,
         sink: &mut S,
         lines: &mut Lines,
     ) -> Result<S::Root, ParseError> {
         let mut expect = Expect::Done;
         let mut stack: Vec<Parent> = Vec::new();
-        if !REST {
+        if OPEN {
             sink.push_array_context()?;
-            if self.byte(0) == Some(0xEF)
-                && self.byte(1) == Some(0xBB)
-                && self.byte(2) == Some(0xBF)
-            {
-                self.index += 3;
-            }
+        }
+        if BOM
+            && self.byte(0) == Some(0xEF)
+            && self.byte(1) == Some(0xBB)
+            && self.byte(2) == Some(0xBF)
+        {
+            self.index += 3;
         }
         states!(self, sink, expect, stack, skip: self.skip_line_whitespace(&mut lines.feeds), done: {
             let feeds = lines.feeds;
