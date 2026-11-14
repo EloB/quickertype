@@ -5,6 +5,7 @@
 //
 //   node script/build.mjs --trace
 //   node test/bench/phases.mjs [--only REGEX] [--rounds N] [--bytes] [--json] [--package DIR]
+//                              [--timeout SECONDS]
 //
 // With --bytes, each sample is given as its UTF-8 bytes (a Uint8Array, made
 // before the clock starts) instead of a string.
@@ -17,13 +18,12 @@
 //
 // (`--json` here also writes each input to build/bench/phases/, for that.)
 
-import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as http from "node:http";
-import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { evaluateInChrome } from "./chrome.mjs";
 import { benchInputs } from "./inputs.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -36,21 +36,27 @@ const packageRoot = path.resolve(option("--package") ?? path.join(here, "..", ".
 const only = option("--only") === undefined ? undefined : new RegExp(option("--only"));
 const fixedRounds = option("--rounds") === undefined ? undefined : Number(option("--rounds"));
 const bytes = args.includes("--bytes");
+// The whole page: every round of every input (the default is ample for
+// the benchmark inputs).
+const timeoutMs = Number(option("--timeout") ?? 15 * 60) * 1000;
 const inputs = [["tiny (7 B)", () => '{"a":1}'], ...benchInputs]
     .filter(([name]) => only === undefined || only.test(name))
     .map(([name, make]) => ({ name, text: make() }));
 
 const outDir = path.join(packageRoot, "build", "bench", "phases");
 fs.mkdirSync(outDir, { recursive: true });
-fs.writeFileSync(path.join(outDir, "force-ts.mjs"), 'globalThis[Symbol.for("quicktype-core.engine")] = "ts";\n');
 fs.writeFileSync(
     path.join(outDir, "entry.mjs"),
-    `import "./force-ts.mjs";
-import * as qt from ${JSON.stringify(path.join(packageRoot, "dist", "esm", "index.js"))};
-import { engineSync } from ${JSON.stringify(path.join(packageRoot, "dist", "esm", "native", "engine.js"))};
-import { measurePhases } from ${JSON.stringify(path.join(here, "phases-page.mjs"))};
-const out = document.getElementById("result");
+    `const out = document.getElementById("result");
 try {
+    // Imported with the TypeScript engine forced, so that the package does
+    // not start compiling an engine of its own; then handed the module.
+    // Inside the try, so that a missing or stale dist/ is reported too.
+    globalThis[Symbol.for("quicktype-core.engine")] = "ts";
+    const qt = await import(${JSON.stringify(path.join(packageRoot, "dist", "esm", "index.js"))});
+    const { engineSync } = await import(${JSON.stringify(path.join(packageRoot, "dist", "esm", "native", "engine.js"))});
+    const { measurePhases } = await import(${JSON.stringify(path.join(here, "phases-page.mjs"))});
+    const { defaultRounds } = await import(${JSON.stringify(path.join(here, "workload.mjs"))});
     delete globalThis[Symbol.for("quicktype-core.engine")];
     globalThis[Symbol.for("quicktype-core.wasmModule")] = await WebAssembly.compileStreaming(fetch("/engine.wasm"));
     const glue = engineSync();
@@ -59,7 +65,7 @@ try {
     const encoder = new TextEncoder();
     const inputs = (await (await fetch("/inputs.json")).json()).map(({ name, text }) => ({ name, text: ${bytes} ? encoder.encode(text) : text }));
     const fixed = ${fixedRounds ?? "undefined"};
-    const rounds = (length) => fixed ?? (length > 10_000_000 ? 11 : length > 1_000_000 ? 21 : 61);
+    const rounds = (length) => fixed ?? defaultRounds(length);
     out.textContent = JSON.stringify({ results: await measurePhases(qt, glue, inputs, rounds) });
 } catch (e) {
     out.textContent = JSON.stringify({ error: String(e?.stack ?? e) });
@@ -100,85 +106,12 @@ const server = http.createServer((request, response) => {
 });
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 
-function findBrowser() {
-    for (const candidate of [
-        process.env.CHROME,
-        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-        "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    ]) {
-        if (candidate !== undefined && fs.existsSync(candidate)) return candidate;
-    }
-
-    throw new Error("no Chrome found (set CHROME)");
-}
-
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const url = `http://127.0.0.1:${server.address().port}/index.html`;
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), "qt-phases-chrome-"));
-const child = spawn(
-    findBrowser(),
-    [
-        "--headless=new",
-        "--disable-gpu",
-        "--no-first-run",
-        "--no-default-browser-check",
-        "--js-flags=--expose-gc",
-        "--remote-debugging-port=0",
-        `--user-data-dir=${profile}`,
-        url,
-    ],
-    { stdio: "ignore" },
-);
 let result;
 try {
-    const portFile = path.join(profile, "DevToolsActivePort");
-    while (!fs.existsSync(portFile) || fs.readFileSync(portFile, "utf8").split("\n").length < 2) await wait(100);
-    const port = fs.readFileSync(portFile, "utf8").split("\n")[0];
-    let page;
-    while (page === undefined) {
-        const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
-        page = targets.find((t) => t.type === "page" && t.url === url);
-        if (page === undefined) await wait(100);
-    }
-
-    const socket = new WebSocket(page.webSocketDebuggerUrl);
-    await new Promise((resolve, reject) => {
-        socket.onopen = resolve;
-        socket.onerror = reject;
-    });
-    let nextId = 0;
-    const pending = new Map();
-    socket.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        pending.get(message.id)?.(message);
-        pending.delete(message.id);
-    };
-    const evaluate = () =>
-        new Promise((resolve) => {
-            const id = ++nextId;
-            pending.set(id, (m) => resolve(m.result?.result?.value));
-            socket.send(JSON.stringify({ id, method: "Runtime.evaluate", params: { expression: 'document.getElementById("result")?.textContent ?? "pending"', returnByValue: true } }));
-        });
-    for (;;) {
-        const text = await evaluate();
-        if (text !== undefined && text !== "pending") {
-            result = JSON.parse(text);
-            break;
-        }
-
-        await wait(500);
-    }
-
-    socket.close();
+    result = JSON.parse(await evaluateInChrome(url, { timeoutMs, args: ["--js-flags=--expose-gc"], pollMs: 500 }));
 } finally {
-    child.kill();
     server.close();
-    await wait(300);
-    try {
-        fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
-    } catch {
-        // Chrome may still be writing its profile; it is a temporary directory.
-    }
 }
 
 if (result.error !== undefined) throw new Error(result.error);

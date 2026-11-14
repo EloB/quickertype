@@ -25,14 +25,13 @@
 // With --again (warm only), each round also runs the same input a second
 // time, and its median is printed after the total ("again").
 
-import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as http from "node:http";
 import { createRequire } from "node:module";
-import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { evaluateInChrome } from "./chrome.mjs";
 import { benchInputs } from "./inputs.mjs";
 import { measure, medians } from "./workload.mjs";
 
@@ -82,83 +81,12 @@ async function inNode() {
     });
 }
 
-function findBrowser() {
-    for (const candidate of [
-        process.env.CHROME,
-        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-        "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    ]) {
-        if (candidate !== undefined && fs.existsSync(candidate)) return candidate;
-    }
-
-    throw new Error("no Chrome found (set CHROME)");
-}
+/** How long a page of the benchmark may take: every round of every input. */
+const pageTimeoutMs = 60 * 60_000;
 
 /** Evaluates `expression` in the page at `url` of a headless Chrome until it gives a result. */
-async function inChrome(url, expression) {
-    const profile = fs.mkdtempSync(path.join(os.tmpdir(), "qt-bench-chrome-"));
-    const child = spawn(
-        findBrowser(),
-        [
-            "--headless=new",
-            "--disable-gpu",
-            "--no-first-run",
-            "--no-default-browser-check",
-            "--js-flags=--expose-gc",
-            "--remote-debugging-port=0",
-            `--user-data-dir=${profile}`,
-            url,
-        ],
-        { stdio: "ignore" },
-    );
-    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    try {
-        const portFile = path.join(profile, "DevToolsActivePort");
-        while (!fs.existsSync(portFile) || fs.readFileSync(portFile, "utf8").split("\n").length < 2) await wait(100);
-        const port = fs.readFileSync(portFile, "utf8").split("\n")[0];
-        let page;
-        while (page === undefined) {
-            const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
-            page = targets.find((t) => t.type === "page" && t.url === url);
-            if (page === undefined) await wait(100);
-        }
-
-        const socket = new WebSocket(page.webSocketDebuggerUrl);
-        await new Promise((resolve, reject) => {
-            socket.onopen = resolve;
-            socket.onerror = reject;
-        });
-        let nextId = 0;
-        const pending = new Map();
-        socket.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            pending.get(message.id)?.(message);
-            pending.delete(message.id);
-        };
-        const evaluate = () =>
-            new Promise((resolve) => {
-                const id = ++nextId;
-                pending.set(id, (m) => resolve(m.result?.result?.value));
-                socket.send(JSON.stringify({ id, method: "Runtime.evaluate", params: { expression, returnByValue: true } }));
-            });
-        for (;;) {
-            const text = await evaluate();
-            if (text !== undefined && text !== "pending") {
-                socket.close();
-                return text;
-            }
-
-            await wait(500);
-        }
-    } finally {
-        child.kill();
-        await wait(300);
-        try {
-            fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
-        } catch {
-            // Chrome may still be writing its profile; it is a temporary directory.
-        }
-    }
+function inChrome(url, expression) {
+    return evaluateInChrome(url, { expression, timeoutMs: pageTimeoutMs, args: ["--js-flags=--expose-gc"], pollMs: 500 });
 }
 
 async function inBrowser() {

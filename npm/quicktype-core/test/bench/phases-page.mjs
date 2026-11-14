@@ -5,11 +5,8 @@
 // (`jsonRead` or `jsonReadBytes`, `start`, `poll`), wrapped from outside, so
 // the facade has no marks of its own.
 
-const median = (values) => {
-    const sorted = [...values].sort((a, b) => a - b);
-    const middle = sorted.length >> 1;
-    return sorted.length === 0 ? NaN : sorted.length % 2 === 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-};
+import { median } from "./workload.mjs";
+
 const now = () => performance.now();
 const nextTask = () => new Promise((resolve) => setTimeout(resolve, 0));
 
