@@ -79,8 +79,23 @@ jsonFiles.forEach((path, i) => {
   const text = read(path);
   seed("json_stream", cat(Buffer.from([i & 1]), text));
   seed("json_parse", cat(Buffer.from([i & 1]), text));
-  // Threads, range size, flags (`handleRefs`, a tiny tree budget).
+  // Threads, range size, flags (`handleRefs`, a tiny tree budget, JSON
+  // Lines).
   seed("json_split", cat(Buffer.from([i, byte(), i & 3]), text));
+  // An array's elements as JSON Lines, now and then on several lines each,
+  // with CRLF line breaks and blank lines.
+  let elements;
+  try {
+    elements = JSON.parse(text.toString("utf8"));
+  } catch {
+    elements = undefined;
+  }
+  if (Array.isArray(elements)) {
+    const lines = elements.map((e, j) => JSON.stringify(e, null, j % 5 === 4 ? 2 : undefined));
+    const breaks = ["\n", "\r\n", "\n\n"];
+    const jsonLines = lines.map((line, j) => line + breaks[(i + j) % breaks.length]).join("");
+    seed("json_split", cat(Buffer.from([i, byte(), 4 | (i & 3)]), jsonLines));
+  }
   seed("yaml", text);
   // Stream and JSON.parse semantics, plain and with random options.
   seed("pipeline", cat(header(i, 0), text));

@@ -1,5 +1,6 @@
-//! Large top-level arrays in files are read on several threads (the CLI's
-//! regular files, `input/parallel_read.rs`), at offsets of the file:
+//! Large top-level arrays (and JSON Lines) in files are read on several
+//! threads (the CLI's regular files, `input/parallel_read.rs`), at offsets
+//! of the file:
 //! `pread` on Unix, `seek_read` on Windows (each reading thread with a
 //! handle of its own, the file opened again). Files written here, read with
 //! forced threads and range sizes, must read as their bytes do in one go:
@@ -61,14 +62,32 @@ fn files_read_on_several_threads_read_as_in_one_go() {
     let good = format!("[{}]\n", records.join(",\n"));
     let broken = good.replacen(r#""id":2000,"#, r#""id":2000,,"#, 1);
     let trailing = format!("{good} x");
+    let lines = format!("\u{feff}{}\r\n", records.join("\n\n"));
+    let broken_lines = lines.replacen(r#""id":2000,"#, r#""id":2000,,"#, 1);
+    let trailing_lines = format!("{lines} x");
     for (name, text, whole) in [
-        ("good", &good, true),
-        ("broken", &broken, false),
-        ("trailing", &trailing, false),
+        ("good.json", &good, true),
+        ("broken.json", &broken, false),
+        ("trailing.json", &trailing, false),
+        ("good.jsonl", &lines, true),
+        ("broken.jsonl", &broken_lines, false),
+        ("trailing.jsonl", &trailing_lines, false),
     ] {
-        let path = dir.join(format!("{name}.json"));
+        let path = dir.join(name);
         std::fs::write(&path, text).unwrap();
-        let expected = read(JsonSample::Stream(text.clone().into_bytes()));
+        let as_lines = name.ends_with(".jsonl");
+        let expected = read(if as_lines {
+            JsonSample::StreamLines(text.clone().into_bytes())
+        } else {
+            JsonSample::Stream(text.clone().into_bytes())
+        });
+        if name == "good.jsonl" {
+            // The array of the values.
+            assert_eq!(
+                expected,
+                read(JsonSample::Stream(good.clone().into_bytes()))
+            );
+        }
         for threads in [2, 4] {
             for range in [64, 4_096, 65_536] {
                 let options = ParallelOptions::default()
@@ -77,7 +96,11 @@ fn files_read_on_several_threads_read_as_in_one_go() {
                     .with_min_len(0);
                 let before = parallel_reads();
                 let sample = parallel_file_sample(&path, options).unwrap();
-                let got = read(JsonSample::Reader(sample));
+                let got = read(if as_lines {
+                    JsonSample::ReaderLines(sample)
+                } else {
+                    JsonSample::Reader(sample)
+                });
                 let after = parallel_reads();
                 assert_eq!(
                     got, expected,

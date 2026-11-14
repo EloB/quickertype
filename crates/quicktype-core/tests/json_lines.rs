@@ -2,7 +2,9 @@
 //! `ReaderLines`) give exactly what the JSON array of their values gives
 //! (`String`, `Stream`, `Reader`): for generated values, separators and
 //! sources, every target language and a range of options, the whole run's
-//! files, or its error, are identical. That the array gives what quicktype
+//! files, or its error, are identical. Readers are also read as files on
+//! several threads (`parallel_sample`, with ranges small enough to split
+//! these samples), the JSON Lines between their lines. That the array gives what quicktype
 //! gives is the parity tests' business; `node xtask/fuzz/fuzz.mjs --modes
 //! jsonl` compares our CLI on JSON Lines with quicktype's on the array.
 
@@ -12,8 +14,9 @@ mod generator;
 
 use std::io::Read;
 
+use quicktype_core::internal::{parallel_reads, parallel_sample};
 use quicktype_core::{
-    InputData, JsonSample, JsonSourceData, Options, SampleReader, TargetLanguage,
+    InputData, JsonSample, JsonSourceData, Options, ParallelOptions, SampleReader, TargetLanguage,
     default_target_languages, json_input_for_target_language, quicktype_multi_file_sync,
 };
 
@@ -48,12 +51,14 @@ impl Read for Chunked {
 }
 
 /// How a sample is given: which reader, and for a stream, in chunks of up
-/// to how many bytes.
+/// to how many bytes, or as a file read on so many threads in ranges of so
+/// many bytes.
 #[derive(Clone, Copy, Debug)]
 enum Reader {
     String,
     Stream,
     Chunks(u64),
+    Parallel(usize, usize),
 }
 
 /// A sample: its values as JSON Lines, or as the JSON array of them.
@@ -97,13 +102,23 @@ impl Sample {
             Reader::String => JsonSample::String(text),
             Reader::Stream if lines => JsonSample::StreamLines(text.into_bytes()),
             Reader::Stream => JsonSample::Stream(text.into_bytes()),
-            Reader::Chunks(max) => {
-                let reader = SampleReader::new(Chunked {
-                    data: text.into_bytes(),
-                    position: 0,
-                    rng: Rng::new(seed),
-                    max,
-                });
+            Reader::Chunks(_) | Reader::Parallel(..) => {
+                let reader = match self.reader {
+                    Reader::Parallel(threads, range) => {
+                        let options = ParallelOptions::default()
+                            .with_threads(threads)
+                            .with_small_ranges(range)
+                            .with_min_len(0);
+                        parallel_sample(text.into_bytes(), options)
+                    }
+                    Reader::Chunks(max) => SampleReader::new(Chunked {
+                        data: text.into_bytes(),
+                        position: 0,
+                        rng: Rng::new(seed),
+                        max,
+                    }),
+                    Reader::String | Reader::Stream => unreachable!(),
+                };
                 if lines {
                     JsonSample::ReaderLines(reader)
                 } else {
@@ -154,10 +169,12 @@ fn case(seed: u64) -> Case {
             let lines = values.len() != 1 || rng.chance(80);
             let reader = if text {
                 Reader::String
-            } else if rng.chance(50) {
+            } else if rng.chance(35) {
                 Reader::Stream
-            } else {
+            } else if rng.chance(50) {
                 Reader::Chunks(*rng.pick(&[1, 3, 16, 4096]))
+            } else {
+                Reader::Parallel(*rng.pick(&[2, 3, 4]), *rng.pick(&[1, 7, 64, 500]))
             };
             let separators = (0..rng.range(1, 3))
                 .map(|_| *rng.pick(separators))
@@ -233,7 +250,10 @@ fn run(case: &Case, as_lines: bool, seed: u64) -> String {
     format!("{}\n{result}", added.join("\n"))
 }
 
-fn check(seeds: std::ops::Range<u64>) {
+/// Checks the cases of `seeds`; returns how many samples were read on
+/// several threads, whole or in part.
+fn check(seeds: std::ops::Range<u64>) -> usize {
+    let before = parallel_reads();
     for seed in seeds {
         let case = case(seed);
         let lines = run(&case, true, seed);
@@ -244,11 +264,14 @@ fn check(seeds: std::ops::Range<u64>) {
             case.lang.name()
         );
     }
+    let after = parallel_reads();
+    after.whole - before.whole + after.in_part - before.in_part
 }
 
 #[test]
 fn json_lines_give_what_their_array_gives() {
-    check(0..300);
+    let parallel = check(0..300);
+    assert!(parallel > 50, "{parallel} samples read on several threads");
 }
 
 /// More seeds: `QUICKTYPE_JSON_LINES_SEEDS` (default 20,000) from
@@ -292,6 +315,20 @@ fn json_lines_errors() {
         error(JsonSample::ReaderLines(SampleReader::new(text.as_bytes()))),
         "Syntax error in input JSON Cards: line 2: Parser cannot parse input: unexpected characters"
     );
+    // On several threads, the line counted from the sample's start
+    // whichever part fails.
+    let long = format!("{}{text}\n", "{\"a\": 0}\r\n\n".repeat(40));
+    for range in [1, 5, 16, 100] {
+        let options = ParallelOptions::default()
+            .with_threads(3)
+            .with_small_ranges(range)
+            .with_min_len(0);
+        let sample = parallel_sample(long.clone().into_bytes(), options);
+        assert_eq!(
+            error(JsonSample::ReaderLines(sample)),
+            "Syntax error in input JSON Cards: line 82: Parser cannot parse input: unexpected characters"
+        );
+    }
     assert_eq!(
         error(JsonSample::StringLines(text.to_owned())),
         "Syntax error in input JSON Cards: line 2: Unexpected non-whitespace character after JSON at position 18"

@@ -1,13 +1,14 @@
-//! Reading a large top-level array on several threads (the CLI's regular
-//! files, `input/parallel_read.rs`): arbitrary bytes, split where the
-//! parallel scan finds the array's element boundaries, must read exactly
-//! as in one go: the same error, or the same type graph right after
+//! Reading a large top-level array, or JSON Lines, on several threads (the
+//! CLI's regular files, `input/parallel_read.rs`): arbitrary bytes, split
+//! where the parallel scan finds the array's element boundaries (the line
+//! feeds between JSON Lines' values), must read exactly as in one go: the
+//! same error (on the same line), or the same type graph right after
 //! inference.
 //!
 //! Header: byte 0 picks the threads (2 to 4), byte 1 the range size (1 to
 //! 256 bytes), byte 2 flags: bit 0 `handleRefs`, bit 1 a budget for the
 //! parts' trees so small that the rest is read in one go after the first
-//! part.
+//! part, bit 2 JSON Lines.
 
 #![no_main]
 
@@ -30,8 +31,14 @@ fuzz_target!(|data: &[u8]| {
         .with_min_len(0)
         .with_budget((flags & 2 != 0).then_some(1 << 12));
     let handle_refs = flags & 1 != 0;
-    let parallel = read(JsonSample::Reader(parallel_sample(sample.to_vec(), options)), handle_refs);
-    let in_one_go = read(JsonSample::Stream(sample.to_vec()), handle_refs);
+    let reader = parallel_sample(sample.to_vec(), options);
+    let (parallel, in_one_go) = if flags & 4 != 0 {
+        (JsonSample::ReaderLines(reader), JsonSample::StreamLines(sample.to_vec()))
+    } else {
+        (JsonSample::Reader(reader), JsonSample::Stream(sample.to_vec()))
+    };
+    let parallel = read(parallel, handle_refs);
+    let in_one_go = read(in_one_go, handle_refs);
     assert_eq!(parallel, in_one_go, "read on several threads and in one go differ");
 });
 

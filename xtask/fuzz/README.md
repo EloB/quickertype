@@ -116,6 +116,9 @@ Each case runs in some of these modes (`--modes`, chosen per seed):
   `.JSONL`, or anything with `--src-lang jsonl`; several top-levels are a
   directory of `.jsonl`, `.ndjson` and `.json` files, run without
   `--src-lang` or with `jsonl` (a directory goes by the files' names).
+  Half the time our binary reads the files on several threads, in ranges
+  small enough to split them (`QUICKTYPE_READ_THREADS` and
+  `QUICKTYPE_READ_CHUNK`), between their lines.
   JSON Schema, GraphQL and mixed cases run as a directory with an
   explicit `--src-lang` other than `jsonl` (`schema`, or `json`) that
   also holds stray `.jsonl` and `.NDJSON` files, the same on both sides
