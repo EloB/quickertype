@@ -35,11 +35,11 @@ npm/quicktype-core         → loads the .wasm that quicktype-wasm compiles to
 
 | Crate | Ports (TS path) | Notable external crates |
 |---|---|---|
-| [`crates/quicktype-core`](../crates/quicktype-core) | `packages/quicktype-core/src`; also the CLI's `src/CompressedJSONFromStream.ts` with stream-json's parser (`input/compressed_json_from_stream.rs`), `collection-utils` (`support/collection_utils.rs`) and Node's `fetch` (`input/io/fetch.rs`) | `indexmap`, `regex`, `stacker`; with feature `http`: `ureq`, `url`, `flate2`, `brotli-decompressor` |
-| [`crates/quicktype-cli`](../crates/quicktype-cli) | `src/` (`index.ts`, `TypeSource.ts`, `URLGrammar.ts`, `GraphQLIntrospection.ts`); also `command-line-args`, `command-line-usage` (with `table-layout`, `wordwrapjs`) and `chalk`/`supports-color`/`chalk-template` | `indexmap` |
-| [`crates/quicktype-graphql-input`](../crates/quicktype-graphql-input) | `packages/quicktype-graphql-input/src`; also graphql-js 16.14.2's lexer and parser (`src/graphql/`) | `indexmap` |
+| [`crates/quicktype-core`](../crates/quicktype-core) | `packages/quicktype-core/src`; also the CLI's `src/CompressedJSONFromStream.ts` with stream-json's parser (`input/compressed_json_from_stream.rs`), `collection-utils` (`support/collection_utils.rs`) and Node's `fetch` (`input/io/fetch.rs`) | `indexmap`, `hashbrown`, `regex`, `stacker`; with feature `http`: `ureq`, `url`, `flate2`, `brotli-decompressor` |
+| [`crates/quicktype-cli`](../crates/quicktype-cli) | `src/` (`index.ts`, `TypeSource.ts`, `URLGrammar.ts`, `GraphQLIntrospection.ts`); also `command-line-args`, `command-line-usage` (with `table-layout`, `wordwrapjs`) and `chalk`/`supports-color`/`chalk-template` | `mimalloc` |
+| [`crates/quicktype-graphql-input`](../crates/quicktype-graphql-input) | `packages/quicktype-graphql-input/src`; also graphql-js 16.14.2's lexer and parser (`src/graphql/`) | none |
 | [`crates/quicktype-typescript-input`](../crates/quicktype-typescript-input) | `packages/quicktype-typescript-input/src/index.ts`; also typescript-json-schema 0.67.4 (`src/tjs/`) and a client for TypeScript 7.0.2's `tsc --api` protocol (`src/tsc/`) | `serde`, `serde_json`, `stacker` |
-| [`crates/quicktype-js-compat`](../crates/quicktype-js-compat) | no TS file: JavaScript runtime behavior and npm packages the output depends on (section 4) | `ryu`, `saphyr-parser`, `regex`, `indexmap`, `stacker`; `wasm-bindgen` under `js-host-math` |
+| [`crates/quicktype-js-compat`](../crates/quicktype-js-compat) | no TS file: JavaScript runtime behavior and npm packages the output depends on (section 4) | `ryu`, `saphyr-parser`, `regex`, `indexmap`, `foldhash`, `stacker`; `wasm-bindgen` under `js-host-math` and `js-host-random` |
 | [`crates/quicktype-wasm`](../crates/quicktype-wasm) | no TS file: the bindings the npm facade calls (section 5) | `wasm-bindgen`, `js-sys`, pinned to the `wasm-bindgen` CLI version |
 | [`xtask`](../xtask) | no TS file: `cargo xtask parity`, `diff`, `golden` (`xtask/src/`) and the Node recorders (`xtask/*/`) | `serde`, `serde_json` |
 | [`npm/quicktype-core`](../npm/quicktype-core) | `packages/quicktype-core/src` verbatim except `Run.ts`, plus `src/native/` | npm package |
@@ -228,6 +228,21 @@ others default to the function of the same name in
   reproduce them bit for bit, keyed by `TypeIdentity`.
 - **`Map`/`Set`** become `IndexMap`/`IndexSet`. Where an object is a JS `Map`
   key, `SameValueZeroKey` and `JsObject` model SameValueZero.
+- **Hashing**: every hash map and set, in every crate, is one of
+  `quicktype_js_compat::hash`'s `IndexMap`, `IndexSet`, `HashMap` and
+  `HashSet` (quickertype-core re-exports them as `support::fast_hash`),
+  with its one hasher, `SeededState`: foldhash with a secret seed, because
+  the keys come from the input. Natively the seed is foldhash's, per
+  process; in WebAssembly it is 16 bytes of `crypto.getRandomValues`, per
+  instance (the `js-host-random` feature). `IndexMap`/`IndexSet` iterate
+  in insertion order whatever the seed; `HashMap`/`HashSet` are for
+  lookups only, since their order changes with it (docs/PARITY.md, rule
+  1). Maps are made with `default()`, `with_capacity_and_hasher` or
+  `collect()`. indexmap is built without `std`, so it has no `RandomState`
+  default, and clippy's `disallowed-types` ([`clippy.toml`](../clippy.toml))
+  rejects `std`'s maps, `RandomState` and indexmap's own types outside
+  that module. `EqualityMap` is the exception: it reproduces
+  collection-utils' own hash and probing, which parity needs.
 - **`===` on emitted items** (`emitLineOnce`, `emitItemOnce`): a
   `Source::Text` equals an earlier one with the same text, a `Source::Name`
   the same name, and a sequence (`sl![...]`, a TS array literal) nothing

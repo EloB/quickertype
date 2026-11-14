@@ -2180,23 +2180,108 @@ quickertype-core's `js-host-random` feature, which the bindings turn on:
   than before (5,446,238 bytes against 5,448,495, with the error
   reporting above), and no phase moved by more than 0.5%.
 
-Covered: the JSON reader's string and key tables, the `fast_hash`
-`HashMap`s and `HashSet`s, and the tallies' `IndexMap`s.
+Covered at first: the JSON reader's string and key tables, the
+`fast_hash` `HashMap`s and `HashSet`s, and the tallies' `IndexMap`s. The
+output did not depend on the seed: every scenario of the differential
+suite (19,078, of which 18,957 run on WebAssembly) gave byte-identical
+results with two different seeds.
 
-Not covered yet:
-- The `IndexMap`s and `IndexSet`s that use `std`'s `RandomState`. Many of
-  them hold names from the input (class properties, enum and string
-  cases, `JsonValue` objects), so in WebAssembly crafted property names
-  can still slow inference. `std` has no way to seed them; they move to
-  `fast_hash`'s hasher in `fix/seeded-index-maps`.
+#### Every map and set
+
+The rest had `std`'s `RandomState`, with fixed keys in WebAssembly: the
+`IndexMap`s and `IndexSet`s, many of them holding names from the input
+(class properties, enum and string cases, `JsonValue` objects), and the
+bindings' `std` `HashMap`s (natively, the GraphQL and TypeScript inputs'
+too). Crafted property names could still slow inference. Now there is
+one hasher for all of them, `SeededState`, in quickertype-js-compat's
+`hash` module: the crate every other one depends on, and the one with
+`JsonValue`. quickertype-core re-exports it as `support::fast_hash`. It is
+the seeding above, moved, with `IndexMap`, `IndexSet`, `HashMap` and
+`HashSet` aliases:
+- Natively it is foldhash's `fast::RandomState`, seeded per process from
+  address space layout randomization, the clock and an allocator
+  address, with a seed of its own for each map. For the `IndexMap`s it
+  replaces SipHash, whose keys came from the system's random source;
+  their order is insertion order either way.
+- In WebAssembly it is the seeded state above: the seed from
+  `crypto.getRandomValues` with `js-host-random` (quickertype-js-compat
+  has the feature now, and core's turns it on).
+- Nothing else can make a map. indexmap is built without `std`, so its
+  types have no `RandomState` default and no `new()`. clippy's
+  `disallowed-types` (`clippy.toml`) rejects `std`'s `HashMap`, `HashSet`,
+  `RandomState` and `DefaultHasher`, indexmap's own types and foldhash's
+  states everywhere but the `hash` module.
+- `npm/quicktype-core/test/seed.test.mjs` checks the property that
+  matters: two fresh Node processes that do the same hash a key
+  differently in a new map of class properties (`__hashForTests`), and so
+  does a fresh instance after a trap. With the entropy fixed, the test
+  fails.
+
+Not covered:
+- `EqualityMap` (`support::collection_utils`), which reproduces
+  collection-utils' hash (Java's `h * 31 + c` over UTF-16 units) and its
+  linear probing, because which of two equal types wins depends on them.
+  Its keys are type identities, which hold names from the input, so
+  crafted names can make it probe long chains, as they can in quicktype.
 - In dependencies, regex-automata's maps. Their keys are capture names of
   the engine's own patterns, and the lazy DFA's states, which the input
   only selects among. saphyr-parser hashes nothing.
 
-The output does not depend on the seed. Every scenario of the
-differential suite (19,078, of which 18,957 run on WebAssembly) gave
-byte-identical results with two different seeds. The differential test
-against TypeScript passes as before.
+**The output does not depend on the seed.** An `IndexMap` iterates in
+insertion order whatever its hasher. A `HashMap` or `HashSet` iterates in
+an order that changes with the seed, so it must never reach output
+(docs/PARITY.md, rule 1). An audit of every hashed map and set in the six
+crates found none that does. The one iteration, naming's forbidden names
+grouped by lowercase, feeds an `any` that gives the same answer in any
+order. Every other is only looked up, sorted, or filled from an ordered
+collection. `expand_strings` sums the seeded hashes of a set's cases to
+bucket sets, but returns the first equal set among a bucket's candidates,
+whatever the seed. Every run takes new seeds, and all of these passed:
+`cargo xtask parity -j 6` three times (11,177 of 11,177 cases each),
+`npm test` in npm/quicktype-core twice (64 tests, one skipped because
+every renderer is ported), and the differential suite (`npm run
+test:differential`) three times (20,604 scenarios, 20,471 of them on
+WebAssembly, none different; one known gap, as before).
+
+**Speed.** Interleaved, before (`b65fa2212`) and after, on an Apple M2 Max
+with another agent's builds and tests running beside:
+- The CLI (`-l ts -o <file>`, 15 rounds, wall time; load average 6.6):
+
+  | Input | Before: min / median | After: min / median | Change |
+  |---|---:|---:|---:|
+  | generated (40 MB) | 150.9 / 152.1 ms | 146.9 / 148.5 ms | −2.6% / −2.4% |
+  | 1M records (267 MB), all cores | 46.7 / 48.6 ms | 47.4 / 48.7 ms | +1.4% / +0.3% (CPU time −1.2%) |
+  | 100k records (26.8 MB), all cores | 9.2 / 9.7 ms | 9.2 / 9.8 ms | +0.5% / +0.8% |
+
+  An earlier block of 11 rounds (load average 7.5) gave −3.0%, −1.7% and
+  +0.1% at the minimum. The records are within noise; generating the 40
+  MB input, where the run hashes many class properties and string cases,
+  is faster.
+- The engine natively (the `phases` example, 15 rounds of 21 runs, load
+  average 2.7 to 2.9): the rulings' read and run within 1%. On the 40 MB
+  input (9 rounds of 11, load 6.3 to 9.4), the run (inference and
+  rendering) 6.0% faster (54.0 to 50.8 ms, faster in 8 of 9 rounds), the
+  read within noise.
+- WebAssembly in headless Chrome (`compare.mjs --browser --variant`, the
+  two packages interleaved in one page; load average 5.7 falling to
+  3.3), the median of three runs of the benchmark, each a median, in
+  ms. Chrome's timer steps by 0.1 ms here:
+
+  | Input | Before: read / generate / total | After: read / generate / total |
+  |---|---:|---:|
+  | pokedex (82 KB) | 0.50 / 1.20 / 1.70 | 0.50 / 1.20 / 1.70 |
+  | generated (2 MB) | 8.80 / 5.10 / 13.9 | 8.80 / 4.90 / 13.8 |
+  | generated (20 MB) | 89.1 / 32.6 / 122 | 89.1 / 31.9 / 121 |
+  | rulings (27 MB) | 46.4 / 6.50 / 52.8 | 46.4 / 6.60 / 52.8 |
+  | cards (22 MB) | 88.5 / 23.4 / 112 | 88.9 / 23.5 / 112 |
+
+  Generating the 20 MB input is 2–3% faster in each of the three runs
+  (32.5 to 31.6, 32.6 to 31.9, 32.9 to 31.9). Everything else is the
+  same within the timer's step and the noise. Reading hashed with
+  foldhash already (the string tables), and the records and cards have
+  few classes and properties to hash.
+- The engine is 5,434,960 bytes, 38,365 (0.7%) smaller than before
+  (5,473,325).
 
 ### Hashing strings in WebAssembly
 
@@ -2297,8 +2382,24 @@ engine runs, which interns into the compressed form's string table and
 keeps the `JSON.parse` reader's key table. The CLI's running tallies
 intern into the same kind of string table, but the CLI is not measurably
 affected: built at the same two commits, it took 29.9 and 30.0 ms on the 100k rulings and 86.7 and
-85.4 ms on the 20 MB input (`-l ts`, 15 interleaved runs each). The `cfg`
-above has not been made.
+85.4 ms on the 20 MB input (`-l ts`, 15 interleaved runs each).
+
+**Re-checked again** with every map seeded (see "Every map and set"
+above): the `cfg`, natively `hash_one` (`Hash for str`) and in
+WebAssembly `write` and `finish`, against `write` and `finish` everywhere,
+on the `phases` example and the CLI, interleaved:
+- Rulings, `read: commit`: −1.4% (11.22 to 11.05 ms, 25 rounds of 21
+  runs, faster in 21; load average 4.1 to 4.5) and −0.3% (15 rounds,
+  load 2.7 to 2.9). The re-check above found `write` alone 4.9% slower
+  here; now it is 0.3 to 1.4% slower.
+- The 40 MB input, `read: commit`: +1.1%, within the noise (9 rounds,
+  load 6.3 to 9.4).
+- The CLI: the same within noise on the 100k and 1M records and the 40
+  MB input (−0.5% to +2% at the minimum, 11 to 21 rounds).
+
+About 1% in one phase and nothing in the CLI is not worth a second way
+to hash strings, which the native tests would no longer cover, so the
+`cfg` is not made: `hash_str` is `write` and `finish` on every target.
 
 #### Tried and dropped: a 32-bit hasher for WebAssembly
 

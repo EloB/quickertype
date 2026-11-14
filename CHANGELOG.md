@@ -59,8 +59,37 @@ section are absolute.
   its controls on one row, the input kind fills the first, and the
   output's head is as tall, so the rows under them still line up.
 
+### Changed
+
+- **Breaking for the Rust API:** every hash map and set in the crates
+  uses one seeded hasher, `SeededState` (quickertype-js-compat's new
+  `hash` module, which quickertype-core re-exports as
+  `support::fast_hash`, with `IndexMap`, `IndexSet`, `HashMap` and
+  `HashSet` aliases). The maps in the public API (`JsonValue::Object`,
+  `MultiFileRenderResult`, the type graph's maps) have it as their third
+  type parameter, so code that made them with `IndexMap::new()` makes
+  them with `IndexMap::default()` (or `collect()`, or
+  `with_capacity_and_hasher(n, Default::default())`).
+  `support::fast_hash::BuildHasher` is `SeededState` on every target.
+  quickertype-js-compat has the `js-host-random` feature now, which
+  quickertype-core's `js-host-random` turns on.
+
 ### Fixed
 
+- **The WebAssembly engine's remaining hash maps are seeded per
+  instance,** which closes the gap 0.2.0 left. The `IndexMap`s and
+  `IndexSet`s of class properties, enum and string cases and `JsonValue`
+  objects, and the bindings' own maps, used `std`'s `RandomState`, whose
+  keys are the same in every WebAssembly instance, so crafted property
+  names could make inference quadratic. Now every map and set takes its
+  seed from `crypto.getRandomValues`, as the JSON reader's tables do
+  since 0.2.0, and natively from foldhash's per-process seed. Output does
+  not change. indexmap without `std` and clippy's `disallowed-types` keep
+  every new map on the seeded hasher. foldhash is also faster than
+  SipHash: the CLI turns the 40 MB benchmark input into TypeScript 2.5%
+  faster, and the engine in Chrome generates the 20 MB one 2–3% faster.
+  The engine is 38 KB smaller. See
+  [Hash seeds in WebAssembly](https://github.com/EloB/quickertype/blob/main/docs/BENCHMARKS.md#hash-seeds-in-webassembly).
 - **TypeScript input: descriptions inherited from base members as
   quicktype gives them.** A member whose own JSDoc has no text (none,
   only tags such as `@deprecated`, or an empty `/** */`) takes the

@@ -71,10 +71,11 @@
 //!
 //! # WebAssembly
 //!
-//! The hash maps' seed has to be secret, since their keys come from the
-//! input, and WebAssembly has no randomness of its own. With the
-//! `js-host-random` feature a wasm32 build takes it from the JavaScript
-//! host's `crypto.getRandomValues`; the host must call
+//! Every hash map and set (`IndexMap` and `IndexSet` too) uses one seeded
+//! hasher, `support::fast_hash::SeededState`. The seed has to be secret,
+//! since the keys come from the input, and WebAssembly has no randomness
+//! of its own. With the `js-host-random` feature a wasm32 build takes it
+//! from the JavaScript host's `crypto.getRandomValues`; the host must call
 //! `support::fast_hash::init()` when it starts and handle its error (a
 //! host without `crypto.getRandomValues`), or the first map panics there.
 //! Without the feature, an embedder can give its own entropy to
