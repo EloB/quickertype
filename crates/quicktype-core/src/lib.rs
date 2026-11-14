@@ -218,6 +218,10 @@ pub mod internal {
     pub use crate::input::compressed_json::CompressedJsonTables;
     pub use crate::input::inputs::CompressedTopLevel;
     pub use crate::input::io::{LocalBoxFuture, block_on};
+    #[cfg(not(target_family = "wasm"))]
+    pub use crate::input::parallel_read::{
+        Fault, ParallelOptions, parallel_reads, parallel_sample,
+    };
     pub use crate::markov_chain::{TrainingMarkovChain, train as train_markov_chain};
     pub use crate::source::Source;
     pub use crate::support::support::{capture_console, set_console_error_sink};

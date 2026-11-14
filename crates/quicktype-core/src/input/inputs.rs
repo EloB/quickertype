@@ -25,9 +25,13 @@ use std::sync::OnceLock;
 use indexmap::{IndexMap, IndexSet};
 
 use super::compressed_json::{
-    CompressedJson, CompressedJsonTables, Framing, JsonSample, ParseError, Value, read_sample_into,
+    CompressedJson, CompressedJsonTables, Framing, JsonSample, ParseError, SampleStream, Value,
+    read_sample_into,
 };
+use super::compressed_json_from_stream::parse_stream_reader_into;
 use super::inference::TypeInference;
+#[cfg(not(target_family = "wasm"))]
+use super::parallel_read;
 use super::tallies::{
     FormTallies, KeptTallies, NodeId, RunningTallies, Tallies, TallyBuilder, tally_compressed,
 };
@@ -744,9 +748,16 @@ impl JsonInput {
         // and frees what it was given).
         let mut source: Option<NodeId> = None;
         for sample in samples {
-            let mut builder = TallyBuilder::new(tallies, &self.compressed_json);
-            let read = read_sample_into(&mut builder, sample);
-            drop(builder);
+            let config = &self.compressed_json;
+            let read = match sample {
+                // A large top-level array in a file read at offsets, on
+                // several threads as far as it can be.
+                JsonSample::Reader(reader) => match reader.take() {
+                    Some(stream) => read_stream_into(tallies, config, stream),
+                    None => Err(ParseError::Read(already_read(Framing::Value))),
+                },
+                sample => read_sample_into(&mut TallyBuilder::new(tallies, config), sample),
+            };
             let added = read.map_err(report).and_then(|tree| match source {
                 Some(source) => tallies.tallies.merge(source, tree),
                 None => {
@@ -975,6 +986,26 @@ impl Input for JsonInput {
 
     fn single_string_schema_source(&self) -> Option<String> {
         None
+    }
+}
+
+/// Reads a [`JsonSample::Reader`]'s bytes into `tallies`: on several
+/// threads as far as they can be, if they can be read at any offset and
+/// are a large top-level array ([`parallel_read::read_sample`]); in one go
+/// otherwise.
+fn read_stream_into(
+    tallies: &mut RunningTallies,
+    config: &CompressedJson,
+    stream: SampleStream,
+) -> Result<NodeId, ParseError> {
+    match stream {
+        #[cfg(not(target_family = "wasm"))]
+        SampleStream::Positional(sample) => parallel_read::read_sample(sample, tallies, config),
+        stream => parse_stream_reader_into(
+            &mut TallyBuilder::new(tallies, config),
+            &mut *stream.into_reader(),
+            Framing::Value,
+        ),
     }
 }
 

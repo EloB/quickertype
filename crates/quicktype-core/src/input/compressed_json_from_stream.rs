@@ -123,6 +123,22 @@ pub(crate) fn parse_stream_reader_into<S: JsonSink>(
     parse_stream_chunked_into(sink, reader, CHUNK_SIZE, framing)
 }
 
+/// [`parse_stream_reader_into`] for the rest of a sample's top-level array
+/// after a comma between its elements: the elements that follow, the
+/// array's `]` and whatever follows it, read as reading the whole sample
+/// reads them from there, into a `sink` that is in that array. The
+/// reading of a sample on several threads goes on so from a part it does
+/// not read on several ([`parallel_read`](super::parallel_read)).
+#[cfg(not(target_family = "wasm"))]
+pub(crate) fn parse_array_rest_into<S: JsonSink>(
+    sink: &mut S,
+    reader: &mut dyn Read,
+) -> Result<S::Root, ParseError> {
+    let mut tokenizer = Tokenizer::streaming(reader, CHUNK_SIZE);
+    let result = tokenizer.run_from(sink, Expect::Value, vec![Parent::Array]);
+    finish(sink, tokenizer, result)
+}
+
 /// [`parse_stream_reader_into`] with chunks of at most `chunk_size` bytes.
 pub(crate) fn parse_stream_chunked_into<S: JsonSink>(
     sink: &mut S,
@@ -150,6 +166,15 @@ fn tokenize<S: JsonSink, W: Window>(
     mut tokenizer: Tokenizer<'_, W>,
 ) -> Result<S::Root, ParseError> {
     let result = tokenizer.run(sink);
+    finish(sink, tokenizer, result)
+}
+
+/// The result of a run of `tokenizer`, which read into `sink`.
+fn finish<S: JsonSink, W: Window>(
+    sink: &mut S,
+    mut tokenizer: Tokenizer<'_, W>,
+    result: Result<S::Root, ParseError>,
+) -> Result<S::Root, ParseError> {
     let read_error = tokenizer.read_error.take();
     // A failed read looks like the end of the input to the parser; the
     // read error is what is reported.
@@ -674,8 +699,18 @@ impl<W: Window> Tokenizer<'_, W> {
     }
 
     fn run<S: JsonSink>(&mut self, sink: &mut S) -> Result<S::Root, ParseError> {
-        let mut expect = Expect::Value;
-        let mut stack: Vec<Parent> = Vec::new();
+        self.run_from(sink, Expect::Value, Vec::new())
+    }
+
+    /// Reads the input into `sink`, starting in state `expect` with the
+    /// containers `stack` open (`Value` and none for a whole sample, see
+    /// [`run`](Self::run)).
+    fn run_from<S: JsonSink>(
+        &mut self,
+        sink: &mut S,
+        mut expect: Expect,
+        mut stack: Vec<Parent>,
+    ) -> Result<S::Root, ParseError> {
         states!(self, sink, expect, stack, skip: self.skip_whitespace(), done: {
             self.skip_whitespace();
             if self.peek().is_some() {

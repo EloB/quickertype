@@ -175,8 +175,34 @@ pub enum JsonSample {
 /// fails with stream-json's `Parser has expected a value`; here reading a
 /// `SampleReader` (or a clone of it) a second time is an error that says
 /// so. The CLI opens a new stream for every sample, so it never does.
+///
+/// A regular file opened with
+/// [`Readable::open_sample`](crate::input::io::node_io::Readable::open_sample)
+/// can also be read at any offset, and a large top-level array in it is
+/// read on several threads, into the same tallies (see
+/// `docs/STREAMING-INFERENCE.md`, "Reading on several threads").
 #[derive(Clone)]
-pub struct SampleReader(Rc<RefCell<Option<Box<dyn Read>>>>);
+pub struct SampleReader(Rc<RefCell<Option<SampleStream>>>);
+
+/// What a [`SampleReader`] reads.
+pub(crate) enum SampleStream {
+    /// A byte stream.
+    Read(Box<dyn Read>),
+    /// Bytes that can be read at any offset.
+    #[cfg(not(target_family = "wasm"))]
+    Positional(super::parallel_read::PositionalSample),
+}
+
+impl SampleStream {
+    /// The bytes as a stream, from the start of the sample.
+    pub(crate) fn into_reader(self) -> Box<dyn Read> {
+        match self {
+            SampleStream::Read(reader) => reader,
+            #[cfg(not(target_family = "wasm"))]
+            SampleStream::Positional(sample) => sample.into_reader(),
+        }
+    }
+}
 
 impl SampleReader {
     /// A sample read from `reader`. To report a failed read as Node's
@@ -184,11 +210,21 @@ impl SampleReader {
     /// [`IoError`](crate::input::io::node_io::IoError) (see
     /// [`CompressedJson::parse_stream_reader`]).
     pub fn new(reader: impl Read + 'static) -> Self {
-        SampleReader(Rc::new(RefCell::new(Some(Box::new(reader)))))
+        Self::of(SampleStream::Read(Box::new(reader)))
+    }
+
+    /// A sample whose bytes can be read at any offset.
+    #[cfg(not(target_family = "wasm"))]
+    pub(crate) fn positional(sample: super::parallel_read::PositionalSample) -> Self {
+        Self::of(SampleStream::Positional(sample))
+    }
+
+    fn of(stream: SampleStream) -> Self {
+        SampleReader(Rc::new(RefCell::new(Some(stream))))
     }
 
     /// The stream, unless it was read already.
-    pub(crate) fn take(&self) -> Option<Box<dyn Read>> {
+    pub(crate) fn take(&self) -> Option<SampleStream> {
         self.0.borrow_mut().take()
     }
 }
@@ -451,7 +487,7 @@ impl Strings {
     }
 
     /// The bytes of its buffers.
-    fn heap_size(&self) -> usize {
+    pub(crate) fn heap_size(&self) -> usize {
         vec_size(&self.blocks)
             + self.blocks.iter().map(String::capacity).sum::<usize>()
             + vec_size(&self.spans)
@@ -1414,8 +1450,10 @@ pub(crate) fn read_sample_into<S: JsonSink>(
     match sample {
         String(text) | StringLines(text) => parse_string_into(sink, &text, framing),
         Stream(bytes) | StreamLines(bytes) => parse_stream_into(sink, &bytes, framing),
+        // (In one go: the tallies read a large top-level array on several
+        // threads, `JsonInput`'s `tally_samples`.)
         Reader(reader) | ReaderLines(reader) => match reader.take() {
-            Some(mut stream) => parse_stream_reader_into(sink, &mut *stream, framing),
+            Some(stream) => parse_stream_reader_into(sink, &mut *stream.into_reader(), framing),
             None => Err(ParseError::Read(crate::input::inputs::already_read(
                 framing,
             ))),
