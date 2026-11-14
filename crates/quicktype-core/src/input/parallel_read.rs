@@ -40,7 +40,9 @@ use std::sync::{Condvar, Mutex, OnceLock, mpsc};
 use std::thread;
 
 use super::compressed_json::{CompressedJson, Framing, ParseError};
-use super::compressed_json_from_stream::{parse_array_rest_into, parse_stream_reader_into};
+use super::compressed_json_from_stream::{
+    is_whitespace, parse_array_rest_into, parse_stream_reader_into,
+};
 use super::json_split::{BLOCK, ScanState, Summarizer, Summary, blocks, escaped_after};
 use super::tallies::{NodeId, PortableTree, RunningTallies, TallyBuilder};
 use crate::date_time::DateTimeRecognizer;
@@ -348,11 +350,6 @@ fn count_read(count: impl FnOnce(&mut ParallelReads)) {
         count(&mut reads);
         r.set(reads);
     });
-}
-
-/// TS whitespace of the stream tokenizer: space, tab, LF and CR.
-fn is_whitespace(b: u8) -> bool {
-    matches!(b, b' ' | b'\t' | b'\n' | b'\r')
 }
 
 /// What reading a sample on several threads came to.

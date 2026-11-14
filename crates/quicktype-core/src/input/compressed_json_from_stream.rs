@@ -339,7 +339,7 @@ fn read_error(e: &std::io::Error) -> ParseError {
 }
 
 /// `TERM` and the whitespace the parser skips: space, tab, LF and CR only.
-fn is_whitespace(b: u8) -> bool {
+pub(crate) fn is_whitespace(b: u8) -> bool {
     matches!(b, b' ' | b'\t' | b'\n' | b'\r')
 }
 
