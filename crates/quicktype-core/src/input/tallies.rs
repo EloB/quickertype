@@ -42,7 +42,9 @@ use std::fmt;
 use indexmap::IndexMap;
 use quicktype_js_compat::utf16;
 
-use super::compressed_json::{CompressedJson, JsonSink, StringReaderState, Strings, Value};
+use super::compressed_json::{
+    CompressedJson, JsonSink, StringReaderState, Strings, TableCounts, Value,
+};
 use crate::attributes::string_types::{
     StringTypes, StringTypesTypeAttributeKind, infer_transformed_string_type_kind_for_string,
 };
@@ -900,13 +902,13 @@ fn case_slot(id: u32, node: NodeId) -> usize {
 /// call, so that they tally the same values alike. Keys and string cases
 /// are string ids.
 impl Tallies {
-    #[inline]
+    #[inline(always)]
     fn node_mut(&mut self, id: NodeId) -> Result<&mut Node> {
         defined(self.nodes.get_mut(id as usize))
     }
 
     /// The strings at `node`, a new tally if there are none yet.
-    #[inline]
+    #[inline(always)]
     fn strings_mut(&mut self, node: NodeId) -> Result<&mut StringTally> {
         let Tallies {
             nodes,
@@ -919,14 +921,14 @@ impl Tallies {
     }
 
     /// A `null`, a boolean or a number, of non-string `kind`.
-    #[inline]
+    #[inline(always)]
     pub(crate) fn add_kind(&mut self, node: NodeId, kind: TypeKind) -> Result<()> {
         self.node_mut(node)?.kinds.add(kind);
         Ok(())
     }
 
     /// An interned string (`Tag.InternedString`): the case `id`.
-    #[inline]
+    #[inline(always)]
     pub(crate) fn add_case(&mut self, node: NodeId, id: u32) -> Result<()> {
         let Tallies {
             nodes,
@@ -960,14 +962,14 @@ impl Tallies {
     }
 
     /// A string too long to intern (`Tag.UninternedString`).
-    #[inline]
+    #[inline(always)]
     pub(crate) fn add_uninterned(&mut self, node: NodeId) -> Result<()> {
         self.strings_mut(node)?.add_uninterned()
     }
 
     /// A string of a transformed kind without attribute producer
     /// (`Tag.StringFormat`).
-    #[inline]
+    #[inline(always)]
     pub(crate) fn add_string_format(&mut self, node: NodeId, kind: TypeKind) -> Result<()> {
         self.strings_mut(node)?.add_string_format(kind)
     }
@@ -986,7 +988,7 @@ impl Tallies {
 
     /// An object, where it starts (`pushObjectContext`); its keys and
     /// values follow.
-    #[inline]
+    #[inline(always)]
     pub(crate) fn add_object(&mut self, node: NodeId) -> Result<()> {
         let Tallies {
             nodes,
@@ -1003,6 +1005,7 @@ impl Tallies {
 
     /// An array, where it starts (`pushArrayContext`): returns the node of
     /// its elements, which follow.
+    #[inline(always)]
     pub(crate) fn add_array(&mut self, node: NodeId) -> Result<NodeId> {
         let items = match self.node(node)?.items {
             Some(items) => items,
@@ -1073,12 +1076,6 @@ impl Tallies {
     }
 }
 
-/// What [`CompressedTally`] knows of a string of the compressed form: not
-/// looked at yet, a text other than `"__proto__"`, or `"__proto__"`.
-const UNKNOWN: u8 = 0;
-const PLAIN: u8 = 1;
-const PROTO: u8 = 2;
-
 /// Tallies the values of a compressed form (each top-level's samples, in
 /// order) as reading their samples would have tallied them: the running
 /// tallies of samples that were read into a [`CompressedJson`] instead
@@ -1127,12 +1124,16 @@ pub(crate) fn tally_compressed<'c>(
 /// error tallying a value (a lookup that fails, too many places) is raised.
 struct CompressedTally<'c> {
     cjson: &'c CompressedJson,
-    /// By string index: [`UNKNOWN`], [`PLAIN`] or [`PROTO`].
-    classes: Vec<u8>,
+    /// The number of strings, objects and arrays of the form.
+    counts: TableCounts,
+    /// Whether the form has a `"__proto__"` text; most have none, and then
+    /// no string is looked at to tell.
+    protos: bool,
     /// The index of the first `"__proto__"` looked at, which stands for
     /// every one ([`NO_INDEX`] before).
     proto: u32,
-    /// Bit sets of the objects and arrays reached so far.
+    /// Bit sets of the objects and arrays reached so far, by index, as
+    /// long as the largest index reached needs.
     objects_seen: Vec<u64>,
     arrays_seen: Vec<u64>,
     /// The containers being walked, innermost last.
@@ -1162,44 +1163,53 @@ enum WalkFrame<'c> {
     },
 }
 
-/// Marks bit `index` of `bits`; whether it was clear. An index past the
-/// bits is a value that is not there, as looking it up finds.
-fn first_visit(bits: &mut [u64], index: u32) -> Result<bool> {
+/// Marks container `index` (of `count`) in `bits`, which grow to hold it;
+/// whether it was not marked yet. An index past `count` is a value that is
+/// not there, as looking it up finds.
+#[inline(always)]
+fn first_visit(bits: &mut Vec<u64>, index: u32, count: usize) -> Result<bool> {
+    if index as usize >= count {
+        return defined(None);
+    }
     let (word, bit) = ((index / 64) as usize, 1u64 << (index % 64));
-    let w = defined(bits.get_mut(word))?;
-    let first = *w & bit == 0;
-    *w |= bit;
+    if word >= bits.len() {
+        bits.resize(word + 1, 0);
+    }
+    let first = bits[word] & bit == 0;
+    bits[word] |= bit;
     Ok(first)
 }
 
 impl<'c> CompressedTally<'c> {
     fn new(cjson: &'c CompressedJson) -> Self {
-        let (objects, arrays) = cjson.counts();
         CompressedTally {
             cjson,
-            classes: vec![UNKNOWN; cjson.table_counts().strings],
+            counts: cjson.table_counts(),
+            protos: cjson.has_proto_strings(),
             proto: NO_INDEX,
-            objects_seen: vec![0; objects.div_ceil(64)],
-            arrays_seen: vec![0; arrays.div_ceil(64)],
+            objects_seen: Vec::new(),
+            arrays_seen: Vec::new(),
             stack: Vec::new(),
         }
     }
 
-    /// Whether string `index` is `"__proto__"`.
-    #[inline]
+    /// Whether string `index` is `"__proto__"`. An index past the string
+    /// table is a value that is not there, as looking it up finds.
+    #[inline(always)]
     fn is_proto(&mut self, index: u32) -> Result<bool> {
-        let class = defined(self.classes.get_mut(index as usize))?;
-        if *class == UNKNOWN {
-            *class = if defined(self.cjson.string(index))? == "__proto__" {
-                if self.proto == NO_INDEX {
-                    self.proto = index;
-                }
-                PROTO
-            } else {
-                PLAIN
+        if !self.protos {
+            return match (index as usize) < self.counts.strings {
+                true => Ok(false),
+                false => defined(None),
             };
         }
-        Ok(*class == PROTO)
+        if defined(self.cjson.string(index))? != "__proto__" {
+            return Ok(false);
+        }
+        if self.proto == NO_INDEX {
+            self.proto = index;
+        }
+        Ok(true)
     }
 
     /// Tallies `samples` into a new tree of `tallies`, and returns it;
@@ -1318,7 +1328,7 @@ impl<'c> CompressedTally<'c> {
                 tallies.add_transformed_string(node, kind, &producer(text))?;
             }
             Value::Object(index) => {
-                if !first_visit(&mut self.objects_seen, index)? {
+                if !first_visit(&mut self.objects_seen, index, self.counts.objects)? {
                     return Ok(false);
                 }
                 tallies.add_object(node)?;
@@ -1330,7 +1340,7 @@ impl<'c> CompressedTally<'c> {
                 });
             }
             Value::Array(index) => {
-                if !first_visit(&mut self.arrays_seen, index)? {
+                if !first_visit(&mut self.arrays_seen, index, self.counts.arrays)? {
                     return Ok(false);
                 }
                 let items = tallies.add_array(node)?;

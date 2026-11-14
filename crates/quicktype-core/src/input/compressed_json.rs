@@ -351,6 +351,8 @@ pub(crate) struct Strings {
     /// Whether a text other than `"__proto__"` is in the table more than
     /// once (only an imported table can have that).
     duplicates: bool,
+    /// Whether `"__proto__"` is in the table.
+    protos: bool,
 }
 
 impl Strings {
@@ -361,6 +363,7 @@ impl Strings {
             indexes: HashTable::new(),
             hasher: BuildHasher::default(),
             duplicates: false,
+            protos: false,
         }
     }
 
@@ -436,6 +439,7 @@ impl Strings {
     /// Appends `s`, registered for lookups under `hash` if given; returns
     /// its index.
     fn append(&mut self, s: &str, hash: Option<u64>) -> u32 {
+        self.protos |= s == "__proto__";
         let index = self.spans.len() as u32;
         let fits = self
             .blocks
@@ -631,6 +635,12 @@ impl CompressedJson {
     /// text once but `"__proto__"`; for imported tables, if they are such.
     pub(crate) fn unique_strings(&self) -> bool {
         !self.strings.duplicates
+    }
+
+    /// Whether `"__proto__"` is in the string table (a key or string of
+    /// the samples was, and only then).
+    pub(crate) fn has_proto_strings(&self) -> bool {
+        self.strings.protos
     }
 
     /// `getObjectForValue(v)`: the object's key/value pairs, in the order
