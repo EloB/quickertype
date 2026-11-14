@@ -122,6 +122,8 @@ pub struct Generator<'s> {
     pub warnings: Vec<String>,
     all_symbols: HashMap<String, Rc<Type>>,
     user_symbols: Vec<(String, Rc<Symbol>)>,
+    /// Positions in `user_symbols` by name.
+    user_index: HashMap<String, usize>,
     inheriting_types: HashMap<String, Vec<String>>,
     reffed_definitions: Obj,
     type_names_by_id: HashMap<u64, String>,
@@ -212,6 +214,7 @@ impl<'s> Generator<'s> {
             warnings: Vec::new(),
             all_symbols: HashMap::new(),
             user_symbols: Vec::new(),
+            user_index: HashMap::new(),
             inheriting_types: HashMap::new(),
             reffed_definitions: Value::object(),
             type_names_by_id: HashMap::new(),
@@ -267,15 +270,17 @@ impl<'s> Generator<'s> {
             let name = text::strip_quoted_prefix(&g.fqn(&symbol)?);
             // `if (!userSymbols[name])` on a plain object: `Object.prototype`
             // names count as present.
-            if !g.user_symbols.iter().any(|(n, _)| *n == name)
-                && !js::is_object_prototype_key(&name)
-            {
+            let known = g.user_index.get(&name).copied();
+            if known.is_none() && !js::is_object_prototype_key(&name) {
                 g.all_symbols.insert(name.clone(), Rc::clone(&node_type));
             }
             if name != "__proto__" {
-                match g.user_symbols.iter_mut().find(|(n, _)| *n == name) {
-                    Some(entry) => entry.1 = Rc::clone(&symbol),
-                    None => g.user_symbols.push((name.clone(), Rc::clone(&symbol))),
+                match known {
+                    Some(i) => g.user_symbols[i].1 = Rc::clone(&symbol),
+                    None => {
+                        g.user_index.insert(name.clone(), g.user_symbols.len());
+                        g.user_symbols.push((name.clone(), Rc::clone(&symbol)));
+                    }
                 }
             }
             if has(node_type.flags, tf::Object) && has(node_type.object_flags, of::ClassOrInterface)
@@ -297,7 +302,7 @@ impl<'s> Generator<'s> {
         let names = js_key_order(self.user_symbols.iter().map(|(n, _)| n.clone()).collect());
         let mut main = Vec::new();
         for name in names {
-            let Some((_, sym)) = self.user_symbols.iter().find(|(n, _)| *n == name) else {
+            let Some((_, sym)) = self.user_index.get(&name).map(|i| &self.user_symbols[*i]) else {
                 continue;
             };
             if let Some(d) = sym.declarations.first() {
