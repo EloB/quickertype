@@ -32,9 +32,11 @@ http = ["fs", "dep:ureq", "dep:url", "dep:flate2", "dep:brotli-decompressor"]
 trace = []
 # On wasm32, seed the hash maps from the JavaScript host's
 # `crypto.getRandomValues` (`support::fast_hash`), as the `quicktype-wasm`
-# bindings do. Needs a JavaScript host with wasm-bindgen glue. Without it,
-# a wasm32 build's maps all share one fixed seed: WebAssembly has no
-# randomness of its own.
+# bindings do. Needs a JavaScript host with wasm-bindgen glue, which must
+# call `support::fast_hash::init()` when it starts and handle its error.
+# Without the feature, a wasm32 build seeds its maps from `std`'s
+# `RandomState` (fixed on wasm32-unknown-unknown, which has no randomness
+# of its own) unless the embedder calls `support::fast_hash::seed` first.
 js-host-random = ["dep:wasm-bindgen"]
 
 [dependencies]

@@ -1,21 +1,30 @@
 //! Hash maps and sets for lookups only.
 //!
 //! `std`'s default hasher (SipHash-1-3) was 10% of the engine's time. These
-//! aliases use foldhash instead, seeded per process (per instance in
-//! WebAssembly). Iterating them visits the entries in an arbitrary order,
-//! exactly like `std`'s maps, so the rule stands: their iteration order
-//! must never reach output (docs/PARITY.md, rule 1); use
+//! aliases use foldhash instead. Iterating them visits the entries in an
+//! arbitrary order, exactly like `std`'s maps, so the rule stands: their
+//! iteration order must never reach output (docs/PARITY.md, rule 1); use
 //! `IndexMap`/`IndexSet` for that.
 //!
 //! The seed has to be secret because the keys come from the input: whoever
 //! knows it can write JSON whose keys all land in one bucket, and reading it
-//! then takes quadratic time. Natively, foldhash seeds itself from address
-//! space layout randomization and the clock. WebAssembly has neither, so
-//! there foldhash's seed comes out the same in every instance (and so do the
-//! keys of `std`'s `RandomState`). The WebAssembly build's [`BuildHasher`]
-//! is foldhash with seeds from the JavaScript host's
-//! `crypto.getRandomValues` (the `js-host-random` feature), taken when the
-//! first map is made, or earlier by [`init`].
+//! then takes quadratic time. Where the seed comes from:
+//!
+//! - **Natively:** foldhash's own, from address space layout randomization
+//!   and the clock, per process.
+//! - **In WebAssembly with the `js-host-random` feature** (the npm
+//!   package's engine): 16 bytes of the JavaScript host's
+//!   `crypto.getRandomValues`, per instance. A host must call [`init`] when
+//!   it starts and handle its error (the bindings fail the module's start
+//!   with it). Otherwise the first map takes the seed, and on a host without
+//!   `crypto.getRandomValues` that panics in the middle of a run.
+//! - **In WebAssembly without it:** the entropy an embedder gives [`seed`]
+//!   before the first map; failing that, `std`'s `RandomState`, which is
+//!   random on WASI but on `wasm32-unknown-unknown` is made of addresses
+//!   that are the same in every instance (as foldhash's own seed is there).
+//!
+//! In WebAssembly the maps are foldhash with these seeds: a shared seed,
+//! and a sequence that gives each map its own.
 
 /// The hasher of [`HashMap`] and [`HashSet`].
 #[cfg(not(target_arch = "wasm32"))]
@@ -56,16 +65,32 @@ impl StrHasher {
     }
 }
 
-/// Takes the maps' seed now rather than when the first map is made; an
-/// error, naming the API, if the host cannot give one. In WebAssembly with
-/// the `js-host-random` feature that is a host without
-/// `crypto.getRandomValues` (the bindings call this as the module starts,
-/// and fail the start with it). Elsewhere it does nothing.
+/// Takes the maps' seed now, rather than when the first map is made.
+///
+/// In WebAssembly with the `js-host-random` feature, a host must call this
+/// when it starts and handle its error: a host without
+/// `crypto.getRandomValues`, or one where it throws (the error names which,
+/// with what it threw). The `quicktype-wasm` bindings fail the module's
+/// start with it. Elsewhere it does not fail, and natively it does nothing.
 pub fn init() -> Result<(), String> {
     #[cfg(target_arch = "wasm32")]
-    return seeded::init();
+    return seeded::try_seeds().map(|_| ());
     #[cfg(not(target_arch = "wasm32"))]
     Ok(())
+}
+
+/// Seeds the maps with `entropy`, which must be random and secret, instead
+/// of the host's randomness: for an embedder with a source of its own (a
+/// `wasm32-unknown-unknown` host without `js-host-random`, whose fallback is
+/// fixed). In WebAssembly it must come before the first map and before
+/// [`init`]; called later, it panics, because the maps made so far were
+/// seeded already. Natively the seed is foldhash's own, and this does
+/// nothing.
+pub fn seed(entropy: [u64; 2]) {
+    #[cfg(target_arch = "wasm32")]
+    seeded::seed(entropy);
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = entropy;
 }
 
 /// foldhash with seeds from the host's randomness: the WebAssembly build's
@@ -94,40 +119,57 @@ mod seeded {
         }
     }
 
-    /// Taken once, by the first map or by [`init`], whichever comes first.
+    /// Set once: by [`seed`], [`init`](super::init) or the first map,
+    /// whichever comes first.
     static SEEDS: OnceLock<Seeds> = OnceLock::new();
 
-    fn seeds() -> &'static Seeds {
-        SEEDS.get_or_init(|| Seeds::new(entropy().unwrap_or_else(|missing| panic!("{missing}"))))
+    /// The seeds, taken from the host the first time.
+    pub(super) fn try_seeds() -> Result<&'static Seeds, String> {
+        if let Some(seeds) = SEEDS.get() {
+            return Ok(seeds);
+        }
+        let entropy = entropy()?;
+        Ok(SEEDS.get_or_init(|| Seeds::new(entropy)))
     }
 
-    /// [`super::init`].
-    pub(super) fn init() -> Result<(), String> {
-        if SEEDS.get().is_none() {
-            let entropy = entropy()?;
-            SEEDS.get_or_init(|| Seeds::new(entropy));
+    /// [`super::seed`].
+    pub(super) fn seed(entropy: [u64; 2]) {
+        if SEEDS.set(Seeds::new(entropy)).is_err() {
+            panic!(
+                "quicktype_core::support::fast_hash::seed was called after the hash maps were \
+                 seeded: call it before anything makes a map, and before fast_hash::init()"
+            );
         }
-        Ok(())
     }
 
     /// 16 bytes of the JavaScript host's `crypto.getRandomValues`.
     #[cfg(all(target_arch = "wasm32", feature = "js-host-random"))]
-    fn entropy() -> Result<[u64; 2], String> {
+    pub(super) fn entropy() -> Result<[u64; 2], String> {
         let mut bytes = [0; 16];
-        host::get_random_values(&mut bytes).map_err(|_| {
-            "quickertype-core needs crypto.getRandomValues (the Web Crypto API) to seed its \
-             hash maps, and this JavaScript host does not have it"
-                .to_owned()
-        })?;
+        if let Err(error) = host::get_random_values(&mut bytes) {
+            return Err(if host::has_get_random_values() {
+                format!(
+                    "quickertype-core could not seed its hash maps: crypto.getRandomValues threw {}",
+                    host::describe(&error)
+                )
+            } else {
+                "quickertype-core needs crypto.getRandomValues (the Web Crypto API) to seed its \
+                 hash maps, and this JavaScript host does not have it"
+                    .to_owned()
+            });
+        }
         let entropy = u128::from_le_bytes(bytes);
         Ok([entropy as u64, (entropy >> 64) as u64])
     }
 
-    /// Without a host to ask: fixed, as foldhash's own seed is in
-    /// WebAssembly (digits of e).
+    /// Without a JavaScript host: `std`'s `RandomState`, random where the
+    /// platform has a random source (natively, WASI), fixed on
+    /// `wasm32-unknown-unknown`.
     #[cfg(not(all(target_arch = "wasm32", feature = "js-host-random")))]
-    fn entropy() -> Result<[u64; 2], String> {
-        Ok([0x2b7e_1516_28ae_d2a6, 0xabf7_1588_09cf_4f3c])
+    pub(super) fn entropy() -> Result<[u64; 2], String> {
+        use std::hash::BuildHasher as _;
+        let state = std::hash::RandomState::new();
+        Ok([state.hash_one(0u8), state.hash_one(1u8)])
     }
 
     #[cfg(all(target_arch = "wasm32", feature = "js-host-random"))]
@@ -136,10 +178,40 @@ mod seeded {
 
         #[wasm_bindgen]
         extern "C" {
-            /// `crypto.getRandomValues(array)`; throws where there is no
-            /// `crypto`.
+            /// `crypto.getRandomValues(array)`.
             #[wasm_bindgen(js_namespace = crypto, js_name = getRandomValues, catch)]
             pub(super) fn get_random_values(array: &mut [u8]) -> Result<(), JsValue>;
+
+            #[wasm_bindgen(thread_local_v2, js_name = globalThis)]
+            static GLOBAL_THIS: JsValue;
+
+            #[wasm_bindgen(js_namespace = Reflect, js_name = get, catch)]
+            fn reflect_get(target: &JsValue, key: &JsValue) -> Result<JsValue, JsValue>;
+        }
+
+        /// Whether the host has `crypto.getRandomValues` at all (rather
+        /// than one that throws).
+        pub(super) fn has_get_random_values() -> bool {
+            let get = |target: &JsValue, key: &str| {
+                reflect_get(target, &JsValue::from_str(key))
+                    .ok()
+                    .filter(|value| !value.is_undefined() && !value.is_null())
+            };
+            GLOBAL_THIS
+                .with(|global| get(global, "crypto"))
+                .and_then(|crypto| get(&crypto, "getRandomValues"))
+                .is_some_and(|f| f.is_function())
+        }
+
+        /// The first line of what JavaScript says of `error` (`TypeError:
+        /// …` for an exception).
+        pub(super) fn describe(error: &JsValue) -> String {
+            let text = format!("{error:?}");
+            let text = text
+                .strip_prefix("JsValue(")
+                .and_then(|t| t.strip_suffix(')'))
+                .unwrap_or(&text);
+            text.lines().next().unwrap_or_default().to_owned()
         }
     }
 
@@ -167,7 +239,14 @@ mod seeded {
         // cheap next to making one.
         #[inline(never)]
         fn default() -> Self {
-            RandomState::with_seeds(seeds())
+            match try_seeds() {
+                Ok(seeds) => RandomState::with_seeds(seeds),
+                Err(error) => panic!(
+                    "{error}. A host with quickertype-core's `js-host-random` feature must \
+                     call quicktype_core::support::fast_hash::init() when it starts, and \
+                     handle its error, before anything makes a hash map"
+                ),
+            }
         }
     }
 
@@ -260,6 +339,20 @@ mod tests {
             hasher.write(t.as_bytes());
             hasher.finish()
         });
+    }
+
+    #[test]
+    fn without_a_javascript_host_the_entropy_is_std_s() {
+        // Natively, as on WASI, std's RandomState is random: two draws
+        // differ.
+        assert_ne!(super::seeded::entropy(), super::seeded::entropy());
+    }
+
+    #[test]
+    fn seeding_after_the_maps_were_seeded_panics() {
+        super::seeded::try_seeds().unwrap();
+        let late = std::panic::catch_unwind(|| super::seeded::seed([1, 2]));
+        assert!(late.is_err());
     }
 
     #[test]

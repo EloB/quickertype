@@ -67,6 +67,18 @@
 //! # Ok::<(), quicktype_core::QuickTypeError>(())
 //! ```
 //!
+//! # WebAssembly
+//!
+//! The hash maps' seed has to be secret, since their keys come from the
+//! input, and WebAssembly has no randomness of its own. With the
+//! `js-host-random` feature a wasm32 build takes it from the JavaScript
+//! host's `crypto.getRandomValues`; the host must call
+//! `support::fast_hash::init()` when it starts and handle its error (a
+//! host without `crypto.getRandomValues`), or the first map panics there.
+//! Without the feature, an embedder can give its own entropy to
+//! `support::fast_hash::seed` before the first map; otherwise the seed is
+//! `std`'s, which is fixed on `wasm32-unknown-unknown`.
+//!
 //! # Stability
 //!
 //! Only the root re-exports are the documented, semver-stable API; enums and

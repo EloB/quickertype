@@ -1374,16 +1374,23 @@ quickertype-core's `js-host-random` feature, which the bindings turn on:
   when the first map is made. `fast_hash` turns it into foldhash's shared
   seed and the start of a sequence, which gives each map its own seed.
 - The bindings take it earlier, when the module starts
-  (`#[wasm_bindgen(start)]`). On a host without `crypto.getRandomValues`
-  the start fails with an error that names it, and the facade runs on
+  (`#[wasm_bindgen(start)]`, which calls `fast_hash::init()`). On a host
+  without `crypto.getRandomValues` the start fails with an error that
+  names it (or, if it throws, says what it threw), and the facade runs on
   TypeScript instead (or throws that error, with the WebAssembly engine
   forced). Every host the package supports has it: Node 20 and later,
-  browsers and workers.
+  browsers and workers. Another host using the feature must call
+  `fast_hash::init()` itself; otherwise the first map takes the seed, and
+  panics, with a message that says so, where there is none.
+- Without the feature (WASI, or a host without JavaScript), the seed is
+  the entropy an embedder passes to `fast_hash::seed` before the first
+  map, or else `std`'s `RandomState`: random on WASI, fixed on
+  `wasm32-unknown-unknown`.
 - Making a map's seed is a call (`RandomState::default` is not inlined),
   because maps are made in hundreds of places. Inlined, the seeding made
-  the engine 9.8 KB larger. Out of line, the engine is 4.0 KB smaller
-  than before (5,444,370 bytes against 5,448,495), and no phase moved by
-  more than 0.5%.
+  the engine 9.8 KB larger. Out of line, the engine is 2.2 KB smaller
+  than before (5,446,238 bytes against 5,448,495, with the error
+  reporting above), and no phase moved by more than 0.5%.
 
 Covered: the JSON reader's string and key tables, the `fast_hash`
 `HashMap`s and `HashSet`s, and the tallies' `IndexMap`s.

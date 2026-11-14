@@ -131,6 +131,18 @@ memory limit (`evicted`; see [JSON samples](#json-samples)), and those
 it freed without exporting them because nothing could reach them any
 more (`dropped`).
 
+The engine needs `crypto.getRandomValues` (the Web Crypto API). It seeds
+its hash maps with it when it starts, because their keys come from the
+input and WebAssembly has no randomness of its own. Every host the package
+supports has it: Node 20 and later, browsers and workers. Where it is
+missing, the engine does not load. `engineLoadError()` in
+`dist/native/engine.js` is then an `Error` that says "quickertype-core
+needs crypto.getRandomValues (the Web Crypto API) to seed its hash maps,
+and this JavaScript host does not have it", and every run uses the
+TypeScript engine. With `QUICKTYPE_ENGINE=wasm`, runs throw that error
+instead. If `crypto.getRandomValues` exists but throws, the error says
+what it threw.
+
 ### JSON samples
 
 `JSONInput.addSource` and `addSourceSync` parse every sample on the spot
