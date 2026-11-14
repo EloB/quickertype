@@ -95,6 +95,12 @@ pub fn schema_for_typescript_sources_in(
     cwd: &Path,
     tsc_exe: &Path,
 ) -> std::result::Result<Output, Failure> {
+    let (session, files) = open(file_names, cwd, tsc_exe)?;
+    run(&session, file_names, &files)
+}
+
+/// The compiler session for `file_names`, and their root file paths.
+fn open(file_names: &[String], cwd: &Path, tsc_exe: &Path) -> Result<(Session, Vec<String>)> {
     let case_sensitive = !cfg!(any(target_os = "macos", target_os = "windows"));
     let cwd = normalize(&cwd.to_string_lossy());
     let files = root_files(file_names, &cwd, case_sensitive)
@@ -126,7 +132,7 @@ pub fn schema_for_typescript_sources_in(
         &config_path,
         vec![(config_path.clone(), config.to_string())],
     )?;
-    run(&session, file_names, &files)
+    Ok((session, files))
 }
 
 fn run(s: &Session, given: &[String], files: &[String]) -> std::result::Result<Output, Failure> {
@@ -589,5 +595,91 @@ mod tests {
         }))
         .unwrap();
         assert_eq!(flatten(&d), "a\n  b\n    c\n  d");
+    }
+
+    /// `n` interfaces with the kinds of properties real typings have, each
+    /// referring to the ones before it.
+    fn typings(n: usize) -> String {
+        let mut out = String::from(
+            "export type Status = \"on\" | \"off\";\n\
+             /** A base. */ export interface Base { /** @deprecated */ base: string; }\n",
+        );
+        for i in 0..n {
+            let r = |k: usize| format!("Model{}", i.saturating_sub(k + 1));
+            let extends = if i % 3 == 0 { " extends Base" } else { "" };
+            let refs = if i == 0 {
+                String::new()
+            } else {
+                format!(
+                    "  one: {}; many: {}[]; maybe: {} | null; list?: Array<{} | null>;\n",
+                    r(0),
+                    r(1),
+                    r(2),
+                    r(3)
+                )
+            };
+            out.push_str(&format!(
+                "/** Model {i}. */\nexport interface Model{i}{extends} {{\n\
+                 \x20 /** The id. */ id: string;\n\
+                 \x20 /** @format date-time */ at: Date;\n\
+                 {refs}\
+                 \x20 status: Status; kind: \"a\" | \"b\"; size?: number | string;\n\
+                 \x20 point: {{ x: number; y?: string }}; pair: [number, number];\n\
+                 \x20 counts: {{ [key: string]: number }}; tags: ReadonlyArray<string>;\n\
+                 }}\n"
+            ));
+        }
+        out
+    }
+
+    /// The compiler, as the differential test finds it; `None` skips.
+    fn compiler() -> Option<std::path::PathBuf> {
+        let crate_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+        if let Ok(exe) = tsc::locate::locate(crate_dir) {
+            return Some(exe);
+        }
+        crate_dir.ancestors().find_map(|dir| {
+            let modules = dir.join("quicktype").join("node_modules");
+            let exe = tsc::locate::platform_package_exe(&modules);
+            (exe.is_file() && tsc::locate::has_pinned_version(&exe)).then_some(exe)
+        })
+    }
+
+    /// The generator's questions to the compiler go out in a few pipelined
+    /// batches: neither the requests sent one at a time nor the batches
+    /// become more with more interfaces.
+    #[test]
+    fn round_trips_do_not_grow_with_the_input() {
+        let Some(exe) = compiler() else {
+            eprintln!(
+                "skipped: no TypeScript {} compiler",
+                tsc::generated::TSC_VERSION
+            );
+            return;
+        };
+        let dir = std::env::temp_dir().join(format!("qt-ts-round-trips-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut seen = Vec::new();
+        for n in [10, 200] {
+            let name = format!("typings{n}.ts");
+            std::fs::write(dir.join(&name), typings(n)).unwrap();
+            let names = vec![name];
+            let (session, files) = open(&names, &dir, &exe).unwrap();
+            let out = run(&session, &names, &files).unwrap();
+            assert!(out.source.schema.contains("Model9"));
+            let stats = session.stats();
+            let requests: u64 = stats.methods.values().map(|m| m.count).sum();
+            seen.push((n, requests, stats.round_trips, stats.batches));
+        }
+        std::fs::remove_dir_all(&dir).unwrap();
+        let [
+            (_, small, trips, batches),
+            (_, large, more_trips, more_batches),
+        ] = seen[..]
+        else {
+            unreachable!()
+        };
+        assert!(large > 10 * small, "{seen:?}");
+        assert_eq!((trips, batches), (more_trips, more_batches), "{seen:?}");
     }
 }

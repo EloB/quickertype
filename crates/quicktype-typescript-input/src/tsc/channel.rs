@@ -47,6 +47,8 @@ pub struct MethodStats {
 pub struct Stats {
     /// Requests by method.
     pub methods: BTreeMap<String, MethodStats>,
+    /// Requests sent one at a time, each waiting for its answer.
+    pub round_trips: u64,
     /// Pipelined batches sent.
     pub batches: u64,
     /// Time spent in pipelined batches (their requests count no round trip).
@@ -97,7 +99,8 @@ impl std::fmt::Display for Stats {
         )?;
         writeln!(
             f,
-            "pipelined: {} batches, {:.1} ms",
+            "round trips: {} one at a time, {} pipelined batches ({:.1} ms)",
+            self.round_trips,
             self.batches,
             ms(self.batch_time)
         )?;
@@ -136,6 +139,7 @@ pub struct Channel {
     stderr_thread: Option<JoinHandle<()>>,
     files: VirtualFiles,
     stats: BTreeMap<String, MethodStats>,
+    round_trips: u64,
     batches: u64,
     batch_time: Duration,
 }
@@ -271,6 +275,7 @@ impl Channel {
             stderr_thread: Some(stderr_thread),
             files,
             stats: BTreeMap::new(),
+            round_trips: 0,
             batches: 0,
             batch_time: Duration::ZERO,
         })
@@ -304,6 +309,7 @@ impl Channel {
             .request_io(method, payload)
             .map_err(|e| self.failure(method, e))?;
         self.count(method, payload.len(), reply.len(), start.elapsed());
+        self.round_trips += 1;
         Ok(reply)
     }
 
@@ -410,6 +416,7 @@ impl Channel {
     pub fn stats(&self) -> Stats {
         Stats {
             methods: self.stats.clone(),
+            round_trips: self.round_trips,
             batches: self.batches,
             batch_time: self.batch_time,
             blocked: self.reader.get_ref().blocked,

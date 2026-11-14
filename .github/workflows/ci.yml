@@ -112,7 +112,9 @@ jobs:
           "$tsc" --version
           "$tsc" --version | grep -q "7\.0\.2"
           echo "QUICKTYPE_TSC=$tsc" >> "$GITHUB_ENV"
-      - run: cargo test -p quickertype-typescript-input --test differential
+      # The differential test, and the unit tests that need the compiler
+      # (the round-trip count among them).
+      - run: cargo test -p quickertype-typescript-input --lib --test differential
 
   # Secrets in the whole history (configuration: .gitleaks.toml).
   secrets:
