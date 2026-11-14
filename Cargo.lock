@@ -392,7 +392,6 @@ dependencies = [
 name = "quickertype"
 version = "0.2.0"
 dependencies = [
- "indexmap",
  "mimalloc",
  "quickertype-core",
  "quickertype-graphql-input",
@@ -422,7 +421,6 @@ dependencies = [
 name = "quickertype-graphql-input"
 version = "0.2.0"
 dependencies = [
- "indexmap",
  "quickertype-core",
  "quickertype-js-compat",
  "serde_json",
@@ -457,7 +455,6 @@ dependencies = [
 name = "quicktype-wasm"
 version = "0.2.0"
 dependencies = [
- "indexmap",
  "js-sys",
  "mimalloc",
  "quickertype-core",

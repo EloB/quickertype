@@ -37,7 +37,9 @@ quickertype-js-compat = { path = "crates/quicktype-js-compat", version = "=0.2.0
 quickertype-typescript-input = { path = "crates/quicktype-typescript-input", version = "=0.2.0" }
 foldhash = "0.2"
 hashbrown = { version = "0.17", default-features = false }
-indexmap = "2"
+# Without `std`, so that no map can take `std`'s `RandomState` by default:
+# every map is `quicktype_js_compat::hash`'s, with the seeded hasher.
+indexmap = { version = "2", default-features = false }
 mimalloc = { version = "0.1", default-features = false }
 regex = "1"
 # The engine under `regex`, used directly for multi-pattern searches.

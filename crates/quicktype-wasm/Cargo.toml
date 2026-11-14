@@ -17,7 +17,6 @@ dist = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-indexmap.workspace = true
 js-sys.workspace = true
 quickertype-core = { workspace = true, default-features = false, features = ["js-host-random"] }
 quickertype-js-compat = { workspace = true, features = ["js-host-math"] }
