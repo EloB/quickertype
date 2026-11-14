@@ -12,7 +12,7 @@ use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Mutex, Once};
 
-use crate::parity::{build_cli, first_difference, normalize_command_name, snapshot};
+use crate::parity::{build_cli, first_difference, normalize_help, snapshot};
 
 pub const USAGE: &str = "\
 cargo xtask diff [options] -- <quicktype args...>
@@ -223,8 +223,8 @@ fn run_one(
 }
 
 /// Returns `None` when both runs behaved identically, else a description.
-/// Our `--help` names the command `quickertype`; that is compared as
-/// quicktype's (`normalize_command_name`).
+/// Our `--help` names the command `quickertype`; its stdout is compared as
+/// quicktype's (`normalize_help`), as `parity` does.
 fn compare(reference: &RunResult, ours: &RunResult) -> Option<String> {
     let mut problems = vec![];
     if reference.code != ours.code {
@@ -233,12 +233,13 @@ fn compare(reference: &RunResult, ours: &RunResult) -> Option<String> {
             reference.code, ours.code
         ));
     }
-    let our_stdout = normalize_command_name(&ours.stdout);
-    if reference.stdout != our_stdout {
-        problems.push(format!(
+    match normalize_help(&reference.stdout, &ours.stdout) {
+        Err(e) => problems.push(format!("stdout: {e}")),
+        Ok(our_stdout) if reference.stdout != *our_stdout => problems.push(format!(
             "stdout differs at {}",
             first_difference(&reference.stdout, &our_stdout)
-        ));
+        )),
+        Ok(_) => {}
     }
     if reference.stderr != ours.stderr {
         problems.push(format!(

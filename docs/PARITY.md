@@ -19,10 +19,12 @@ findings per area, with file and line references.
   stdin, multiple sources, `--out` inference and error paths. A step may
   pipe a `stdin` file and a case may set `env` (e.g. `FORCE_COLOR`); paths
   in the captured streams are normalized to `{INPUTS}` and `{CWD}`. The
-  one intended difference is the command's name in `--help` (`$ quickertype
-  ...` in the synopsis and the examples, where quicktype says
-  `$ quicktype ...`): `parity` and `diff` turn those lines back into
-  quicktype's, padding included, and compare everything else byte for byte.
+  one intended difference is the command's name in `--help`'s synopsis and
+  examples (`$ quickertype ...`, where quicktype's says `$ quicktype ...`).
+  In `--help`'s stdout, `parity` and `diff` require each such line in the
+  Synopsis and Examples sections to be quicktype's with the name swapped
+  and two fewer spaces of padding (an error says so otherwise), turn it
+  into quicktype's, and compare everything else byte for byte.
 - **Recording** (`xtask/golden/`): a preload hook intercepts the reference test
   harness's in-process CLI calls, converts each options object into the
   equivalent argv, runs the *real* CLI code path with that argv, and stores
