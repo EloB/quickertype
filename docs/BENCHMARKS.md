@@ -1354,6 +1354,47 @@ cargo run --release -p quicktype-wasm --features trace --example phases -- npm/q
 node --expose-gc npm/quicktype-core/test/bench/compare.mjs --browser --again --variant main=<main's package> --variant branch=npm/quicktype-core
 ```
 
+### Hash seeds in WebAssembly
+
+The keys of the engine's hash maps come from the input, so their seed has
+to be secret. With a known seed, someone can write JSON whose keys all
+land in one bucket, and reading it then takes quadratic time.
+
+Natively, the seeds come from the operating system: foldhash uses address
+space layout randomization and the clock, and SipHash uses the system's
+random source. `wasm32-unknown-unknown` has neither. There, foldhash's
+seed is computed from addresses that are the same in every instance; a
+module that hashed `"abc"` gave the same value in every fresh Node
+process. `std`'s `RandomState` (SipHash) has the same problem: it builds
+its keys from the address of a stack byte and of a fresh `Box`.
+
+Now the engine seeds its maps when the module starts, before anything
+makes a map (`#[wasm_bindgen(start)]` in `crates/quicktype-wasm`).
+- The entropy is 16 bytes from `crypto.getRandomValues`. Where there is
+  no `crypto` (Node before 19), it uses `Math.random`, which is weaker
+  but still differs between instances.
+- `quicktype_core::support::fast_hash::seed` turns those bytes into
+  foldhash's shared seed and the start of a sequence. The sequence gives
+  each map its own seed.
+- A debug build panics if a map was made before the seed was set.
+
+Covered: the JSON reader's string and key tables, the `fast_hash`
+`HashMap`s and `HashSet`s, and the tallies' `IndexMap`s.
+
+Not covered yet:
+- The `IndexMap`s and `IndexSet`s that use `std`'s `RandomState`. Many of
+  them hold names from the input (class properties, enum and string
+  cases, `JsonValue` objects). `std` has no way to seed them, so they need
+  to move to `fast_hash`'s hasher.
+- In dependencies, regex-automata's maps. Their keys are capture names of
+  the engine's own patterns, and the lazy DFA's states, which the input
+  only selects among. saphyr-parser hashes nothing.
+
+The output does not depend on the seed. Every scenario of the
+differential suite (19,078, of which 18,957 run on WebAssembly) gave
+byte-identical results with two different seeds. The differential test
+against TypeScript passes as before.
+
 ## Reproducing
 
 ```sh

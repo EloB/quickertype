@@ -68,6 +68,17 @@ section are absolute.
   keeps the tallies of a compressed form with it. An error while tallying
   a compressed form is reported instead of falling back to its values.
 
+### Fixed
+
+- The JavaScript API's WebAssembly engine seeded its hash maps the same in
+  every instance, because WebAssembly has no randomness of its own; whoever
+  knew the seed could craft JSON keys that make reading quadratic. The JSON
+  reader's string and key tables and the engine's other foldhash maps are
+  now seeded per instance from `crypto.getRandomValues` (`Math.random`
+  where there is no `crypto`). The `IndexMap`s and `IndexSet`s that use
+  `std`'s SipHash are not covered yet (docs/BENCHMARKS.md, "Hash seeds in
+  WebAssembly").
+
 ## [0.1.0] - 2026-11-13
 
 The first release: the `quicktype` CLI, ported to Rust, as prebuilt binaries
