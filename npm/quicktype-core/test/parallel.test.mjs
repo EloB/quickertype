@@ -225,23 +225,35 @@ test("a run on the TypeScript engine fills the tables by reading the sample agai
     assert.deepEqual([...main.__partsCount()], [0, 0]);
 });
 
-test("tables that cannot be had leave the input as it was: a failed run on TypeScript, then runs on the engine, and tables once the sample reads again", async () => {
+test("tables that cannot be had leave the input as it was: a failed run on TypeScript, then runs on the engine; later uses fail at once", async () => {
     for (const lines of [false, true]) {
         const bytes = utf8(lines ? linesOf(rulings) : rulings);
         const one = await inOneGo("go", bytes, lines);
         const expected = await run(one.input, "go");
-        const expectedInside = inside(one.input);
         // The sample read again fails in every way it can: reading it
         // throws (a RangeError, as decoding a text too long for one string
-        // does), or it is not what was read (not JSON, cut short).
-        let reread = () => {
-            throw new RangeError("Invalid string length");
-        };
-        const input = qt.jsonInputForTargetLanguage("go");
-        const source = { name: "Things", lines, size: bytes.length, read: async (f, t) => bytes.slice(f, t), reread: () => reread() };
-        assert.equal((await readJSONInputInParts(input, source, workersFor(bytes, 3), { minLength: 0, range: 4096 })).read, true);
-        for (const failing of [reread, () => bytes.slice(0, bytes.length >> 1), () => utf8("[1, ")]) {
-            reread = failing;
+        // does), or it is not what was read (cut short, not JSON).
+        const failures = [
+            () => {
+                throw new RangeError("Invalid string length");
+            },
+            () => bytes.slice(0, bytes.length >> 1),
+            () => utf8("[1, "),
+        ];
+        for (const failing of failures) {
+            let rereads = 0;
+            const input = qt.jsonInputForTargetLanguage("go");
+            const source = {
+                name: "Things",
+                lines,
+                size: bytes.length,
+                read: async (f, t) => bytes.slice(f, t),
+                reread: () => {
+                    rereads++;
+                    return failing();
+                },
+            };
+            assert.equal((await readJSONInputInParts(input, source, workersFor(bytes, 3), { minLength: 0, range: 4096 })).read, true);
             globalThis[engineKey] = "ts";
             let failed;
             try {
@@ -252,18 +264,26 @@ test("tables that cannot be had leave the input as it was: a failed run on TypeS
 
             assert.match(failed.error?.message ?? "", /^quicktype-core: the tables cannot be had for this input: /, `lines ${lines}: ${JSON.stringify(failed)}`);
             assert.equal(tablesFailed(input), true);
-            // As it was: its tallies, and the accessors that try again.
+            assert.equal(rereads, 1);
+            // As it was: its tallies, for runs on the engine; and the tables
+            // fail at once, with the same error, without reading again.
             assert.deepEqual([...main.__partsCount()], [1, 0]);
-            assert.throws(() => input._compressedJSON._strings, /the tables cannot be had for this input/);
+            let again;
+            try {
+                void input._compressedJSON._strings;
+            } catch (e) {
+                again = e;
+            }
+
+            assert.equal(again?.message, failed.error.message);
+            assert.equal(rereads, 1, "the sample read again after the tables failed");
             assert.deepEqual(await run(input, "go"), expected, `lines ${lines}: a run on the engine after the tables failed`);
+            assert.equal(rereads, 1);
+            releaseJSONInput(input);
+            assert.equal(tablesFailed(input), false);
         }
 
-        // Once the sample reads again, its tables are TypeScript's, and the tallies go.
-        reread = () => bytes;
-        assert.deepEqual(inside(input), expectedInside);
-        assert.equal(tablesFailed(input), false);
         assert.deepEqual([...main.__partsCount()], [0, 0]);
-        assert.deepEqual(await run(input, "go"), expected);
         releaseJSONInput(one.input);
     }
 });
@@ -396,7 +416,8 @@ test("the CLI's rules: small samples, one element, trees far larger than their t
     const distinct = JSON.stringify(Array.from({ length: 400_000 }, (_, i) => ({ [`k${i}`]: i })));
     assert.deepEqual(await reading(distinct, false, { minLength: 0, range: 1 << 14 }), { inOneGo: "trees far larger than their text", always: true });
     const long = `${JSON.stringify({ text: "x".repeat(1_200_000) })}\n${linesOf(rulings)}`;
-    assert.deepEqual(await reading(long, true, { minLength: 0, range: 1 << 16 }), { inOneGo: "no line feed between values in the first MiB", always: true });
+    // (Which ranges start in the first MiB is the plan's: another may find the line feed.)
+    assert.deepEqual(await reading(long, true, { minLength: 0, range: 1 << 16 }), { inOneGo: "no line feed between values in the first MiB", always: false });
     assert.deepEqual(await reading(broken(rulings, 0.5, (a, b) => `${a}}${b}`), false, { minLength: 0, range: 997 }), { inOneGo: "a part did not read", always: true });
     // This reading's: an input that is not fresh, or not the engine's; one
     // that throws when it is looked at (nothing is rejected, every worker is done).
@@ -481,7 +502,7 @@ test("bytes whose text a browser decodes to nothing (too long for one string, in
     }
 });
 
-test("the split search's bindings: a plan, summaries, states, splits, parts", () => {
+test("the split search's bindings: a plan, summaries, states, splits, parts", async () => {
     const text = '[{"a": "x,]\\"", "b": [1, 2]}, 3, "\\\\", {"c": {}}]';
     const bytes = utf8(text);
     const plan = main.splitPlan(bytes.length, 3, 0, 4);
@@ -513,5 +534,13 @@ test("the split search's bindings: a plan, summaries, states, splits, parts", ()
     assert.equal(main.splitArrayStart(utf8('{"a": 1}')), -1);
     assert.equal(main.splitPlan(10, 3, 0, 0), undefined);
     assert.equal(main.splitResolve(new Float64Array(14), false), undefined);
-    assert.equal(main.splitParts(new Float64Array(3), 0, splits, false).inOneGo, "not a plan");
+    assert.deepEqual(main.splitParts(new Float64Array(3), 0, splits, false), { inOneGo: "numbers that are not the engine's", always: false });
+    assert.equal(main.splitDecide(plan.plan, parts, 4, 100, 100, 100), undefined);
+    assert.deepEqual(main.splitDecide(plan.plan, parts, 0, 70_000, 700_000, 1), { inOneGo: "trees far larger than their text", always: true });
+    // Tallies past the budget (the plan's) are this reading's.
+    const reader = new PartReader(instances[0], async (f, t) => bytes.slice(f, t));
+    await reader.summarize({ starts: plan.starts.slice() });
+    const tallied = await reader.tally({ parts, lines: false, size: bytes.length, reading: { dateTime: "default", handleRefs: false, min: undefined, max: undefined }, limit: 1 });
+    reader.done();
+    assert.deepEqual(tallied, { notRead: "the parts' tallies would take too much memory", always: false });
 });

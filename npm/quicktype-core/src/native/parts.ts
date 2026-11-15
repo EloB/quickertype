@@ -154,7 +154,8 @@ export class PartReader implements PartWorker {
                 const bytes = await this.partBytes(from, to, end);
                 const read = glue.partsRead(id, bytes, lines, parts[i + 2] === 1, parts[i + 1] < 0);
                 if (read !== 1) return notRead(read);
-                if ((glue.partsBytes(id) ?? 0) > limit) return { notRead: "the parts' tallies would take too much memory", always: true };
+                // (The budget is the plan's: another plan may read the sample.)
+                if ((glue.partsBytes(id) ?? 0) > limit) return { notRead: "the parts' tallies would take too much memory", always: false };
             }
 
             const bytes = glue.partsExport(id);

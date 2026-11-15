@@ -135,6 +135,12 @@ interface Tallied {
     lines: boolean;
     /** The sample again, for the tables, if they are asked for. */
     reread: (() => string | Uint8Array) | undefined;
+    /**
+     * Why the tables could not be had, once they could not
+     * (`materializeTallied`): every later use of them throws this at once,
+     * without reading the sample again.
+     */
+    failure?: Error;
 }
 
 /**
@@ -801,19 +807,15 @@ export function materialize(cjson: any): void {
 }
 
 /**
- * The `CompressedJSON`s whose tables could not be had (`materializeTallied`):
- * the playground's workers let go of such an input (`tablesFailed`).
- */
-const unavailable = new WeakSet<object>();
-
-/**
  * Not public (the playground's workers use it): whether `input`'s tables
  * were asked for and could not be had (a sample read in parts that could
- * not be read again). Its samples are still in the engine, for runs there.
+ * not be read again). Its samples are still in the engine, for runs there;
+ * its tables never will be, so the playground lets such an input go.
  */
 export function tablesFailed(input: any): boolean {
     const cjson = input?._compressedJSON;
-    return cjson !== undefined && cjson !== null && unavailable.has(cjson);
+    if (cjson === undefined || cjson === null) return false;
+    return states.get(cjson)?.tallies?.failure !== undefined;
 }
 
 /**
@@ -822,11 +824,13 @@ export function tablesFailed(input: any): boolean {
  * it into a `CompressedJSON` of its own, as it would have when the sample
  * was added; only once that succeeded does `cjson` take those tables (and
  * its tallies go). If it fails (no `reread`, reading again fails, the text
- * is too long for one string), nothing changes: the tallies stay for runs
- * on the engine, every use of the tables tries again, and this throws an
- * error that says the tables cannot be had, whose `cause` is why.
+ * is too long for one string), the tallies stay for runs on the engine, and
+ * this throws an error that says the tables cannot be had, whose `cause` is
+ * why; so does every later use of the tables, at once, without reading the
+ * sample again (`Tallied.failure`): an input read afresh is another input.
  */
 function materializeTallied(cjson: any, state: NativeSamples, tallied: Tallied): void {
+    if (tallied.failure !== undefined) throw tallied.failure;
     const { config } = state;
     let read: any;
     try {
@@ -840,15 +844,14 @@ function materializeTallied(cjson: any, state: NativeSamples, tallied: Tallied):
             read.finish();
         }
     } catch (e) {
-        unavailable.add(cjson);
         const error = new Error(`quicktype-core: the tables cannot be had for this input: ${String((e as any)?.message ?? e)}`);
         (error as any).cause = e;
+        tallied.failure = error;
         throw error;
     }
 
     states.delete(cjson);
     registry.unregister(state);
-    unavailable.delete(cjson);
     for (const [name, descriptor] of state.fields) {
         Object.defineProperty(cjson, name, descriptor);
     }

@@ -58,8 +58,9 @@ export interface WasmGlue {
     splitResolve(summaries: Float64Array, lines: boolean): Float64Array | undefined;
     splitFind(range: Uint8Array, escaped: boolean, inString: boolean, depth: number, lines: boolean): number;
     splitArrayStart(head: Uint8Array): number;
-    splitParts(plan: Float64Array, first: number, splits: Float64Array, lines: boolean): { parts?: Float64Array; inOneGo?: string };
-    splitDecide(plan: Float64Array, parts: Float64Array, probed: number, text: number, trees: number, smallest: number): string | undefined;
+    /** The parts, or why the sample is read in one go and whether that holds whatever the plan. */
+    splitParts(plan: Float64Array, first: number, splits: Float64Array, lines: boolean): { parts: Float64Array } | { inOneGo: string; always: boolean };
+    splitDecide(plan: Float64Array, parts: Float64Array, probed: number, text: number, trees: number, smallest: number): { inOneGo: string; always: boolean } | undefined;
     partsCreate(dateTime: string, handleRefs: boolean, min: string | undefined, max: string | undefined): number | undefined;
     /** 1 if the part was read; -1 to -4 why not; -5 for an id that is not being read. */
     partsRead(id: number, bytes: Uint8Array, lines: boolean, first: boolean, last: boolean): number;

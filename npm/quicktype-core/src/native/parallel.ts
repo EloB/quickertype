@@ -87,11 +87,17 @@ export interface PartsOptions {
 
 /**
  * Why a sample is to be read in one go after all, and whether that is so of
- * the sample, whatever reads it and however often (`always`: it is not an
- * array, has no split, is not JSON in a part, has trees far larger than its
- * text), so that a caller may remember it for the sample; or only of this
- * reading (the input, the engine, a worker, a limit of the moment), so that
- * the next reading tries again.
+ * the sample whatever reads it, however often and with whatever plan
+ * (`always`), so that a caller may remember it for the sample: it is not an
+ * array, has no split, is not JSON (or not UTF-8, or deeper than the engine
+ * reads) in a part, or its first parts' trees are far larger than their
+ * text. Every other reason is only this reading's, and the next reading may
+ * not meet it: one of the plan (a part too long for the budget, JSON Lines
+ * without a split in the ranges that start in their first MiB, tallies too
+ * large for the budget: the threads and ranges decide those), of the
+ * moment (a worker that failed, a sample that changed), or of the input or
+ * the engine. The engine's rules say which of theirs is which
+ * (`splitParts`, `splitDecide`).
  */
 export interface InOneGo {
     inOneGo: string;
@@ -103,17 +109,6 @@ const always = (inOneGo: string): InOneGo => ({ inOneGo, always: true });
 
 /** Of this reading only: see `InOneGo`. */
 const forNow = (inOneGo: string): InOneGo => ({ inOneGo, always: false });
-
-/** What the engine's rules (`splitParts`, `splitDecide`) say of the sample itself. */
-const ofTheSample = new Set([
-    "no split",
-    "no line feed between values in the first MiB",
-    "a part too long to read beside others",
-    "trees far larger than their text",
-]);
-
-/** The engine's reason `why` for reading in one go, as an `InOneGo`. */
-const rule = (why: string): InOneGo => (ofTheSample.has(why) ? always(why) : forNow(why));
 
 /** How a sample was read in parts. */
 export interface ReadInParts {
@@ -198,7 +193,7 @@ async function readInParts(
         const splits = new Float64Array(ranges);
         found.forEach((s, w) => splits.set(s, block(w)[0]));
         const formed = glue.splitParts(plan.plan, first, splits, lines);
-        if (formed.parts === undefined) return rule(formed.inOneGo ?? "no parts");
+        if (!("parts" in formed)) return { inOneGo: formed.inOneGo, always: formed.always };
         const parts = formed.parts;
         const count = parts.length / 3;
         const isLast = (i: number): boolean => parts[3 * i + 1] < 0;
@@ -224,7 +219,7 @@ async function readInParts(
         }
 
         const why = glue.splitDecide(plan.plan, parts, probed, probe.text, probe.trees, probe.smallest);
-        if (why !== undefined) return rule(why);
+        if (why !== undefined) return { inOneGo: why.inOneGo, always: why.always };
 
         // The others, each by the worker whose ranges it starts in.
         const jobs = used.map((_, w) => {
