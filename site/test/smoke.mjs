@@ -42,7 +42,9 @@
 // quicktype's error; that the input survives a reload (localStorage); and
 // that 360 px and 390 px widths do not scroll sideways.
 //
-// The layout: at 1440×900 the generated code has at least 55% of the
+// The layout: side by side (1280, 1440, 1920 px), the panes' heads and
+// second rows line up, the input's head taking two rows where its pane is
+// narrow; at 1440×900 the generated code has at least 55% of the
 // window's height, the masthead as tall as the name and tagline (the
 // headline beside them one line or two, by the fonts installed), the
 // footer one line (with the samples' license), the options
@@ -1304,6 +1306,28 @@ try {
         "the options at load",
     );
     console.log(`ok: at 1440×900 the code has ${(layout.code * 100).toFixed(0)}% of the window's height; the options are open beside it, the comparison one line`);
+
+    // Side by side, the panes' rows line up: their heads are as tall as
+    // the taller one (the input's takes two rows where its pane is narrow),
+    // and their second rows start and end together. Above 1200 px, where
+    // the options stay beside the output as the window changes.
+    const aligned = [];
+    for (const width of [1280, 1440, 1920]) {
+        await page.viewport(width, 900);
+        await settledMotion();
+        const rows = await page.evaluate(`(() => {
+            const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+            const heads = ["#input-pane > .pane-head", "#output-pane > .pane-head"].map((s) => Math.round(box(s).height));
+            const subs = ["#input-pane > .pane-sub", "#output-pane > .pane-sub"].map((s) => [Math.round(box(s).top), Math.round(box(s).bottom)]);
+            return { heads, subs, oneRow: box("#open").top < box("#input-pane .segmented").bottom };
+        })()`);
+        assert.equal(rows.heads[0], rows.heads[1], `${width} px: the panes' heads (${rows.heads.join(" and ")} px)`);
+        assert.deepEqual(rows.subs[0], rows.subs[1], `${width} px: the panes' second rows`);
+        aligned.push(`${width} px: ${rows.heads[0]} px, ${rows.oneRow ? "one row" : "two rows"} in the input's`);
+    }
+    await page.viewport(1440, 900);
+    await settledMotion();
+    console.log(`ok: side by side, the panes' heads and second rows line up (${aligned.join("; ")})`);
 
     // The options open and close from the keyboard: Enter on the Options
     // button, Escape in them, or their close button. Opened, the focus moves
