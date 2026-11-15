@@ -7,10 +7,11 @@ import { createRequire } from "node:module";
 import * as path from "node:path";
 
 import { brief, capture, firstDifference } from "./compare.mjs";
+import { intendedDifference } from "./intended.mjs";
 import { inputsDir, loadPackages } from "./packages.mjs";
 import { allScenarios } from "./scenarios.mjs";
 
-const [shard, shards, only, categories] = process.argv.slice(2);
+const [shard, shards, only, categories, recordIntended] = process.argv.slice(2);
 const timeoutMs = 120_000;
 
 function withTimeout(promise) {
@@ -74,12 +75,44 @@ for (let i = Number(shard); i < list.length; i += Number(shards)) {
         );
     }
 
-    if (JSON.stringify(expected) === JSON.stringify(actual)) {
-        result.status = "pass";
-    } else {
+    const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    const describe = (want, got) => {
+        const d = firstDifference(want, got);
+        return d === undefined ? "?" : `${d.path}: expected ${brief(d.expected)}, got ${brief(d.actual)}`;
+    };
+    // An intended difference (intended.mjs) must differ from the reference,
+    // exactly as stored.
+    const intended = intendedDifference(s.id);
+    if (intended !== undefined) {
+        result.bugs = intended.bugs;
+        if (recordIntended === "record" && intended.record !== undefined && !same(expected, actual)) {
+            intended.record(expected, actual);
+        }
+    }
+
+    if (intended === undefined) {
+        if (same(expected, actual)) {
+            result.status = "pass";
+        } else {
+            result.status = "fail";
+            result.detail = describe(expected, actual);
+        }
+    } else if (same(expected, actual)) {
         result.status = "fail";
-        const d = firstDifference(expected, actual);
-        result.detail = d === undefined ? "?" : `${d.path}: expected ${brief(d.expected)}, got ${brief(d.actual)}`;
+        result.detail = `the reference's result, not the intended difference (${intended.bugs.join(", ")}; tests/intended-differences.txt)`;
+    } else {
+        let corrected;
+        try {
+            corrected = intended.expected(expected);
+        } catch (e) {
+            result.status = "fail";
+            result.detail = `intended difference: ${e.message}`;
+        }
+
+        if (corrected !== undefined) {
+            result.status = same(corrected, actual) ? "intended" : "fail";
+            if (result.status === "fail") result.detail = `differs from the intended difference: ${describe(corrected, actual)}`;
+        }
     }
 
     results.push(result);

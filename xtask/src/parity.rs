@@ -22,6 +22,12 @@
 //!   the command lines and the source languages of `--help`'s stdout are
 //!   turned back into quicktype's ([`normalize_help`]).
 //!
+//! A case listed in `tests/intended-differences.txt` differs from the
+//! recording on purpose (a bug quickertype fixes): each of its outputs with
+//! an `.intended` file beside the recorded one must match that file, and
+//! not the recording ([`crate::intended`]). Such cases are reported as
+//! intended differences, apart from the identical ones.
+//!
 //! A case may set extra environment variables with `env`. Every step runs
 //! with `TZ=UTC` and `NODE_NO_WARNINGS=1`, and without `FORCE_COLOR`,
 //! `NO_COLOR` and `NODE_OPTIONS`, so the developer's shell cannot change the
@@ -38,6 +44,8 @@ use std::time::{Duration, Instant};
 
 use serde::Deserialize;
 
+use crate::intended::IntendedDifferences;
+
 pub const USAGE: &str = "\
 cargo xtask parity [options]
 
@@ -51,6 +59,13 @@ cargo xtask parity [options]
   --report <file>      write a JSON report with every case's result
   --strict             fail on any failing case, not only on regressions
   --update-baseline    record the passing cases in tests/parity-baseline.txt
+  --as-recorded        compare every case with the recorded output, ignoring
+                       tests/intended-differences.txt (the self-check
+                       against the TypeScript reference)
+  --record-intended    write the outputs of the cases listed in
+                       tests/intended-differences.txt that differ from the
+                       recording to <file>.intended, and delete the
+                       .intended files of those that do not
 ";
 
 #[derive(Deserialize)]
@@ -93,11 +108,15 @@ struct Options {
     strict: bool,
     update_baseline: bool,
     report: Option<PathBuf>,
+    as_recorded: bool,
+    record_intended: bool,
 }
 
 struct Outcome {
     id: String,
     failure: Option<String>,
+    /// Whether the case passed as an intended difference.
+    intended: bool,
     elapsed: Duration,
 }
 
@@ -111,6 +130,8 @@ fn parse_options(args: Vec<String>) -> Result<Options, String> {
         strict: false,
         update_baseline: false,
         report: None,
+        as_recorded: false,
+        record_intended: false,
     };
     let mut args = args.into_iter();
     while let Some(a) = args.next() {
@@ -124,6 +145,8 @@ fn parse_options(args: Vec<String>) -> Result<Options, String> {
             "--strict" => o.strict = true,
             "--update-baseline" => o.update_baseline = true,
             "--report" => o.report = Some(PathBuf::from(value()?)),
+            "--as-recorded" => o.as_recorded = true,
+            "--record-intended" => o.record_intended = true,
             _ => return Err(format!("unknown argument {a}\n\n{USAGE}")),
         }
     }
@@ -320,14 +343,88 @@ fn path_forms(dir: &Path, placeholder: &'static str) -> Vec<(String, &'static st
     forms
 }
 
-/// Compares one captured stream of a CLI-behavior step with its golden file.
+/// How the outputs of a case listed in tests/intended-differences.txt are
+/// checked.
+#[derive(Clone, Copy)]
+struct Intended<'a> {
+    /// The bugs that change the case.
+    bugs: &'a [String],
+    /// `--record-intended`.
+    record: bool,
+}
+
+/// Compares an output (`what`: `step N: <name>`) with the recording at
+/// `path` (a missing file is empty output if `missing_is_empty`), or, for a
+/// case with intended differences, with the `.intended` file beside it if
+/// there is one. Returns whether the `.intended` file was the expected
+/// output.
+fn check_output(
+    what: &str,
+    path: &Path,
+    missing_is_empty: bool,
+    actual: &[u8],
+    intended: Option<Intended<'_>>,
+) -> Result<bool, String> {
+    let recorded = match fs::read(path) {
+        Ok(bytes) => bytes,
+        Err(e) if missing_is_empty && e.kind() == std::io::ErrorKind::NotFound => vec![],
+        Err(e) => return Err(format!("golden {}: {e}", path.display())),
+    };
+    let differs = |expected: &[u8], whose: &str| {
+        format!(
+            "{what} differs from {whose} at {}",
+            first_difference(expected, actual)
+        )
+    };
+    let Some(intended) = intended else {
+        return if recorded == actual {
+            Ok(false)
+        } else {
+            Err(differs(&recorded, "the recording"))
+        };
+    };
+    let intended_path = crate::intended::intended_path(path);
+    if intended.record {
+        if recorded == actual {
+            let _ = fs::remove_file(&intended_path);
+            return Ok(false);
+        }
+        fs::write(&intended_path, actual)
+            .map_err(|e| format!("{}: {e}", intended_path.display()))?;
+        return Ok(true);
+    }
+    match fs::read(&intended_path) {
+        Ok(expected) if expected == actual => Ok(true),
+        Ok(_) if recorded == actual => Err(format!(
+            "{what} is quicktype's recorded output, not the intended difference \
+             ({}; tests/intended-differences.txt)",
+            intended.bugs.join(", ")
+        )),
+        Ok(expected) => Err(differs(&expected, "its .intended file")),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            if recorded == actual {
+                Ok(false)
+            } else {
+                Err(differs(
+                    &recorded,
+                    "the recording (it has no .intended file)",
+                ))
+            }
+        }
+        Err(e) => Err(format!("{}: {e}", intended_path.display())),
+    }
+}
+
+/// Compares one captured stream of a CLI-behavior step with its golden file
+/// (see [`check_output`]).
 fn check_stream(
     case_dir: &Path,
     step: usize,
     stream: &str,
     actual: &[u8],
     placeholders: &[(String, &str)],
-) -> Result<(), String> {
+    intended: Option<Intended<'_>>,
+) -> Result<bool, String> {
     let path = case_dir.join(format!("step{step}.{stream}"));
     let expected = match fs::read(&path) {
         Ok(bytes) => bytes,
@@ -340,14 +437,13 @@ fn check_stream(
     } else {
         Cow::Borrowed(actual.as_slice())
     };
-    if expected == *actual {
-        Ok(())
-    } else {
-        Err(format!(
-            "step {step}: {stream} differs at {}",
-            first_difference(&expected, &actual)
-        ))
-    }
+    check_output(
+        &format!("step {step}: {stream}"),
+        &path,
+        true,
+        &actual,
+        intended,
+    )
 }
 
 /// The first non-blank stderr line, shortened, for failure summaries.
@@ -432,13 +528,17 @@ pub(crate) fn step_command(
     Ok(command)
 }
 
+/// Runs a golden case. Returns the time its steps took, and whether an
+/// `.intended` file was the expected output of one of them.
 fn run_case(
     bin: &[String],
     inputs: &str,
     case_dir: &Path,
     work: &Path,
-) -> Result<Duration, String> {
+    intended: Option<Intended<'_>>,
+) -> Result<(Duration, bool), String> {
     let case = prepare_case(case_dir, work)?;
+    let mut used_intended = false;
 
     let mut placeholders = path_forms(Path::new(inputs), "{INPUTS}");
     placeholders.extend(path_forms(work, "{CWD}"));
@@ -462,8 +562,10 @@ fn run_case(
                     first_stderr_line(&out.stderr)
                 ));
             }
-            check_stream(case_dir, i, "stdout", &out.stdout, &placeholders)?;
-            check_stream(case_dir, i, "stderr", &out.stderr, &placeholders)?;
+            used_intended |=
+                check_stream(case_dir, i, "stdout", &out.stdout, &placeholders, intended)?;
+            used_intended |=
+                check_stream(case_dir, i, "stderr", &out.stderr, &placeholders, intended)?;
         } else if step.expect_failure {
             if out.status.success() {
                 return Err(format!("step {i}: expected failure, but exited 0"));
@@ -495,17 +597,25 @@ fn run_case(
             ));
         }
         for file in &step.files {
-            let expected = fs::read(case_dir.join(format!("step{i}")).join(file))
-                .map_err(|e| format!("golden {file}: {e}"))?;
-            if expected != after[file] {
-                return Err(format!(
-                    "step {i}: {file} differs at {}",
-                    first_difference(&expected, &after[file])
-                ));
-            }
+            used_intended |= check_output(
+                &format!("step {i}: {file}"),
+                &case_dir.join(format!("step{i}")).join(file),
+                false,
+                &after[file],
+                intended,
+            )?;
         }
     }
-    Ok(elapsed)
+    if let Some(intended) = intended
+        && !used_intended
+        && !intended.record
+    {
+        return Err(format!(
+            "listed in tests/intended-differences.txt ({}), but no output has an .intended file",
+            intended.bugs.join(", ")
+        ));
+    }
+    Ok((elapsed, used_intended))
 }
 
 pub(crate) fn build_cli(root: &Path) -> Result<Vec<String>, String> {
@@ -534,6 +644,14 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
     let golden = root.join("tests/golden");
     let baseline_path = root.join("tests/parity-baseline.txt");
     let inputs = root.join("tests/inputs").to_string_lossy().into_owned();
+    if o.as_recorded && o.record_intended {
+        return Err("--as-recorded and --record-intended exclude each other".into());
+    }
+    let intended = if o.as_recorded {
+        None
+    } else {
+        Some(IntendedDifferences::load(root, &golden, o.record_intended)?)
+    };
 
     let matches =
         |id: &str| o.filters.is_empty() || o.filters.iter().any(|f| id.contains(f.as_str()));
@@ -574,16 +692,25 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
                     let i = next.fetch_add(1, Ordering::Relaxed);
                     let Some((id, dir)) = cases.get(i) else { break };
                     let work = work_root.join(format!("w{i}"));
-                    let (failure, elapsed) = match run_case(&bin, &inputs, dir, &work) {
-                        Ok(t) => (None, t),
-                        Err(e) => (Some(e), Duration::ZERO),
-                    };
+                    let listed = intended
+                        .as_ref()
+                        .and_then(|list| list.bugs(id))
+                        .map(|bugs| Intended {
+                            bugs,
+                            record: o.record_intended,
+                        });
+                    let (failure, intended, elapsed) =
+                        match run_case(&bin, &inputs, dir, &work, listed) {
+                            Ok((t, intended)) => (None, intended, t),
+                            Err(e) => (Some(e), false, Duration::ZERO),
+                        };
                     if failure.is_none() || !o.keep {
                         let _ = fs::remove_dir_all(&work);
                     }
                     outcomes.lock().expect("lock").push(Outcome {
                         id: id.clone(),
                         failure,
+                        intended,
                         elapsed,
                     });
                     let n = done.fetch_add(1, Ordering::Relaxed) + 1;
@@ -599,18 +726,27 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
     let mut outcomes = outcomes.into_inner().expect("lock");
     outcomes.sort_by(|a, b| a.id.cmp(&b.id));
 
-    let mut per_fixture: BTreeMap<&str, (usize, usize)> = BTreeMap::new();
+    let mut per_fixture: BTreeMap<&str, (usize, usize, usize)> = BTreeMap::new();
     for oc in &outcomes {
         let entry = per_fixture
             .entry(oc.id.split('/').next().unwrap_or(""))
             .or_default();
         entry.1 += 1;
         entry.0 += usize::from(oc.failure.is_none());
+        entry.2 += usize::from(oc.failure.is_none() && oc.intended);
     }
-    println!("  {:<44} {:>6} {:>6}", "fixture", "pass", "total");
-    for (fixture, (pass, total)) in &per_fixture {
+    println!(
+        "  {:<44} {:>6} {:>6} {:>8}",
+        "fixture", "pass", "total", "intended"
+    );
+    for (fixture, (pass, total, intended)) in &per_fixture {
         let mark = if pass == total { ' ' } else { '✗' };
-        println!("{mark} {fixture:<44} {pass:>6} {total:>6}");
+        let intended = if *intended > 0 {
+            intended.to_string()
+        } else {
+            String::new()
+        };
+        println!("{mark} {fixture:<44} {pass:>6} {total:>6} {intended:>8}");
     }
 
     let failures: Vec<&Outcome> = outcomes.iter().filter(|o| o.failure.is_some()).collect();
@@ -631,14 +767,34 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
         .map(|o| o.id.as_str())
         .collect();
     let busy: Duration = outcomes.iter().map(|o| o.elapsed).sum();
+    let intended_passes = outcomes
+        .iter()
+        .filter(|o| o.failure.is_none() && o.intended)
+        .count();
     println!(
-        "\nparity: {}/{} cases pass ({:.1}%) | wall {:.1}s | quicktype time in passing cases {:.1}s",
+        "\nparity: {}/{} cases pass ({:.1}%): {} identical, {intended_passes} intended differences | wall {:.1}s | quicktype time in passing cases {:.1}s",
         passing.len(),
         outcomes.len(),
         100.0 * passing.len() as f64 / outcomes.len() as f64,
+        passing.len() - intended_passes,
         wall.as_secs_f64(),
         busy.as_secs_f64(),
     );
+    match &intended {
+        Some(list) if o.record_intended => println!(
+            "intended differences: recorded the .intended files of the listed cases run ({} listed in {})",
+            list.len(),
+            crate::intended::LIST
+        ),
+        Some(list) => println!(
+            "intended differences: {intended_passes} as stored ({} cases listed in {})",
+            list.len(),
+            crate::intended::LIST
+        ),
+        None => println!(
+            "intended differences: ignored (--as-recorded); every case compared with the recording"
+        ),
+    }
 
     // Ratchet against the baseline (restricted to the cases this run covered).
     let baseline_text = fs::read_to_string(&baseline_path).unwrap_or_default();
@@ -682,6 +838,7 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
                 serde_json::json!({
                     "id": o.id,
                     "pass": o.failure.is_none(),
+                    "intended": o.intended,
                     "failure": o.failure,
                     "ms": u64::try_from(o.elapsed.as_millis()).unwrap_or(u64::MAX),
                 })

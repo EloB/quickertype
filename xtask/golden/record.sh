@@ -72,6 +72,12 @@ rm -rf "$REF/test/runs"
 ) || { tail -40 "$WORK/record.log" >&2; exit 1; }
 rm -rf "$REF/test/runs"
 
+# The corrected outputs of the intended differences (*.intended, listed in
+# tests/intended-differences.txt) are not recordings: keep them across the
+# re-recording, which replaces tests/golden. `cargo xtask parity` then says
+# which ones no longer apply.
+(cd "$REWRITE/tests/golden" && find . -name '*.intended' -print | tar -cf "$WORK/intended.tar" -T -)
+
 echo "* finalizing into tests/golden"
 # The leading-comments Go fixture drives the library API, not the CLI, so it
 # has no CLI recording; exclude it from the snapshot cross-check.
@@ -81,6 +87,7 @@ node "$HERE/finalize.mjs" "$WORK/raw" "$REWRITE/tests/golden" "$WORK/snap" || {
 }
 echo "* recording CLI-behavior cases (tests/golden/cli-*)"
 node "$HERE/record-cli.mjs" "$REF" "$REWRITE/tests/golden" "$REWRITE/tests/inputs"
+tar -xf "$WORK/intended.tar" -C "$REWRITE/tests/golden"
 {
     echo "quicktype_commit=$(git -C "$REF" rev-parse HEAD)"
     echo "node=$(node --version)"

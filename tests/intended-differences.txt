@@ -1,0 +1,24 @@
+# Intended differences from quicktype.
+#
+# quickertype's output is quicktype's, byte for byte, except where it fixes
+# a bug in the code quicktype generates (docs/PARITY.md, "Bugs fixed in
+# quickertype"). This list names every golden case (tests/golden) whose
+# output that changes, with the bugs that change it.
+#
+# The corrected output is stored next to the recorded one, in a file of
+# the same name with `.intended` appended (step0/TopLevel.c.intended beside
+# step0/TopLevel.c, step0.stdout.intended beside step0.stdout); the
+# recording is never changed. `cargo xtask parity` requires each listed
+# case's outputs to match their `.intended` files (and the others the
+# recording), reports the cases as intended differences, and fails when one
+# matches the recording again or differs from its `.intended` file, when an
+# `.intended` file is identical to the recording, or when this list and the
+# `.intended` files disagree. `--record-intended` writes them; review them
+# with `diff <file> <file>.intended`. The npm differential suite and the
+# renderer tests (render_cases.rs) use them too.
+#
+# When quicktype fixes a bug, re-recording the corpus (`cargo xtask golden`)
+# makes its cases identical again: remove them, and the bug, from here.
+#
+# `bug <id> <upstream report>` declares a bug; `<case id> <bug id>...`
+# lists a case.

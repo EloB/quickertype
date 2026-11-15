@@ -10,6 +10,7 @@
 
 mod bench;
 mod diff;
+mod intended;
 mod parity;
 mod streaming;
 
