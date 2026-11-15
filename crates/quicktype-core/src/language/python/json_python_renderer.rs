@@ -91,6 +91,62 @@ impl ConverterFunction {
             ConverterFunction::IsType => "is-type",
         }
     }
+
+    /// Every converter function.
+    pub const ALL: [ConverterFunction; 16] = [
+        ConverterFunction::None,
+        ConverterFunction::Bool,
+        ConverterFunction::Int,
+        ConverterFunction::FromFloat,
+        ConverterFunction::ToFloat,
+        ConverterFunction::Str,
+        ConverterFunction::ToEnum,
+        ConverterFunction::List,
+        ConverterFunction::ToClass,
+        ConverterFunction::Dict,
+        ConverterFunction::Union,
+        ConverterFunction::FromDate,
+        ConverterFunction::FromTime,
+        ConverterFunction::FromDatetime,
+        ConverterFunction::FromStringifiedBool,
+        ConverterFunction::IsType,
+    ];
+
+    /// The Python name of the function, as `conv` emits it: `from_` and
+    /// the name, or the name itself for `from-`, `to-` and `is-` names.
+    pub fn python_name(self) -> String {
+        let s = self.as_str();
+        let name = s.replace('-', "_");
+        if s.starts_with("from-") || s.starts_with("to-") || s.starts_with("is-") {
+            name
+        } else {
+            format!("from_{name}")
+        }
+    }
+
+    /// Whether `from_dict` may call it: the deserializers and the decoding
+    /// transformers' converters (`deserializer`, `transformer`); the
+    /// others only `to_dict` calls.
+    pub fn used_by_from_dict(self) -> bool {
+        match self {
+            ConverterFunction::None
+            | ConverterFunction::Bool
+            | ConverterFunction::Int
+            | ConverterFunction::FromFloat
+            | ConverterFunction::Str
+            | ConverterFunction::List
+            | ConverterFunction::Dict
+            | ConverterFunction::Union
+            | ConverterFunction::FromDate
+            | ConverterFunction::FromTime
+            | ConverterFunction::FromDatetime
+            | ConverterFunction::FromStringifiedBool => true,
+            ConverterFunction::ToFloat
+            | ConverterFunction::ToEnum
+            | ConverterFunction::ToClass
+            | ConverterFunction::IsType => false,
+        }
+    }
 }
 
 /// TS `TopLevelConverterNames`.
@@ -665,12 +721,7 @@ impl<'a> JsonPythonRenderer<'a> {
     /// `conv(cf)`: the name of the Python converter function `cf`.
     fn conv(&mut self, cf: ConverterFunction) -> Source {
         self.deserializer_functions.insert(cf);
-        let s = cf.as_str();
-        let name = s.replace('-', "_");
-        if s.starts_with("from-") || s.starts_with("to-") || s.starts_with("is-") {
-            return name.into();
-        }
-        sl!["from_", name]
+        cf.python_name().into()
     }
 
     /// `convFn(cf, arg)`: applies the converter function to `arg`.
@@ -1222,9 +1273,10 @@ pub mod json_python_hooks {
     /// `to_dict`, and (a fix of ours, docs/PARITY.md, "Bugs fixed in
     /// quickertype") what `from_dict` uses besides its locals, which are
     /// named like the properties: its parameter `obj`, `isinstance` and
-    /// the converter functions ([`CONVERTER_FUNCTION_NAMES`]). quicktype
-    /// forbids only `from_dict` and `to_dict`, so a property `from_date`
-    /// shadows the converter `from_date`.
+    /// the converter functions it calls
+    /// ([`ConverterFunction::used_by_from_dict`]). quicktype forbids only
+    /// `from_dict` and `to_dict`, so a property `from_date` shadows the
+    /// converter `from_date`.
     pub fn forbidden_for_object_properties(
         r: &mut JsonPythonRenderer<'_>,
         c: TypeRef,
@@ -1234,31 +1286,19 @@ pub mod json_python_hooks {
         result.names.extend(
             ["from_dict", "to_dict", "obj", "isinstance"]
                 .into_iter()
-                .chain(CONVERTER_FUNCTION_NAMES)
+                .map(String::from)
+                .chain(
+                    ConverterFunction::ALL
+                        .into_iter()
+                        .filter(|cf| cf.used_by_from_dict())
+                        .map(ConverterFunction::python_name)
+                        // The `dict` converter is the method's name.
+                        .filter(|name| name != "from_dict"),
+                )
                 .map(ForbiddenWord::from),
         );
         Ok(result)
     }
-
-    /// The names of the converter functions, as `conv` makes them, except
-    /// `from_dict` (the `dict` converter), which is also a method's name.
-    const CONVERTER_FUNCTION_NAMES: [&str; 15] = [
-        "from_none",
-        "from_bool",
-        "from_int",
-        "from_float",
-        "to_float",
-        "from_str",
-        "to_enum",
-        "from_list",
-        "to_class",
-        "from_union",
-        "from_date",
-        "from_time",
-        "from_datetime",
-        "from_stringified_bool",
-        "is_type",
-    ];
 
     /// `makeTopLevelDependencyNames(t, topLevelName)`: the names of the
     /// top-level's `from_dict` and `to_dict` functions.
