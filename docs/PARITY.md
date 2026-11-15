@@ -765,7 +765,7 @@ or rejected, but one: a map whose element has the wrong type
 before it stores the map in the class, so the map leaks (quicktype's own
 code, not one of these fixes).
 
-- **C (`--lang cjson`)**, reported upstream: (link pending).
+- **C (`--lang cjson`)**, reported upstream: [#3552](https://github.com/glideapps/quicktype/issues/3552), fix proposed in [#3557](https://github.com/glideapps/quicktype/pull/3557).
   - `cjson-top-level-collections`: a top-level map of integers, booleans,
     doubles or enums stored the value itself as the pointer
     (`hashtable_add(x->value, e->string, cJSON_GetNumberValue(e),
@@ -803,7 +803,7 @@ code, not one of these fixes).
     stored, which doubles the work at every level of nested maps. The
     validated value is stored.
 - **Ruby (`--lang ruby`)**, `ruby-union-forward-declaration`, reported
-  upstream: (link pending). A class's attribute could name a union class
+  upstream: [#3548](https://github.com/glideapps/quicktype/issues/3548), fix proposed in [#3553](https://github.com/glideapps/quicktype/pull/3553). A class's attribute could name a union class
   (`Types.Instance(XElement)` in `class X`, `schema-ruby` with
   `recursive-union-flattening.schema`) before that class was defined:
   quicktype forward-declares only classes, so loading the file failed with
@@ -813,7 +813,7 @@ code, not one of these fixes).
   moves definitions after them, without changing what they do. Upstream CI
   runs `schema-ruby-syntax`, not `schema-ruby`.
 - **Java with `--datetime-provider legacy`**, `java-legacy-date-null`,
-  reported upstream: (link pending). `parseAllDateTimeString` returned
+  reported upstream: [#3549](https://github.com/glideapps/quicktype/issues/3549), fix proposed in [#3554](https://github.com/glideapps/quicktype/pull/3554). `parseAllDateTimeString` returned
   `null` when no format matched, so an invalid date-time was read as
   `null` instead of rejected (`schema-java-datetime-legacy` with
   `optional-date-time.schema` accepts its expected-failure sample), and in
@@ -823,7 +823,7 @@ code, not one of these fixes).
   provider's parsers throw. Every legacy output has the function. Upstream
   CI never runs this fixture (its Java job is `java,schema-java`).
 - **Python (`--lang python`)**, `python-property-shadows-converter`,
-  reported upstream: (link pending). `from_dict` assigns each property to a
+  reported upstream: [#3550](https://github.com/glideapps/quicktype/issues/3550), fix proposed in [#3555](https://github.com/glideapps/quicktype/pull/3555). `from_dict` assigns each property to a
   local variable of its name, so a property named like something
   `from_dict` uses shadowed it: `from_date` (`python` with
   `misc/a0496.json`: `from_date(obj["to_date"])` fails, mypy reports
@@ -844,7 +844,7 @@ code, not one of these fixes).
 - **Accessor names and enum values that cannot combine: TypeScript input
   with string enums (`--src-lang typescript`), and JSON Schema
   `qt-accessors` and `qt-enum-values`**, `accessor-names-combine`,
-  reported upstream: (link pending). `export enum E { A = "a", B = "b" } export
+  reported upstream: [#3551](https://github.com/glideapps/quicktype/issues/3551), fix proposed in [#3556](https://github.com/glideapps/quicktype/pull/3556). `export enum E { A = "a", B = "b" } export
   interface X { f: E | null }` stopped with `Internal error: Cannot
   combine type attribute accessorNames.`, as did two optional properties
   of the same enum with Python (which makes them `E | None`), `E[] | F`,

@@ -23,15 +23,15 @@
 # `bug <id> <upstream report>` declares a bug; `<case id> <bug id>...`
 # lists a case.
 
-bug accessor-names-combine (link pending)
-bug cjson-enum-getter (link pending)
-bug cjson-map-parsed-twice (link pending)
-bug cjson-pattern-regcomp (link pending)
-bug cjson-top-level-collections (link pending)
-bug cjson-top-level-null-marker (link pending)
-bug java-legacy-date-null (link pending)
-bug python-property-shadows-converter (link pending)
-bug ruby-union-forward-declaration (link pending)
+bug accessor-names-combine https://github.com/glideapps/quicktype/issues/3551
+bug cjson-enum-getter https://github.com/glideapps/quicktype/issues/3552
+bug cjson-map-parsed-twice https://github.com/glideapps/quicktype/issues/3552
+bug cjson-pattern-regcomp https://github.com/glideapps/quicktype/issues/3552
+bug cjson-top-level-collections https://github.com/glideapps/quicktype/issues/3552
+bug cjson-top-level-null-marker https://github.com/glideapps/quicktype/issues/3552
+bug java-legacy-date-null https://github.com/glideapps/quicktype/issues/3549
+bug python-property-shadows-converter https://github.com/glideapps/quicktype/issues/3550
+bug ruby-union-forward-declaration https://github.com/glideapps/quicktype/issues/3548
 
 # Golden cases (tests/golden).
 cjson-default/json/priority/nbl-stats.json/b2d393358b cjson-enum-getter cjson-map-parsed-twice
