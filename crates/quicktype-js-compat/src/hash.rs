@@ -1,11 +1,11 @@
-//! The hasher of every hash map and set in quickertype, and the maps and
-//! sets that use it.
+//! The hasher of quickertype's hash maps and sets, and the maps and sets
+//! that use it.
 //!
 //! The keys of these maps come from the input: class properties, enum and
 //! string cases, JSON object keys. So the seed has to be secret. Whoever
 //! knows it can write JSON whose keys all land in one bucket, and reading
 //! it then takes quadratic time. [`SeededState`] is foldhash with a secret
-//! seed, and every map and set uses it:
+//! seed, and every `IndexMap`, `IndexSet`, `HashMap` and `HashSet` uses it:
 //!
 //! - [`IndexMap`] and [`IndexSet`] iterate in insertion order whatever the
 //!   hasher, so their order is output (docs/PARITY.md, rule 1).
@@ -13,17 +13,25 @@
 //!   seed, so it changes from run to run. That order must never reach
 //!   output; use them only for lookups.
 //!
-//! Nothing else may make a map. indexmap is built without `std`, so it has
-//! no `RandomState` default, and clippy's `disallowed-types` (clippy.toml)
-//! rejects `std`'s maps, `RandomState` and indexmap's own types outside this
-//! module. Make maps with `default()`, `with_capacity_and_hasher(n,
-//! Default::default())` or `collect()`.
+//! Nothing else may make a map. Make them with `default()`,
+//! [`index_map_with_capacity`], `collect()`, or a map's own hasher
+//! (`with_capacity_and_hasher(n, map.hasher().clone())`) for a copy with
+//! the same keys. clippy's `disallowed-types` and `disallowed-methods`
+//! (clippy.toml) reject `std`'s maps, its `RandomState` and
+//! `DefaultHasher`, indexmap's own types and their `RandomState`
+//! constructors, and foldhash's own states, everywhere but here. The builds
+//! that ship have indexmap without `std`, so its types have no
+//! `RandomState` default there at all; tests get `std` back through
+//! serde_json's `preserve_order`.
 //!
 //! Where the seed comes from:
 //!
-//! - **Natively:** foldhash's own, per process, from address space layout
-//!   randomization, the clock and an address from the allocator. Each map
-//!   also gets its own seed.
+//! - **Natively:** `std`'s `RandomState`, which takes its keys from the
+//!   operating system's random source, gives 16 bytes once per process.
+//!   The hash is still foldhash, a fast hash with a secret seed, not a
+//!   keyed pseudorandom function like SipHash. The `siphash` feature makes
+//!   [`SeededState`] `std`'s `RandomState` (SipHash-1-3) natively, for an
+//!   embedder that hashes untrusted input on a server and wants that.
 //! - **In WebAssembly with the `js-host-random` feature** (the npm
 //!   package's engine): 16 bytes of the JavaScript host's
 //!   `crypto.getRandomValues`, per instance. A host must call [`init`] when
@@ -31,18 +39,20 @@
 //!   with it). Otherwise the first map takes the seed, and on a host
 //!   without `crypto.getRandomValues` that panics in the middle of a run.
 //! - **In WebAssembly without it:** the entropy an embedder gives [`seed`]
-//!   before the first map. Failing that, `std`'s `RandomState`, which is
-//!   random on WASI. On `wasm32-unknown-unknown` it is made of addresses
-//!   that are the same in every instance, and so is foldhash's own seed.
+//!   before any other use of this crate or of quickertype-core. Failing
+//!   that, `std`'s `RandomState`, which is random on WASI. On
+//!   `wasm32-unknown-unknown` it is made of addresses that are the same in
+//!   every instance.
 //!
-//! In WebAssembly the hasher is foldhash with these seeds: a shared seed,
-//! and a sequence that gives each map its own.
+//! The 16 bytes become foldhash's shared seed and the start of a sequence
+//! that gives each map a seed of its own.
 //!
 //! quickertype-core re-exports all of this as `support::fast_hash`.
 
-#![allow(clippy::disallowed_types)] // The one module that names the maps' own types.
+// The one module that names the maps' own types and hashers (clippy.toml).
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
-use std::hash::BuildHasher;
+use std::hash::{BuildHasher, Hasher};
 
 /// [`indexmap::IndexMap`] with [`SeededState`].
 pub type IndexMap<K, V> = indexmap::IndexMap<K, V, SeededState>;
@@ -56,24 +66,69 @@ pub type HashMap<K, V> = std::collections::HashMap<K, V, SeededState>;
 /// [`std::collections::HashSet`] with [`SeededState`]: for lookups only.
 pub type HashSet<T> = std::collections::HashSet<T, SeededState>;
 
-/// The hasher of every map and set: foldhash, seeded as the module says.
-/// `default()` gives each map its own seed.
+/// An empty [`IndexMap`] with room for `n` entries and a seed of its own.
+pub fn index_map_with_capacity<K, V>(n: usize) -> IndexMap<K, V> {
+    IndexMap::with_capacity_and_hasher(n, SeededState::default())
+}
+
+/// The hasher of every map and set, seeded as the module says.
+/// `default()` gives each map a seed of its own; a clone keeps it.
 #[derive(Clone, Debug, Default)]
 pub struct SeededState(Inner);
 
-#[cfg(not(target_arch = "wasm32"))]
-type Inner = foldhash::fast::RandomState;
-
-#[cfg(target_arch = "wasm32")]
+#[cfg(not(all(feature = "siphash", not(target_arch = "wasm32"))))]
 type Inner = seeded::RandomState;
 
+/// With `siphash`, natively: `std`'s SipHash-1-3, keyed from the operating
+/// system's random source.
+#[cfg(all(feature = "siphash", not(target_arch = "wasm32")))]
+type Inner = std::hash::RandomState;
+
+#[cfg(not(all(feature = "siphash", not(target_arch = "wasm32"))))]
+type InnerHasher = foldhash::fast::FoldHasher<'static>;
+
+#[cfg(all(feature = "siphash", not(target_arch = "wasm32")))]
+type InnerHasher = std::hash::DefaultHasher;
+
 impl BuildHasher for SeededState {
-    type Hasher = foldhash::fast::FoldHasher<'static>;
+    type Hasher = InnerHasher;
 
     #[inline]
     fn build_hasher(&self) -> Self::Hasher {
         self.0.build_hasher()
     }
+}
+
+/// The hasher of a table that hashes its strings itself (hashbrown's
+/// `HashTable`: quickertype-core's JSON reader's string and key tables),
+/// where each hash is of one whole string. It hashes strings in one way
+/// only, so that a table cannot mix two kinds of hash (and then miss what
+/// it holds).
+#[derive(Clone, Debug, Default)]
+pub struct StrHasher(SeededState);
+
+impl StrHasher {
+    /// The hash of `s`: what foldhash's own `write_str` does with its
+    /// `nightly` feature (`write` mixes the length in; SipHash's `finish`
+    /// does too).
+    ///
+    /// `Hash for str` also writes a marker after the bytes, to keep a
+    /// string apart from what follows it in a longer key. foldhash adds the
+    /// marker through a 128-bit buffer and one more multiply; in
+    /// WebAssembly that is four multiplies and a call to shift the buffer.
+    /// A lone string does not need it.
+    #[inline]
+    pub fn hash_str(&self, s: &str) -> u64 {
+        hash_whole_str(&self.0, s)
+    }
+}
+
+/// [`StrHasher::hash_str`] with any hasher, for its tests.
+#[inline]
+fn hash_whole_str(state: &impl BuildHasher, s: &str) -> u64 {
+    let mut hasher = state.build_hasher();
+    hasher.write(s.as_bytes());
+    hasher.finish()
 }
 
 /// Takes the maps' seed now, rather than when the first map is made.
@@ -82,21 +137,26 @@ impl BuildHasher for SeededState {
 /// when it starts and handle its error: a host without
 /// `crypto.getRandomValues`, or one where it throws (the error names which,
 /// with what it threw). The `quicktype-wasm` bindings fail the module's
-/// start with it. Elsewhere it does not fail, and natively it does nothing.
+/// start with it. Elsewhere it does not fail.
 pub fn init() -> Result<(), String> {
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(not(all(feature = "siphash", not(target_arch = "wasm32"))))]
     return seeded::try_seeds().map(|_| ());
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(all(feature = "siphash", not(target_arch = "wasm32")))]
     Ok(())
 }
 
 /// Seeds the maps with `entropy`, which must be random and secret, instead
 /// of the host's randomness: for an embedder with a source of its own (a
 /// `wasm32-unknown-unknown` host without `js-host-random`, whose fallback is
-/// fixed). In WebAssembly it must come before the first map and before
-/// [`init`]; called later, it panics, because the maps made so far were
-/// seeded already. Natively the seed is foldhash's own, and this does
-/// nothing.
+/// fixed). quickertype-core re-exports it as `support::fast_hash::seed`.
+///
+/// In WebAssembly, call it before any other use of this crate or of
+/// quickertype-core, and before [`init`]. Every map and set takes its seed
+/// when it is made, and nearly everything makes one: parsing JSON
+/// ([`crate::json`]), YAML, building quickertype-core's `Options`. Called
+/// after the first map, it panics, because the maps made so far were
+/// seeded already. Natively the seed always comes from the operating
+/// system, and this does nothing.
 pub fn seed(entropy: [u64; 2]) {
     #[cfg(target_arch = "wasm32")]
     seeded::seed(entropy);
@@ -104,9 +164,13 @@ pub fn seed(entropy: [u64; 2]) {
     let _ = entropy;
 }
 
-/// foldhash with seeds from the host's randomness: the WebAssembly build's
-/// hasher. (Built everywhere, for its tests.)
-#[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
+/// foldhash with seeds from the host's randomness: [`SeededState`]'s
+/// hasher, but natively with the `siphash` feature (built there too, for
+/// its tests).
+#[cfg_attr(
+    any(not(target_arch = "wasm32"), feature = "siphash"),
+    allow(dead_code)
+)]
 mod seeded {
     use std::sync::OnceLock;
     use std::sync::atomic::{AtomicU64, Ordering};
@@ -147,8 +211,10 @@ mod seeded {
     pub(super) fn seed(entropy: [u64; 2]) {
         if SEEDS.set(Seeds::new(entropy)).is_err() {
             panic!(
-                "quicktype_core::support::fast_hash::seed was called after the hash maps were \
-                 seeded: call it before anything makes a map, and before fast_hash::init()"
+                "quicktype_js_compat::hash::seed (quicktype_core::support::fast_hash::seed) was \
+                 called after the hash maps were seeded. Call it first, before anything else \
+                 uses quickertype-js-compat or quickertype-core (parsing JSON or building \
+                 Options makes maps too), and before init()"
             );
         }
     }
@@ -160,12 +226,12 @@ mod seeded {
         if let Err(error) = host::get_random_values(&mut bytes) {
             return Err(if host::has_get_random_values() {
                 format!(
-                    "quickertype-core could not seed its hash maps: crypto.getRandomValues threw {}",
+                    "quickertype could not seed its hash maps: crypto.getRandomValues threw {}",
                     host::describe(&error)
                 )
             } else {
-                "quickertype-core needs crypto.getRandomValues (the Web Crypto API) to seed its \
-                 hash maps, and this JavaScript host does not have it"
+                "quickertype needs crypto.getRandomValues (the Web Crypto API) to seed its hash \
+                 maps, and this JavaScript host does not have it"
                     .to_owned()
             });
         }
@@ -173,9 +239,9 @@ mod seeded {
         Ok([entropy as u64, (entropy >> 64) as u64])
     }
 
-    /// Without a JavaScript host: `std`'s `RandomState`, random where the
-    /// platform has a random source (natively, WASI), fixed on
-    /// `wasm32-unknown-unknown`.
+    /// Without a JavaScript host: two hashes of a fresh `std`
+    /// `RandomState`, which is keyed from the operating system's random
+    /// source natively and on WASI, and fixed on `wasm32-unknown-unknown`.
     #[cfg(not(all(target_arch = "wasm32", feature = "js-host-random")))]
     pub(super) fn entropy() -> Result<[u64; 2], String> {
         use std::hash::BuildHasher as _;
@@ -253,9 +319,9 @@ mod seeded {
             match try_seeds() {
                 Ok(seeds) => RandomState::with_seeds(seeds),
                 Err(error) => panic!(
-                    "{error}. A host with quickertype-core's `js-host-random` feature must \
-                     call quicktype_core::support::fast_hash::init() when it starts, and \
-                     handle its error, before anything makes a hash map"
+                    "{error}. With the `js-host-random` feature, a host must call \
+                     quicktype_js_compat::hash::init() (quicktype_core::support::fast_hash::init()) \
+                     when it starts, and handle its error, before anything makes a hash map"
                 ),
             }
         }
@@ -276,7 +342,7 @@ mod tests {
     use std::hash::BuildHasher as _;
 
     use super::seeded::{RandomState, Seeds};
-    use super::{HashMap, HashSet, IndexMap, IndexSet, SeededState};
+    use super::{HashMap, HashSet, IndexMap, IndexSet, SeededState, StrHasher};
 
     fn seeds(entropy: [u64; 2]) -> &'static Seeds {
         Box::leak(Box::new(Seeds::new(entropy)))
@@ -339,6 +405,50 @@ mod tests {
         assert_eq!(super::init(), Ok(()));
     }
 
+    /// The strings the reader's tables must tell apart: prefixes, zero
+    /// bytes, lengths around foldhash's 8- and 16-byte steps, and two
+    /// spellings of `é`.
+    const TEXTS: [&str; 14] = [
+        "",
+        "\0",
+        "\0\0",
+        "a",
+        "ab",
+        "abb",
+        "abcd",
+        "abcdabcd",
+        "abcdefgh",
+        "abcdefghi",
+        "abcdefghabcdefgh",
+        "abcdefghabcdefghX",
+        "\u{e9}",
+        "e\u{301}",
+    ];
+
+    fn tells_texts_apart(hash: &dyn Fn(&str) -> u64) {
+        let hashes: std::collections::HashSet<u64> = TEXTS.iter().map(|t| hash(t)).collect();
+        assert_eq!(hashes.len(), TEXTS.len());
+        assert!(TEXTS.iter().all(|t| hash(t) == hash(t)));
+    }
+
+    /// `hash_str` on what each target uses: this build's [`StrHasher`], and
+    /// explicitly the seeded state (WebAssembly's, and natively without
+    /// `siphash`), with two seeds, whose hashes differ.
+    #[test]
+    fn hash_str_tells_texts_apart() {
+        let tables = StrHasher::default();
+        tells_texts_apart(&|t| tables.hash_str(t));
+        let seeded = RandomState::with_seeds(seeds([7, 8]));
+        tells_texts_apart(&|t| super::hash_whole_str(&seeded, t));
+        let other = RandomState::with_seeds(seeds([9, 8]));
+        tells_texts_apart(&|t| super::hash_whole_str(&other, t));
+        assert!(
+            TEXTS
+                .iter()
+                .all(|t| super::hash_whole_str(&seeded, t) != super::hash_whole_str(&other, t))
+        );
+    }
+
     /// Every alias is seeded: its hasher is [`SeededState`] (the
     /// annotations fail to compile otherwise), and two maps of one type
     /// hash the same key differently, which `std`'s `RandomState` does too
@@ -368,6 +478,9 @@ mod tests {
             let set: HashSet<String> = HashSet::default();
             set.hasher().clone()
         }));
+        assert!(differs(|| super::index_map_with_capacity::<String, u32>(4)
+            .hasher()
+            .clone()));
         // A clone keeps the seed, so a cloned map still finds its keys.
         let mut map: IndexMap<String, u32> = (0..100).map(|i| (i.to_string(), i)).collect();
         let copy = map.clone();

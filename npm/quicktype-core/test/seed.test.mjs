@@ -42,7 +42,7 @@ function inFreshNode(prelude, body, env = {}) {
 
 const noCrypto = 'Object.defineProperty(globalThis, "crypto", { configurable: true, value: undefined });';
 const missing =
-    "quickertype-core needs crypto.getRandomValues (the Web Crypto API) to seed its hash maps, and this JavaScript host does not have it";
+    "quickertype needs crypto.getRandomValues (the Web Crypto API) to seed its hash maps, and this JavaScript host does not have it";
 
 test("without crypto.getRandomValues the engine does not load, and runs use TypeScript", () => {
     const [glue, error, files, stats] = inFreshNode(
@@ -74,13 +74,13 @@ test("a crypto.getRandomValues that throws fails the load with what it threw", (
         `run();
          return [String(engine.engineLoadError()?.message), [engineStats.wasm, engineStats.ts]];`,
     );
-    assert.equal(error, "quickertype-core could not seed its hash maps: crypto.getRandomValues threw TypeError: a broken polyfill");
+    assert.equal(error, "quickertype could not seed its hash maps: crypto.getRandomValues threw TypeError: a broken polyfill");
     assert.deepEqual(stats, [0, 1]);
 });
 
 test("each instance takes 16 bytes of crypto.getRandomValues as it starts, and only then", () => {
     // What the engine asks for is recorded (and still random). That the
-    // bytes become the maps' seeds is tested in Rust (support::fast_hash).
+    // bytes become the maps' seeds is tested in Rust (quicktype_js_compat::hash).
     const [afterLoad, afterRuns, afterTrap, stats] = inFreshNode(
         `const real = globalThis.crypto;
          globalThis.calls = [];

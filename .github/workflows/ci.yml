@@ -24,6 +24,9 @@ jobs:
       # The `trace` feature (docs/BENCHMARKS.md), off in every other build:
       # its spans, `__trace` and the `phases` example.
       - run: cargo clippy -p quickertype-core -p quicktype-wasm --all-targets --features quickertype-core/trace,quicktype-wasm/trace
+      # The `siphash` feature (quickertype-js-compat's `hash`): every map
+      # with std's SipHash natively instead of foldhash.
+      - run: cargo clippy --workspace --all-targets --features quickertype-core/siphash
 
   test:
     runs-on: ubuntu-latest
@@ -35,6 +38,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --workspace
       - run: cargo test -p quickertype-core -p quicktype-wasm --lib --features quickertype-core/trace,quicktype-wasm/trace
+      # With `siphash`: the same output with std's SipHash in every map.
+      - run: cargo test -p quickertype-js-compat -p quickertype-core --features quickertype-core/siphash
 
   # The CLI and the tests on the other platforms the release builds for
   # (docs/RELEASING.md). The parity corpus runs on Linux only (`parity`).
