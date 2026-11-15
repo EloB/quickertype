@@ -8,11 +8,12 @@
 //   node script/test-hooks.mjs   (npm test runs it first, after npm run build)
 //
 // The package is build/test-hooks/package; test/hooks.mjs loads it as the
-// facade loads the shipped one. The engine is built in its own target
-// directory, build/test-hooks/target, so that it never overwrites the
-// package's own build, with the `test-hooks` profile: release code without
-// fat LTO, which builds in about a minute from scratch and in seconds when
-// little changed. No wasm-opt.
+// facade loads the shipped one. The engine is built with the `test-hooks`
+// cargo profile (release code without fat LTO, which builds in about a
+// minute from scratch and in seconds when little changed; no wasm-opt),
+// whose output is target/wasm32-unknown-unknown/test-hooks/: never the
+// release/ or debug/ module that script/build.mjs builds and reads, and in
+// the workspace's target directory, which CI caches.
 
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
@@ -33,11 +34,11 @@ if (!fs.existsSync(path.join(dist, "index.js"))) {
     throw new Error("test-hooks: no dist/ to take the facade from; run `npm run build` first");
 }
 
-const targetDir = path.join(outDir, "target");
+const targetDir = process.env.CARGO_TARGET_DIR ?? path.join(repositoryRoot, "target");
 run(
     "cargo",
     ["build", "-p", "quicktype-wasm", "--target", "wasm32-unknown-unknown", "--profile", "test-hooks", "--features", "test-hooks"],
-    { cwd: repositoryRoot, env: { ...process.env, CARGO_TARGET_DIR: targetDir } },
+    { cwd: repositoryRoot },
 );
 const bindgenDir = path.join(outDir, "wasm-bindgen");
 fs.rmSync(bindgenDir, { recursive: true, force: true });

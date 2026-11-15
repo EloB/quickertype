@@ -103,8 +103,8 @@ strip = false
 
 # The engine with test hooks that npm/quicktype-core's tests build
 # (script/test-hooks.mjs, `--features test-hooks`): release code without fat
-# LTO, so that it builds in about a minute from scratch, in its own target
-# directory. Never shipped.
+# LTO, so that it builds in about a minute from scratch. Its output is
+# target/<triple>/test-hooks/, apart from release/ and debug/. Never shipped.
 [profile.test-hooks]
 inherits = "release"
 lto = false

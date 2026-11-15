@@ -150,7 +150,7 @@ jobs:
       # example too) as WebAssembly, with and without `trace`.
       - run: cargo clippy --package quicktype-wasm --target wasm32-unknown-unknown --all-targets
       - run: cargo clippy --package quicktype-wasm --target wasm32-unknown-unknown --all-targets --features trace
-      # The tests' own engine (npm/quicktype-core/test/hooks-engine.mjs).
+      # The tests' own engine (npm/quicktype-core/script/test-hooks.mjs).
       - run: cargo clippy --package quicktype-wasm --target wasm32-unknown-unknown --all-targets --features test-hooks
 
   # npm/quicktype-core: the WebAssembly engine behind quicktype's own

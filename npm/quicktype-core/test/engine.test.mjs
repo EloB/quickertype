@@ -1,27 +1,25 @@
 // The WebAssembly engine behind the facade: `**` exactly as V8 computes it,
 // which runs go where, concurrency, and recovery from a trap.
 //
-//   node --test test/engine.test.mjs   (after `npm run build`)
+//   node --test test/engine.test.mjs test/engine.hooks.test.mjs   (after `npm run build`
+//   and `node script/test-hooks.mjs`; npm test runs both)
+//
+// The tests that call no test hook run on the shipped package; those that
+// trap an instance or read the engine's counters (`__panicForTests`,
+// `__pow`, `__memoryGrowths`, ...), which the shipped engine does not
+// export, run from engine.hooks.test.mjs on the test-hooks package
+// (test/hooks.mjs).
 
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
-import { createRequire } from "node:module";
 import * as path from "node:path";
-import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { hooksPackageRoot } from "./hooks.mjs";
+import { hookTest, runPackage, shippedTest } from "./hooks.mjs";
 
-const require = createRequire(import.meta.url);
-// The package with the test-hooks engine (test/hooks.mjs): these tests trap
-// instances and read the engine's counters (`__panicForTests`, `__pow`,
-// `__memoryGrowths`, ...), which the shipped engine does not export.
-const packageRoot = hooksPackageRoot;
+const { root: packageRoot, qt, engineStats, engine } = runPackage();
 const repositoryRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
-const qt = require(packageRoot);
-const { engineStats } = require(path.join(packageRoot, "dist", "native", "bridge.js"));
-const engine = require(path.join(packageRoot, "dist", "native", "engine.js"));
 
 const view = new DataView(new ArrayBuffer(8));
 const fromHex = (hex) => {
@@ -46,7 +44,7 @@ async function json(lang, samples) {
 // Node on macOS arm64; other Node builds differ on a few of them (the sign
 // of NaN on x64, the last bit of some hard cases on Linux), so the recorded
 // values are only checked on the platform they were recorded on.
-test("** is this Node's Math.pow on the js-compat vectors", () => {
+hookTest("** is this Node's Math.pow on the js-compat vectors", () => {
     const glue = engine.engineSync();
     const vectors = JSON.parse(
         fs.readFileSync(path.join(repositoryRoot, "crates", "quicktype-js-compat", "tests", "vectors", "number.json"), "utf8"),
@@ -63,7 +61,7 @@ test("** is this Node's Math.pow on the js-compat vectors", () => {
     }
 });
 
-test("** matches this Node's Math.pow on InferMaps-shaped inputs", () => {
+hookTest("** matches this Node's Math.pow on InferMaps-shaped inputs", () => {
     const glue = engine.engineSync();
     // MarkovChain.evaluate: probability ** (1 / length); InferMaps: 22 ** exponent.
     let seed = 12345;
@@ -81,7 +79,7 @@ test("** matches this Node's Math.pow on InferMaps-shaped inputs", () => {
     assert.equal(mismatches, 0);
 });
 
-test("eligible runs use the WebAssembly engine, others the TypeScript engine", async () => {
+shippedTest("eligible runs use the WebAssembly engine, others the TypeScript engine", async () => {
     const before = { ...engineStats };
     await qt.quicktype({ lang: "rust", inputData: await json("rust", ['{"a": 1}']) });
     assert.equal(engineStats.wasm, before.wasm + 1);
@@ -95,7 +93,7 @@ test("eligible runs use the WebAssembly engine, others the TypeScript engine", a
     assert.equal(engineStats.wasm, before.wasm + 2);
 });
 
-test("the synchronous API uses the engine from the first call", () => {
+shippedTest("the synchronous API uses the engine from the first call", () => {
     const script = `
         const qt = require(${JSON.stringify(packageRoot)});
         const { engineStats } = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "bridge.js"))});
@@ -110,7 +108,7 @@ test("the synchronous API uses the engine from the first call", () => {
     assert.deepEqual(JSON.parse(out), [1, 0, 1]);
 });
 
-test("QUICKTYPE_ENGINE=ts selects the TypeScript engine", () => {
+shippedTest("QUICKTYPE_ENGINE=ts selects the TypeScript engine", () => {
     const script = `
         const qt = require(${JSON.stringify(packageRoot)});
         const { engineStats } = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "bridge.js"))});
@@ -128,7 +126,7 @@ test("QUICKTYPE_ENGINE=ts selects the TypeScript engine", () => {
     assert.deepEqual(JSON.parse(out), [0, 1]);
 });
 
-test("languages the engine lacks fall back to TypeScript, never to an error", async (t) => {
+shippedTest("languages the engine lacks fall back to TypeScript, never to an error", async (t) => {
     const glue = engine.engineSync();
     const lacking = qt.defaultTargetLanguages.filter((l) => !glue.supportsLanguage(l.name));
     assert.ok(qt.defaultTargetLanguages.some((l) => glue.supportsLanguage(l.name)));
@@ -167,7 +165,7 @@ test("languages the engine lacks fall back to TypeScript, never to an error", as
     }
 });
 
-test("concurrent runs with pending fetches don't interfere", async () => {
+shippedTest("concurrent runs with pending fetches don't interfere", async () => {
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const languages = ["typescript", "rust", "cs", "java", "kotlin", "php"];
     const run = async (i, mode) => {
@@ -203,7 +201,7 @@ test("concurrent runs with pending fetches don't interfere", async () => {
     assert.deepEqual(actual, expected);
 });
 
-test("an instance that trapped is replaced by a fresh one", async () => {
+hookTest("an instance that trapped is replaced by a fresh one", async () => {
     const glue = engine.engineSync();
     assert.throws(() => glue.__panicForTests(), WebAssembly.RuntimeError);
     engine.discardEngine(glue);
@@ -244,7 +242,7 @@ async function trappingRun(lang) {
     });
 }
 
-test("a run whose instance traps is redone on TypeScript, never continued", async () => {
+hookTest("a run whose instance traps is redone on TypeScript, never continued", async () => {
     const expected = await tsMode(() => trappingRun("rust"));
     const before = { ...engineStats };
     const actual = await trappingRun("rust");
@@ -253,7 +251,7 @@ test("a run whose instance traps is redone on TypeScript, never continued", asyn
     assert.equal(engineStats.wasm, before.wasm);
 });
 
-test("other runs in flight on a trapping instance are redone too", async () => {
+hookTest("other runs in flight on a trapping instance are redone too", async () => {
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const schemaRun = async () => {
         class Store extends qt.JSONSchemaStore {
@@ -280,7 +278,7 @@ test("other runs in flight on a trapping instance are redone too", async () => {
     assert.equal(engineStats.rerun, before.rerun + 2);
 });
 
-test("documents are flattened once per run, however often they are fetched", async () => {
+shippedTest("documents are flattened once per run, however often they are fetched", async () => {
     const definitions = {};
     for (let i = 0; i < 500; i++) definitions[`D${i}`] = { type: "object", properties: { v: { type: "integer" } } };
     const documents = { "big.json": { definitions } };
@@ -313,7 +311,7 @@ test("documents are flattened once per run, however often they are fetched", asy
     assert.equal(engineStats.documentsEncoded - before, Object.keys(documents).length);
 });
 
-test("a run nobody waits for any more is dropped by the engine", () => {
+hookTest("a run nobody waits for any more is dropped by the engine", () => {
     const script = `
         const qt = require(${JSON.stringify(packageRoot)});
         const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
@@ -343,7 +341,7 @@ test("a run nobody waits for any more is dropped by the engine", () => {
     assert.deepEqual(JSON.parse(out), [5, 0]);
 });
 
-test("a module that fails to compile is not compiled again on every run", () => {
+shippedTest("a module that fails to compile is not compiled again on every run", () => {
     const script = `
         globalThis[Symbol.for("quicktype-core.wasmModule")] = new Uint8Array([0, 1, 2, 3]);
         const qt = require(${JSON.stringify(packageRoot)});
@@ -362,7 +360,7 @@ test("a module that fails to compile is not compiled again on every run", () => 
     assert.deepEqual(JSON.parse(out), [1, 0, 3]);
 });
 
-test("a module that is not the engine is instantiated once, not on every run", () => {
+shippedTest("a module that is not the engine is instantiated once, not on every run", () => {
     // The smallest valid module: it compiles and instantiates, but has none
     // of the engine's exports. That is a load failure (the TypeScript engine
     // runs), not an engine failure in each run (a rerun).
@@ -418,7 +416,7 @@ function manyClasses(n) {
 // memory, more than linearly in the output's size (an 8-million-line PHP
 // file took 726 s against TypeScript's 126 s). The engine's allocator now
 // grows the memory geometrically (crates/quicktype-wasm/src/allocator.rs).
-test("a run with a large output grows the engine's memory a few times", { timeout: 300_000 }, async () => {
+hookTest("a run with a large output grows the engine's memory a few times", { timeout: 300_000 }, async () => {
     const options = { lang: "php", inferMaps: false, rendererOptions: { "with-get": true, "with-set": true } };
     const run = () => {
         const input = qt.jsonInputForTargetLanguage("php");

@@ -14,7 +14,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import * as esbuild from "esbuild";
 
-import { featureExports, testHookExports } from "../script/bindgen.mjs";
+import { testHookExports } from "../script/bindgen.mjs";
 import { hooksPackageRoot } from "./hooks.mjs";
 
 const require = createRequire(import.meta.url);
@@ -36,11 +36,12 @@ function walk(directory, keep) {
 test("the shipped engine has no test hooks, and the tests' engine has them all", () => {
     // The exports for tests (quicktype-wasm's `test-hooks` feature:
     // `__panicForTests` traps the instance, `__hashForTests` reads a seed,
-    // the rest read counters) and for measurements (`heap-stats`, `trace`)
-    // are not in the shipped module, nor in its glue. The facade itself uses
-    // none of them. The tests' engine (script/test-hooks.mjs) has the test
+    // the rest read counters) are not in the shipped module, nor in its
+    // glue; the facade uses none of them. The measurement exports
+    // (`build.mjs --trace`, `--heap-stats`) are left to the build that asks
+    // for them. The tests' engine (script/test-hooks.mjs) has the test
     // hooks.
-    const notShipped = [...testHookExports, ...featureExports["heap-stats"], ...featureExports.trace];
+    const notShipped = testHookExports;
     const moduleExports = (dir) =>
         WebAssembly.Module.exports(new WebAssembly.Module(fs.readFileSync(path.join(dir, "native", "wasm", "quicktype_wasm_bg.wasm")))).map(
             (e) => e.name,

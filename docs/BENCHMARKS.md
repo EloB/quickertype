@@ -2244,11 +2244,15 @@ the seeding above, moved, with aliases of `IndexMap`, `IndexSet`,
   counters) is behind quicktype-wasm's `test-hooks` feature, and
   `__heapBytes`/`__heapPeak` behind `heap-stats`. `script/test-hooks.mjs`,
   which `npm test` runs first, builds the tests' package: the shipped
-  facade with an engine built with the feature, in its own target
-  directory, with a `test-hooks` profile (release without fat LTO): 29.7 s
-  from cold at load 11 to 15, 0.67 s when nothing changed. The facade
-  loads it as it loads the shipped one. `package.test.mjs` checks that
-  the shipped module and its glue have none of these exports.
+  facade with an engine built with the feature and a `test-hooks` profile
+  (release without fat LTO, written to `target/<triple>/test-hooks/`):
+  29.7 s from cold at load 11 to 15, 0.67 s when nothing changed. The
+  facade loads it as it loads the shipped one. Only the tests that call a
+  hook use it: engine.test.mjs and samples.test.mjs run on the shipped
+  engine and again, from their `*.hooks.test.mjs` twins, on the tests'
+  engine, each test on the one it needs (and the samples tests that only
+  also check the engine's leases on both). `package.test.mjs` checks that
+  the shipped module and its glue have no test hook.
 
 **`EqualityMap`** (`support::collection_utils`), which deduplicates types
 by identity and resolves JSON Schema `$ref`s, reproduces collection-utils:

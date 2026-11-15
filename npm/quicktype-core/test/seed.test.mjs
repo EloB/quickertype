@@ -12,11 +12,9 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import * as path from "node:path";
 import { test } from "node:test";
-import { fileURLToPath } from "node:url";
 
-import { hooksPackageRoot } from "./hooks.mjs";
+import { hooksPackageRoot, packageRoot } from "./hooks.mjs";
 
-const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
  * Runs `body` in a fresh Node process after `prelude` (which may replace
@@ -83,30 +81,45 @@ test("a crypto.getRandomValues that throws fails the load with what it threw", (
     assert.deepEqual(stats, [0, 1]);
 });
 
+/** A prelude that records how many bytes each `crypto.getRandomValues` call asks for. */
+const recordCrypto = `const real = globalThis.crypto;
+     globalThis.calls = [];
+     Object.defineProperty(globalThis, "crypto", {
+         configurable: true,
+         value: { getRandomValues(array) { calls.push(array.length); return real.getRandomValues(array); } },
+     });`;
+
 test("each instance takes 16 bytes of crypto.getRandomValues as it starts, and only then", () => {
-    // What the engine asks for is recorded (and still random). That the
-    // bytes become the maps' seeds is tested in Rust (quicktype_js_compat::hash).
-    const [afterLoad, afterRuns, afterTrap, stats] = inFreshNode(
-        `const real = globalThis.crypto;
-         globalThis.calls = [];
-         Object.defineProperty(globalThis, "crypto", {
-             configurable: true,
-             value: { getRandomValues(array) { calls.push(array.length); return real.getRandomValues(array); } },
-         });`,
-        `const glue = engine.engineSync();
+    // The shipped engine. What it asks for is recorded (and still random).
+    // That the bytes become the maps' seeds is tested in Rust
+    // (quicktype_js_compat::hash).
+    const [afterLoad, afterRuns, stats] = inFreshNode(
+        recordCrypto,
+        `engine.engineSync();
          const afterLoad = [...calls];
          run();
          run();
-         const afterRuns = [...calls];
-         try { glue.__panicForTests(); } catch { engine.discardEngine(glue); }
-         run();
-         return [afterLoad, afterRuns, [...calls], [engineStats.wasm, engineStats.ts]];`,
-        { root: hooksPackageRoot },
+         return [afterLoad, [...calls], [engineStats.wasm, engineStats.ts]];`,
     );
     assert.deepEqual(afterLoad, [16]);
     assert.deepEqual(afterRuns, [16]);
+    assert.deepEqual(stats, [2, 0]);
+});
+
+test("the fresh instance after a trap takes 16 bytes of its own", () => {
+    // The test-hooks package (test/hooks.mjs), whose `__panicForTests` traps
+    // the instance; the facade's recovery makes a fresh one.
+    const [afterTrap, stats] = inFreshNode(
+        recordCrypto,
+        `const glue = engine.engineSync();
+         run();
+         try { glue.__panicForTests(); } catch { engine.discardEngine(glue); }
+         run();
+         return [[...calls], [engineStats.wasm, engineStats.ts]];`,
+        { root: hooksPackageRoot },
+    );
     assert.deepEqual(afterTrap, [16, 16]);
-    assert.deepEqual(stats, [3, 0]);
+    assert.deepEqual(stats, [2, 0]);
 });
 
 test("each instance hashes the keys of the maps inference fills differently", () => {
