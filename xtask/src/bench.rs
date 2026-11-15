@@ -820,10 +820,9 @@ fn machine_info(tools: &[Tool]) -> Vec<MachineFact> {
     if tools
         .iter()
         .any(|t| t.cmd.first().is_some_and(|c| c == "node"))
+        && let Some(v) = shell_output("node", &["--version"])
     {
-        if let Some(v) = shell_output("node", &["--version"]) {
-            fact("node", "Node.js", v);
-        }
+        fact("node", "Node.js", v);
     }
     info
 }

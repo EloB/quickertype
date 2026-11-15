@@ -252,10 +252,11 @@ pub fn decode_value(encoded: &EncodedValue) -> Result<Option<JsonSchema>, WireEr
     let mut stack: Vec<Frame> = Vec::new();
     loop {
         // The key of the value about to be read, if inside an object.
-        if let Some(Frame::Object(_, remaining, key)) = stack.last_mut() {
-            if *remaining > 0 && key.is_none() {
-                *key = Some(strings.next().ok_or_else(truncated)?.clone());
-            }
+        if let Some(Frame::Object(_, remaining, key)) = stack.last_mut()
+            && *remaining > 0
+            && key.is_none()
+        {
+            *key = Some(strings.next().ok_or_else(truncated)?.clone());
         }
         let finished = matches!(
             stack.last(),

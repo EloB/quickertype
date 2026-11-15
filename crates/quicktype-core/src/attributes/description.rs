@@ -110,16 +110,15 @@ pub fn description_attribute_producer(
     let path = r.path();
     let path_length = path.len();
     let non_null_types = types.iter().filter(|t| **t != JsonSchemaType::Null).count();
-    if types.contains(&JsonSchemaType::Object)
+    if (types.contains(&JsonSchemaType::Object)
         || non_null_types > 1
         || schema.get("enum").is_some()
         || path_length < 2
-        || !is_properties_key(&path[path_length - 2])
+        || !is_properties_key(&path[path_length - 2]))
+        && let Some(JsonSchema::String(d)) = schema.get("description")
     {
-        if let Some(JsonSchema::String(d)) = schema.get("description") {
-            description =
-                DescriptionTypeAttributeKind.make_attributes([d.clone()].into_iter().collect());
-        }
+        description =
+            DescriptionTypeAttributeKind.make_attributes([d.clone()].into_iter().collect());
     }
 
     if types.contains(&JsonSchemaType::Object)

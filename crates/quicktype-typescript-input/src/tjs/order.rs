@@ -98,11 +98,11 @@ struct Replay<'a> {
 
 impl Replay<'_> {
     fn create(&mut self, n: &Node) {
-        if let Some(id) = self.types.get(&key(n)) {
-            if !self.order.index.contains_key(id) {
-                self.order.index.insert(*id, self.next);
-                self.next += 1;
-            }
+        if let Some(id) = self.types.get(&key(n))
+            && !self.order.index.contains_key(id)
+        {
+            self.order.index.insert(*id, self.next);
+            self.next += 1;
         }
     }
 
@@ -244,10 +244,10 @@ impl Replay<'_> {
             }
             sk::TypeReference => {
                 if let Some(Some(decl)) = self.alias_decls.get(&key(n)).cloned() {
-                    if self.resolved_aliases.insert(key(&decl)) {
-                        if let Some(t) = decl.named("type") {
-                            self.resolve(&t);
-                        }
+                    if self.resolved_aliases.insert(key(&decl))
+                        && let Some(t) = decl.named("type")
+                    {
+                        self.resolve(&t);
                     }
                     for a in n.named_list("typeArguments") {
                         self.resolve(&a);
@@ -264,10 +264,10 @@ impl Replay<'_> {
                 }
             }
             sk::ArrayType => {
-                if !self.deferred(n) {
-                    if let Some(e) = n.named("elementType") {
-                        self.resolve(&e);
-                    }
+                if !self.deferred(n)
+                    && let Some(e) = n.named("elementType")
+                {
+                    self.resolve(&e);
                 }
                 self.create(n);
             }
@@ -548,10 +548,9 @@ impl Generator<'_> {
         if t.flags & tf::Object != 0
             && t.object_flags & of::Reference != 0
             && t.object_flags & of::ClassOrInterface == 0
+            && let Some(target) = s.target_of_type(&t)?
         {
-            if let Some(target) = s.target_of_type(&t)? {
-                t = target;
-            }
+            t = target;
         }
         if t.flags & tf::Object == 0 || t.object_flags & of::ClassOrInterface == 0 || depth > 32 {
             return Ok(None);

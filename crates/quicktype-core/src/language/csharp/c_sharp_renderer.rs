@@ -393,10 +393,10 @@ pub trait CSharpRenderer<'a>: ConvenienceRenderer<'a> {
         // exactly once.  Without this, an optional property whose type
         // is e.g. `string | null` would render as `string??` at C# 8
         // (and a nullable value-type union as `long??` at any version).
-        if graph.type_at(t)?.is_union() {
-            if let Some(nullable) = nullable_from_union(graph, t)? {
-                t = follow_target_type(graph, nullable)?;
-            }
+        if graph.type_at(t)?.is_union()
+            && let Some(nullable) = nullable_from_union(graph, t)?
+        {
+            t = follow_target_type(graph, nullable)?;
         }
 
         let cs_type = self.cs_type(t, follow, with_issues)?;

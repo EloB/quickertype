@@ -310,10 +310,10 @@ fn sanitize_type_annotations(value: &Value) {
         }
         Value::Object(o) => {
             let t = o.borrow().get("type");
-            if let Some(Value::String(t)) = t {
-                if let Some(inner) = tjs::text::braced_type(&t) {
-                    o.borrow_mut().set("type", Value::str(inner));
-                }
+            if let Some(Value::String(t)) = t
+                && let Some(inner) = tjs::text::braced_type(&t)
+            {
+                o.borrow_mut().set("type", Value::str(inner));
             }
             let values: Vec<Value> = o.borrow().entries().into_iter().map(|(_, v)| v).collect();
             values.iter().for_each(sanitize_type_annotations);

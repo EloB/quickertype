@@ -309,10 +309,10 @@ impl<'s> Generator<'s> {
             let Some((_, sym)) = self.user_index.get(&name).map(|i| &self.user_symbols[*i]) else {
                 continue;
             };
-            if let Some(d) = sym.declarations.first() {
-                if self.main_files.contains(&d.path) {
-                    main.push((name, Rc::clone(sym)));
-                }
+            if let Some(d) = sym.declarations.first()
+                && self.main_files.contains(&d.path)
+            {
+                main.push((name, Rc::clone(sym)));
             }
         }
         let root = Value::object();
@@ -359,12 +359,11 @@ impl<'s> Generator<'s> {
             return Ok(n.clone());
         }
         let mut name = sym.name.clone();
-        if sym.escaped_name == "default" {
-            if let Some(d) = sym.declarations.first() {
-                if let Some(id) = self.s.resolve(d)?.named("name").and_then(|n| n.text()) {
-                    name = id;
-                }
-            }
+        if sym.escaped_name == "default"
+            && let Some(d) = sym.declarations.first()
+            && let Some(id) = self.s.resolve(d)?.named("name").and_then(|n| n.text())
+        {
+            name = id;
         }
         let full = match self.s.parent_of_symbol(sym)? {
             Some(p) => format!("{}.{name}", self.fqn(&p)?),
@@ -525,10 +524,10 @@ impl<'s> Generator<'s> {
             };
             for (i, el) in elem_types.iter().take(arity).enumerate() {
                 let def = self.get_type_definition(el, DefArgs::default())?;
-                if let (Some(Some(label)), Some(o)) = (labels.get(i), def.as_object()) {
-                    if !label.is_empty() {
-                        set(o, "title", Value::str(label.clone()));
-                    }
+                if let (Some(Some(label)), Some(o)) = (labels.get(i), def.as_object())
+                    && !label.is_empty()
+                {
+                    set(o, "title", Value::str(label.clone()));
                 }
                 fixed.push(def);
             }
@@ -1195,30 +1194,30 @@ impl<'s> Generator<'s> {
 
     /// quicktype's patched `getTypeDefinition` (`patchGeneratorForBuiltinTypes`).
     fn get_type_definition(&mut self, ty: &Rc<Type>, args: DefArgs) -> Result<Value> {
-        if let Some(symbol) = self.s.symbol_of_type(ty)? {
-            if self.is_declared_in_default_lib(&symbol)? {
-                let name = symbol.name.as_str();
-                if (name == "Map" || name == "ReadonlyMap")
-                    && has(ty.flags, tf::Object)
-                    && has(ty.object_flags, of::Reference)
-                {
-                    let type_args = self.s.type_arguments(ty)?;
-                    if type_args.len() == 2 {
-                        let out = Value::object();
-                        set(&out, "type", Value::str("object"));
-                        let value = self.get_type_definition(&type_args[1], DefArgs::default())?;
-                        set(&out, "additionalProperties", value);
-                        return Ok(Value::Object(out));
-                    }
+        if let Some(symbol) = self.s.symbol_of_type(ty)?
+            && self.is_declared_in_default_lib(&symbol)?
+        {
+            let name = symbol.name.as_str();
+            if (name == "Map" || name == "ReadonlyMap")
+                && has(ty.flags, tf::Object)
+                && has(ty.object_flags, of::Reference)
+            {
+                let type_args = self.s.type_arguments(ty)?;
+                if type_args.len() == 2 {
+                    let out = Value::object();
+                    set(&out, "type", Value::str("object"));
+                    let value = self.get_type_definition(&type_args[1], DefArgs::default())?;
+                    set(&out, "additionalProperties", value);
+                    return Ok(Value::Object(out));
                 }
-                if let Some((_, advice)) = UNSUPPORTED_BUILTINS.iter().find(|(n, _)| *n == name) {
-                    let t = self.s.type_to_string(ty, None)?;
-                    return Err(Error::TypeScript {
-                        message: format!(
-                            "quicktype's TypeScript input does not support '{t}' - {advice}"
-                        ),
-                    });
-                }
+            }
+            if let Some((_, advice)) = UNSUPPORTED_BUILTINS.iter().find(|(n, _)| *n == name) {
+                let t = self.s.type_to_string(ty, None)?;
+                return Err(Error::TypeScript {
+                    message: format!(
+                        "quicktype's TypeScript input does not support '{t}' - {advice}"
+                    ),
+                });
             }
         }
         self.original_get_type_definition(ty, args)
@@ -1320,10 +1319,10 @@ impl<'s> Generator<'s> {
             let ret = Rc::clone(ret);
             self.parse_comments_into_definition(Some(prop), &ret, &other_annotations)?;
         }
-        if let (Some(paired), Some(sym)) = (&args.paired_symbol, &symbol) {
-            if self.is_from_default_lib(sym)? {
-                self.parse_comments_into_definition(Some(paired), &definition, &other_annotations)?;
-            }
+        if let (Some(paired), Some(sym)) = (&args.paired_symbol, &symbol)
+            && self.is_from_default_lib(sym)?
+        {
+            self.parse_comments_into_definition(Some(paired), &definition, &other_annotations)?;
         }
         let already_reffed = self
             .reffed_definitions
@@ -1434,10 +1433,9 @@ impl<'s> Generator<'s> {
             .borrow()
             .get("nullable")
             .is_some_and(|v| v.truthy())
+            && let Some(ret) = returned.as_object()
         {
-            if let Some(ret) = returned.as_object() {
-                make_nullable(ret)?;
-            }
+            make_nullable(ret)?;
         }
         Ok(returned)
     }

@@ -432,10 +432,10 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
                 let mut found = Vec::new();
                 for item in items {
                     item.for_each_name(&mut |name| {
-                        if name != own_name {
-                            if let Some(&dependency) = index_of_name.get(&name) {
-                                found.push(dependency);
-                            }
+                        if name != own_name
+                            && let Some(&dependency) = index_of_name.get(&name)
+                        {
+                            found.push(dependency);
                         }
                     });
                 }

@@ -323,15 +323,15 @@ fn auto_size(columns: &mut [Column], max_width: i64) {
         column.min_width = Some(column.min_content_width + column.padding.len());
     }
     for column in columns.iter_mut() {
-        if let Some(max) = column.max_width {
-            if column.generated_width > max {
-                column.generated_width = max;
-            }
+        if let Some(max) = column.max_width
+            && column.generated_width > max
+        {
+            column.generated_width = max;
         }
-        if let Some(min) = column.min_width {
-            if column.generated_width < min {
-                column.generated_width = min;
-            }
+        if let Some(min) = column.min_width
+            && column.generated_width < min
+        {
+            column.generated_width = min;
         }
     }
     let total: i64 = columns.iter().map(|c| c.generated_width).sum();

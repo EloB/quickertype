@@ -129,12 +129,12 @@ pub fn cycle_breaker_types_for_graph(
             } else {
                 visited.insert(frame.t);
                 frames.pop();
-                if let Some(t) = path.pop() {
-                    if let Some(count) = on_path.get_mut(&t) {
-                        *count -= 1;
-                        if *count == 0 {
-                            on_path.remove(&t);
-                        }
+                if let Some(t) = path.pop()
+                    && let Some(count) = on_path.get_mut(&t)
+                {
+                    *count -= 1;
+                    if *count == 0 {
+                        on_path.remove(&t);
                     }
                 }
             }

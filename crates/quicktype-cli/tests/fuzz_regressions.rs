@@ -355,10 +355,10 @@ fn fuzz_regression_file_names_are_portable() {
         }
         for i in 1..=components.len() {
             let prefix = components[..i].join("/");
-            if let Some(other) = folded.insert(prefix.to_lowercase(), prefix.clone()) {
-                if other != prefix {
-                    problems.push(format!("{prefix:?} and {other:?} differ only in case"));
-                }
+            if let Some(other) = folded.insert(prefix.to_lowercase(), prefix.clone())
+                && other != prefix
+            {
+                problems.push(format!("{prefix:?} and {other:?} differ only in case"));
             }
         }
     }

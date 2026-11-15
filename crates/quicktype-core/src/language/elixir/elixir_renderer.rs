@@ -877,10 +877,10 @@ impl<'a> ElixirRenderer<'a> {
                         _ => {}
                     }
 
-                    if let [single] = item_types[..] {
-                        if graph.kind(single)? == TypeKind::Union {
-                            item_types = graph.children(single)?.into_iter().collect();
-                        }
+                    if let [single] = item_types[..]
+                        && graph.kind(single)? == TypeKind::Union
+                    {
+                        item_types = graph.children(single)?.into_iter().collect();
                     }
 
                     let parent_name = self.name_for_named_type_with_namespace(c)?;

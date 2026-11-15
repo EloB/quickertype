@@ -1075,7 +1075,7 @@ mod tests {
                 1 + i % 9,
                 i % 10,
                 i * 7,
-                i % 2 == 0,
+                i.is_multiple_of(2),
                 i,
                 ["red", "green", "blue"][i % 3],
                 i % 3,

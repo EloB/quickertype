@@ -108,12 +108,13 @@ fn case_variants(low: u32, high: u32) -> Vec<(u32, u32)> {
         ranges.push((low - 32, high - 32));
     } else if ascii_upper.contains(&low) && ascii_upper.contains(&high) {
         ranges.push((low + 32, high + 32));
-    } else if low == high && low >= 0x80 {
-        if let Some(c) = char::from_u32(low) {
-            for other in [single_char(c.to_uppercase()), single_char(c.to_lowercase())] {
-                if let Some(other) = other.filter(|o| !o.is_ascii() && *o != c) {
-                    ranges.push((u32::from(other), u32::from(other)));
-                }
+    } else if low == high
+        && low >= 0x80
+        && let Some(c) = char::from_u32(low)
+    {
+        for other in [single_char(c.to_uppercase()), single_char(c.to_lowercase())] {
+            if let Some(other) = other.filter(|o| !o.is_ascii() && *o != c) {
+                ranges.push((u32::from(other), u32::from(other)));
             }
         }
     }

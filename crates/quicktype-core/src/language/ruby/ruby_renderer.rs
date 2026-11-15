@@ -309,10 +309,10 @@ impl<'a> RubyRenderer<'a> {
                     " }"
                 ],
                 TypeKind::Class | TypeKind::Union => {
-                    if ty.is_union() {
-                        if let Some(nullable) = nullable_from_union(graph, t)? {
-                            return self.from_dynamic(nullable, e, true, false);
-                        }
+                    if ty.is_union()
+                        && let Some(nullable) = nullable_from_union(graph, t)?
+                    {
+                        return self.from_dynamic(nullable, e, true, false);
                     }
                     let expression = sl![
                         self.name_for_named_type(t)?,

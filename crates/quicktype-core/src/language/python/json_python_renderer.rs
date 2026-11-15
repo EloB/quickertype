@@ -912,11 +912,11 @@ impl<'a> JsonPythonRenderer<'a> {
             }
         }
 
-        if let (Some(double_index), Some(integer_index)) = (double_index, integer_index) {
-            if integer_index > double_index {
-                let integer_type = members.remove(integer_index);
-                members.insert(double_index, integer_type);
-            }
+        if let (Some(double_index), Some(integer_index)) = (double_index, integer_index)
+            && integer_index > double_index
+        {
+            let integer_type = members.remove(integer_index);
+            members.insert(double_index, integer_type);
         }
 
         Ok(members)

@@ -85,7 +85,7 @@ Cross-cutting items each language package must pick up:
   TypeScript, Flow, JavaScript (L5) and JSON Schema; the trait default is
   `false`.
 
-## Cleanup backlog (cross-branch follow-ups) — ✅ done on `chore/cleanup-backlog`; its two follow-ups are [parked](#parked)
+## Cleanup backlog (cross-branch follow-ups) — ✅ done on `chore/cleanup-backlog`, its two follow-ups on `chore/clippy-188-lints`
 
 The branch also moved `acronymOption`/`convertersOption` into `support/`
 as in TypeScript, corrected module headers that named missing TS files,
@@ -114,8 +114,11 @@ and made GraphQL input's linear-time test independent of machine load.
       `crates/quicktype-core/tests/data/target_languages.json`
       (`xtask/core-rendering/record-target-languages.mjs`, which reproduces
       the committed file byte for byte).
-- Parked: the test files' own `block_on`, and the clippy lints that
-  `rust-version = "1.88"` turns on (see [Parked](#parked)).
+- [x] Follow-ups (`chore/clippy-188-lints`): the JSON input tests use
+      `quicktype_core::internal::block_on` instead of their own, and the
+      clippy lints that `rust-version = "1.88"` turns on (`collapsible_if`
+      with let chains, `manual_is_multiple_of`) are fixed and no longer
+      allowed in `[workspace.lints.clippy]`.
 
 ## Phase 5 — Remaining inputs — ✅ done (GraphQL, Postman, URL sources, --graphql-introspect)
 
@@ -323,15 +326,3 @@ the phases above have none left open.
   also how union check macros are named, so pick a name that cannot
   clash; and match each value against the cases once, not once to check
   and again to get it.
-
-**Cleanup** (from the cleanup backlog)
-
-- **`block_on` in two test files.** `tests/json_input.rs` and
-  `tests/json_input_vitest.rs` (quicktype-core) keep their own
-  `block_on`; `quicktype_core::internal::block_on` does the same. Left for
-  a branch that changes JSON input; the tests pass either way.
-- **The clippy lints `rust-version = "1.88"` turns on**
-  (`collapsible_if` with let chains, `manual_is_multiple_of`; about 50
-  places in 30 files), allowed in `[workspace.lints.clippy]`. Fixing them
-  (`cargo clippy --fix`, then removing the two `allow`s) changes no
-  behavior and conflicts with every open branch; do it when none is open.

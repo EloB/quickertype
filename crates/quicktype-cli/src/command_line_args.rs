@@ -446,10 +446,10 @@ pub fn parse(
     let mut result = ParsedArgs::default();
     for option in output {
         if option.def.is_none() {
-            if let ArgValue::List(items) = option.value {
-                if partial {
-                    result.unknown = items.iter().map(ArgValue::to_js_string).collect();
-                }
+            if let ArgValue::List(items) = option.value
+                && partial
+            {
+                result.unknown = items.iter().map(ArgValue::to_js_string).collect();
             }
         } else {
             result.values.push((option.name, option.value));

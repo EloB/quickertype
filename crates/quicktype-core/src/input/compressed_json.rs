@@ -1230,7 +1230,7 @@ impl CompressedJson {
         let (object_count, array_count) = (object_ranges.len(), array_ranges.len());
         for (start, end) in object_ranges {
             let flat = &tables.objects[start..end];
-            if flat.len() % 2 != 0 {
+            if !flat.len().is_multiple_of(2) {
                 return panic("An object in the CompressedJSON tables has a key without a value");
             }
             let mut object = Vec::with_capacity(flat.len() / 2);

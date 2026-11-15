@@ -15,16 +15,13 @@
 //! `json_schema_vitest.rs` and, through the CLI, in quicktype-cli's
 //! `tests/url_input.rs`.
 
-use std::future::Future;
-use std::pin::pin;
-use std::task::{Context, Poll, Waker};
-
 use quicktype_core::date_time::DefaultDateTimeRecognizer;
 use quicktype_core::inference::InferenceFlags;
 use quicktype_core::input::compressed_json::{CompressedJson, JsonSample};
 use quicktype_core::input::inputs::{
     InputData, JsonInput, JsonSourceData, json_input_for_target_language_named,
 };
+use quicktype_core::internal::block_on;
 use quicktype_core::language::all::{default_target_languages, language_named};
 use quicktype_core::messages::Result;
 use quicktype_core::renderer_options::RendererOptions;
@@ -37,16 +34,6 @@ use quicktype_core::target_language::TargetLanguage;
 use quicktype_core::ty::transformed_string_type::TypeKind;
 use quicktype_core::ty::type_builder::TypeBuilder;
 use quicktype_core::ty::type_graph::TypeGraph;
-
-fn block_on<F: Future>(future: F) -> F::Output {
-    let mut cx = Context::from_waker(Waker::noop());
-    let mut future = pin!(future);
-    loop {
-        if let Poll::Ready(output) = future.as_mut().poll(&mut cx) {
-            return output;
-        }
-    }
-}
 
 fn language(name: &str) -> &'static dyn TargetLanguage {
     language_named(name, default_target_languages()).expect("known language")
