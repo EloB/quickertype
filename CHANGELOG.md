@@ -161,6 +161,13 @@ section are absolute.
   fails to load with "quickertype needs crypto.getRandomValues (the Web
   Crypto API) to seed its hash maps, and this JavaScript host does not
   have it" (it said "quickertype-core needs").
+- The playground says why the engines' outputs can differ: when
+  quickertype's output differs from quicktype's, or only quicktype stops
+  with an error, a line under the comparison says that quickertype fixes
+  some quicktype bugs, so its output can differ on an input that hits one,
+  and links the list
+  ([docs/PARITY.md](https://github.com/EloB/quickertype/blob/main/docs/PARITY.md#bugs-fixed-in-quickertype)).
+  It does not say which bug an input hits.
 
 ### Fixed
 
@@ -257,6 +264,13 @@ section are absolute.
     `qt-accessors`. The member names are kept where the enum's copies
     agree on them. `qt-enum-values` combine when the copies are the same;
     copies that differ still stop with quicktype's error.
+- The playground's error box names the engine that stopped: "quickertype
+  stopped with an error" when quickertype's WebAssembly engine did, and
+  "quicktype stopped with an error" when quicktype's TypeScript engine did
+  (also for a run of quickertype's that went to that engine). Where no one
+  engine did, it says "Stopped while reading the input" or, when a worker
+  failed, "The run stopped with an error". It always said "quicktype
+  stopped with an error".
 - Parity: `cargo xtask parity`, the renderer tests and the npm
   differential suite report those cases as intended differences, apart
   from the identical ones, and fail when one matches quicktype's output

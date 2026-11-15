@@ -2148,6 +2148,124 @@ try {
     await switchEngine("wasm", "back to quickertype on invalid JSON");
     console.log("ok: an error is drawn, as an alert, once per result");
 
+    // An error without a title of its own is titled by the engine that
+    // stopped, as the bars name it: invalid JSON stops before either engine
+    // starts, while reading the input (neutral words); a JSON Schema whose
+    // reference goes nowhere stops in quickertype's engine (the WebAssembly
+    // engine, `ran`), then in quicktype's, with the same message.
+    const errorNow = () =>
+        page.evaluate(`({
+            title: document.querySelector("#error .error-title")?.textContent,
+            message: document.querySelector("#error .error-message")?.textContent,
+            engine: playground.view.shown.engine,
+            ran: playground.view.shown.result?.ran ?? null,
+        })`);
+    assert.deepEqual(
+        { ...(await errorNow()), message: undefined },
+        { title: "Stopped while reading the input", message: undefined, engine: "wasm", ran: null },
+        "invalid JSON: the title",
+    );
+    const nowhere = '{"type": "object", "properties": {"a": {"$ref": "#/definitions/Missing"}}}';
+    await andRun(typeInput(nowhere), "the schema as JSON");
+    await andRun("document.querySelector('input[name=kind][value=schema]').click()", "a schema whose reference goes nowhere", `${settled} && document.body.dataset.status === "error"`);
+    const missingRef = /^Key definitions not in schema object at \w+#definitions\/Missing$/;
+    const inEngine = await errorNow();
+    assert.match(inEngine.message, missingRef, "quickertype's engine stopped: the message");
+    assert.deepEqual({ ...inEngine, message: undefined }, { title: "quickertype stopped with an error", message: undefined, engine: "wasm", ran: "wasm" }, "quickertype's engine stopped");
+    await switchEngine("ts", "quicktype on a schema whose reference goes nowhere");
+    const inTs = await errorNow();
+    assert.deepEqual(inTs, { ...inEngine, title: "quicktype stopped with an error", engine: "ts", ran: "ts" }, "quicktype's engine stopped");
+    const sameError = await page.evaluate(`({ verdict: document.querySelector("#meter .verdict")?.textContent, note: document.querySelector("#meter .fixed-note") })`);
+    assert.deepEqual(sameError, { verdict: "the same error ✓", note: null }, "the same error on both engines: no note on fixed bugs");
+    await switchEngine("wasm", "back to quickertype on the schema");
+    console.log(`ok: an error's title names the engine that stopped ("${inEngine.title}", "${inTs.title}"), or none ("Stopped while reading the input")`);
+
+    // An input that hits a quicktype bug that quickertype fixes: the outputs
+    // differ, and the page says why they can, linking the list of the bugs
+    // fixed (without claiming which). A Python property named `from_date`
+    // shadows the converter quicktype's from_dict calls; quickertype renames
+    // it. And a JSON Schema with two definitions of the same enum, each with
+    // its accessor names, that quicktype stops on.
+    const fixedBugs = "https://github.com/EloB/quickertype/blob/main/docs/PARITY.md#bugs-fixed-in-quickertype";
+    const fixedNow = () =>
+        page.evaluate(`(() => {
+            const note = document.querySelector("#meter .fixed-note");
+            return {
+                compare: document.body.dataset.compare,
+                verdict: document.querySelector("#meter-toggle .verdict")?.textContent,
+                note: note?.textContent ?? null,
+                link: note?.querySelector("a")?.href ?? null,
+                linkText: note?.querySelector("a")?.textContent ?? null,
+                visible: note !== null && note.getClientRects().length > 0 && note.closest("[hidden]") === null,
+                said: document.getElementById("announce").textContent.trim(),
+            };
+        })()`);
+    const accessors = JSON.stringify({
+        type: "object",
+        properties: { a: { $ref: "#/definitions/E1" }, b: { $ref: "#/definitions/E2" } },
+        required: ["a", "b"],
+        definitions: Object.fromEntries(["E1", "E2"].map((name) => [name, { type: "string", enum: ["x", "y"], "qt-accessors": { x: "Ex", y: "Why" } }])),
+    });
+    await andRun(typeInput(accessors), "a schema with the same enum twice, with accessor names");
+    assert.equal((await shown()).ran, "wasm", "the schema with the same enum twice on quickertype");
+    await switchEngine("ts", "quicktype on the schema with the same enum twice");
+    assert.match((await errorNow()).message, /^Internal error: Cannot combine type attribute accessorNames/);
+    const onlyTs = await fixedNow();
+    assert.deepEqual(
+        onlyTs,
+        {
+            compare: "different",
+            verdict: "only quicktype stopped with an error ≠",
+            note: "quickertype fixes some quicktype bugs, so it can generate code for an input that quicktype stops on. Bugs fixed in quickertype",
+            link: fixedBugs,
+            linkText: "Bugs fixed in quickertype",
+            visible: true,
+            said: onlyTs.said,
+        },
+        "only quicktype stopped, on a bug quickertype fixes",
+    );
+    await switchEngine("wasm", "back to quickertype on the schema with the same enum twice");
+    await andRun("document.querySelector('input[name=kind][value=json]').click()", "the schema as JSON");
+    await select("lang", "python");
+    const fromDate = '{"from_date": "2024-01-01", "to_date": "2024-02-01"}';
+    await andRun(typeInput(fromDate), "a property named from_date, to Python");
+    const renamed = (await shown()).files[0].text;
+    await switchEngine("ts", "quicktype on a property named from_date");
+    const shadowing = (await shown()).files[0].text;
+    assert.match(renamed, /^ {4}[a-z_]+_from_date: datetime\.date$/m, "quickertype renames the property");
+    assert.doesNotMatch(renamed, /^ {4}from_date:/m, "quickertype renames the property");
+    assert.match(shadowing, /^ {4}from_date: datetime\.date$/m, "quicktype's property shadows its converter");
+    const differ = await fixedNow();
+    const fromLine = renamed.split("\n").findIndex((l, i) => l !== shadowing.split("\n")[i]) + 1;
+    assert.deepEqual(
+        differ,
+        {
+            compare: "different",
+            verdict: `outputs differ from line ${fromLine} ≠`,
+            note: "quickertype fixes some quicktype bugs, so its output can differ from quicktype's on an input that hits one. Bugs fixed in quickertype",
+            link: fixedBugs,
+            linkText: "Bugs fixed in quickertype",
+            visible: true,
+            said: differ.said,
+        },
+        "outputs that differ on a bug quickertype fixes",
+    );
+    assert.match(
+        differ.said,
+        new RegExp(`; outputs differ from line ${fromLine}\\. quickertype fixes some quicktype bugs, so its output can differ from quicktype's on an input that hits one\\.$`),
+        "the live region says why the outputs can differ",
+    );
+    await page.screenshot("fixed-bug.png");
+    // Identical outputs say nothing of it.
+    await andRun(typeInput('{"name": "Ann", "age": 7}'), "identical outputs, to Python");
+    await switchEngine("wasm", "quickertype on identical outputs");
+    await page.waitFor("document.body.dataset.compare === 'identical'", "identical outputs compared");
+    assert.equal(await page.evaluate(`document.querySelector("#meter .fixed-note")`), null, "identical outputs: no note on fixed bugs");
+    console.log(`ok: outputs that differ on a fixed bug ("${differ.verdict}") and quicktype stopping on one say quickertype fixes some quicktype bugs, linking the list`);
+    // As before: invalid JSON to Rust, on quickertype.
+    await select("lang", "rust");
+    await andRun(typeInput(invalid), "invalid JSON again", `${settled} && document.body.dataset.status === "error"`);
+
     // The input survives a reload (localStorage); the hash keeps the rest.
     const hash = await page.evaluate("location.hash");
     await page.navigate(`${url}${hash}`);
@@ -2338,6 +2456,8 @@ try {
     );
     const failure = await page.evaluate("document.querySelector('.error-message')?.textContent");
     assert.equal(failure, "The WebAssembly worker stopped (simulated failure); the next run starts a new one.");
+    // Not an engine's error: neutral words.
+    assert.equal(await page.evaluate("document.querySelector('#error .error-title')?.textContent"), "The run stopped with an error", "a worker that failed: the title");
     await select("lang", "rust");
     assert.ok(await page.evaluate("playground.engines.wasm.worker !== globalThis.failedWorker"), "the worker was not replaced");
     await sameAsCli(
@@ -2764,7 +2884,7 @@ try {
         command: playground.cli(),
     })`);
     assert.deepEqual(badShown, {
-        title: "quicktype stopped with an error",
+        title: "Stopped while reading the input",
         message: "Syntax error in input JSON Bad: line 4: Expected ',' or '}' after property value in JSON at position 9",
         command: "quickertype --lang typescript --top-level Bad bad.jsonl",
     });
