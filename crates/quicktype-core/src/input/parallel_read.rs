@@ -336,10 +336,11 @@ pub struct ParallelOptions {
     pub range: usize,
     /// Samples shorter than this (in bytes) are read in one go.
     pub min_len: u64,
-    /// How many bytes the trees of the parts being read on other threads
-    /// may take together (see [`Reading::coordinate`]); by default
-    /// (`None`), the threads that read times the range size, or
-    /// [`TREE_BUDGET`].
+    /// How many bytes the tree of a part read on another thread may take
+    /// twice over: a part whose tree would take half of it is read in one
+    /// go instead, and the parts given out may hold twice it together
+    /// (see [`Reading::coordinate`]); by default (`None`), the
+    /// threads that read times the range size, or [`TREE_BUDGET`].
     pub budget: Option<u64>,
     /// Whether `range` may be under [`MIN_RANGE`] (see
     /// [`with_small_ranges`](Self::with_small_ranges)).
@@ -823,6 +824,14 @@ struct Reading<'s> {
 /// tokenizer reads at a time.
 const SCAN_PIECE: usize = 64 << 10;
 
+/// How many budgets the parts given out may hold together
+/// ([`Reading::coordinate`]). A part whose tree would take half of one
+/// budget is still read in one go; with one budget in all, a thread could
+/// not read on while the part it read last waited to be appended, and the
+/// 3.0 GB Scryfall cards kept about half the threads waiting (1.26 against
+/// 0.98 s with two, at about the same peak memory: 151 against 147 MiB).
+const IN_FLIGHT: u64 = 2;
+
 /// What a range's split search found.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Split {
@@ -1093,10 +1102,10 @@ impl Reading<'_> {
     /// parts given out and not appended yet, while they are read (their
     /// trees estimated by the largest ratio of tree to text seen, and at
     /// least the smallest tree seen) and once read (their trees, waiting
-    /// for the parts before them), may hold together at most
-    /// [`ParallelOptions::budget`], and there are at most a few per thread.
-    /// Where a part's tree alone would take half of the budget, the rest is
-    /// read in one go instead, which shares the tallies. The first part,
+    /// for the parts before them), may hold together at most [`IN_FLIGHT`]
+    /// times [`ParallelOptions::budget`], and there are at most a few per
+    /// thread. Where a part's tree alone would take half of the budget, the
+    /// rest is read in one go instead, which shares the tallies. The first part,
     /// read here straight into the tallies, is the first estimate. The
     /// ranges are summarized only a few ahead of the next part to give out
     /// (so at most a few parts and ranges ahead of the first part not
@@ -1178,7 +1187,7 @@ impl Reading<'_> {
         loop {
             let before = (summarized, resolved, formed, parts.len(), dispatched);
             // Summaries a few ranges past those formed into parts; while
-            // parts wait to be given out (whose number the budget bounds),
+            // parts wait to be given out (whose number IN_FLIGHT budgets bound),
             // not much past the next; and not past where a stretch without
             // a split ends the reading (below), for JSON Lines without a
             // split yet FIRST_LINE_MAX from the start.
@@ -1326,7 +1335,9 @@ impl Reading<'_> {
                     }
                     break;
                 }
-                if held.values().sum::<u64>() + estimate > budget && !held.is_empty() {
+                if held.values().sum::<u64>() + estimate > budget.saturating_mul(IN_FLIGHT)
+                    && !held.is_empty()
+                {
                     break;
                 }
                 self.push(Job::Tally(dispatched, parts[dispatched]));
@@ -1726,7 +1737,7 @@ mod tests {
 
     /// A part read slowly does not let the others' trees pile up behind it:
     /// the parts given out and not appended yet (their trees, once read)
-    /// hold at most the budget, but for one part over it.
+    /// hold at most [`IN_FLIGHT`] budgets, but for one part over them.
     #[test]
     fn trees_waiting_for_a_slow_part_stay_within_the_budget() {
         let config = config(false);
@@ -1749,8 +1760,8 @@ mod tests {
         assert!(largest >= 64 << 10, "{largest}");
         let budget = options.budget.unwrap();
         assert!(
-            peak <= budget + largest,
-            "{peak} bytes held, over {budget} + {largest}"
+            peak <= budget.saturating_mul(IN_FLIGHT) + largest,
+            "{peak} bytes held, over {IN_FLIGHT} × {budget} + {largest}"
         );
     }
 
@@ -2008,7 +2019,8 @@ mod tests {
     /// Parts whose trees are several times their text (a distinct key in
     /// each element) are measured before any is read elsewhere: behind a
     /// part read slowly, the parts given out and not appended yet (their
-    /// trees, once read) hold at most the budget, but for one part over it.
+    /// trees, once read) hold at most [`IN_FLIGHT`] budgets, but for one
+    /// part over them.
     #[test]
     fn trees_larger_than_their_text_stay_within_the_budget() {
         let config = config(false);
@@ -2032,8 +2044,8 @@ mod tests {
         // The parts' trees are several times their text.
         assert!(largest > 2 * (256 << 10), "{largest}");
         assert!(
-            peak <= budget + largest,
-            "{peak} bytes held, over {budget} + {largest}"
+            peak <= budget.saturating_mul(IN_FLIGHT) + largest,
+            "{peak} bytes held, over {IN_FLIGHT} × {budget} + {largest}"
         );
     }
 

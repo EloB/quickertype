@@ -124,7 +124,10 @@ pub struct Plan {
     pub probe: u64,
     /// How many threads (or workers) read.
     pub threads: usize,
-    /// The bytes the parts' trees under way may take together.
+    /// The budget for the parts' trees: a part whose tree would take half
+    /// of it is read in one go. The CLI's threads let the parts under way
+    /// take twice it together (`parallel_read`'s `IN_FLIGHT`); the
+    /// WebAssembly engine's workers, once.
     pub budget: u64,
     /// The sample's length.
     pub len: u64,

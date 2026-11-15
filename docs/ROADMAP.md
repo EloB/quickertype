@@ -241,14 +241,20 @@ the phases above have none left open.
 
 **Speed**
 
-- **SIMD in the JSON reader.** In WebAssembly, turning on simd128 gained
-  under 2% (below), and a hand-written SIMD string scan might save 3–5 ms
-  of the 100k records' 48 ms read. Natively, the string and structure
-  scans SIMD would speed up are at most 10–15% of the CPU work, and the
-  3 GB file, read on 12 threads, is bound by the disk. Either way it needs
-  `unsafe` code (intrinsics, or a 16-lane constructor), which the
-  workspace forbids (`unsafe_code = "deny"`); the reader scans 8 bytes at a
-  time in plain Rust instead.
+- **SIMD in the JSON reader.** Tried natively with NEON (November 2026,
+  M2 Max): the split scan found each 64-byte block's quotes, backslashes
+  and brackets in four registers, and the tokenizer its string runs
+  sixteen bytes at a time, with the same output (tested against the
+  eight-byte code for every byte at every place). On 12 threads, after
+  the parts-in-flight fix: the 3.0 GB cards 0.98 → 0.91 s (6% less CPU
+  time), the 657 MB cards 0.21 → 0.19 s, the 2.5 GB text-heavy array
+  (strings of about 210 characters) 0.30 → 0.23 s; on one thread about
+  1%. What is left is mostly not scanning: classifying strings (dates,
+  URIs, UUIDs) and tallying. It needs `unsafe` code (the intrinsics, in a
+  module of about 130 lines), which the workspace denies
+  (`unsafe_code = "deny"`), and code of its own for each architecture
+  (x86 would need SSE or AVX); the reader scans eight bytes at a time in
+  plain Rust instead. In WebAssembly, simd128 gained under 2% (below).
 - **simd128 for the WebAssembly engine** (`-C target-feature=+simd128`).
   Under 2% on every input measured (pokedex 2.20 → 2.20 ms, 20 MB 151–153
   → 149–152 ms, the 100k records 55.5–56.1 → 55.1–55.3 ms), for a module
