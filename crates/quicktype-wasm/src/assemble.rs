@@ -246,13 +246,13 @@ impl Input for HostSchemaInput {
 
 #[cfg(test)]
 mod tests {
-    use quicktype_js_compat::hash::HashMap;
     use std::cell::RefCell;
 
     use quicktype_core::internal::block_on;
     use quicktype_core::{
         JsonSourceData, OptionValue, quicktype_multi_file, quicktype_multi_file_sync,
     };
+    use quicktype_js_compat::hash::HashMap;
 
     use super::*;
     use crate::wire::{DateTimeKind, SchemaSource};

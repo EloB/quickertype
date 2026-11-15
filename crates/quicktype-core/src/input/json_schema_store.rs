@@ -9,12 +9,11 @@
 
 use std::rc::Rc;
 
-use crate::support::fast_hash::IndexMap;
 use quicktype_js_compat::json::JsonValue;
 
 use crate::input::io::{LocalBoxFuture, grow_stack};
 use crate::messages::{MessageValue, Result};
-use crate::support::fast_hash::HashMap;
+use crate::support::fast_hash::{HashMap, IndexMap};
 use crate::support::support::console_log;
 
 /// `JSONSchema`: a schema document or any part of one, as the JavaScript
@@ -74,7 +73,7 @@ impl From<JsonValue> for JsonSchema {
                 JsonValue::Object(map) => {
                     let map = std::mem::take(map);
                     return Start::Open(Frame::Object(
-                        IndexMap::with_capacity_and_hasher(map.len(), Default::default()),
+                        IndexMap::with_capacity_and_hasher(map.len(), map.hasher().clone()),
                         None,
                         map.into_iter(),
                     ));

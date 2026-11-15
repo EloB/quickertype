@@ -55,7 +55,6 @@ pub mod graphql;
 pub mod graphql_schema;
 mod js;
 
-use quicktype_js_compat::hash::HashMap;
 use std::cell::RefCell;
 
 use quicktype_core::attributes::string_types::StringTypes;
@@ -73,7 +72,7 @@ use quicktype_core::ty::ty::ClassProperty;
 use quicktype_core::ty::type_builder::TypeBuilder;
 use quicktype_core::ty::type_ref::TypeRef;
 use quicktype_core::{Input, Result, RunContext};
-use quicktype_js_compat::hash::{IndexMap, IndexSet};
+use quicktype_js_compat::hash::{HashMap, IndexMap, IndexSet};
 use quicktype_js_compat::json::JsonValue;
 
 use crate::graphql::ast::{

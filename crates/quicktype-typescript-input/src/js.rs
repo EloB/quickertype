@@ -13,11 +13,11 @@
 //! whitespace come from `quicktype-js-compat`; this module adds the shared
 //! object graph, `JSON.parse` and `parseFloat`.
 
-use quicktype_js_compat::hash::HashMap;
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::rc::Rc;
 
+use quicktype_js_compat::hash::HashMap;
 pub use quicktype_js_compat::json::quote;
 use quicktype_js_compat::json::{JsonValue, is_array_index};
 pub use quicktype_js_compat::number::to_string as number_to_string;

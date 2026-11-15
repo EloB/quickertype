@@ -21,8 +21,9 @@ pub mod order;
 mod prefetch;
 pub mod text;
 
-use quicktype_js_compat::hash::HashMap;
 use std::rc::Rc;
+
+use quicktype_js_compat::hash::HashMap;
 
 use crate::error::{Error, Result};
 use crate::js::{self, Obj, Value};

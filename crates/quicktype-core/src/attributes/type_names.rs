@@ -18,12 +18,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::support::fast_hash::IndexSet;
-
 use crate::attributes::type_attributes::{AttributeKind, TypeAttributes};
 use crate::messages::Result;
 use crate::support::chance::Chance;
-use crate::support::fast_hash::HashSet;
+use crate::support::fast_hash::{HashSet, IndexSet};
 use crate::support::strings::snake_case;
 use crate::support::support::panic;
 use quicktype_js_compat::utf16;

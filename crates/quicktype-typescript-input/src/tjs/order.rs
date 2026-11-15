@@ -18,8 +18,9 @@
 //! (`resolveObjectTypeMembers`/`addInheritedMembers`); TypeScript 7 differs
 //! for chains of two or more `extends`.
 
-use quicktype_js_compat::hash::{HashMap, HashSet};
 use std::rc::Rc;
+
+use quicktype_js_compat::hash::{HashMap, HashSet};
 
 use super::Generator;
 use crate::error::Result;

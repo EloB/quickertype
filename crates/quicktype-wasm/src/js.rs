@@ -7,7 +7,6 @@
 //! Rust destructors and leave borrows held. What it threw is kept by the
 //! run's [`JsHost`] and rethrown unchanged when the run returns.
 
-use quicktype_js_compat::hash::HashMap;
 use std::cell::{Cell, RefCell};
 use std::future::Future;
 use std::pin::Pin;
@@ -21,6 +20,7 @@ use quicktype_core::{
     Clock, CommentOptions, DebugOptions, INFERENCE_FLAGS, JsErrorName, JsonSchema, LocalBoxFuture,
     MessageValue, MultiFileRenderResult, OptionValue, QuickTypeError, Result,
 };
+use quicktype_js_compat::hash::HashMap;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
 

@@ -19,14 +19,12 @@
 
 use std::rc::Rc;
 
-use crate::support::fast_hash::{IndexMap, IndexSet};
-
 use crate::attributes::type_attributes::{
     CombinationKind, TypeAttributes, combine_type_attributes, combine_type_attributes2,
 };
 use crate::messages::Result;
 use crate::support::collection_utils::EqualityMap;
-use crate::support::fast_hash::HashMap;
+use crate::support::fast_hash::{HashMap, IndexMap, IndexSet};
 use crate::support::recursion::guard;
 use crate::support::support::{assert, console_log, indentation_string, panic};
 use crate::ty::transformed_string_type::TypeKind;
@@ -878,7 +876,7 @@ impl<'a, 'g> TypeReconstituter<'a, 'g> {
         &mut self,
         trefs: &IndexMap<K, TypeRef>,
     ) -> Result<IndexMap<K, TypeRef>> {
-        let mut result = IndexMap::with_capacity_and_hasher(trefs.len(), Default::default());
+        let mut result = IndexMap::with_capacity_and_hasher(trefs.len(), trefs.hasher().clone());
         for (k, &tref) in trefs {
             let r = self
                 .builder

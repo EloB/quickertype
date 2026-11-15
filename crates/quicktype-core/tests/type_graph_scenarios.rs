@@ -8,7 +8,6 @@
 //! interprets the same programs with the Rust port and compares the output
 //! byte for byte. Node is not needed to run it.
 
-use quicktype_core::support::fast_hash::HashMap;
 use std::cell::RefCell;
 use std::fs;
 use std::path::Path;
@@ -32,7 +31,6 @@ use quicktype_core::graph_rewriting::make_replacer;
 use quicktype_core::language::csharp::language::CSharpTargetLanguage;
 use quicktype_core::language::python::language::PythonTargetLanguage;
 use quicktype_core::messages::{QuickTypeError, Result};
-use quicktype_core::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_core::support::support::set_console_sink;
 use quicktype_core::target_language::TargetLanguage;
 use quicktype_core::ty::transformed_string_type::TypeKind;
@@ -61,6 +59,7 @@ use quicktype_core::rewrites::infer_maps::infer_maps;
 use quicktype_core::rewrites::replace_object_type::replace_object_type;
 use quicktype_core::rewrites::resolve_intersections::resolve_intersections;
 use quicktype_core::run::RunContext;
+use quicktype_core::support::fast_hash::{HashMap, IndexMap, IndexSet};
 use quicktype_core::transformers::{downcast_transformation, transformation_for_type};
 
 fn err(message: impl Into<String>) -> QuickTypeError {

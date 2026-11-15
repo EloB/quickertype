@@ -7,7 +7,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_js_compat::number;
 
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
@@ -21,7 +20,6 @@ use crate::declaration_ir::{Declaration, DeclarationKind};
 use crate::renderer_options::RendererOptions;
 use crate::support::collection_utils::{SameValueZero, array_intercalate};
 use crate::support::comments::CommentOptions;
-use crate::support::fast_hash::HashMap;
 use crate::support::recursion::guard;
 use crate::support::strings::{NamingStyle, make_name_style, string_escape};
 use crate::support::support::{assert, defined, panic};
@@ -42,6 +40,7 @@ use super::utils::{
     MemberNames, OPTIONAL_AS_SHARED_TYPE, OPTIONAL_FACTORY_AS_SHARED_TYPE, StringKind, TypeContext,
     TypeRecord, WrappingCode, add_qualifier, constraints_for_type, legalize_name,
 };
+use crate::support::fast_hash::{HashMap, IndexMap, IndexSet};
 
 /// A name style (TS `NameStyle`), shared by the namers made from it.
 type NameStyle = Rc<dyn Fn(&str) -> String>;

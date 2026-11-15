@@ -19,10 +19,8 @@ use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
 
-use crate::support::fast_hash::{IndexMap, IndexSet};
-
 use crate::messages::Result;
-use crate::support::fast_hash::{HashMap, HashSet};
+use crate::support::fast_hash::{HashMap, HashSet, IndexMap, IndexSet};
 use crate::support::support::{assert, defined, panic};
 
 /// A name to be assigned (TS `Name`). Resolve it with [`Names::get`] once

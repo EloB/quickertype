@@ -12,13 +12,11 @@
 
 use std::hash::BuildHasher as _;
 
-use crate::support::fast_hash::{IndexMap, IndexSet};
-
 use crate::attributes::string_types::StringTypes;
 use crate::attributes::type_attributes::{TypeAttributeKind, TypeAttributes};
 use crate::graph_rewriting::make_replacer;
 use crate::messages::Result;
-use crate::support::fast_hash::{BuildHasher, HashMap, HashSet};
+use crate::support::fast_hash::{BuildHasher, HashMap, HashSet, IndexMap, IndexSet};
 use crate::support::support::{assert, assert_default, defined};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder::TypeBuilder;

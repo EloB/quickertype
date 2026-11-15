@@ -27,15 +27,13 @@
 
 use std::cell::OnceCell;
 
-use crate::support::fast_hash::{IndexMap, IndexSet};
-
 use crate::attributes::type_attributes::{AttributeKind, TypeAttributeValue, TypeAttributes};
 use crate::attributes::type_names::NamesTypeAttributeKind;
 use crate::graph::Graph;
 use crate::graph_rewriting::{Replacer, make_replacer};
 use crate::messages::{ErrorKind, MessageValue, Result, message_error};
 use crate::support::collection_utils::set_subtract;
-use crate::support::fast_hash::HashSet;
+use crate::support::fast_hash::{HashSet, IndexMap, IndexSet};
 use crate::support::support::{assert, console_log, defined, must_not_happen, panic};
 use crate::ty::provenance_type_attribute_kind::ProvenanceTypeAttributeKind;
 use crate::ty::transformed_string_type::TypeKind;

@@ -8,11 +8,10 @@
 
 use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
-
-use quicktype_js_compat::hash::{HashMap, HashSet};
 use std::path::Path;
 use std::rc::Rc;
 
+use quicktype_js_compat::hash::{HashMap, HashSet};
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Value as Json, json};

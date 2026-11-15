@@ -34,7 +34,6 @@ use std::fmt;
 use std::future::Future;
 use std::rc::Rc;
 
-use crate::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_js_compat::sort::{compare_utf16, sort_by};
 use quicktype_js_compat::uri::{Uri, UriError, decode_uri_component};
 use quicktype_js_compat::{number, utf16};
@@ -66,7 +65,7 @@ use crate::messages::{
 };
 use crate::run::RunContext;
 use crate::support::collection_utils::{EqualityMap, JsEquals, JsHash, add_hash_code, hash_string};
-use crate::support::fast_hash::{HashMap, HashSet};
+use crate::support::fast_hash::{HashMap, HashSet, IndexMap, IndexSet};
 use crate::support::parse_json::parse_json;
 use crate::support::recursion::stack_overflow;
 use crate::support::support::{assert, console_log, defined, panic};

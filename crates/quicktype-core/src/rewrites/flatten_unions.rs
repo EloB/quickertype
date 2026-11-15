@@ -9,12 +9,10 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use crate::support::fast_hash::IndexSet;
-
 use crate::attributes::type_attributes::TypeAttributes;
 use crate::graph_rewriting::make_replacer;
 use crate::messages::{ErrorKind, MessageValue, Result, message_assert};
-use crate::support::fast_hash::{HashMap, HashSet};
+use crate::support::fast_hash::{HashMap, HashSet, IndexSet};
 use crate::support::support::assert;
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder::TypeBuilder;

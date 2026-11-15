@@ -15,7 +15,7 @@ use std::collections::VecDeque;
 use std::mem::size_of;
 use std::rc::Rc;
 
-use crate::support::fast_hash::IndexMap;
+use crate::support::fast_hash::{IndexMap, index_map_with_capacity};
 
 use super::{KeyTally, KindOrder, Node, NodeId, ObjectTally, Tallies, alloc, map_size};
 use crate::attributes::string_types::StringTypes;
@@ -231,7 +231,7 @@ impl Tallies {
             let object = match portable.object {
                 Some(mut o) => {
                     let keys = std::mem::take(&mut o.keys);
-                    o.keys = IndexMap::with_capacity_and_hasher(keys.len(), Default::default());
+                    o.keys = index_map_with_capacity(keys.len());
                     for (local, key) in keys {
                         let key = KeyTally {
                             count: key.count,

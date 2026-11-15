@@ -11,7 +11,7 @@
 
 use std::rc::Rc;
 
-use crate::support::fast_hash::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet, index_map_with_capacity};
 
 use crate::attributes::type_attributes::{
     CombinationKind, TypeAttributes, combine_type_attributes2,
@@ -89,8 +89,7 @@ fn get_clique_properties<'g>(
         Some(types) => Some(make_property_type(builder, types)?),
     };
 
-    let mut unified_properties =
-        IndexMap::with_capacity_and_hasher(properties.len(), Default::default());
+    let mut unified_properties = index_map_with_capacity(properties.len());
     for (name, types, is_optional) in properties {
         let t = make_property_type(builder, &types)?;
         unified_properties.insert(name, builder.make_class_property(t, is_optional));

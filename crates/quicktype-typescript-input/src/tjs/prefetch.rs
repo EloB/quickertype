@@ -13,8 +13,9 @@
 //! costs a little time, never a different result: every query is a pure
 //! function of the snapshot.
 
-use quicktype_js_compat::hash::HashSet;
 use std::rc::Rc;
+
+use quicktype_js_compat::hash::HashSet;
 
 use crate::error::Result;
 use crate::tsc::api::{IndexInfo, Query, Session, Symbol, Type, type_at_is_declared_type};

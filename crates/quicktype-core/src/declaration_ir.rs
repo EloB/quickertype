@@ -6,12 +6,10 @@
 //! break cycles in languages that need indirection for recursive types
 //! ([`cycle_breaker_types_for_graph`]).
 
-use crate::support::fast_hash::IndexSet;
-
 use crate::graph::Graph;
 use crate::messages::{ErrorKind, MessageValue, Result, message_error};
 use crate::support::collection_utils::{set_intersect, set_subtract};
-use crate::support::fast_hash::HashSet;
+use crate::support::fast_hash::{HashSet, IndexSet};
 use crate::support::support::{assert, panic};
 use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;

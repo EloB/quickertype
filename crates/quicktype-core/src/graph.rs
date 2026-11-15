@@ -9,10 +9,8 @@
 
 use std::hash::Hash;
 
-use crate::support::fast_hash::IndexSet;
-
 use crate::messages::Result;
-use crate::support::fast_hash::HashMap;
+use crate::support::fast_hash::{HashMap, IndexSet};
 use crate::support::support::{assert, assert_default, defined};
 
 fn count_component_graph_nodes(components: &[Vec<usize>]) -> Result<usize> {

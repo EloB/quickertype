@@ -414,8 +414,10 @@ impl<'g> UnionBuilder<'g> for IntersectionUnionBuilder {
             );
         };
 
-        let mut properties =
-            IndexMap::with_capacity_and_hasher(property_types.len(), Default::default());
+        let mut properties = IndexMap::with_capacity_and_hasher(
+            property_types.len(),
+            property_types.hasher().clone(),
+        );
         for (name, cp) in property_types {
             let t = self.make_intersection(builder, &cp.types, TypeAttributes::new())?;
             properties.insert(name.clone(), builder.make_class_property(t, cp.is_optional));

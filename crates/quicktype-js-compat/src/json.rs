@@ -101,7 +101,7 @@ impl Clone for JsonValue {
                     Err(Frame::Array(Vec::with_capacity(items.len()), items.iter()))
                 }
                 JsonValue::Object(map) => Err(Frame::Object(
-                    IndexMap::with_capacity_and_hasher(map.len(), Default::default()),
+                    IndexMap::with_capacity_and_hasher(map.len(), map.hasher().clone()),
                     None,
                     map.iter(),
                 )),

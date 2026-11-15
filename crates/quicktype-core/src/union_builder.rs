@@ -68,7 +68,7 @@ fn add_attributes_to_builder(
 fn build_type_attribute_map(
     builder: &TypeAttributeMapBuilder,
 ) -> Result<IndexMap<TypeKind, TypeAttributes>> {
-    let mut result = IndexMap::with_capacity_and_hasher(builder.len(), Default::default());
+    let mut result = IndexMap::with_capacity_and_hasher(builder.len(), builder.hasher().clone());
     for (&kind, arr) in builder {
         let refs: Vec<&TypeAttributes> = arr.iter().collect();
         result.insert(

@@ -30,7 +30,6 @@ use std::cell::{OnceCell, RefCell};
 use std::hash::Hash;
 use std::rc::Rc;
 
-use crate::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_js_compat::{whitespace, wordwrap::WordWrap};
 
 use crate::annotation::AnnotationData;
@@ -56,7 +55,7 @@ use crate::support::collection_utils::{
     SameValueZeroKey, first_by_same_value_zero, sort_by_cached_string_key,
 };
 use crate::support::comments::{Comment, CommentOptions};
-use crate::support::fast_hash::HashMap;
+use crate::support::fast_hash::{HashMap, IndexMap, IndexSet};
 use crate::support::strings::trim_end;
 use crate::support::support::{assert, defined, non_null, panic};
 use crate::target_language::TargetLanguage;
