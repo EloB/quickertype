@@ -20,15 +20,21 @@ export function formatBytes(n) {
     return `${(n / 1_000_000_000).toFixed(1)} GB`;
 }
 
+/** Whether a file is JSON Lines by its name, as for the CLI: `*.jsonl` or `*.ndjson`, in any case. */
+export const isJsonLinesName = (name) => /\.(jsonl|ndjson)$/i.test(name);
+
 /**
- * The error for a file too large to read as text, or undefined if it is not.
- * Its message names the CLI; `link` is where to get it.
+ * The error for a file too large to read as text, or undefined if it is not:
+ * a file of `size` bytes, whose text is decoded from `decoded` bytes (the
+ * file's own, or, for quicktype's side of JSON Lines, the JSON array made
+ * of them). Its message names the CLI; `link` is where to get it.
  */
-export function tooLarge(name, size) {
-    if (size <= maxTextBytes) return undefined;
+export function tooLarge(name, size, decoded = size) {
+    if (size <= maxTextBytes && decoded <= maxTextBytes) return undefined;
+    const array = decoded === size ? "" : ` Made into the JSON array that quicktype reads, it is ${decoded.toLocaleString("en-US")} bytes.`;
     return {
         title: `${name} is too large for the browser`,
-        message: `This file is ${formatBytes(size)}. Browsers can't hold text this large in one piece; use the quickertype CLI, which handles multi-GB files.`,
+        message: `This file is ${formatBytes(size)}.${array} Browsers can't hold text this large in one piece; use the quickertype CLI, which handles multi-GB files.`,
         link: cliLink,
     };
 }

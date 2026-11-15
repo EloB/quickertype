@@ -42,7 +42,9 @@
 // quicktype's error; that the input survives a reload (localStorage); and
 // that 360 px and 390 px widths do not scroll sideways.
 //
-// The layout: at 1440×900 the generated code has at least 55% of the
+// The layout: side by side (1280, 1440, 1920 px), the panes' heads and
+// second rows line up, the input's head taking two rows where its pane is
+// narrow; at 1440×900 the generated code has at least 55% of the
 // window's height, the masthead as tall as the name and tagline (the
 // headline beside them one line or two, by the fonts installed), the
 // footer one line (with the samples' license), the options
@@ -79,7 +81,14 @@
 // the input before stays the input, in the input pane, the command and
 // what is saved (typed text survives a 3 GB file dropped on it, the next
 // change runs it, and a reload brings it back). One deleted before a
-// worker read it says so for that engine.
+// worker read it says so for that engine. JSON Lines: a `.jsonl` file
+// opened, an `.NDJSON` one with a byte order mark, CRLF and blank lines, a
+// dropped one, a 5 MB one posted to the workers as a File, and text typed
+// with the input kind JSON Lines give the CLI's output for the command
+// shown, on both engines (quicktype gets the JSON array of the values,
+// site/src/json-lines.js, checked here too), identical; a file of another
+// kind than its name says shows `--src-lang`; and an error names its line,
+// as the CLI's does.
 // A worker keeps a large file's text only while requests carry that file: it
 // lets it go once a sample is loaded. "Show in the editor" reads a large file
 // once, however often it is clicked ("Reading…" until then), and is not
@@ -149,6 +158,9 @@ import {
 import { fuzzFacts, landingLinks, readQuicktype, workflowFacts } from "../landing.mjs";
 import { chartProblems, chartUrl, readmeFile, readmeRows } from "../readme-charts.mjs";
 import { quicktypeReference } from "../reference.mjs";
+import { eachJSONLinesValue } from "../../npm/quicktype-core/dist/esm/native/lines.js";
+import { formatBytes, isJsonLinesName, maxTextBytes, tooLarge } from "../src/input-file.js";
+import { jsonLinesToArray, jsonLinesToArrayInPlace } from "../src/json-lines.js";
 import { serve } from "./serve.mjs";
 
 const siteRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -1125,6 +1137,36 @@ function rulingsJson(bytes) {
     return { text: `[${records.join(",")}]`, records: records.length };
 }
 
+/**
+ * Synthetic JSON Lines: `count` small card records (seeded, so every run
+ * checks the same file), one per line, with `eol` line breaks, a byte order
+ * mark if `bom`, and a blank line now and then if `blank`.
+ */
+function cardLines(count, { eol = "\n", bom = false, blank = false } = {}) {
+    let seed = 7;
+    const random = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const pick = (items) => items[Math.floor(random() * items.length)];
+    const lines = [];
+    for (let i = 0; i < count; i++) {
+        const card = {
+            id: `card-${i}`,
+            name: `${pick(["Ember", "Frost", "Grove", "Tide", "Dusk"])} ${pick(["Drake", "Sage", "Golem", "Wisp"])}`,
+            cost: Math.floor(random() * 8),
+            colors: ["red", "blue", "green"].filter(() => random() < 0.4),
+            rarity: pick(["common", "uncommon", "rare", "mythic"]),
+            released: `20${10 + Math.floor(random() * 15)}-0${1 + Math.floor(random() * 9)}-1${Math.floor(random() * 9)}`,
+            art: `https://example.com/art/${i}.png`,
+        };
+        if (random() < 0.3) card.power = Math.floor(random() * 10);
+        if (random() < 0.2) card.flavor = random() < 0.5 ? null : "It came from the deep.";
+        if (random() < 0.15) card.prices = { usd: `${Math.floor(random() * 50)}.${Math.floor(random() * 90) + 10}`, eur: random() < 0.5 ? null : "1.25" };
+        lines.push(JSON.stringify(card));
+        if (blank && i % 7 === 3) lines.push(i % 2 === 0 ? "" : " \t");
+    }
+
+    return `${bom ? "\u{feff}" : ""}${lines.join(eol)}${eol}`;
+}
+
 /** "median 3.2 ms (reading the input 1.1, generating 2.1)" for one engine's warm runs. */
 function medians({ times, inputTimes }) {
     const median = (xs) => [...xs].sort((a, b) => a - b)[xs.length >> 1];
@@ -1266,6 +1308,28 @@ try {
         "the options at load",
     );
     console.log(`ok: at 1440×900 the code has ${(layout.code * 100).toFixed(0)}% of the window's height; the options are open beside it, the comparison one line`);
+
+    // Side by side, the panes' rows line up: their heads are as tall as
+    // the taller one (the input's takes two rows where its pane is narrow),
+    // and their second rows start and end together. Above 1200 px, where
+    // the options stay beside the output as the window changes.
+    const aligned = [];
+    for (const width of [1280, 1440, 1920]) {
+        await page.viewport(width, 900);
+        await settledMotion();
+        const rows = await page.evaluate(`(() => {
+            const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+            const heads = ["#input-pane > .pane-head", "#output-pane > .pane-head"].map((s) => Math.round(box(s).height));
+            const subs = ["#input-pane > .pane-sub", "#output-pane > .pane-sub"].map((s) => [Math.round(box(s).top), Math.round(box(s).bottom)]);
+            return { heads, subs, oneRow: box("#open").top < box("#input-pane .segmented").bottom };
+        })()`);
+        assert.equal(rows.heads[0], rows.heads[1], `${width} px: the panes' heads (${rows.heads.join(" and ")} px)`);
+        assert.deepEqual(rows.subs[0], rows.subs[1], `${width} px: the panes' second rows`);
+        aligned.push(`${width} px: ${rows.heads[0]} px, ${rows.oneRow ? "one row" : "two rows"} in the input's`);
+    }
+    await page.viewport(1440, 900);
+    await settledMotion();
+    console.log(`ok: side by side, the panes' heads and second rows line up (${aligned.join("; ")})`);
 
     // The options open and close from the keyboard: Enter on the Options
     // button, Escape in them, or their close button. Opened, the focus moves
@@ -1470,7 +1534,7 @@ try {
 
     // The notes behind an "i": Enter opens one, inside the window; Escape
     // closes it, the focus back on its button.
-    for (const [note, text] of [["engine-note", /^Both run in your browser: /], ["version-note", /^This is newer than the v26\.0\.0 release/], ["input-note", /^Paste JSON or a JSON Schema, /], ["install-note", /^Get the CLI\. .*brew install elob\/tap\/quickertype.*npm install -g quickertype.*cargo install quickertype/]]) {
+    for (const [note, text] of [["engine-note", /^Both run in your browser: /], ["version-note", /^This is newer than the v26\.0\.0 release/], ["input-note", /^Paste JSON, JSON Lines or a JSON Schema, .* JSON Lines \(a \.jsonl or \.ndjson file\) hold one JSON value per line/], ["install-note", /^Get the CLI\. .*brew install elob\/tap\/quickertype.*npm install -g quickertype.*cargo install quickertype/]]) {
         const button = `document.querySelector('[aria-controls=${note}]')`;
         await page.evaluate(`${button}.focus()`);
         await pressEnter();
@@ -1967,7 +2031,7 @@ try {
     })()`;
     await andRun(typeInput(""), "no input", `${settled} && document.body.dataset.status === "empty"`);
     const emptyWide = await page.evaluate("document.getElementById('error').innerText.trim()");
-    assert.equal(emptyWide, "Paste JSON or a JSON Schema in the Input pane, load a sample, or drop a file there.", "no input, at 1440 px");
+    assert.equal(emptyWide, "Paste JSON, JSON Lines or a JSON Schema in the Input pane, load a sample, or drop a file there.", "no input, at 1440 px");
     console.log(`ok: no input: "${emptyWide}"`);
     const invalid = '{\n  "name": "Ann",\n  "age": 7,\n}';
     await andRun(
@@ -2420,6 +2484,185 @@ try {
     await andRun(drop("dropped.json", readInput("pokedex.json").toString("utf8")), "a dropped file");
     await sameAsCli("a dropped file: dropped.json → TypeScript", "quickertype --lang typescript --top-level Dropped dropped.json");
     console.log(`ok: a file too large for a browser, one that cannot be read, and one dropped: "${tooLargeMessage}"; the input before (rulings.json) stays the input`);
+
+    // JSON Lines: a file named *.jsonl or *.ndjson (in any case) is read as
+    // JSON Lines, one value per line typed as the JSON array of the values,
+    // as by the CLI: opened, dropped, too large for the editor (posted to
+    // the workers as a File, read as bytes), and typed with the input kind
+    // JSON Lines. Each gives the CLI's output for the command the page
+    // shows, on quickertype and on quicktype, which gets the JSON array of
+    // the values (made in its worker); the two are identical. A file of
+    // another kind than its name says shows --src-lang, and an error names
+    // its line, as the CLI's does.
+    // quicktype's side (site/src/json-lines.js, on quickertype-core's own
+    // scan): for text quickertype reads as JSON Lines, the JSON array of
+    // the very values it reads, typed (a string) and from a file's bytes
+    // (made in place); for text it rejects, an array that is not JSON
+    // either, so that quicktype fails too. On JSON Lines, values over
+    // several lines, a byte order mark (as bytes, the decoder's and the
+    // text's), what is not JSON Lines, and seeded random text.
+    {
+        let seed = 99;
+        const random = (n) => (seed = (seed * 1103515245 + 12345) % 2147483648) % n;
+        const pieces = ["{", "}", "[", "]", '"', "\\", ",", ":", " ", "\t", "\r", "\n", "\n", "a", "1", "-2.5e3", "true", "null", "é", "😀", "\u{feff}", '"x"', '{"k": [1, "v"]}', ",1", "1,2"];
+        const corpus = [
+            cardLines(40),
+            cardLines(40, { eol: "\r\n", bom: true, blank: true }),
+            '{"a": [1,\n 2]}\n\n{"b": "x\\"}"}\n',
+            "",
+            "\u{feff}\u{feff}1\n2",
+            ...['{"a": 1}\n{"a": 2} {"a": 3}\n', '{\n  "a": 1\n} {}', '{"a": 1}\n\n{"a": }\n', "[1,\n", '{"a": 1}\r\n{"a":\r\n', "1\r2\n", "1\n2\n3 4\n5\n"],
+            ...['\u{feff}{}\n{]\n', '\u{feff}\u{feff}\u{feff}{}\n', '{"a": 1}\n{\n  "b": [1,\n  2,,\n]}\n', '{"a": "x}\n{"b": 1}\n', '{"a": 1}\n{"a": 2}x\n', "1\n2x\n", "{}\n]\n"],
+            ...["true\nTrue\n", "1\n01\n", "{}{}\n", "x".repeat(100), '"a",1\n', "1,2\n", '{"a": 1} ,{"b": 2}\n'],
+        ];
+        for (let i = 0; i < 1500; i++) corpus.push(Array.from({ length: random(30) }, () => pieces[random(pieces.length)]).join(""));
+        const valuesOf = (source) => {
+            const values = [];
+            try {
+                eachJSONLinesValue(source, (value) => values.push(value));
+            } catch {
+                return undefined;
+            }
+
+            return values;
+        };
+        let rejected = 0;
+        for (const text of corpus) {
+            const bytes = new TextEncoder().encode(text);
+            const buffer = new Uint8Array(bytes.length + 2);
+            buffer.set(bytes, 1);
+            const fromBytes = new TextDecoder().decode(buffer.subarray(0, jsonLinesToArrayInPlace(buffer)));
+            for (const [array, values, form] of [
+                [jsonLinesToArray(text), valuesOf(text), "typed"],
+                [fromBytes, valuesOf(bytes), "bytes"],
+            ]) {
+                const what = `the JSON array of the JSON Lines ${JSON.stringify(text)} (${form})`;
+                if (values === undefined) {
+                    rejected++;
+                    assert.throws(() => JSON.parse(array), SyntaxError, `${what}: quicktype reads ${JSON.stringify(array)}`);
+                } else {
+                    assert.deepEqual(JSON.parse(array), values, what);
+                }
+            }
+        }
+
+        assert.ok(rejected > 500, `${rejected} readings of text that is not JSON Lines`);
+        console.log(`ok: quicktype's JSON array of JSON Lines is the values quickertype reads, on ${corpus.length} texts each typed and as bytes (made in place), and not JSON in the ${rejected} of those ${corpus.length * 2} readings that are not JSON Lines`);
+    }
+    assert.deepEqual(["a.jsonl", "B.JSONL", "c.NdJson", "d.json", "jsonl", "e.jsonl.json"].map(isJsonLinesName), [true, true, true, false, false, false]);
+    // A file at the limit whose array is past it: its own size, and the array's.
+    assert.equal(tooLarge("big.jsonl", maxTextBytes), undefined);
+    assert.deepEqual(tooLarge("big.jsonl", maxTextBytes - 1, maxTextBytes + 1), {
+        title: "big.jsonl is too large for the browser",
+        message: `This file is ${formatBytes(maxTextBytes - 1)}. Made into the JSON array that quicktype reads, it is ${(maxTextBytes + 1).toLocaleString("en-US")} bytes. Browsers can't hold text this large in one piece; use the quickertype CLI, which handles multi-GB files.`,
+        link: { href: "https://github.com/EloB/quickertype#install", text: "the quickertype CLI" },
+    });
+    const kindNow = () => page.evaluate("document.querySelector('input[name=kind]:checked').value");
+    const cardsFile = chosen("cards.jsonl", cardLines(60));
+    await openFile(cardsFile);
+    assert.equal(await kindNow(), "jsonl", "cards.jsonl: the input kind");
+    await sameAsCli("Open file: cards.jsonl", "quickertype --lang typescript --top-level Cards cards.jsonl");
+    const cardsCommand = await commandShown("cards.jsonl");
+    assert.equal(cardsCommand.command, "quickertype --lang typescript --top-level Cards cards.jsonl");
+    ran = await switchEngine("ts", "quicktype on cards.jsonl");
+    assert.deepEqual(ran, { wasm: 0, ts: 1 }, "the switch to quicktype on cards.jsonl ran");
+    await sameAsCli("Open file: cards.jsonl on quicktype (the JSON array of its values)", "quickertype --lang typescript --top-level Cards cards.jsonl", "ts");
+    await comparedIdentical("cards.jsonl");
+    const linesNote = await page.evaluate(`document.querySelector("#meter .fine p")?.textContent ?? ""`);
+    assert.match(linesNote, /quicktype has no JSON Lines input: it is given the JSON array of the values on the lines/, "cards.jsonl: the note on quicktype");
+    await page.screenshot("jsonl-cards.png");
+    ran = await switchEngine("wasm", "back to quickertype on cards.jsonl");
+    assert.deepEqual(ran, { wasm: 0, ts: 0 });
+    // Upper case, a byte order mark, CRLF and blank lines.
+    await openFile(chosen("Events.NDJSON", cardLines(25, { eol: "\r\n", bom: true, blank: true })));
+    assert.equal(await kindNow(), "jsonl", "Events.NDJSON: the input kind");
+    await sameAsCli("Open file: Events.NDJSON (a byte order mark, CRLF, blank lines)", "quickertype --lang typescript --top-level Events Events.NDJSON");
+    ran = await switchEngine("ts", "quicktype on Events.NDJSON");
+    await sameAsCli("Open file: Events.NDJSON on quicktype", "quickertype --lang typescript --top-level Events Events.NDJSON", "ts");
+    await comparedIdentical("Events.NDJSON");
+    await switchEngine("wasm", "back to quickertype on Events.NDJSON");
+    // Dropped.
+    chosen("dropped.jsonl", cardLines(30));
+    await andRun(drop("dropped.jsonl", cardLines(30)), "a dropped .jsonl file");
+    assert.equal(await kindNow(), "jsonl", "dropped.jsonl: the input kind");
+    await sameAsCli("a dropped file: dropped.jsonl → TypeScript", "quickertype --lang typescript --top-level Dropped dropped.jsonl");
+    await select("lang", "go");
+    await sameAsCli("a dropped file: dropped.jsonl → Go", "quickertype --lang go --top-level Dropped dropped.jsonl");
+    ran = await switchEngine("ts", "quicktype on dropped.jsonl");
+    await sameAsCli("a dropped file: dropped.jsonl → Go on quicktype", "quickertype --lang go --top-level Dropped dropped.jsonl", "ts");
+    await comparedIdentical("dropped.jsonl");
+    await switchEngine("wasm", "back to quickertype on dropped.jsonl");
+    await select("lang", "typescript");
+    // Too large for the editor: posted to the workers as a File, which
+    // quickertype's reads as bytes, and quicktype's turns into the JSON
+    // array from its bytes.
+    const bigLines = cardLines(30_000);
+    const bigLinesFile = chosen("big-cards.jsonl", bigLines);
+    await openFile(bigLinesFile, { timeout: 300_000 });
+    const bigOpened = await page.evaluate(`({
+        posted: playground.view.request.file instanceof File && playground.view.request.file.name,
+        kind: playground.view.request.kind,
+        panel: !document.getElementById("large").hidden,
+        name: document.getElementById("large-name").textContent,
+    })`);
+    assert.deepEqual(bigOpened, { posted: "big-cards.jsonl", kind: "jsonl", panel: true, name: "big-cards.jsonl" }, "big-cards.jsonl: posted as a File");
+    const bigLabel = `Open file: big-cards.jsonl (${(bigLines.length / 1e6).toFixed(1)} MB, 30,000 lines)`;
+    await sameAsCli(bigLabel, "quickertype --lang typescript --top-level BigCards big-cards.jsonl");
+    ran = await switchEngine("ts", "quicktype on big-cards.jsonl");
+    assert.deepEqual(ran, { wasm: 0, ts: 1 });
+    await sameAsCli(`${bigLabel} on quicktype`, "quickertype --lang typescript --top-level BigCards big-cards.jsonl", "ts");
+    await comparedIdentical("big-cards.jsonl");
+    await switchEngine("wasm", "back to quickertype on big-cards.jsonl");
+    // One line, of another kind than the name says: JSON Lines read as
+    // JSON (one object, not an array of one), and JSON as JSON Lines, with
+    // --src-lang in the command.
+    const oneLine = chosen("one.jsonl", `${JSON.stringify({ id: 1, name: "Ann", tags: ["x"] })}\n`);
+    await openFile(oneLine);
+    const asLines = await sameAsCli("Open file: one.jsonl", "quickertype --lang typescript --top-level One one.jsonl");
+    await andRun(`document.querySelector("input[name=kind][value=json]").click()`, "one.jsonl as JSON");
+    const asJson = await sameAsCli("one.jsonl as JSON", "quickertype --src-lang json --lang typescript --top-level One one.jsonl");
+    assert.notEqual(asJson, asLines, "one.jsonl: JSON and JSON Lines give other types");
+    await openFile(chosen("one.json", `${JSON.stringify({ id: 1, name: "Ann", tags: ["x"] })}\n`));
+    assert.equal(await kindNow(), "json");
+    await andRun(`document.querySelector("input[name=kind][value=jsonl]").click()`, "one.json as JSON Lines");
+    assert.equal(await sameAsCli("one.json as JSON Lines", "quickertype --src-lang jsonl --lang typescript --top-level One one.json"), asLines);
+    // Typed, with the input kind JSON Lines.
+    const typedLines = '{"name": "Ann", "age": 7}\n{"name": "Bo", "pets": ["cat"]}\n';
+    await andRun(
+        `(() => {
+            const input = document.getElementById("input");
+            input.value = ${JSON.stringify(typedLines)};
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        })()`,
+        "a run on typed JSON Lines",
+        `${settled} && document.body.dataset.status === "done"`,
+    );
+    chosen("input.jsonl", typedLines);
+    assert.equal(await kindNow(), "jsonl");
+    await sameAsCli("typed JSON Lines", "quickertype --lang typescript --top-level One input.jsonl");
+    ran = await switchEngine("ts", "quicktype on typed JSON Lines");
+    await sameAsCli("typed JSON Lines on quicktype", "quickertype --lang typescript --top-level One input.jsonl", "ts");
+    await comparedIdentical("typed JSON Lines");
+    await switchEngine("wasm", "back to quickertype on typed JSON Lines");
+    // A line that is not JSON: the error names it, as the CLI's does.
+    const badLines = chosen("bad.jsonl", '{"id": 1}\n{"id": 2}\n\n{"id": 3 "name": "x"}\n{"id": 5}\n');
+    await openFile(badLines, { failing: true });
+    const badShown = await page.evaluate(`({
+        title: document.querySelector("#error .error-title")?.textContent,
+        message: document.querySelector("#error .error-message")?.textContent,
+        command: playground.cli(),
+    })`);
+    assert.deepEqual(badShown, {
+        title: "quicktype stopped with an error",
+        message: "Syntax error in input JSON Bad: line 4: Expected ',' or '}' after property value in JSON at position 9",
+        command: "quickertype --lang typescript --top-level Bad bad.jsonl",
+    });
+    const badCli = spawnSync(cli, ["--lang", "typescript", "--top-level", "Bad", badLines], { encoding: "utf8" });
+    assert.notEqual(badCli.status, 0);
+    assert.match(badCli.stderr, /^Error: Syntax error in input JSON Bad: line 4: /, "the CLI names the same line");
+    await page.screenshot("jsonl-error.png");
+    console.log(`ok: JSON Lines (.jsonl, .NDJSON, dropped, ${(bigLines.length / 1e6).toFixed(1)} MB as a File, typed) give the CLI's output on both engines, identical; --src-lang where the name says otherwise; an error names its line: "${badShown.message}"`);
+    await select("sample", "pokedex");
 
     // Typed input survives a file that cannot be opened: it stays the input,
     // in the editor and saved; the next change runs it, and a reload brings
@@ -3104,7 +3347,7 @@ try {
     await andRun(typeInput(""), "no input at 390 px", `${settled} && document.body.dataset.status === "empty"`);
     await page.evaluate("document.querySelector('input[name=view][value=output]').click()");
     const emptyPhone = await page.evaluate("document.getElementById('error').innerText.trim()");
-    assert.equal(emptyPhone, "Switch to Input to paste JSON or a JSON Schema, load a sample, or open a file.", "no input, at 390 px");
+    assert.equal(emptyPhone, "Switch to Input to paste JSON, JSON Lines or a JSON Schema, load a sample, or open a file.", "no input, at 390 px");
     await noSidewaysScroll(390, "390 px, no input");
     await page.screenshot("layout-390-empty.png");
     await page.evaluate("document.querySelector('#error .show-input').click()");

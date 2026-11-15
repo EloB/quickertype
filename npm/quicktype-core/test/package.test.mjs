@@ -165,10 +165,28 @@ test("the vendored files the bridge depends on are unchanged", async () => {
     assert.deepEqual(changed, []);
 });
 
+/** The `jsonLines` field of `JSONSourceData`, in input/Inputs.ts and its declaration alike. */
+const jsonLinesField =
+    "    /**\n" +
+    "     * quickertype-core, not in quicktype: with `true`, each sample is JSON\n" +
+    "     * Lines text (one JSON value per line), read as the JSON array of its\n" +
+    "     * values; a syntax error names its line (`line 3: …`).\n" +
+    "     */\n" +
+    "    jsonLines?: boolean;\n";
+
+/**
+ * The reader of a source's JSON Lines samples, before `addSource`'s
+ * `try`: what cannot read them throws outside quicktype's "Syntax error".
+ */
+const readerOfLines =
+    "        const lines =\n" +
+    "            jsonLines === true ? jsonLinesReader(this._compressedJSON) : undefined;\n";
+
 /**
  * What src/ changes in two upstream files besides Run.ts, as [ours,
- * upstream] pairs: the hook of the JSON samples reader, and samples given as
- * bytes (README, "JSON samples as bytes"), typed and decoded.
+ * upstream] pairs: the hook of the JSON samples reader, samples given as
+ * bytes (README, "JSON samples as bytes"), typed and decoded, and JSON
+ * Lines samples (README, "JSON Lines").
  */
 const modifiedParts = {
     "input/CompressedJSON.ts": [
@@ -185,7 +203,28 @@ const modifiedParts = {
         ["public async parse(input: string | Uint8Array): Promise<Value> {", "public async parse(input: string): Promise<Value> {"],
         ["public parseSync(input: string | Uint8Array): Value {", "public parseSync(input: string): Value {"],
     ],
-    "input/Inputs.ts": [["): JSONInput<string | Uint8Array> {", "): JSONInput<string> {"]],
+    "input/Inputs.ts": [
+        ['import { jsonLinesReader } from "../native/lines.js";\n', ""],
+        [jsonLinesField, ""],
+        ["const { name, samples, description, jsonLines } = source;", "const { name, samples, description } = source;"],
+        [readerOfLines, ""],
+        [
+            "                async (s) =>\n" +
+                "                    await (lines === undefined\n" +
+                "                        ? this._compressedJSON.parse(s)\n" +
+                "                        : lines.parse(s)),\n",
+            "                async (s) => await this._compressedJSON.parse(s),\n",
+        ],
+        ["const { name, samples, description, jsonLines } = source;", "const { name, samples, description } = source;"],
+        [readerOfLines, ""],
+        [
+            "                lines === undefined\n" +
+                "                    ? this._compressedJSON.parseSync(s)\n" +
+                "                    : lines.parseSync(s),\n",
+            "                this._compressedJSON.parseSync(s),\n",
+        ],
+        ["): JSONInput<string | Uint8Array> {", "): JSONInput<string> {"],
+    ],
 };
 
 /** `text` with each of `parts` replaced, once, by its upstream text. */
@@ -198,7 +237,7 @@ function upstreamOf(text, parts) {
     return text;
 }
 
-test("CompressedJSON.ts and Inputs.ts are upstream's but for the samples reader's hook and byte samples", (t) => {
+test("CompressedJSON.ts and Inputs.ts are upstream's but for the samples reader's hook, byte samples and JSON Lines", (t) => {
     const configured = process.env.QUICKTYPE_REFERENCE;
     const candidates = configured ? [configured] : [path.join(repositoryRoot, "..", "quicktype"), path.join(repositoryRoot, "..", "..", "quicktype")];
     for (const [file, parts] of Object.entries(modifiedParts)) {
@@ -227,14 +266,17 @@ test("declaration files are byte-identical to the reference build", (t) => {
     const declarations = walk(referenceDist, (n) => n.endsWith(".d.ts")).map((f) => path.relative(referenceDist, f));
     assert.ok(declarations.length > 400);
     // But for JSON samples given as bytes, which the types of two
-    // declarations take too.
+    // declarations take too, and JSON Lines samples (`jsonLines`).
     const widened = {
         [path.join("input", "CompressedJSON.d.ts")]: [
             ["extends CompressedJSON<string | Uint8Array> {", "extends CompressedJSON<string> {"],
             ["parse(input: string | Uint8Array): Promise<Value>;", "parse(input: string): Promise<Value>;"],
             ["parseSync(input: string | Uint8Array): Value;", "parseSync(input: string): Value;"],
         ],
-        [path.join("input", "Inputs.d.ts")]: [["): JSONInput<string | Uint8Array>;", "): JSONInput<string>;"]],
+        [path.join("input", "Inputs.d.ts")]: [
+            [jsonLinesField, ""],
+            ["): JSONInput<string | Uint8Array>;", "): JSONInput<string>;"],
+        ],
     };
     const different = declarations.filter((f) => {
         const ours = path.join(dist, f);

@@ -1213,6 +1213,18 @@ impl CompressedJson {
     ) -> Result<Value, ReadStringError> {
         read_string_sample_into(self, text, limits, Framing::Value)
     }
+
+    /// [`read_string_sample`](Self::read_string_sample) of [JSON
+    /// Lines](crate::JsonSample::StringLines) text, read as the array of
+    /// its values (a byte order mark may come first): the sample's root is
+    /// that array.
+    pub fn read_string_lines_sample(
+        &mut self,
+        text: &str,
+        limits: StringSampleLimits,
+    ) -> Result<Value, ReadStringError> {
+        read_string_sample_into(self, text, limits, Framing::Lines)
+    }
 }
 
 /// [`CompressedJson::read_string_sample`] into any [`JsonSink`]; with

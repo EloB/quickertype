@@ -1,14 +1,17 @@
 // The one place where upstream code outside Run.ts calls into the bridge:
 // `CompressedJSONFromString.parseSync` asks `readSampleNatively` before it
-// parses a sample itself, and parses what `sampleText` makes of it. The
-// reader is installed by src/native/samples.ts when the bridge loads, so
-// that src/input/CompressedJSON.ts imports nothing that imports it back.
+// parses a sample itself, and parses what `sampleText` makes of it;
+// src/native/lines.ts asks it first for a JSON Lines sample. The reader is
+// installed by src/native/samples.ts when the bridge loads, so that
+// src/input/CompressedJSON.ts imports nothing that imports it back.
 
 /**
- * Reads a JSON sample into `cjson` on the WebAssembly engine, returning
- * the sample's `Value`, or `undefined` if TypeScript is to read it.
+ * Reads a JSON sample into `cjson` on the WebAssembly engine (with
+ * `lines`, a JSON Lines sample, as the array of its values), returning the
+ * sample's `Value`, or `undefined` if TypeScript is to read it; for JSON
+ * Lines, 0 if the engine found they are not JSON Lines (it read nothing).
  */
-export type SampleReader = (cjson: object, input: unknown) => number | undefined;
+export type SampleReader = (cjson: object, input: unknown, lines: boolean) => number | undefined;
 
 let reader: SampleReader | undefined;
 
@@ -16,8 +19,8 @@ export function installSampleReader(read: SampleReader): void {
     reader = read;
 }
 
-export function readSampleNatively(cjson: object, input: unknown): number | undefined {
-    return reader === undefined ? undefined : reader(cjson, input);
+export function readSampleNatively(cjson: object, input: unknown, lines = false): number | undefined {
+    return reader === undefined ? undefined : reader(cjson, input, lines);
 }
 
 /**

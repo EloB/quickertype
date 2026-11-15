@@ -307,12 +307,65 @@ button.quiet:hover:not(:disabled) {
 }
 
 #input-pane {
-    container: input / inline-size;
     border-right: 1px solid var(--rule);
 }
 
-#output-pane {
+/*
+ * What the container queries below look at: the panes' rows, as wide as
+ * their panes, rather than the panes themselves, which share their rows
+ * (a subgrid can be no container: containment would make its own grid).
+ */
+#input-pane > .pane-head,
+#input-pane > .pane-sub {
+    container: input / inline-size;
+}
+
+#meter {
     container: output / inline-size;
+}
+
+/*
+ * Side by side, the panes share their rows (a subgrid): their heads, their
+ * second rows, and the output's meter, notes, code and command, which the
+ * input's editor spans. A head is as tall as the taller of the two (the
+ * input's takes two rows where the pane is narrow), so the rows under them
+ * line up.
+ */
+@media (min-width: 900px) {
+    .panes {
+        grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
+    }
+
+    .pane {
+        display: grid;
+        grid-row: 1 / -1;
+        grid-template-rows: subgrid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #input-pane .editor {
+        grid-row: 3 / -1;
+    }
+
+    #meter {
+        grid-row: 3;
+    }
+
+    #notes {
+        grid-row: 4;
+    }
+
+    #code-wrap {
+        grid-row: 5;
+    }
+
+    #output-pane .pane-foot {
+        grid-row: 6;
+    }
+
+    :root[data-panel="inline"] .inspector {
+        grid-row: 1 / -1;
+    }
 }
 
 /* A pane's first row: its controls. */
@@ -392,8 +445,21 @@ button.quiet:hover:not(:disabled) {
     flex: none;
 }
 
-/* Too narrow for the input's controls on one row: the sample and Open file fill the second. */
-@container input (width < 440px) {
+/*
+ * Too narrow for the input's controls on one row (the input kind's three
+ * choices, the sample and Open file need some 530 px): the kind fills the
+ * first row, its choices alike, and the sample and Open file the second.
+ */
+@container input (width < 560px) {
+    #input-pane .pane-head .segmented {
+        flex: 1 1 100%;
+    }
+
+    #input-pane .pane-head .segmented label {
+        flex: 1;
+        text-align: center;
+    }
+
     #input-pane .head-actions {
         flex: 1 1 100%;
     }

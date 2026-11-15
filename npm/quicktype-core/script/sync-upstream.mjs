@@ -3,7 +3,8 @@
 // input/CompressedJSON.ts (whose `CompressedJSONFromString.parseSync` lets
 // the engine read JSON samples, and decodes samples given as bytes),
 // input/Inputs.ts (whose `jsonInputForTargetLanguage` is typed to take
-// them) and src/native/ (the bridge).
+// them, and whose `JSONInput` reads JSON Lines samples, `jsonLines`) and
+// src/native/ (the bridge).
 //
 //   node script/sync-upstream.mjs [--check | --accept] [QUICKTYPE_CHECKOUT]
 //

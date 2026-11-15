@@ -39,6 +39,12 @@
 //!
 //! When a table is full (2^21 inputs at once), [`json_create`] returns
 //! `undefined`, and the facade reads that input with TypeScript.
+//!
+//! A JSON Lines sample (`addSource({ name, samples, jsonLines: true })`,
+//! not in quicktype) is read with [`json_read_lines`] (or
+//! [`json_read_lines_bytes`]) into the same compressed form: as the array
+//! of its values, exactly as the JSON text `[V1,…,Vn]` would be read, so
+//! its root is an array and its tables are that array's.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -170,6 +176,37 @@ pub fn json_read_bytes(id: f64, bytes: &[u8]) -> i32 {
     drop(span);
     match text {
         Ok(text) => read_with(id, |cjson| cjson.read_string_sample(text, LIMITS)),
+        Err(_) => NOT_UTF8,
+    }
+}
+
+/// [`json_read`] of a JSON Lines sample (`addSource({ jsonLines: true })`,
+/// not in quicktype): the text read as the array of the values on its
+/// lines (`CompressedJson::read_string_lines_sample`), whose root is that
+/// array. A byte order mark may come first. A text that is not JSON Lines
+/// is [`INVALID`], with nothing read: the facade's own reader then reads
+/// it, and throws the error of the line it fails on.
+#[wasm_bindgen(js_name = jsonReadLines)]
+pub fn json_read_lines(id: f64, text: &str) -> i32 {
+    crate::install_clock();
+    let _span = quicktype_core::trace::span("jsonRead");
+    read_with(id, |cjson| cjson.read_string_lines_sample(text, LIMITS))
+}
+
+/// [`json_read_lines`] for a sample given as bytes, as [`json_read_bytes`]
+/// reads them: the text `new TextDecoder().decode(bytes)` gives (without a
+/// leading byte order mark), as JSON Lines, which may start with a byte
+/// order mark of their own; [`NOT_UTF8`] for bytes that are not UTF-8.
+#[wasm_bindgen(js_name = jsonReadLinesBytes)]
+pub fn json_read_lines_bytes(id: f64, bytes: &[u8]) -> i32 {
+    crate::install_clock();
+    let _span = quicktype_core::trace::span("jsonRead");
+    let bytes = bytes.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(bytes);
+    let span = quicktype_core::trace::span("read: check UTF-8");
+    let text = std::str::from_utf8(bytes);
+    drop(span);
+    match text {
+        Ok(text) => read_with(id, |cjson| cjson.read_string_lines_sample(text, LIMITS)),
         Err(_) => NOT_UTF8,
     }
 }
@@ -472,6 +509,85 @@ mod tests {
             tables(&|id| json_read_bytes(id, b"\xEF\xBB\xBF")),
             (INVALID, None)
         );
+    }
+
+    /// A JSON Lines sample is read as the array of its values: the root and
+    /// the tables of the array's JSON text, as a string or as bytes, with a
+    /// byte order mark, CRLF line breaks and blank lines; a text that is
+    /// not JSON Lines reads nothing.
+    #[test]
+    fn lines() {
+        let read = |read: &dyn Fn(f64) -> i32| {
+            let id = create("default", None, None);
+            assert!(json_read(id, r#"{"before": [0]}"#) > 0);
+            let root = read(id);
+            let tables = (root > 0).then(|| form(id).to_tables(&[]).0);
+            json_drop(id);
+            (root, tables.map(|t| (t.strings, t.objects, t.arrays)))
+        };
+        let array = r#"[{"a": ["é", 1, {"b": "2020-01-01"}]}, [2, {"a": null}], "a string", 3.5]"#;
+        let expected = read(&|id| json_read(id, array));
+        assert!(expected.0 > 0);
+        let values =
+            "{\"a\": [\"é\", 1, {\"b\": \"2020-01-01\"}]}\n[2, {\"a\": null}]\n\"a string\"\n3.5";
+        let pretty = "{\"a\": [\n  \"é\", 1,\n  {\"b\": \"2020-01-01\"}\n]}\n[2,\n {\"a\": null}]\n\"a string\"\n3.5\n";
+        let crlf = format!("\r\n \t\r\n{}\r\n\r\n\n", values.replace('\n', "\r\n"));
+        for text in [
+            values,
+            pretty,
+            &format!("{values}\n"),
+            &crlf,
+            &format!("\u{feff}{values}"),
+        ] {
+            assert_eq!(read(&|id| json_read_lines(id, text)), expected, "{text:?}");
+            assert_eq!(
+                read(&|id| json_read_lines_bytes(id, text.as_bytes())),
+                expected,
+                "{text:?}"
+            );
+        }
+        // Bytes: a byte order mark (the decoder's), then one of the text's.
+        let bom = format!("\u{feff}{values}");
+        let both = [b"\xEF\xBB\xBF".as_slice(), bom.as_bytes()].concat();
+        assert_eq!(read(&|id| json_read_lines_bytes(id, &both)), expected);
+        assert_eq!(
+            read(&|id| json_read_lines(id, &format!("\u{feff}{bom}"))),
+            (INVALID, None)
+        );
+        // No values: an empty array; one value: an array of one.
+        let empty = read(&|id| json_read(id, "[]"));
+        for text in ["", "\n", " \r\n\t\n", "\u{feff}"] {
+            assert_eq!(read(&|id| json_read_lines(id, text)), empty, "{text:?}");
+        }
+        assert_eq!(
+            read(&|id| json_read_lines(id, "{\"x\": 1}\n")),
+            read(&|id| json_read(id, "[{\"x\": 1}]"))
+        );
+        // Not JSON Lines: nothing read, and the form takes the next sample.
+        for bad in [
+            "1\n2 3\n",
+            "{\"a\": 1}\n{\"a\": }\n",
+            "[1,\n",
+            "1\r2",
+            "{} {}",
+            "\n\nx",
+        ] {
+            let id = create("default", None, None);
+            let before = form(id).table_counts();
+            assert_eq!(json_read_lines(id, bad), INVALID, "{bad:?}");
+            assert_eq!(
+                json_read_lines_bytes(id, bad.as_bytes()),
+                INVALID,
+                "{bad:?}"
+            );
+            assert_eq!(form(id).table_counts(), before, "{bad:?}");
+            assert!(json_read_lines(id, "[1]\n") > 0);
+            json_drop(id);
+        }
+        let id = create("default", None, None);
+        assert_eq!(json_read_lines_bytes(id, b"[1]\n[\"\xFF\"]\n"), NOT_UTF8);
+        assert_eq!(json_read_lines(id, "[\"\\ud800\"]\n"), DECLINED);
+        json_drop(id);
     }
 
     #[test]

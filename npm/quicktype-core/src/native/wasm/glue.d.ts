@@ -39,6 +39,10 @@ export interface WasmGlue {
     jsonRead(id: number, text: string): number;
     /** `jsonRead` for the UTF-8 bytes of a sample; -2 if they are not UTF-8 (nothing is read). */
     jsonReadBytes(id: number, bytes: Uint8Array): number;
+    /** `jsonRead` of a JSON Lines sample: the array of the values on its lines. */
+    jsonReadLines(id: number, text: string): number;
+    /** `jsonReadBytes` of a JSON Lines sample. */
+    jsonReadLinesBytes(id: number, bytes: Uint8Array): number;
     jsonDrop(id: number): void;
     /** The bytes the compressed forms hold together. */
     jsonHeld(): number;
