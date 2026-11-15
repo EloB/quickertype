@@ -1,0 +1,47 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -144,7 +144,7 @@
+ 
+ enum GeometryType cJSON_GetGeometryTypeValue(const cJSON * j) {
+     enum GeometryType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Point")) x = GEOMETRYTYPE_POINT;
+     }
+     return x;
+@@ -160,7 +160,7 @@
+ 
+ enum MaintainingAuthority cJSON_GetMaintainingAuthorityValue(const cJSON * j) {
+     enum MaintainingAuthority x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "City of Ballarat")) x = MAINTAININGAUTHORITY_CITY_OF_BALLARAT;
+     }
+     return x;
+@@ -176,7 +176,7 @@
+ 
+ enum Class cJSON_GetClassValue(const cJSON * j) {
+     enum Class x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "No Code Allocated")) x = CLASS_NO_CODE_ALLOCATED;
+         else if (!strcmp(cJSON_GetStringValue(j), "OS-District")) x = CLASS_OS_DISTRICT;
+         else if (!strcmp(cJSON_GetStringValue(j), "OS-Neighbourhood")) x = CLASS_OS_NEIGHBOURHOOD;
+@@ -198,7 +198,7 @@
+ 
+ enum Ward cJSON_GetWardValue(const cJSON * j) {
+     enum Ward x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "South")) x = WARD_SOUTH;
+         else if (!strcmp(cJSON_GetStringValue(j), "North")) x = WARD_NORTH;
+         else if (!strcmp(cJSON_GetStringValue(j), "Central")) x = WARD_CENTRAL;
+@@ -218,7 +218,7 @@
+ 
+ enum FeatureType cJSON_GetFeatureTypeValue(const cJSON * j) {
+     enum FeatureType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Feature")) x = FEATURETYPE_FEATURE;
+     }
+     return x;

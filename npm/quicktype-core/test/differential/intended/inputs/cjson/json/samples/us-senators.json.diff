@@ -1,0 +1,101 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -233,7 +233,7 @@
+ 
+ enum Party cJSON_GetPartyValue(const cJSON * j) {
+     enum Party x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Democrat")) x = PARTY_DEMOCRAT;
+         else if (!strcmp(cJSON_GetStringValue(j), "Republican")) x = PARTY_REPUBLICAN;
+         else if (!strcmp(cJSON_GetStringValue(j), "Independent")) x = PARTY_INDEPENDENT;
+@@ -253,7 +253,7 @@
+ 
+ enum Gender cJSON_GetGenderValue(const cJSON * j) {
+     enum Gender x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "female")) x = GENDER_FEMALE;
+         else if (!strcmp(cJSON_GetStringValue(j), "male")) x = GENDER_MALE;
+     }
+@@ -271,7 +271,7 @@
+ 
+ enum GenderLabel cJSON_GetGenderLabelValue(const cJSON * j) {
+     enum GenderLabel x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Female")) x = GENDERLABEL_FEMALE;
+         else if (!strcmp(cJSON_GetStringValue(j), "Male")) x = GENDERLABEL_MALE;
+     }
+@@ -289,7 +289,7 @@
+ 
+ enum Namemod cJSON_GetNamemodValue(const cJSON * j) {
+     enum Namemod x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "")) x = NAMEMOD_EMPTY;
+         else if (!strcmp(cJSON_GetStringValue(j), "Jr.")) x = NAMEMOD_JR;
+         else if (!strcmp(cJSON_GetStringValue(j), "III")) x = NAMEMOD_III;
+@@ -309,7 +309,7 @@
+ 
+ enum RoleType cJSON_GetRoleTypeValue(const cJSON * j) {
+     enum RoleType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "senator")) x = ROLETYPE_SENATOR;
+     }
+     return x;
+@@ -325,7 +325,7 @@
+ 
+ enum RoleTypeLabel cJSON_GetRoleTypeLabelValue(const cJSON * j) {
+     enum RoleTypeLabel x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Senator")) x = ROLETYPELABEL_SENATOR;
+     }
+     return x;
+@@ -341,7 +341,7 @@
+ 
+ enum SenatorClass cJSON_GetSenatorClassValue(const cJSON * j) {
+     enum SenatorClass x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "class1")) x = SENATORCLASS_CLASS1;
+         else if (!strcmp(cJSON_GetStringValue(j), "class2")) x = SENATORCLASS_CLASS2;
+         else if (!strcmp(cJSON_GetStringValue(j), "class3")) x = SENATORCLASS_CLASS3;
+@@ -361,7 +361,7 @@
+ 
+ enum SenatorClassLabel cJSON_GetSenatorClassLabelValue(const cJSON * j) {
+     enum SenatorClassLabel x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Class 1")) x = SENATORCLASSLABEL_CLASS_1;
+         else if (!strcmp(cJSON_GetStringValue(j), "Class 2")) x = SENATORCLASSLABEL_CLASS_2;
+         else if (!strcmp(cJSON_GetStringValue(j), "Class 3")) x = SENATORCLASSLABEL_CLASS_3;
+@@ -381,7 +381,7 @@
+ 
+ enum SenatorRank cJSON_GetSenatorRankValue(const cJSON * j) {
+     enum SenatorRank x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "junior")) x = SENATORRANK_JUNIOR;
+         else if (!strcmp(cJSON_GetStringValue(j), "senior")) x = SENATORRANK_SENIOR;
+     }
+@@ -399,7 +399,7 @@
+ 
+ enum SenatorRankLabel cJSON_GetSenatorRankLabelValue(const cJSON * j) {
+     enum SenatorRankLabel x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Junior")) x = SENATORRANKLABEL_JUNIOR;
+         else if (!strcmp(cJSON_GetStringValue(j), "Senior")) x = SENATORRANKLABEL_SENIOR;
+     }
+@@ -417,7 +417,7 @@
+ 
+ enum Title cJSON_GetTitleValue(const cJSON * j) {
+     enum Title x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Sen.")) x = TITLE_SEN;
+     }
+     return x;

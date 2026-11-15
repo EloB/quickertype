@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -98,7 +98,7 @@
+ 
+ enum Status cJSON_GetStatusValue(const cJSON * j) {
+     enum Status x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "inactive")) x = STATUS_INACTIVE;
+         else if (!strcmp(cJSON_GetStringValue(j), "active")) x = STATUS_ACTIVE;
+     }

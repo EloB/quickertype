@@ -1,0 +1,13 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -81,7 +81,9 @@
+                 cJSON_ArrayForEach(e, j) {
+                     if (!quicktype_cJSON_IsInteger(e)) { cJSON_DeleteTopLevel(x); return NULL; }
+                     int64_t * item = cJSON_malloc(sizeof(*item));
+-                    if (NULL != item) { *item = cJSON_GetNumberValue(e); list_add_tail(x->value, item, sizeof(*item)); }
++                    if (NULL == item) { cJSON_DeleteTopLevel(x); return NULL; }
++                    *item = cJSON_GetNumberValue(e);
++                    list_add_tail(x->value, item, sizeof(*item));
+                 }
+             }
+         }

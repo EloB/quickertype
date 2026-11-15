@@ -1,0 +1,195 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -62,8 +62,14 @@
+ class Selection < Dry::Struct; end
+ 
+ # (forward declaration)
++class SelectionOperand < Dry::Struct; end
++
++# (forward declaration)
+ class Predicate < Dry::Struct; end
+ 
++# (forward declaration)
++class LogicalOperandPredicate < Dry::Struct; end
++
+ # The sizing format type. One of `"pad"`, `"fit"` or `"none"`. See the [autosize
+ # type](https://vega.github.io/vega-lite/docs/size.html#autosize) documentation for
+ # descriptions of each.
+@@ -4561,8 +4567,39 @@
+     else
+       nil
+     end
++  end
++
++  def to_json(options = nil)
++    JSON.generate(to_dynamic, options)
++  end
++end
++
++class Selection < Dry::Struct
++  attribute :selection_not, Types.Instance(SelectionOperand).optional
++  attribute :selection_and, Types.Array(Types.Instance(SelectionOperand)).optional
++  attribute :selection_or,  Types.Array(Types.Instance(SelectionOperand)).optional
++
++  def self.from_dynamic!(d)
++    d = Types::Hash[d]
++    new(
++      selection_not: d.key?("not") ? SelectionOperand.from_dynamic!(d["not"]) : nil,
++      selection_and: d.key?("and") ? d["and"].map { |x| SelectionOperand.from_dynamic!(x) } : nil,
++      selection_or:  d.key?("or") ? d["or"].map { |x| SelectionOperand.from_dynamic!(x) } : nil,
++    )
+   end
+ 
++  def self.from_json!(json)
++    from_dynamic!(JSON.parse(json))
++  end
++
++  def to_dynamic
++    {
++      "not" => selection_not&.to_dynamic,
++      "and" => selection_and&.map { |x| x.to_dynamic },
++      "or"  => selection_or&.map { |x| x.to_dynamic },
++    }
++  end
++
+   def to_json(options = nil)
+     JSON.generate(to_dynamic, options)
+   end
+@@ -4607,37 +4644,6 @@
+   end
+ end
+ 
+-class Selection < Dry::Struct
+-  attribute :selection_not, Types.Instance(SelectionOperand).optional
+-  attribute :selection_and, Types.Array(Types.Instance(SelectionOperand)).optional
+-  attribute :selection_or,  Types.Array(Types.Instance(SelectionOperand)).optional
+-
+-  def self.from_dynamic!(d)
+-    d = Types::Hash[d]
+-    new(
+-      selection_not: d.key?("not") ? SelectionOperand.from_dynamic!(d["not"]) : nil,
+-      selection_and: d.key?("and") ? d["and"].map { |x| SelectionOperand.from_dynamic!(x) } : nil,
+-      selection_or:  d.key?("or") ? d["or"].map { |x| SelectionOperand.from_dynamic!(x) } : nil,
+-    )
+-  end
+-
+-  def self.from_json!(json)
+-    from_dynamic!(JSON.parse(json))
+-  end
+-
+-  def to_dynamic
+-    {
+-      "not" => selection_not&.to_dynamic,
+-      "and" => selection_and&.map { |x| x.to_dynamic },
+-      "or"  => selection_or&.map { |x| x.to_dynamic },
+-    }
+-  end
+-
+-  def to_json(options = nil)
+-    JSON.generate(to_dynamic, options)
+-  end
+-end
+-
+ # Time unit for the field to be filtered.
+ #
+ # time unit for the field to be filtered.
+@@ -4693,49 +4699,6 @@
+   Utchoursminutesseconds              = "utchoursminutesseconds"
+   Utcminutesseconds                   = "utcminutesseconds"
+   Utcsecondsmilliseconds              = "utcsecondsmilliseconds"
+-end
+-
+-# The `filter` property must be one of the predicate definitions:
+-# (1) an [expression](types.html#expression) string,
+-# where `datum` can be used to refer to the current data object;
+-# (2) one of the field predicates: [equal predicate](filter.html#equal-predicate);
+-# [range predicate](filter.html#range-predicate), [one-of
+-# predicate](filter.html#one-of-predicate);
+-# (3) a [selection predicate](filter.html#selection-predicate);
+-# or (4) a logical operand that combines (1), (2), or (3).
+-class LogicalOperandPredicate < Dry::Struct
+-  attribute :predicate, Predicate.optional
+-  attribute :string,    Types::String.optional
+-
+-  def self.from_dynamic!(d)
+-    begin
+-      value = Predicate.from_dynamic!(d)
+-      if schema.key(:predicate).type.right.valid? value
+-        return new(predicate: value, string: nil)
+-      end
+-    rescue
+-    end
+-    if schema.key(:string).type.right.valid? d
+-      return new(string: d, predicate: nil)
+-    end
+-    raise "Invalid union"
+-  end
+-
+-  def self.from_json!(json)
+-    from_dynamic!(JSON.parse(json))
+-  end
+-
+-  def to_dynamic
+-    if predicate != nil
+-      predicate.to_dynamic
+-    elsif string != nil
+-      string
+-    end
+-  end
+-
+-  def to_json(options = nil)
+-    JSON.generate(to_dynamic, options)
+-  end
+ end
+ 
+ class Predicate < Dry::Struct
+@@ -4798,6 +4761,49 @@
+       "oneOf"     => one_of&.map { |x| x.to_dynamic },
+       "selection" => selection&.to_dynamic,
+     }
++  end
++
++  def to_json(options = nil)
++    JSON.generate(to_dynamic, options)
++  end
++end
++
++# The `filter` property must be one of the predicate definitions:
++# (1) an [expression](types.html#expression) string,
++# where `datum` can be used to refer to the current data object;
++# (2) one of the field predicates: [equal predicate](filter.html#equal-predicate);
++# [range predicate](filter.html#range-predicate), [one-of
++# predicate](filter.html#one-of-predicate);
++# (3) a [selection predicate](filter.html#selection-predicate);
++# or (4) a logical operand that combines (1), (2), or (3).
++class LogicalOperandPredicate < Dry::Struct
++  attribute :predicate, Predicate.optional
++  attribute :string,    Types::String.optional
++
++  def self.from_dynamic!(d)
++    begin
++      value = Predicate.from_dynamic!(d)
++      if schema.key(:predicate).type.right.valid? value
++        return new(predicate: value, string: nil)
++      end
++    rescue
++    end
++    if schema.key(:string).type.right.valid? d
++      return new(string: d, predicate: nil)
++    end
++    raise "Invalid union"
++  end
++
++  def self.from_json!(json)
++    from_dynamic!(JSON.parse(json))
++  end
++
++  def to_dynamic
++    if predicate != nil
++      predicate.to_dynamic
++    elsif string != nil
++      string
++    end
+   end
+ 
+   def to_json(options = nil)

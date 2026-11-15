@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -424,7 +424,7 @@
+ 
+ enum Enum cJSON_GetEnumValue(const cJSON * j) {
+     enum Enum x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "_")) x = ENUM_EMPTY;
+         else if (!strcmp(cJSON_GetStringValue(j), "_Bool")) x = ENUM_BOOL;
+         else if (!strcmp(cJSON_GetStringValue(j), "_Complex")) x = ENUM_COMPLEX;

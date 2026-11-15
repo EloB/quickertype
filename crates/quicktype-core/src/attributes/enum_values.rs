@@ -11,7 +11,8 @@ use crate::messages::Result;
 use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;
 
-/// `enumValuesTypeAttributeKind`: `enumValues`. Cannot be combined.
+/// `enumValuesTypeAttributeKind`: `enumValues`, combined only when every
+/// copy is the same (`type_attributes::combine_values`).
 #[derive(Clone, Copy, Debug, Default)]
 pub struct EnumValuesTypeAttributeKind;
 

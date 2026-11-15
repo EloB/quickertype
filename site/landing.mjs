@@ -7,7 +7,8 @@
 //   (written by site/quicktype-snapshot.mjs from a quicktype checkout and
 //   GitHub's API; refused unless it is of the commit in tests/golden/REFERENCE);
 // * the output languages: quicktype-core's API (the build's languages());
-// * the test corpus: tests/golden (every case.json), tests/parity-baseline.txt
+// * the test corpus: tests/golden (every case.json), tests/intended-differences.txt
+//   (the cases a fix of a quicktype bug changes), tests/parity-baseline.txt
 //   and tests/inputs; the JS API differential suite's scenarios
 //   (npm/quicktype-core/test/differential/scenarios.mjs, counted, not run);
 //   tests/fuzz-regressions, fuzz/fuzz_targets and the streaming fuzzer's
@@ -47,6 +48,7 @@ export const landingLinks = {
     repository,
     install: `${repository}#install`,
     parity: `${repository}/blob/main/docs/PARITY.md`,
+    fixes: `${repository}/blob/main/docs/PARITY.md#bugs-fixed-in-quickertype`,
     fuzz: `${repository}/blob/main/xtask/fuzz/README.md`,
     benchmarksDoc: `${repository}/blob/main/docs/BENCHMARKS.md`,
     notice: `${repository}/blob/main/NOTICE`,
@@ -133,8 +135,10 @@ function filesUnder(dir) {
 
 /**
  * tests/golden: its cases (each a recorded run of quicktype's CLI, one or
- * more steps), by what they cover, and how many of them
- * tests/parity-baseline.txt holds as passing.
+ * more steps), by what they cover, how many of them
+ * tests/parity-baseline.txt holds as passing, and how many of those are
+ * intended differences (tests/intended-differences.txt: the cases a fix of
+ * a quicktype bug changes, which pass with their corrected output).
  */
 export function goldenFacts() {
     const golden = path.join(repositoryRoot, "tests", "golden");
@@ -156,7 +160,15 @@ export function goldenFacts() {
             .map((l) => l.trim())
             .filter((l) => l !== "" && !l.startsWith("#")),
     );
-    return { cases: ids.length, steps, kinds, passing: ids.filter((id) => baseline.has(id)).length };
+    const intended = new Set(
+        fs
+            .readFileSync(path.join(repositoryRoot, "tests", "intended-differences.txt"), "utf8")
+            .split("\n")
+            .map((l) => l.trim().split(/\s+/)[0])
+            .filter((id) => id !== "" && !id.startsWith("#") && id !== "bug"),
+    );
+    const passing = ids.filter((id) => baseline.has(id));
+    return { cases: ids.length, steps, kinds, passing: passing.length, intended: passing.filter((id) => intended.has(id)).length };
 }
 
 /** tests/inputs: quicktype's test inputs, copied unmodified (NOTICE). */
@@ -491,7 +503,7 @@ ${picture(images, "speed-trails", "", { sizes: "100vw", eager: true, className: 
 <div class="hero-grid">
 <div class="hero-copy">
 <h1 id="hero-title">quicktype, rewritten in&nbsp;Rust.</h1>
-<p class="hero-lead">The same CLI, the same API and the same output, byte for byte. Up to ${stat("upto", Number(speed.upTo), `${speed.upTo}×`)} faster, in a fraction of the memory.</p>
+<p class="hero-lead">The same CLI, the same API and the same output, byte for byte, apart from a few fixed bugs. Up to ${stat("upto", Number(speed.upTo), `${speed.upTo}×`)} faster, in a fraction of the memory.</p>
 ${raceHtml(bench)}
 <p class="actions"><a class="button primary" href="./app/">Try it in the playground</a><a class="button" href="#install">Install the CLI</a></p>
 <p class="hero-credit">A port of <a href="${repo.url}">quicktype</a>, the work of ${stat("contributors-hero", people.length)} contributors since ${e(since)}. <a href="#thanks">Thank you</a>.</p>
@@ -550,13 +562,13 @@ ${contributorWall(people)}
         ["quicktype runs its own tests", `Every fixture in quicktype's test suite, in every language and option variant it uses, on ${stat("flow-inputs", inputs.files)} test inputs. <code>cargo xtask golden</code> records them.`],
         ["Each run is recorded", `${stat("golden-cases", golden.cases)} cases: each command line, with the exact files, output streams and exit code it produced.`],
         ["Every change replays them", `<code>cargo xtask parity</code> runs all ${stat("golden-steps", golden.steps)} commands with quickertype, on every push.`],
-        ["Byte for byte", `${stat("golden-passing", golden.passing)} of ${number(golden.cases)} identical. The one allowed difference is the command's name in <code>--help</code>.`],
+        ["Byte for byte", `${stat("golden-identical", golden.passing - golden.intended)} of ${number(golden.cases)} identical. The other ${stat("golden-intended", golden.intended)} are <a href="${landingLinks.fixes}">intended differences</a>: quickertype fixes a bug in the code quicktype generates there, and each must match its stored corrected output. The one other allowed difference is the command's name in <code>--help</code>.`],
     ];
     const tested = `<section id="tested" class="tested" aria-labelledby="tested-title">
 <div class="tested-intro">
 <div>
 <h2 id="tested-title">Checked against quicktype, byte for byte</h2>
-<p class="lead">Close is not enough: quickertype's output has to be quicktype's, to the last byte. Every change is checked against runs recorded from quicktype's own command line, and fuzzers keep looking for an input on which the two disagree.</p>
+<p class="lead">Close is not enough: quickertype's output has to be quicktype's, to the last byte, except where it fixes one of quicktype's bugs, and there it has to be the corrected output on record. Every change is checked against runs recorded from quicktype's own command line, and fuzzers keep looking for an input on which the two disagree.</p>
 </div>
 ${picture(images, "parity-mirror", "Abstract art: two identical glass lattices on either side of a thin line of light", { sizes: "(min-width: 1000px) 440px, 100vw" })}
 </div>
@@ -739,6 +751,6 @@ cargo install quickertype</code></pre>
 
 /** The page's meta description, from the same numbers. */
 export function landingDescription(facts) {
-    return `quickertype is quicktype rewritten in Rust: the same CLI, API and output, byte for byte, up to ${facts.speed.upTo}× faster. Checked against ${number(facts.golden.cases)} recorded quicktype runs. With thanks to quicktype and its ${facts.quicktype.contributors.people.length} contributors.`;
+    return `quickertype is quicktype rewritten in Rust: the same CLI, API and output, byte for byte apart from a few fixed bugs, up to ${facts.speed.upTo}× faster. Checked against ${number(facts.golden.cases)} recorded quicktype runs. With thanks to quicktype and its ${facts.quicktype.contributors.people.length} contributors.`;
 }
 

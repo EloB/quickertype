@@ -1,0 +1,29 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -191,7 +191,7 @@
+ 
+ enum DetailLanguage cJSON_GetDetailLanguageValue(const cJSON * j) {
+     enum DetailLanguage x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "en")) x = DETAILLANGUAGE_EN;
+         else if (!strcmp(cJSON_GetStringValue(j), "th")) x = DETAILLANGUAGE_TH;
+     }
+@@ -209,7 +209,7 @@
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j) {
+     enum Type x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Poster")) x = TYPE_POSTER;
+         else if (!strcmp(cJSON_GetStringValue(j), "Backdrop")) x = TYPE_BACKDROP;
+     }
+@@ -227,7 +227,7 @@
+ 
+ enum ResultLanguage cJSON_GetResultLanguageValue(const cJSON * j) {
+     enum ResultLanguage x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "en")) x = RESULTLANGUAGE_EN;
+         else if (!strcmp(cJSON_GetStringValue(j), "-")) x = RESULTLANGUAGE_EMPTY;
+     }

@@ -60,7 +60,8 @@ impl DeepHash for AccessorEntry {
 /// `AccessorNames`: accessor entries by property name or enum case.
 pub type AccessorNames = IndexMap<String, AccessorEntry>;
 
-/// `accessorNamesTypeAttributeKind`: `accessorNames`. Cannot be combined.
+/// `accessorNamesTypeAttributeKind`: `accessorNames`, combined by
+/// [`combine_accessor_names`].
 #[derive(Clone, Copy, Debug, Default)]
 pub struct AccessorNamesTypeAttributeKind;
 
@@ -139,6 +140,42 @@ pub fn get_accessor_name(
         Some(Some((name, fixed))) => (Some(name.clone()), *fixed),
         _ => (None, false),
     }
+}
+
+/// `AccessorNamesTypeAttributeKind.combine`: the entries the combined types
+/// agree on; a name with different entries is dropped, so it falls back to
+/// the default name.
+///
+/// quicktype has no `combine` for accessor names, so combining two types
+/// that have them stops with "Cannot combine type attribute accessorNames"
+/// (a fix of ours, docs/PARITY.md, "Bugs fixed in quickertype"). That
+/// happens when the TypeScript input's string enums meet themselves in a
+/// union (`E | null`, an optional `E` in Python, `E[] | F`) or two enums
+/// have the same values: the enum's `qt-accessors` (its member names) are
+/// on every copy. With entries they agree on kept, `f: E | null` names the
+/// cases as `f: E` does; an entry they disagree on is no one's choice, so
+/// the case is named as without accessor names.
+pub(crate) fn combine_accessor_names(arr: &[&AccessorNames]) -> AccessorNames {
+    let mut result = AccessorNames::default();
+    let mut conflicting: IndexSet<&str> = IndexSet::default();
+    for accessors in arr {
+        for (key, entry) in accessors.iter() {
+            if conflicting.contains(key.as_str()) {
+                continue;
+            }
+            match result.get(key) {
+                None => {
+                    result.insert(key.clone(), entry.clone());
+                }
+                Some(existing) if !existing.js_equals(entry) => {
+                    result.shift_remove(key);
+                    conflicting.insert(key);
+                }
+                Some(_) => {}
+            }
+        }
+    }
+    result
 }
 
 /// `UnionIdentifierTypeAttributeKind.combine`.

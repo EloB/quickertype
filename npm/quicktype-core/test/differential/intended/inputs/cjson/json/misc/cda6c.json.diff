@@ -1,0 +1,20 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -129,7 +129,7 @@
+ 
+ enum Id cJSON_GetIdValue(const cJSON * j) {
+     enum Id x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "CN")) x = ID_CN;
+         else if (!strcmp(cJSON_GetStringValue(j), "SP.POP.TOTL")) x = ID_SP_POP_TOTL;
+     }
+@@ -147,7 +147,7 @@
+ 
+ enum Value cJSON_GetValueValue(const cJSON * j) {
+     enum Value x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "China")) x = VALUE_CHINA;
+         else if (!strcmp(cJSON_GetStringValue(j), "Population, total")) x = VALUE_POPULATION_TOTAL;
+     }

@@ -353,7 +353,10 @@ fn emit_legacy_converters<'a, R: JavaRenderer<'a>>(r: &mut R) -> Result<()> {
                     Ok(())
                 })
             })?;
-            r.emit_line("return null;");
+            // quicktype returns `null`, which reads an invalid date as
+            // `null` (a fix of ours, docs/PARITY.md, "Bugs fixed in
+            // quickertype"); the other provider's parsers throw too.
+            r.emit_line("throw new IllegalArgumentException(\"Unparseable date: \" + str);");
             Ok(())
         },
     )?;

@@ -1,0 +1,478 @@
+# Intended differences from quicktype.
+#
+# quickertype's output is quicktype's, byte for byte, except where it fixes
+# a bug in the code quicktype generates (docs/PARITY.md, "Bugs fixed in
+# quickertype"). This list names every golden case (tests/golden) whose
+# output that changes, with the bugs that change it.
+#
+# The corrected output is stored next to the recorded one, in a file of
+# the same name with `.intended` appended (step0/TopLevel.c.intended beside
+# step0/TopLevel.c, step0.stdout.intended beside step0.stdout); the
+# recording is never changed. `cargo xtask parity` requires each listed
+# case's outputs to match their `.intended` files (and the others the
+# recording), reports the cases as intended differences, and fails when one
+# matches the recording again or differs from its `.intended` file, when an
+# `.intended` file is identical to the recording, or when this list and the
+# `.intended` files disagree. `--record-intended` writes them; review them
+# with `diff <file> <file>.intended`. The npm differential suite and the
+# renderer tests (render_cases.rs) use them too.
+#
+# When quicktype fixes a bug, re-recording the corpus (`cargo xtask golden`)
+# makes its cases identical again: remove them, and the bug, from here.
+#
+# `bug <id> <upstream report>` declares a bug; `<case id> <bug id>...`
+# lists a case.
+
+bug accessor-names-combine (link pending)
+bug cjson-enum-getter (link pending)
+bug cjson-map-parsed-twice (link pending)
+bug cjson-pattern-regcomp (link pending)
+bug cjson-top-level-collections (link pending)
+bug cjson-top-level-null-marker (link pending)
+bug java-legacy-date-null (link pending)
+bug python-property-shadows-converter (link pending)
+bug ruby-union-forward-declaration (link pending)
+
+# Golden cases (tests/golden).
+cjson-default/json/priority/nbl-stats.json/b2d393358b cjson-enum-getter cjson-map-parsed-twice
+cjson-multi-header/json/priority/nbl-stats.json/1c60dbc05b cjson-enum-getter cjson-map-parsed-twice
+cjson-multi-split/json/priority/nbl-stats.json/08975b77ae cjson-enum-getter cjson-map-parsed-twice
+cjson/json/misc/00c36.json/bc58cf51d6 cjson-enum-getter
+cjson/json/misc/00ec5.json/e6324d6d12 cjson-enum-getter cjson-map-parsed-twice
+cjson/json/misc/010b1.json/e7710a9406 cjson-enum-getter
+cjson/json/misc/050b0.json/f7dceed481 cjson-enum-getter
+cjson/json/misc/06bee.json/08d6d17e35 cjson-enum-getter
+cjson/json/misc/09f54.json/abff045166 cjson-map-parsed-twice
+cjson/json/misc/0a91a.json/9c26683408 cjson-enum-getter
+cjson/json/misc/0cffa.json/6f4581aed9 cjson-enum-getter
+cjson/json/misc/0e0c2.json/1da24d3af7 cjson-enum-getter
+cjson/json/misc/10be4.json/05271d06b7 cjson-enum-getter
+cjson/json/misc/127a1.json/030c9a27b9 cjson-enum-getter
+cjson/json/misc/1a7f5.json/69f58c03a2 cjson-enum-getter
+cjson/json/misc/1b409.json/8d2ac3f334 cjson-enum-getter
+cjson/json/misc/262f0.json/397fa8044a cjson-enum-getter
+cjson/json/misc/26b49.json/260f399c95 cjson-enum-getter
+cjson/json/misc/27332.json/10ff8e13d8 cjson-enum-getter
+cjson/json/misc/29f47.json/b2d70728f6 cjson-enum-getter
+cjson/json/misc/2d4e2.json/3aee68f6b8 cjson-enum-getter
+cjson/json/misc/2df80.json/60b8637fd4 cjson-enum-getter
+cjson/json/misc/32431.json/7cdf9da591 cjson-enum-getter
+cjson/json/misc/337ed.json/29bea3f0ad cjson-enum-getter
+cjson/json/misc/33d2e.json/bed18c9886 cjson-enum-getter
+cjson/json/misc/34702.json/9811a8b455 cjson-enum-getter
+cjson/json/misc/3536b.json/a33c8f08d8 cjson-enum-getter
+cjson/json/misc/3f1ce.json/85098a0625 cjson-enum-getter
+cjson/json/misc/437e7.json/200627efbb cjson-enum-getter
+cjson/json/misc/458db.json/2bf3cf8e71 cjson-enum-getter
+cjson/json/misc/4a455.json/25605d5db5 cjson-enum-getter
+cjson/json/misc/4d6fb.json/43d3481e90 cjson-enum-getter
+cjson/json/misc/54d32.json/0d7b59a4d6 cjson-enum-getter
+cjson/json/misc/570ec.json/829824dce8 cjson-enum-getter
+cjson/json/misc/5f7fe.json/c15183ef22 cjson-enum-getter
+cjson/json/misc/617e8.json/e39f8c4efc cjson-enum-getter
+cjson/json/misc/65dec.json/f5f44efe42 cjson-enum-getter
+cjson/json/misc/66121.json/82966f7a25 cjson-enum-getter
+cjson/json/misc/6de06.json/6073455a84 cjson-enum-getter
+cjson/json/misc/6dec6.json/a9091988f7 cjson-enum-getter
+cjson/json/misc/734ad.json/69a7290b89 cjson-enum-getter
+cjson/json/misc/7681c.json/872cfa3943 cjson-enum-getter
+cjson/json/misc/76ae1.json/229486e67d cjson-enum-getter cjson-map-parsed-twice
+cjson/json/misc/77392.json/3d4e2573d9 cjson-enum-getter
+cjson/json/misc/7d397.json/28adede6d2 cjson-enum-getter cjson-map-parsed-twice
+cjson/json/misc/7eb30.json/96fa6b7a26 cjson-enum-getter
+cjson/json/misc/7f568.json/f09a4fc3b7 cjson-enum-getter cjson-map-parsed-twice
+cjson/json/misc/7fbfb.json/e2f2e1807c cjson-enum-getter
+cjson/json/misc/8592b.json/881c23e7e7 cjson-enum-getter
+cjson/json/misc/996bd.json/e55b948bb0 cjson-enum-getter
+cjson/json/misc/9a503.json/e05920a661 cjson-enum-getter
+cjson/json/misc/9ac3b.json/d3d373e679 cjson-enum-getter
+cjson/json/misc/9eed5.json/d9f846fbf6 cjson-enum-getter
+cjson/json/misc/a3d8c.json/ce7dea3b96 cjson-enum-getter
+cjson/json/misc/a45b0.json/aebaf7549c cjson-enum-getter
+cjson/json/misc/ab0d1.json/f9beee7915 cjson-enum-getter
+cjson/json/misc/ad8be.json/69824de0a9 cjson-enum-getter
+cjson/json/misc/ae7f0.json/bfa5112c53 cjson-enum-getter
+cjson/json/misc/ae9ca.json/104d42c1f1 cjson-enum-getter
+cjson/json/misc/af2d1.json/bdf975ab5d cjson-enum-getter
+cjson/json/misc/b4865.json/ef69c3db67 cjson-enum-getter
+cjson/json/misc/be234.json/a4c12b673d cjson-enum-getter
+cjson/json/misc/c0356.json/8685134e39 cjson-map-parsed-twice
+cjson/json/misc/c3303.json/7d6475649e cjson-enum-getter
+cjson/json/misc/c8c7e.json/4a623d3ea3 cjson-enum-getter
+cjson/json/misc/cb0cc.json/da48cbc4b7 cjson-enum-getter
+cjson/json/misc/cda6c.json/c516361387 cjson-enum-getter
+cjson/json/misc/dbfb3.json/a241b5f425 cjson-enum-getter
+cjson/json/misc/dc44f.json/c4e6315f3a cjson-enum-getter
+cjson/json/misc/dd1ce.json/25bb6d3303 cjson-enum-getter
+cjson/json/misc/e0ac7.json/60dc93c322 cjson-enum-getter
+cjson/json/misc/e2915.json/c99dcceecf cjson-enum-getter
+cjson/json/misc/e324e.json/3c285a614d cjson-enum-getter cjson-map-parsed-twice
+cjson/json/misc/e53b5.json/bd4ef92a16 cjson-enum-getter
+cjson/json/misc/e8a0b.json/6bc09e2f4f cjson-enum-getter
+cjson/json/misc/e8b04.json/b71016f27d cjson-enum-getter
+cjson/json/misc/ed095.json/bcad8d9c9f cjson-top-level-collections
+cjson/json/misc/f22f5.json/28fd54385a cjson-enum-getter
+cjson/json/misc/f3edf.json/03d50a0003 cjson-enum-getter
+cjson/json/misc/f466a.json/fd27b9f58c cjson-enum-getter
+cjson/json/misc/f6a65.json/bd99b2203e cjson-enum-getter
+cjson/json/misc/f74d5.json/94f4cc6f91 cjson-enum-getter
+cjson/json/misc/f82d9.json/95e62dc78f cjson-enum-getter
+cjson/json/misc/fcca3.json/4eed27a1a9 cjson-enum-getter
+cjson/json/misc/fd329.json/02976971e5 cjson-map-parsed-twice
+cjson/json/priority/bug2037.json/fd18ba5449 cjson-map-parsed-twice
+cjson/json/priority/bug427.json/34a5f52161 cjson-enum-getter
+cjson/json/priority/bug855-short.json/fc476e9ba0 cjson-top-level-collections
+cjson/json/priority/bug863.json/4fb358a428 cjson-enum-getter
+cjson/json/priority/coin-pairs.json/2914e65df7 cjson-map-parsed-twice
+cjson/json/priority/combined-enum.json/a925f8deb3 cjson-enum-getter
+cjson/json/priority/issue2680-scalar-array.json/8f2c9ae44b cjson-top-level-collections
+cjson/json/priority/keywords.json/60b743987b cjson-enum-getter
+cjson/json/priority/kotlin-enum-class-case-collision.json/194cea6bfe cjson-enum-getter
+cjson/json/priority/nbl-stats.json/5d9dac3414 cjson-enum-getter cjson-map-parsed-twice
+cjson/json/samples/github-events.json/4047b962fc cjson-enum-getter
+cjson/json/samples/objc-control-characters.json/79956a905d cjson-enum-getter
+cjson/json/samples/pokedex.json/9bb0e3a49f cjson-enum-getter
+cjson/json/samples/reddit.json/8474429a8a cjson-enum-getter
+cjson/json/samples/us-avg-temperatures.json/a9c7a91c7e cjson-map-parsed-twice
+cjson/json/samples/us-senators.json/7f88730cee cjson-enum-getter
+cli-options/json/samples/kitchen-sink.json/c66c6b1b81 java-legacy-date-null
+cli-options/schema/date-time.schema/2f8a9427d5 java-legacy-date-null
+cli-stdout/schema/description.schema/8f1f0fb0c2 cjson-enum-getter
+graphql-cjson/graphql/github3.graphql/c7164a881b cjson-enum-getter
+graphql-cjson/graphql/github4.graphql/0e25ca2268 cjson-enum-getter
+graphql-cjson/graphql/github8.graphql/ef85f777fa cjson-enum-getter
+graphql-cjson/graphql/github9.graphql/d5ff62e0c1 cjson-enum-getter
+graphql-java-datetime-legacy/graphql/github1.graphql/612edb411f java-legacy-date-null
+graphql-java-datetime-legacy/graphql/github2.graphql/c3c4c84d53 java-legacy-date-null
+graphql-java-datetime-legacy/graphql/github3.graphql/1d982d0ccc java-legacy-date-null
+graphql-java-datetime-legacy/graphql/github4.graphql/66fd937cb9 java-legacy-date-null
+graphql-java-datetime-legacy/graphql/github5.graphql/55382da46f java-legacy-date-null
+graphql-java-datetime-legacy/graphql/github6.graphql/5c8f90f8c4 java-legacy-date-null
+graphql-java-datetime-legacy/graphql/github7.graphql/f809597256 java-legacy-date-null
+graphql-java-datetime-legacy/graphql/github8.graphql/42c623e83f java-legacy-date-null
+graphql-java-datetime-legacy/graphql/github9.graphql/aba3a7b7de java-legacy-date-null
+java-datetime-legacy/json/priority/blns-object.json/ef73a3f40c java-legacy-date-null
+java-datetime-legacy/json/priority/bug2037.json/e9957fd969 java-legacy-date-null
+java-datetime-legacy/json/priority/bug2521.json/00d3203bfd java-legacy-date-null
+java-datetime-legacy/json/priority/bug2590.json/94a7799d78 java-legacy-date-null
+java-datetime-legacy/json/priority/bug2663.json/3fe3d1b4a4 java-legacy-date-null
+java-datetime-legacy/json/priority/bug2793.json/bd0b3db1af java-legacy-date-null
+java-datetime-legacy/json/priority/bug427.json/34e669cce1 java-legacy-date-null
+java-datetime-legacy/json/priority/bug790.json/f174506422 java-legacy-date-null
+java-datetime-legacy/json/priority/bug855-short.json/fe07fce092 java-legacy-date-null
+java-datetime-legacy/json/priority/bug863.json/d5b6787ce4 java-legacy-date-null
+java-datetime-legacy/json/priority/coin-pairs.json/b677b2f554 java-legacy-date-null
+java-datetime-legacy/json/priority/combinations1.json/1ad8202226 java-legacy-date-null
+java-datetime-legacy/json/priority/combinations1.json/7a4e10355f java-legacy-date-null
+java-datetime-legacy/json/priority/combinations2.json/5957079287 java-legacy-date-null
+java-datetime-legacy/json/priority/combinations2.json/a949c49e88 java-legacy-date-null
+java-datetime-legacy/json/priority/combinations3.json/1a3487850f java-legacy-date-null
+java-datetime-legacy/json/priority/combinations3.json/5ab61d9e61 java-legacy-date-null
+java-datetime-legacy/json/priority/combinations4.json/0c6ad5203e java-legacy-date-null
+java-datetime-legacy/json/priority/combinations4.json/c1f34162e8 java-legacy-date-null
+java-datetime-legacy/json/priority/combined-enum.json/ee5e50b376 java-legacy-date-null
+java-datetime-legacy/json/priority/direct-recursive.json/2c2ea12f67 java-legacy-date-null
+java-datetime-legacy/json/priority/empty-enum.json/303a65bc30 java-legacy-date-null
+java-datetime-legacy/json/priority/identifiers.json/ef9e661845 java-legacy-date-null
+java-datetime-legacy/json/priority/issue2680-object-array.json/bc66e800df java-legacy-date-null
+java-datetime-legacy/json/priority/issue2680-scalar-array.json/bb3cf1d9d9 java-legacy-date-null
+java-datetime-legacy/json/priority/keywords.json/ef2abfddef java-legacy-date-null
+java-datetime-legacy/json/priority/kotlin-enum-class-case-collision.json/6227f76488 java-legacy-date-null
+java-datetime-legacy/json/priority/list.json/801dc1384a java-legacy-date-null
+java-datetime-legacy/json/priority/name-style.json/ec3d6d4ed8 java-legacy-date-null
+java-datetime-legacy/json/priority/nbl-stats.json/030ffbc12f java-legacy-date-null
+java-datetime-legacy/json/priority/nested-objects.json/27cf7c25e5 java-legacy-date-null
+java-datetime-legacy/json/priority/no-classes.json/823ed8d996 java-legacy-date-null
+java-datetime-legacy/json/priority/nst-test-suite.json/8de83fac65 java-legacy-date-null
+java-datetime-legacy/json/priority/number-map.json/7ec6aea494 java-legacy-date-null
+java-datetime-legacy/json/priority/omit-empty.json/60f263c376 java-legacy-date-null
+java-datetime-legacy/json/priority/optional-union.json/beaf75ef1b java-legacy-date-null
+java-datetime-legacy/json/priority/php-mixed-union.json/79dd3e9cfb java-legacy-date-null
+java-datetime-legacy/json/priority/php-validation.json/6b53db7fba java-legacy-date-null
+java-datetime-legacy/json/priority/recursive.json/397bdeb260 java-legacy-date-null
+java-datetime-legacy/json/priority/simple-identifiers.json/8255a5513c java-legacy-date-null
+java-datetime-legacy/json/priority/union-constructor-clash.json/81dfc49a39 java-legacy-date-null
+java-datetime-legacy/json/priority/unions.json/46af9bd25d java-legacy-date-null
+java-datetime-legacy/json/priority/url.json/467910861d java-legacy-date-null
+java-datetime-legacy/json/priority/uuids.json/b255912565 java-legacy-date-null
+java-datetime-legacy/json/samples/bitcoin-block.json/02864a850b java-legacy-date-null
+java-datetime-legacy/json/samples/copy-with-property.json/180c94950a java-legacy-date-null
+java-datetime-legacy/json/samples/getting-started.json/f079a035b8 java-legacy-date-null
+java-datetime-legacy/json/samples/github-events.json/8bc971186e java-legacy-date-null
+java-datetime-legacy/json/samples/kitchen-sink.json/34b1a26e7a java-legacy-date-null
+java-datetime-legacy/json/samples/null-safe.json/a0dc2de7e7 java-legacy-date-null
+java-datetime-legacy/json/samples/objc-control-characters.json/ce3f17ae46 java-legacy-date-null
+java-datetime-legacy/json/samples/pokedex.json/bc78ba94d4 java-legacy-date-null
+java-datetime-legacy/json/samples/reddit.json/ff3daa57e7 java-legacy-date-null
+java-datetime-legacy/json/samples/simple-object.json/959073bfca java-legacy-date-null
+java-datetime-legacy/json/samples/spotify-album.json/ff2f940e14 java-legacy-date-null
+java-datetime-legacy/json/samples/us-avg-temperatures.json/7677571aaa java-legacy-date-null
+java-datetime-legacy/json/samples/us-senators.json/e082381854 java-legacy-date-null
+python/json/misc/0e0c2.json/daaf56eef2 python-property-shadows-converter
+python/json/misc/a0496.json/af3236316e python-property-shadows-converter
+schema-cjson/schema/accessors.schema/82f90d67df cjson-enum-getter
+schema-cjson/schema/all-of-additional-properties-false.schema/692993e832 cjson-enum-getter
+schema-cjson/schema/any.schema/e62cc488d7 cjson-map-parsed-twice
+schema-cjson/schema/class-map-union.schema/5c2eef3944 cjson-map-parsed-twice
+schema-cjson/schema/class-with-additional.schema/2229739a5c cjson-map-parsed-twice
+schema-cjson/schema/comment-injection-enum-nested-comment.schema/5cc51fc8ea cjson-enum-getter
+schema-cjson/schema/comment-injection-enum.schema/b62e317fee cjson-enum-getter
+schema-cjson/schema/const-non-string.schema/97d1a22bd1 cjson-enum-getter
+schema-cjson/schema/description.schema/a40cef1a66 cjson-enum-getter
+schema-cjson/schema/direct-union.schema/7a3e6f5cad cjson-map-parsed-twice
+schema-cjson/schema/enum-large.schema/83b89a63f3 cjson-enum-getter
+schema-cjson/schema/enum-with-null.schema/968a394997 cjson-enum-getter
+schema-cjson/schema/enum-with-values.schema/f115032865 cjson-enum-getter
+schema-cjson/schema/enum.schema/22ac9bd87b cjson-enum-getter
+schema-cjson/schema/haskell-enum-forbidden.schema/bdbed3afd5 cjson-enum-getter
+schema-cjson/schema/issue2680-top-level-array.schema/eb74f963b4 cjson-top-level-collections
+schema-cjson/schema/keyword-enum.schema/34741f230c cjson-enum-getter
+schema-cjson/schema/multi-type-enum.schema/d28cc7bc66 cjson-enum-getter
+schema-cjson/schema/nullable-optional-one-of.schema/c964d73870 cjson-enum-getter
+schema-cjson/schema/optional-constraints.schema/03d278be81 cjson-pattern-regcomp
+schema-cjson/schema/optional-enum.schema/d5c3d08925 cjson-enum-getter
+schema-cjson/schema/pattern.schema/a6e72d9b15 cjson-pattern-regcomp
+schema-cjson/schema/renaming-bug.schema/82d2a673ea cjson-enum-getter cjson-pattern-regcomp
+schema-cjson/schema/unicode-codepoint-length.schema/3f5184cf89 cjson-pattern-regcomp
+schema-cjson/schema/vega-lite.schema/9a2eed59ba cjson-enum-getter cjson-map-parsed-twice
+schema-java-datetime-legacy/schema/accessors.schema/e0adcfc7c4 java-legacy-date-null
+schema-java-datetime-legacy/schema/all-of-additional-properties-false.schema/2db8c3b5ff java-legacy-date-null
+schema-java-datetime-legacy/schema/any.schema/45127c32d4 java-legacy-date-null
+schema-java-datetime-legacy/schema/bool-string.schema/8b493401f9 java-legacy-date-null
+schema-java-datetime-legacy/schema/boolean-subschema.schema/c5b3912c3e java-legacy-date-null
+schema-java-datetime-legacy/schema/camelCase.schema/fa2cfdf287 java-legacy-date-null
+schema-java-datetime-legacy/schema/class-map-union.schema/2e990cc5e8 java-legacy-date-null
+schema-java-datetime-legacy/schema/class-with-additional.schema/1a67c120de java-legacy-date-null
+schema-java-datetime-legacy/schema/comment-injection-enum-nested-comment.schema/2b12ed8aa5 java-legacy-date-null
+schema-java-datetime-legacy/schema/comment-injection-enum.schema/b09d7b4a1b java-legacy-date-null
+schema-java-datetime-legacy/schema/comment-injection-nested-comment.schema/cb1acc2b0e java-legacy-date-null
+schema-java-datetime-legacy/schema/comment-injection.schema/39d3036fea java-legacy-date-null
+schema-java-datetime-legacy/schema/const-non-string.schema/87d0ee6769 java-legacy-date-null
+schema-java-datetime-legacy/schema/constructor.schema/3d68e997b4 java-legacy-date-null
+schema-java-datetime-legacy/schema/cut-enum.schema/edb09ff433 java-legacy-date-null
+schema-java-datetime-legacy/schema/date-time-or-string.schema/19d46b37d4 java-legacy-date-null
+schema-java-datetime-legacy/schema/default-value.schema/2f1ca1a926 java-legacy-date-null
+schema-java-datetime-legacy/schema/description-with-double-quotes.schema/a8ded4b9e8 java-legacy-date-null
+schema-java-datetime-legacy/schema/description.schema/a6af0ff6d5 java-legacy-date-null
+schema-java-datetime-legacy/schema/direct-union.schema/3311c3b464 java-legacy-date-null
+schema-java-datetime-legacy/schema/empty-object.schema/ba261217ba java-legacy-date-null
+schema-java-datetime-legacy/schema/enum-large.schema/8156217120 java-legacy-date-null
+schema-java-datetime-legacy/schema/enum-with-null.schema/6815d2721a java-legacy-date-null
+schema-java-datetime-legacy/schema/enum-with-values.schema/f3035a98e2 java-legacy-date-null
+schema-java-datetime-legacy/schema/enum.schema/c8def7d7be java-legacy-date-null
+schema-java-datetime-legacy/schema/fractional-bounds.schema/610f61046c java-legacy-date-null
+schema-java-datetime-legacy/schema/go-schema-pattern-properties.schema/ca883264ad java-legacy-date-null
+schema-java-datetime-legacy/schema/haskell-enum-forbidden.schema/0e4951f2bc java-legacy-date-null
+schema-java-datetime-legacy/schema/id-no-address.schema/fc4c6efa0c java-legacy-date-null
+schema-java-datetime-legacy/schema/id-root.schema/424bdd0940 java-legacy-date-null
+schema-java-datetime-legacy/schema/ie-suffix-singularization.schema/204bf5d39b java-legacy-date-null
+schema-java-datetime-legacy/schema/implicit-all-of.schema/3c3c759859 java-legacy-date-null
+schema-java-datetime-legacy/schema/implicit-class-array-union.schema/6a51f961f0 java-legacy-date-null
+schema-java-datetime-legacy/schema/implicit-one-of.schema/3b21395de1 java-legacy-date-null
+schema-java-datetime-legacy/schema/integer-before-number.schema/24fe529562 java-legacy-date-null
+schema-java-datetime-legacy/schema/integer-float-union.schema/9bc4c348f3 java-legacy-date-null
+schema-java-datetime-legacy/schema/integer-string.schema/a4618a60b1 java-legacy-date-null
+schema-java-datetime-legacy/schema/integer-type.schema/bd14c12ecf java-legacy-date-null
+schema-java-datetime-legacy/schema/intersection-nested.schema/8458090486 java-legacy-date-null
+schema-java-datetime-legacy/schema/intersection.schema/47e78e1088 java-legacy-date-null
+schema-java-datetime-legacy/schema/issue2680-top-level-array.schema/846855c2de java-legacy-date-null
+schema-java-datetime-legacy/schema/keyword-enum.schema/cd5866f506 java-legacy-date-null
+schema-java-datetime-legacy/schema/keyword-unions.schema/ddfe242dfc java-legacy-date-null
+schema-java-datetime-legacy/schema/light.schema/bde4b5cf36 java-legacy-date-null
+schema-java-datetime-legacy/schema/list.schema/bb314542a2 java-legacy-date-null
+schema-java-datetime-legacy/schema/min-max-items.schema/707d6561cb java-legacy-date-null
+schema-java-datetime-legacy/schema/minmax-integer.schema/e9629d276e java-legacy-date-null
+schema-java-datetime-legacy/schema/minmax.schema/3edd1c75b2 java-legacy-date-null
+schema-java-datetime-legacy/schema/minmaxlength.schema/48620117f1 java-legacy-date-null
+schema-java-datetime-legacy/schema/multi-type-enum.schema/3b4a830ec3 java-legacy-date-null
+schema-java-datetime-legacy/schema/mutually-recursive.schema/153603585c java-legacy-date-null
+schema-java-datetime-legacy/schema/nested-intersection-union.schema/6f724f6c7c java-legacy-date-null
+schema-java-datetime-legacy/schema/non-standard-ref.schema/be812bd245 java-legacy-date-null
+schema-java-datetime-legacy/schema/nullable-optional-one-of.schema/2a4be078a8 java-legacy-date-null
+schema-java-datetime-legacy/schema/object-type-required.schema/46a7760148 java-legacy-date-null
+schema-java-datetime-legacy/schema/optional-any.schema/b988630389 java-legacy-date-null
+schema-java-datetime-legacy/schema/optional-const-ref.schema/ba6feb1b53 java-legacy-date-null
+schema-java-datetime-legacy/schema/optional-constraints.schema/e568713f8b java-legacy-date-null
+schema-java-datetime-legacy/schema/optional-date-time.schema/c4ec1aa418 java-legacy-date-null
+schema-java-datetime-legacy/schema/optional-enum.schema/3ca7c10c8d java-legacy-date-null
+schema-java-datetime-legacy/schema/pattern.schema/b9fb5846a1 java-legacy-date-null
+schema-java-datetime-legacy/schema/postman-collection.schema/8f444471ac java-legacy-date-null
+schema-java-datetime-legacy/schema/prefix-items.schema/412869b107 java-legacy-date-null
+schema-java-datetime-legacy/schema/recursive-union-flattening.schema/808cac9f99 java-legacy-date-null
+schema-java-datetime-legacy/schema/ref-id-files.schema/020b77f90f java-legacy-date-null
+schema-java-datetime-legacy/schema/ref-remote.schema/a4a6615bae java-legacy-date-null
+schema-java-datetime-legacy/schema/renaming-bug.schema/3a3e8c96a6 java-legacy-date-null
+schema-java-datetime-legacy/schema/required-draft3.schema/0920a54001 java-legacy-date-null
+schema-java-datetime-legacy/schema/required-non-properties.schema/104143ab04 java-legacy-date-null
+schema-java-datetime-legacy/schema/required.schema/94369a40b1 java-legacy-date-null
+schema-java-datetime-legacy/schema/rust-cycle-breaker-union.schema/44c26b18ef java-legacy-date-null
+schema-java-datetime-legacy/schema/schema-constraints.schema/2bf7a6c993 java-legacy-date-null
+schema-java-datetime-legacy/schema/simple-ref.schema/38a3f938b6 java-legacy-date-null
+schema-java-datetime-legacy/schema/strict-optional.schema/5c497c84fc java-legacy-date-null
+schema-java-datetime-legacy/schema/top-level-array.schema/b3b4acd50b java-legacy-date-null
+schema-java-datetime-legacy/schema/top-level-enum.schema/beea80ebbb java-legacy-date-null
+schema-java-datetime-legacy/schema/top-level-primitive-array.schema/0dd5f550bf java-legacy-date-null
+schema-java-datetime-legacy/schema/top-level-primitive.schema/08eb66ee8a java-legacy-date-null
+schema-java-datetime-legacy/schema/tuple.schema/33f74ada17 java-legacy-date-null
+schema-java-datetime-legacy/schema/unevaluated-properties.schema/97c9716259 java-legacy-date-null
+schema-java-datetime-legacy/schema/unicode-codepoint-length.schema/27b210ecf6 java-legacy-date-null
+schema-java-datetime-legacy/schema/union-int-double.schema/105514b783 java-legacy-date-null
+schema-java-datetime-legacy/schema/union-list.schema/9ea890d4b0 java-legacy-date-null
+schema-java-datetime-legacy/schema/union.schema/6b0b26ff73 java-legacy-date-null
+schema-java-datetime-legacy/schema/uuid.schema/2cecaa0001 java-legacy-date-null
+schema-java-datetime-legacy/schema/vega-lite.schema/f55dd238cf java-legacy-date-null
+schema-ruby/schema/mutually-recursive.schema/8da8cae144 ruby-union-forward-declaration
+schema-ruby/schema/recursive-union-flattening.schema/639f372e69 ruby-union-forward-declaration
+schema-ruby/schema/rust-cycle-breaker-union.schema/7c289d1279 ruby-union-forward-declaration
+schema-ruby/schema/union-list.schema/0be2993f84 ruby-union-forward-declaration
+schema-ruby/schema/vega-lite.schema/c7ed6bc3b1 ruby-union-forward-declaration
+
+# Render scenarios (crates/quicktype-core/tests/fixtures/core-rendering/
+# scenarios): render_scenarios.rs reads <id>.<render>.<file>.intended.
+render-scenarios/cjson-enum-values cjson-enum-getter
+render-scenarios/cjson-shapes cjson-enum-getter cjson-map-parsed-twice cjson-pattern-regcomp
+render-scenarios/cjson-top-levels cjson-enum-getter cjson-top-level-collections cjson-top-level-null-marker
+render-scenarios/java-options java-legacy-date-null
+render-scenarios/java-top-levels java-legacy-date-null
+render-scenarios/ruby-shapes ruby-union-forward-declaration
+render-scenarios/vitest-cjson-enum-default cjson-enum-getter
+
+# npm differential suite scenarios (npm/quicktype-core/test/differential) that
+# are not golden cases: intended/<scenario id>.diff is the corrected result,
+# as a diff of the reference's (its corpus/<case> scenarios use the golden
+# cases' .intended files).
+npm/api/cjson-enum-default/invalid-value-does-not-collide cjson-enum-getter
+npm/corpus/cjson/json/misc/76ae1.json/229486e67d cjson-enum-getter cjson-map-parsed-twice
+npm/inputs-bytes/python/json/misc/0e0c2.json python-property-shadows-converter
+npm/inputs-bytes/python/json/misc/a0496.json python-property-shadows-converter
+npm/inputs/cjson/json/misc/00c36.json cjson-enum-getter
+npm/inputs/cjson/json/misc/00ec5.json cjson-enum-getter cjson-map-parsed-twice
+npm/inputs/cjson/json/misc/010b1.json cjson-enum-getter
+npm/inputs/cjson/json/misc/050b0.json cjson-enum-getter
+npm/inputs/cjson/json/misc/06bee.json cjson-enum-getter
+npm/inputs/cjson/json/misc/09f54.json cjson-map-parsed-twice
+npm/inputs/cjson/json/misc/0a91a.json cjson-enum-getter
+npm/inputs/cjson/json/misc/0cffa.json cjson-enum-getter
+npm/inputs/cjson/json/misc/0e0c2.json cjson-enum-getter
+npm/inputs/cjson/json/misc/10be4.json cjson-enum-getter
+npm/inputs/cjson/json/misc/127a1.json cjson-enum-getter
+npm/inputs/cjson/json/misc/1a7f5.json cjson-enum-getter
+npm/inputs/cjson/json/misc/1b409.json cjson-enum-getter
+npm/inputs/cjson/json/misc/262f0.json cjson-enum-getter
+npm/inputs/cjson/json/misc/26b49.json cjson-enum-getter
+npm/inputs/cjson/json/misc/27332.json cjson-enum-getter
+npm/inputs/cjson/json/misc/29f47.json cjson-enum-getter
+npm/inputs/cjson/json/misc/2d4e2.json cjson-enum-getter
+npm/inputs/cjson/json/misc/2df80.json cjson-enum-getter
+npm/inputs/cjson/json/misc/32431.json cjson-enum-getter
+npm/inputs/cjson/json/misc/337ed.json cjson-enum-getter
+npm/inputs/cjson/json/misc/33d2e.json cjson-enum-getter
+npm/inputs/cjson/json/misc/34702.json cjson-enum-getter
+npm/inputs/cjson/json/misc/3536b.json cjson-enum-getter
+npm/inputs/cjson/json/misc/3f1ce.json cjson-enum-getter
+npm/inputs/cjson/json/misc/437e7.json cjson-enum-getter
+npm/inputs/cjson/json/misc/458db.json cjson-enum-getter
+npm/inputs/cjson/json/misc/4a455.json cjson-enum-getter
+npm/inputs/cjson/json/misc/4d6fb.json cjson-enum-getter
+npm/inputs/cjson/json/misc/54d32.json cjson-enum-getter
+npm/inputs/cjson/json/misc/570ec.json cjson-enum-getter
+npm/inputs/cjson/json/misc/5f7fe.json cjson-enum-getter
+npm/inputs/cjson/json/misc/617e8.json cjson-enum-getter
+npm/inputs/cjson/json/misc/65dec.json cjson-enum-getter
+npm/inputs/cjson/json/misc/66121.json cjson-enum-getter
+npm/inputs/cjson/json/misc/6de06.json cjson-enum-getter
+npm/inputs/cjson/json/misc/6dec6.json cjson-enum-getter
+npm/inputs/cjson/json/misc/734ad.json cjson-enum-getter
+npm/inputs/cjson/json/misc/7681c.json cjson-enum-getter
+npm/inputs/cjson/json/misc/76ae1.json cjson-enum-getter cjson-map-parsed-twice
+npm/inputs/cjson/json/misc/77392.json cjson-enum-getter
+npm/inputs/cjson/json/misc/7d397.json cjson-enum-getter cjson-map-parsed-twice
+npm/inputs/cjson/json/misc/7eb30.json cjson-enum-getter
+npm/inputs/cjson/json/misc/7f568.json cjson-enum-getter cjson-map-parsed-twice
+npm/inputs/cjson/json/misc/7fbfb.json cjson-enum-getter
+npm/inputs/cjson/json/misc/8592b.json cjson-enum-getter
+npm/inputs/cjson/json/misc/996bd.json cjson-enum-getter
+npm/inputs/cjson/json/misc/9a503.json cjson-enum-getter
+npm/inputs/cjson/json/misc/9ac3b.json cjson-enum-getter
+npm/inputs/cjson/json/misc/9eed5.json cjson-enum-getter
+npm/inputs/cjson/json/misc/a3d8c.json cjson-enum-getter
+npm/inputs/cjson/json/misc/a45b0.json cjson-enum-getter
+npm/inputs/cjson/json/misc/ab0d1.json cjson-enum-getter
+npm/inputs/cjson/json/misc/ad8be.json cjson-enum-getter
+npm/inputs/cjson/json/misc/ae7f0.json cjson-enum-getter
+npm/inputs/cjson/json/misc/ae9ca.json cjson-enum-getter
+npm/inputs/cjson/json/misc/af2d1.json cjson-enum-getter
+npm/inputs/cjson/json/misc/b4865.json cjson-enum-getter
+npm/inputs/cjson/json/misc/be234.json cjson-enum-getter
+npm/inputs/cjson/json/misc/c0356.json cjson-map-parsed-twice
+npm/inputs/cjson/json/misc/c3303.json cjson-enum-getter
+npm/inputs/cjson/json/misc/c8c7e.json cjson-enum-getter
+npm/inputs/cjson/json/misc/cb0cc.json cjson-enum-getter
+npm/inputs/cjson/json/misc/cda6c.json cjson-enum-getter
+npm/inputs/cjson/json/misc/dbfb3.json cjson-enum-getter
+npm/inputs/cjson/json/misc/dc44f.json cjson-enum-getter
+npm/inputs/cjson/json/misc/dd1ce.json cjson-enum-getter
+npm/inputs/cjson/json/misc/e0ac7.json cjson-enum-getter
+npm/inputs/cjson/json/misc/e2915.json cjson-enum-getter
+npm/inputs/cjson/json/misc/e324e.json cjson-enum-getter cjson-map-parsed-twice
+npm/inputs/cjson/json/misc/e53b5.json cjson-enum-getter
+npm/inputs/cjson/json/misc/e8a0b.json cjson-enum-getter
+npm/inputs/cjson/json/misc/e8b04.json cjson-enum-getter
+npm/inputs/cjson/json/misc/ed095.json cjson-top-level-collections
+npm/inputs/cjson/json/misc/f22f5.json cjson-enum-getter
+npm/inputs/cjson/json/misc/f3edf.json cjson-enum-getter
+npm/inputs/cjson/json/misc/f466a.json cjson-enum-getter
+npm/inputs/cjson/json/misc/f6a65.json cjson-enum-getter
+npm/inputs/cjson/json/misc/f74d5.json cjson-enum-getter
+npm/inputs/cjson/json/misc/f82d9.json cjson-enum-getter
+npm/inputs/cjson/json/misc/fcca3.json cjson-enum-getter
+npm/inputs/cjson/json/misc/fd329.json cjson-map-parsed-twice
+npm/inputs/cjson/json/priority/bug2037.json cjson-map-parsed-twice
+npm/inputs/cjson/json/priority/bug427.json cjson-enum-getter
+npm/inputs/cjson/json/priority/bug855-short.json cjson-top-level-collections
+npm/inputs/cjson/json/priority/bug863.json cjson-enum-getter
+npm/inputs/cjson/json/priority/coin-pairs.json cjson-map-parsed-twice
+npm/inputs/cjson/json/priority/combined-enum.json cjson-enum-getter
+npm/inputs/cjson/json/priority/issue2680-scalar-array.json cjson-top-level-collections
+npm/inputs/cjson/json/priority/keywords.json cjson-enum-getter
+npm/inputs/cjson/json/priority/kotlin-enum-class-case-collision.json cjson-enum-getter
+npm/inputs/cjson/json/priority/nbl-stats.json cjson-enum-getter cjson-map-parsed-twice
+npm/inputs/cjson/json/samples/github-events.json cjson-enum-getter
+npm/inputs/cjson/json/samples/objc-control-characters.json cjson-enum-getter
+npm/inputs/cjson/json/samples/pokedex.json cjson-enum-getter
+npm/inputs/cjson/json/samples/reddit.json cjson-enum-getter
+npm/inputs/cjson/json/samples/us-avg-temperatures.json cjson-map-parsed-twice
+npm/inputs/cjson/json/samples/us-senators.json cjson-enum-getter
+npm/inputs/cjson/schema/accessors.schema cjson-enum-getter
+npm/inputs/cjson/schema/all-of-additional-properties-false.schema cjson-enum-getter
+npm/inputs/cjson/schema/any.schema cjson-map-parsed-twice
+npm/inputs/cjson/schema/class-map-union.schema cjson-map-parsed-twice
+npm/inputs/cjson/schema/class-with-additional.schema cjson-map-parsed-twice
+npm/inputs/cjson/schema/comment-injection-enum-nested-comment.schema cjson-enum-getter
+npm/inputs/cjson/schema/comment-injection-enum.schema cjson-enum-getter
+npm/inputs/cjson/schema/const-non-string.schema cjson-enum-getter
+npm/inputs/cjson/schema/description.schema cjson-enum-getter
+npm/inputs/cjson/schema/direct-union.schema cjson-map-parsed-twice
+npm/inputs/cjson/schema/enum-large.schema cjson-enum-getter
+npm/inputs/cjson/schema/enum-with-null.schema cjson-enum-getter
+npm/inputs/cjson/schema/enum-with-values.schema cjson-enum-getter
+npm/inputs/cjson/schema/enum.schema cjson-enum-getter
+npm/inputs/cjson/schema/haskell-enum-forbidden.schema cjson-enum-getter
+npm/inputs/cjson/schema/issue2680-top-level-array.schema cjson-top-level-collections
+npm/inputs/cjson/schema/keyword-enum.schema cjson-enum-getter
+npm/inputs/cjson/schema/multi-type-enum.schema cjson-enum-getter
+npm/inputs/cjson/schema/nullable-optional-one-of.schema cjson-enum-getter
+npm/inputs/cjson/schema/optional-constraints.schema cjson-pattern-regcomp
+npm/inputs/cjson/schema/optional-enum.schema cjson-enum-getter
+npm/inputs/cjson/schema/pattern.schema cjson-pattern-regcomp
+npm/inputs/cjson/schema/renaming-bug.schema cjson-enum-getter cjson-pattern-regcomp
+npm/inputs/cjson/schema/top-level-enum.schema cjson-enum-getter
+npm/inputs/cjson/schema/unicode-codepoint-length.schema cjson-pattern-regcomp
+npm/inputs/cjson/schema/vega-lite.schema cjson-enum-getter cjson-map-parsed-twice
+npm/inputs/python/json/misc/0e0c2.json python-property-shadows-converter
+npm/inputs/python/json/misc/a0496.json python-property-shadows-converter
+npm/inputs/ruby/schema/mutually-recursive.schema ruby-union-forward-declaration
+npm/inputs/ruby/schema/recursive-union-flattening.schema ruby-union-forward-declaration
+npm/inputs/ruby/schema/rust-cycle-breaker-union.schema ruby-union-forward-declaration
+npm/inputs/ruby/schema/union-list.schema ruby-union-forward-declaration
+npm/inputs/ruby/schema/vega-lite.schema ruby-union-forward-declaration

@@ -1,0 +1,20 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -132,7 +132,7 @@
+ 
+ enum Egg cJSON_GetEggValue(const cJSON * j) {
+     enum Egg x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "2 km")) x = EGG_THE_2_KM;
+         else if (!strcmp(cJSON_GetStringValue(j), "Not in Eggs")) x = EGG_NOT_IN_EGGS;
+         else if (!strcmp(cJSON_GetStringValue(j), "5 km")) x = EGG_THE_5_KM;
+@@ -156,7 +156,7 @@
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j) {
+     enum Type x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Fire")) x = TYPE_FIRE;
+         else if (!strcmp(cJSON_GetStringValue(j), "Ice")) x = TYPE_ICE;
+         else if (!strcmp(cJSON_GetStringValue(j), "Flying")) x = TYPE_FLYING;

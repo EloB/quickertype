@@ -1,0 +1,32 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -168,8 +168,7 @@
+                             cJSON_DeleteObjective(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteReward(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetRewardValue(e1), sizeof(struct Reward *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Reward *));
+                     }
+                     x->rewards = x1;
+                 }
+@@ -270,8 +269,7 @@
+                             cJSON_DeleteMissionSpec(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteObjective(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetObjectiveValue(e1), sizeof(struct Objective *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Objective *));
+                     }
+                     x->objectives = x1;
+                 }
+@@ -372,8 +370,7 @@
+                             cJSON_DeleteTopLevel(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteMissionSpec(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetMissionSpecValue(e1), sizeof(struct MissionSpec *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct MissionSpec *));
+                     }
+                     x->mission_specs = x1;
+                 }

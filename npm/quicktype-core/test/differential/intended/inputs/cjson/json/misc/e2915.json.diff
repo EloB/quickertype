@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -243,7 +243,7 @@
+ 
+ enum Text cJSON_GetTextValue(const cJSON * j) {
+     enum Text x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Sunny")) x = TEXT_SUNNY;
+     }
+     return x;

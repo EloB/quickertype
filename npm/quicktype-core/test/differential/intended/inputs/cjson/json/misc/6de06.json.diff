@@ -1,0 +1,29 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -286,7 +286,7 @@
+ 
+ enum PostHint cJSON_GetPostHintValue(const cJSON * j) {
+     enum PostHint x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "link")) x = POSTHINT_LINK;
+         else if (!strcmp(cJSON_GetStringValue(j), "image")) x = POSTHINT_IMAGE;
+         else if (!strcmp(cJSON_GetStringValue(j), "rich:video")) x = POSTHINT_RICH_VIDEO;
+@@ -306,7 +306,7 @@
+ 
+ enum SubredditType cJSON_GetSubredditTypeValue(const cJSON * j) {
+     enum SubredditType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "public")) x = SUBREDDITTYPE_PUBLIC;
+     }
+     return x;
+@@ -322,7 +322,7 @@
+ 
+ enum Kind cJSON_GetKindValue(const cJSON * j) {
+     enum Kind x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "t3")) x = KIND_T3;
+     }
+     return x;

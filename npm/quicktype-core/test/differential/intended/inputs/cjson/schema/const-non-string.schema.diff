@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -71,7 +71,7 @@
+ 
+ enum Kind cJSON_GetKindValue(const cJSON * j) {
+     enum Kind x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "widget")) x = KIND_WIDGET;
+     }
+     return x;

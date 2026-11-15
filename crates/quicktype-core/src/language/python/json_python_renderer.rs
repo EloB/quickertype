@@ -91,7 +91,71 @@ impl ConverterFunction {
             ConverterFunction::IsType => "is-type",
         }
     }
+
+    /// Every converter function.
+    pub const ALL: [ConverterFunction; 16] = [
+        ConverterFunction::None,
+        ConverterFunction::Bool,
+        ConverterFunction::Int,
+        ConverterFunction::FromFloat,
+        ConverterFunction::ToFloat,
+        ConverterFunction::Str,
+        ConverterFunction::ToEnum,
+        ConverterFunction::List,
+        ConverterFunction::ToClass,
+        ConverterFunction::Dict,
+        ConverterFunction::Union,
+        ConverterFunction::FromDate,
+        ConverterFunction::FromTime,
+        ConverterFunction::FromDatetime,
+        ConverterFunction::FromStringifiedBool,
+        ConverterFunction::IsType,
+    ];
+
+    /// The Python name of the function, as `conv` emits it: `from_` and
+    /// the name, or the name itself for `from-`, `to-` and `is-` names.
+    pub fn python_name(self) -> String {
+        let s = self.as_str();
+        let name = s.replace('-', "_");
+        if s.starts_with("from-") || s.starts_with("to-") || s.starts_with("is-") {
+            name
+        } else {
+            format!("from_{name}")
+        }
+    }
+
+    /// Whether `from_dict` may call it: the deserializers and the decoding
+    /// transformers' converters (`deserializer`, `transformer`); the
+    /// others only `to_dict` calls.
+    pub fn used_by_from_dict(self) -> bool {
+        match self {
+            ConverterFunction::None
+            | ConverterFunction::Bool
+            | ConverterFunction::Int
+            | ConverterFunction::FromFloat
+            | ConverterFunction::Str
+            | ConverterFunction::List
+            | ConverterFunction::Dict
+            | ConverterFunction::Union
+            | ConverterFunction::FromDate
+            | ConverterFunction::FromTime
+            | ConverterFunction::FromDatetime
+            | ConverterFunction::FromStringifiedBool => true,
+            ConverterFunction::ToFloat
+            | ConverterFunction::ToEnum
+            | ConverterFunction::ToClass
+            | ConverterFunction::IsType => false,
+        }
+    }
 }
+
+/// What the constraint checks of `from_dict` call
+/// (`emit_constraint_checks`): the built-in `len`, the module `re` and
+/// `typing.cast`.
+const LEN: &str = "len";
+const RE: &str = "re";
+const CAST: &str = "cast";
+const CONSTRAINT_CHECK_NAMES: [&str; 3] = [LEN, RE, CAST];
 
 /// TS `TopLevelConverterNames`.
 #[derive(Clone, Copy, Debug)]
@@ -366,7 +430,7 @@ impl<'a> JsonPythonRenderer<'a> {
             return v;
         }
 
-        sl![self.with_typing("cast"), "(", ty, ", ", v, ")"]
+        sl![self.with_typing(CAST), "(", ty, ", ", v, ")"]
     }
 
     /// `def <name>(x: Any) -> <result>:` for the simple converters.
@@ -665,12 +729,7 @@ impl<'a> JsonPythonRenderer<'a> {
     /// `conv(cf)`: the name of the Python converter function `cf`.
     fn conv(&mut self, cf: ConverterFunction) -> Source {
         self.deserializer_functions.insert(cf);
-        let s = cf.as_str();
-        let name = s.replace('-', "_");
-        if s.starts_with("from-") || s.starts_with("to-") || s.starts_with("is-") {
-            return name.into();
-        }
-        sl!["from_", name]
+        cf.python_name().into()
     }
 
     /// `convFn(cf, arg)`: applies the converter function to `arg`.
@@ -1016,7 +1075,9 @@ impl<'a> JsonPythonRenderer<'a> {
         })
     }
 
-    /// The `assert`s of `from_dict` for the constraints of a property.
+    /// The `assert`s of `from_dict` for the constraints of a property. They
+    /// use [`CONSTRAINT_CHECK_NAMES`], which no property may be named
+    /// like.
     fn emit_constraint_checks(
         &mut self,
         name: Name,
@@ -1035,10 +1096,13 @@ impl<'a> JsonPythonRenderer<'a> {
         };
         let (min, max) = min_max_items_for_type(graph, t)?.map_or((None, None), |c| (c.0, c.1));
         if let Some(min) = min {
-            check(self, sl![number::to_string(min), " <= len(", name, ")"]);
+            check(
+                self,
+                sl![number::to_string(min), " <= ", LEN, "(", name, ")"],
+            );
         }
         if let Some(max) = max {
-            check(self, sl!["len(", name, ") <= ", number::to_string(max)]);
+            check(self, sl![LEN, "(", name, ") <= ", number::to_string(max)]);
         }
         let (min_value, max_value) =
             min_max_value_for_type(graph, t)?.map_or((None, None), |c| (c.0, c.1));
@@ -1054,15 +1118,15 @@ impl<'a> JsonPythonRenderer<'a> {
             if let Some(lo) = lo {
                 check(
                     self,
-                    sl![number::to_string(lo), " <= len(", raw.clone(), ")"],
+                    sl![number::to_string(lo), " <= ", LEN, "(", raw.clone(), ")"],
                 );
             }
             if let Some(hi) = hi {
-                check(self, sl!["len(", raw, ") <= ", number::to_string(hi)]);
+                check(self, sl![LEN, "(", raw, ") <= ", number::to_string(hi)]);
             }
         }
         if let Some(pattern) = pattern_for_type(graph, t)? {
-            let re = self.with_module_import("re");
+            let re = self.with_module_import(RE);
             let pattern = self.string(&pattern);
             let cast = self.cast("str".into(), property_value.clone());
             check(self, sl![re, ".search(", pattern, ", ", cast, ")"]);
@@ -1219,15 +1283,35 @@ pub mod json_python_hooks {
     use super::*;
 
     /// `forbiddenForObjectProperties(c, className)`: also `from_dict` and
-    /// `to_dict`.
+    /// `to_dict`, and (a fix of ours, docs/PARITY.md, "Bugs fixed in
+    /// quickertype") what `from_dict` uses besides its locals, which are
+    /// named like the properties: its parameter `obj`, `isinstance` and
+    /// the converter functions it calls
+    /// ([`ConverterFunction::used_by_from_dict`]), and what its constraint
+    /// checks call ([`CONSTRAINT_CHECK_NAMES`]). quicktype forbids only
+    /// `from_dict` and `to_dict`, so a property `from_date` shadows the
+    /// converter `from_date`.
     pub fn forbidden_for_object_properties(
         r: &mut JsonPythonRenderer<'_>,
         c: TypeRef,
         class_name: Name,
     ) -> Result<ForbiddenWordsInfo> {
         let mut result = python_hooks::forbidden_for_object_properties(r, c, class_name)?;
-        result.names.push("from_dict".into());
-        result.names.push("to_dict".into());
+        result.names.extend(
+            ["from_dict", "to_dict", "obj", "isinstance"]
+                .into_iter()
+                .map(String::from)
+                .chain(
+                    ConverterFunction::ALL
+                        .into_iter()
+                        .filter(|cf| cf.used_by_from_dict())
+                        .map(ConverterFunction::python_name)
+                        // The `dict` converter is the method's name.
+                        .filter(|name| name != "from_dict"),
+                )
+                .chain(CONSTRAINT_CHECK_NAMES.into_iter().map(String::from))
+                .map(ForbiddenWord::from),
+        );
         Ok(result)
     }
 
@@ -1279,4 +1363,44 @@ impl<'a> PythonRenderer<'a> for JsonPythonRenderer<'a> {
     }
 
     python_renderer_methods!([forward json_python_methods]);
+}
+
+#[cfg(test)]
+mod converter_function_tests {
+    use super::ConverterFunction;
+
+    /// [`ConverterFunction::ALL`] has every variant: the match below has no
+    /// wildcard, so a new variant does not compile until it gets an index,
+    /// and then `ALL` must have it too.
+    #[test]
+    fn all_lists_every_converter_function() {
+        fn index(cf: ConverterFunction) -> usize {
+            match cf {
+                ConverterFunction::None => 0,
+                ConverterFunction::Bool => 1,
+                ConverterFunction::Int => 2,
+                ConverterFunction::FromFloat => 3,
+                ConverterFunction::ToFloat => 4,
+                ConverterFunction::Str => 5,
+                ConverterFunction::ToEnum => 6,
+                ConverterFunction::List => 7,
+                ConverterFunction::ToClass => 8,
+                ConverterFunction::Dict => 9,
+                ConverterFunction::Union => 10,
+                ConverterFunction::FromDate => 11,
+                ConverterFunction::FromTime => 12,
+                ConverterFunction::FromDatetime => 13,
+                ConverterFunction::FromStringifiedBool => 14,
+                ConverterFunction::IsType => 15,
+            }
+        }
+        const VARIANTS: usize = 16;
+        let mut seen = [false; VARIANTS];
+        for cf in ConverterFunction::ALL {
+            assert!(!seen[index(cf)], "{cf:?} is in ALL twice");
+            seen[index(cf)] = true;
+        }
+        assert!(seen.iter().all(|&s| s), "ALL misses a converter function");
+        assert_eq!(ConverterFunction::ALL.len(), VARIANTS);
+    }
 }

@@ -13,6 +13,14 @@
 //! comment style) and runs the scenario's emit script. The TypeScript
 //! `ProbeRenderer` in the script and [`ProbeRenderer`] here are twins: the
 //! same hooks, the same script interpreter.
+//!
+//! Intended differences (`tests/intended-differences.txt`, bugs quickertype
+//! fixes): a file `<id>.<render index>.<file name>.intended` beside a
+//! scenario's `<id>.json` is what that render must produce instead of the
+//! recorded text, which it must no longer match. A scenario with such files
+//! is listed as `render-scenarios/<id>` in the list, and the other way round.
+//! `RENDER_SCENARIOS_RECORD_INTENDED=1` writes them for the listed
+//! scenarios (and deletes those of files that match the recording).
 
 mod render_support;
 
@@ -946,7 +954,62 @@ fn render(fixture: &Value, render: &Value) -> Result<MultiFileRenderResult> {
     )
 }
 
-fn check_render(fixture: &Value, r: &Value) -> std::result::Result<(), String> {
+/// The `.intended` files of one render (see the module documentation).
+struct IntendedFiles<'a> {
+    dir: &'a Path,
+    id: &'a str,
+    index: usize,
+    /// `RENDER_SCENARIOS_RECORD_INTENDED`, for a listed scenario.
+    record: bool,
+    /// The `.intended` files read or written.
+    used: &'a std::cell::RefCell<IndexSet<std::path::PathBuf>>,
+}
+
+impl IntendedFiles<'_> {
+    fn path(&self, name: &str) -> std::path::PathBuf {
+        self.dir
+            .join(format!("{}.{}.{name}.intended", self.id, self.index))
+    }
+
+    /// The intended output of the file `name`, if it has one; when
+    /// recording, `actual` (if it is not the recording).
+    fn get(&self, name: &str, recorded: &str, actual: &str) -> Option<String> {
+        let path = self.path(name);
+        if self.record {
+            if actual == recorded {
+                let _ = fs::remove_file(&path);
+                return None;
+            }
+            fs::write(&path, actual).unwrap();
+        }
+        let text = fs::read_to_string(&path).ok()?;
+        self.used.borrow_mut().insert(path);
+        Some(text)
+    }
+}
+
+/// The ids of the scenarios `tests/intended-differences.txt` lists
+/// (`render-scenarios/<id>`).
+fn listed_intended_scenarios() -> IndexSet<String> {
+    let list = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/intended-differences.txt");
+    fs::read_to_string(list)
+        .unwrap()
+        .lines()
+        .filter_map(|l| {
+            l.split_whitespace()
+                .next()?
+                .strip_prefix("render-scenarios/")
+        })
+        .map(str::to_owned)
+        .collect()
+}
+
+/// Checks render `r` of `fixture`.
+fn check_render(
+    fixture: &Value,
+    r: &Value,
+    intended: &IntendedFiles<'_>,
+) -> std::result::Result<(), String> {
     let (result, console) = capture_console(|| render(fixture, r));
     let expected_console: Vec<String> = string_list(&r["console"]);
     if console != expected_console {
@@ -974,11 +1037,28 @@ fn check_render(fixture: &Value, r: &Value) -> std::result::Result<(), String> {
     }
     for file in files {
         let name = file["name"].as_str().unwrap_or_default();
-        let expected = file["text"].as_str().unwrap_or_default();
+        let recorded = file["text"].as_str().unwrap_or_default();
         let actual = result[name].lines.join("\n");
+        let intended = intended.get(name, recorded, &actual);
+        if let Some(intended) = &intended {
+            if intended == recorded {
+                return Err(format!("{name}: its .intended file is the recorded text"));
+            }
+            if actual == recorded {
+                return Err(format!(
+                    "{name} is quicktype's recorded output, not the intended difference"
+                ));
+            }
+        }
+        let expected = intended.as_deref().unwrap_or(recorded);
         if actual != expected {
             return Err(format!(
-                "{name} differs at {}",
+                "{name} differs from {} at {}",
+                if intended.is_some() {
+                    "its .intended file"
+                } else {
+                    "the recording"
+                },
                 first_difference(expected, &actual)
             ));
         }
@@ -1016,14 +1096,51 @@ fn render_scenarios_match_reference() {
     entries.sort();
     let mut total = 0;
     let mut failures = Vec::new();
+    let listed = listed_intended_scenarios();
+    let record = std::env::var_os("RENDER_SCENARIOS_RECORD_INTENDED").is_some();
+    let used = std::cell::RefCell::new(IndexSet::default());
+    let mut with_intended = IndexSet::default();
     for path in entries {
         let fixture: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
         let id = fixture["id"].as_str().unwrap_or_default().to_owned();
         for (i, r) in fixture["renders"].as_array().unwrap().iter().enumerate() {
             total += 1;
-            if let Err(message) = check_render(&fixture, r) {
+            let before = used.borrow().len();
+            let intended = IntendedFiles {
+                dir: &dir,
+                id: &id,
+                index: i,
+                record: record && listed.contains(&id),
+                used: &used,
+            };
+            if let Err(message) = check_render(&fixture, r, &intended) {
                 failures.push(format!("{id} render #{i} ({}): {message}", r["lang"]));
             }
+            if used.borrow().len() > before {
+                with_intended.insert(id.clone());
+            }
+        }
+    }
+    let used = used.into_inner();
+    // The .intended files and the list agree.
+    for entry in fs::read_dir(&dir).unwrap() {
+        let path = entry.unwrap().path();
+        if path.extension().is_some_and(|e| e == "intended") && !used.contains(&path) {
+            failures.push(format!("{}: no render has this file", path.display()));
+        }
+    }
+    for id in &with_intended {
+        if !listed.contains(id) {
+            failures.push(format!(
+                "{id}: has .intended files but is not listed in tests/intended-differences.txt"
+            ));
+        }
+    }
+    for id in &listed {
+        if !with_intended.contains(id) {
+            failures.push(format!(
+                "render-scenarios/{id}: listed in tests/intended-differences.txt, but has no .intended file"
+            ));
         }
     }
     println!(

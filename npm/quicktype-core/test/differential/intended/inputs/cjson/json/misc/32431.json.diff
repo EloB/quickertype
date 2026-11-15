@@ -1,0 +1,47 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -175,7 +175,7 @@
+ 
+ enum GeometryType cJSON_GetGeometryTypeValue(const cJSON * j) {
+     enum GeometryType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Point")) x = GEOMETRYTYPE_POINT;
+     }
+     return x;
+@@ -191,7 +191,7 @@
+ 
+ enum MagType cJSON_GetMagTypeValue(const cJSON * j) {
+     enum MagType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "md")) x = MAGTYPE_MD;
+         else if (!strcmp(cJSON_GetStringValue(j), "ml")) x = MAGTYPE_ML;
+         else if (!strcmp(cJSON_GetStringValue(j), "mb")) x = MAGTYPE_MB;
+@@ -211,7 +211,7 @@
+ 
+ enum Status cJSON_GetStatusValue(const cJSON * j) {
+     enum Status x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "automatic")) x = STATUS_AUTOMATIC;
+         else if (!strcmp(cJSON_GetStringValue(j), "reviewed")) x = STATUS_REVIEWED;
+     }
+@@ -229,7 +229,7 @@
+ 
+ enum PropertiesType cJSON_GetPropertiesTypeValue(const cJSON * j) {
+     enum PropertiesType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "earthquake")) x = PROPERTIESTYPE_EARTHQUAKE;
+     }
+     return x;
+@@ -245,7 +245,7 @@
+ 
+ enum FeatureType cJSON_GetFeatureTypeValue(const cJSON * j) {
+     enum FeatureType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Feature")) x = FEATURETYPE_FEATURE;
+     }
+     return x;

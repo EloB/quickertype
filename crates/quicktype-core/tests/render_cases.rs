@@ -17,6 +17,11 @@
 //! A fixture's `console` lists the lines the render printed with
 //! `console.log` (none if absent); they must match, and they precede the
 //! files on stdout.
+//!
+//! A golden file with an `.intended` copy beside it is an intended
+//! difference (`tests/intended-differences.txt`: a bug quickertype fixes):
+//! the render must produce the copy, not the recording. `cargo xtask
+//! parity` checks that the copies and the list agree.
 
 mod render_support;
 
@@ -53,6 +58,19 @@ fn join_stdout(result: &MultiFileRenderResult, quiet: bool) -> String {
     out
 }
 
+/// A golden file, or its `.intended` copy if it has one (the intended
+/// differences, see the module documentation).
+fn read_golden(golden_dir: &Path, path: &str) -> Result<String, String> {
+    let recorded = golden_dir.join(path);
+    let intended = golden_dir.join(format!("{path}.intended"));
+    let file = if intended.is_file() {
+        intended
+    } else {
+        recorded
+    };
+    fs::read_to_string(&file).map_err(|e| format!("cannot read golden {}: {e}", file.display()))
+}
+
 fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
     let mut graph = build_graph(&fixture["graph"]).map_err(|e| format!("graph: {e}"))?;
     let (result, console) =
@@ -79,10 +97,7 @@ fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
     // compare them joined the way the CLI prints them, with the stdout
     // golden (`stdout`) or the recorded stdout (`stdoutText`).
     let stdout = match (fixture["stdout"].as_str(), fixture["stdoutText"].as_str()) {
-        (Some(path), _) => Some(
-            fs::read_to_string(golden_dir.join(path))
-                .map_err(|e| format!("cannot read golden {path}: {e}"))?,
-        ),
+        (Some(path), _) => Some(read_golden(golden_dir, path)?),
         (None, Some(text)) => Some(text.to_owned()),
         (None, None) => None,
     };
@@ -102,10 +117,7 @@ fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
         let name = file["name"].as_str().unwrap_or_default();
         let serialized = &result[name];
         let expected = match (file["golden"].as_str(), file["text"].as_str()) {
-            (Some(golden), _) => Some(
-                fs::read_to_string(golden_dir.join(golden))
-                    .map_err(|e| format!("cannot read golden {golden}: {e}"))?,
-            ),
+            (Some(golden), _) => Some(read_golden(golden_dir, golden)?),
             (None, Some(text)) => Some(text.to_owned()),
             (None, None) if has_stdout => None,
             (None, None) => return Err(format!("{name}: no golden or text")),

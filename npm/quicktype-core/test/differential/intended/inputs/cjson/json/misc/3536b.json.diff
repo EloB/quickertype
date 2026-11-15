@@ -1,0 +1,20 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -129,7 +129,7 @@
+ 
+ enum Scheme cJSON_GetSchemeValue(const cJSON * j) {
+     enum Scheme x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "SPDX")) x = SCHEME_SPDX;
+         else if (!strcmp(cJSON_GetStringValue(j), "DEP5")) x = SCHEME_DEP5;
+         else if (!strcmp(cJSON_GetStringValue(j), "Trove")) x = SCHEME_TROVE;
+@@ -149,7 +149,7 @@
+ 
+ enum Keyword cJSON_GetKeywordValue(const cJSON * j) {
+     enum Keyword x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "discouraged")) x = KEYWORD_DISCOURAGED;
+         else if (!strcmp(cJSON_GetStringValue(j), "obsolete")) x = KEYWORD_OBSOLETE;
+         else if (!strcmp(cJSON_GetStringValue(j), "osi-approved")) x = KEYWORD_OSI_APPROVED;

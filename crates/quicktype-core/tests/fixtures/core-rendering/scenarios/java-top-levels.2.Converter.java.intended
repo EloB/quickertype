@@ -1,0 +1,344 @@
+// To use this code, add the following Maven dependency to your project:
+//
+//
+//     com.fasterxml.jackson.core     : jackson-databind          : 2.9.0
+//
+//
+// Import this package:
+//
+//     import io.quicktype.Converter;
+//
+// Then you can deserialize a JSON string with
+//
+//     long data = Converter.CountFromJsonString(jsonString);
+//     List<String> data = Converter.NamesFromJsonString(jsonString);
+//     Map<String, Double> data = Converter.TableFromJsonString(jsonString);
+//     Either data = Converter.EitherFromJsonString(jsonString);
+//     Date data = Converter.WhenFromJsonString(jsonString);
+
+package io.quicktype;
+
+import java.io.IOException;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.*;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+
+public class Converter {
+    // Date-time helpers
+
+    private static final String[] DATE_TIME_FORMATS = {
+            "yyyy-MM-dd'T'HH:mm:ss.SX",
+            "yyyy-MM-dd'T'HH:mm:ss.S",
+            "yyyy-MM-dd'T'HH:mm:ssX",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd HH:mm:ss.SX",
+            "yyyy-MM-dd HH:mm:ss.S",
+            "yyyy-MM-dd HH:mm:ssX",
+            "yyyy-MM-dd HH:mm:ss",
+            "HH:mm:ss.SZ",
+            "HH:mm:ss.S",
+            "HH:mm:ssZ",
+            "HH:mm:ss",
+            "yyyy-MM-dd",
+    };
+
+    public static Date parseAllDateTimeString(String str) {
+        str = str.replaceFirst("(\\.\\d{3})\\d+", "$1");
+        for (String format : DATE_TIME_FORMATS) {
+            try {
+                return new SimpleDateFormat(format).parse(str);
+            } catch (Exception ex) {
+                // Ignored
+            }
+        }
+        throw new IllegalArgumentException("Unparseable date: " + str);
+    }
+
+    public static String serializeDateTime(Date datetime) {
+        return new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ").format(datetime);
+    }
+
+    public static String serializeDate(Date datetime) {
+        return new SimpleDateFormat("yyyy-MM-dd").format(datetime);
+    }
+
+    public static String serializeTime(Date datetime) {
+        return new SimpleDateFormat("hh:mm:ssZ").format(datetime);
+    }
+    // Serialize/deserialize helpers
+
+    public static long CountFromJsonString(String json) throws IOException {
+        return getCountObjectReader().readValue(json);
+    }
+
+    public static String CountToJsonString(long obj) throws JsonProcessingException {
+        return getCountObjectWriter().writeValueAsString(obj);
+    }
+
+    public static List<String> NamesFromJsonString(String json) throws IOException {
+        return getNamesObjectReader().readValue(json);
+    }
+
+    public static String NamesToJsonString(List<String> obj) throws JsonProcessingException {
+        return getNamesObjectWriter().writeValueAsString(obj);
+    }
+
+    public static Map<String, Double> TableFromJsonString(String json) throws IOException {
+        return getTableObjectReader().readValue(json);
+    }
+
+    public static String TableToJsonString(Map<String, Double> obj) throws JsonProcessingException {
+        return getTableObjectWriter().writeValueAsString(obj);
+    }
+
+    public static Either EitherFromJsonString(String json) throws IOException {
+        return getEitherObjectReader().readValue(json);
+    }
+
+    public static String EitherToJsonString(Either obj) throws JsonProcessingException {
+        return getEitherObjectWriter().writeValueAsString(obj);
+    }
+
+    public static Date WhenFromJsonString(String json) throws IOException {
+        return getWhenObjectReader().readValue(json);
+    }
+
+    public static String WhenToJsonString(Date obj) throws JsonProcessingException {
+        return getWhenObjectWriter().writeValueAsString(obj);
+    }
+
+    private static ObjectReader CountReader;
+    private static ObjectWriter CountWriter;
+
+    private static void instantiateCountMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        mapper.registerModule(module);
+        CountReader = mapper.readerFor(long.class);
+        CountWriter = mapper.writerFor(long.class);
+    }
+
+    private static ObjectReader getCountObjectReader() {
+        if (CountReader == null) instantiateCountMapper();
+        return CountReader;
+    }
+
+    private static ObjectWriter getCountObjectWriter() {
+        if (CountWriter == null) instantiateCountMapper();
+        return CountWriter;
+    }
+
+    private static ObjectReader NamesReader;
+    private static ObjectWriter NamesWriter;
+
+    private static void instantiateNamesMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        mapper.registerModule(module);
+        NamesReader = mapper.readerFor(new TypeReference<List<String>>() {});
+        NamesWriter = mapper.writerFor(new TypeReference<List<String>>() {});
+    }
+
+    private static ObjectReader getNamesObjectReader() {
+        if (NamesReader == null) instantiateNamesMapper();
+        return NamesReader;
+    }
+
+    private static ObjectWriter getNamesObjectWriter() {
+        if (NamesWriter == null) instantiateNamesMapper();
+        return NamesWriter;
+    }
+
+    private static ObjectReader TableReader;
+    private static ObjectWriter TableWriter;
+
+    private static void instantiateTableMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        mapper.registerModule(module);
+        TableReader = mapper.readerFor(Map.class);
+        TableWriter = mapper.writerFor(Map.class);
+    }
+
+    private static ObjectReader getTableObjectReader() {
+        if (TableReader == null) instantiateTableMapper();
+        return TableReader;
+    }
+
+    private static ObjectWriter getTableObjectWriter() {
+        if (TableWriter == null) instantiateTableMapper();
+        return TableWriter;
+    }
+
+    private static ObjectReader EitherReader;
+    private static ObjectWriter EitherWriter;
+
+    private static void instantiateEitherMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        mapper.registerModule(module);
+        EitherReader = mapper.readerFor(Either.class);
+        EitherWriter = mapper.writerFor(Either.class);
+    }
+
+    private static ObjectReader getEitherObjectReader() {
+        if (EitherReader == null) instantiateEitherMapper();
+        return EitherReader;
+    }
+
+    private static ObjectWriter getEitherObjectWriter() {
+        if (EitherWriter == null) instantiateEitherMapper();
+        return EitherWriter;
+    }
+
+    private static ObjectReader WhenReader;
+    private static ObjectWriter WhenWriter;
+
+    private static void instantiateWhenMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        mapper.registerModule(module);
+        WhenReader = mapper.readerFor(Date.class);
+        WhenWriter = mapper.writerFor(Date.class);
+    }
+
+    private static ObjectReader getWhenObjectReader() {
+        if (WhenReader == null) instantiateWhenMapper();
+        return WhenReader;
+    }
+
+    private static ObjectWriter getWhenObjectWriter() {
+        if (WhenWriter == null) instantiateWhenMapper();
+        return WhenWriter;
+    }
+}

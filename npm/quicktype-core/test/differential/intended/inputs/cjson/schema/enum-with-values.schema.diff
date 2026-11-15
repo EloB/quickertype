@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -73,7 +73,7 @@
+ 
+ enum Weekdays cJSON_GetWeekdaysValue(const cJSON * j) {
+     enum Weekdays x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Monday")) x = WEEKDAYS_MONDAY;
+         else if (!strcmp(cJSON_GetStringValue(j), "Tuesday")) x = WEEKDAYS_TUESDAY;
+         else if (!strcmp(cJSON_GetStringValue(j), "Wednesday")) x = WEEKDAYS_WEDNESDAY;

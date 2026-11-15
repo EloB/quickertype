@@ -1,0 +1,38 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -91,7 +91,7 @@
+             if (!cJSON_HasObjectItem(j, "pattern3")) { cJSON_DeleteRegExp(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "pattern3")) {
+                 if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "pattern3"))) { cJSON_DeleteRegExp(x); return NULL; }
+-                regex_t regex; regcomp(&regex, "d[.]*", REG_EXTENDED); if (regexec(&regex, cJSON_GetObjectItemCaseSensitive(j, "pattern3")->valuestring, 0, NULL, 0)) { regfree(&regex); cJSON_DeleteRegExp(x); return NULL; } regfree(&regex);
++                regex_t regex; if (0 == regcomp(&regex, "d[.]*", REG_EXTENDED)) { if (regexec(&regex, cJSON_GetObjectItemCaseSensitive(j, "pattern3")->valuestring, 0, NULL, 0)) { regfree(&regex); cJSON_DeleteRegExp(x); return NULL; } regfree(&regex); }
+                 x->pattern3 = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "pattern3")));
+             }
+             else {
+@@ -160,7 +160,7 @@
+             if (!cJSON_HasObjectItem(j, "pattern1")) { cJSON_DeleteTopLevel(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "pattern1")) {
+                 if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "pattern1"))) { cJSON_DeleteTopLevel(x); return NULL; }
+-                regex_t regex; regcomp(&regex, "a[.]*", REG_EXTENDED); if (regexec(&regex, cJSON_GetObjectItemCaseSensitive(j, "pattern1")->valuestring, 0, NULL, 0)) { regfree(&regex); cJSON_DeleteTopLevel(x); return NULL; } regfree(&regex);
++                regex_t regex; if (0 == regcomp(&regex, "a[.]*", REG_EXTENDED)) { if (regexec(&regex, cJSON_GetObjectItemCaseSensitive(j, "pattern1")->valuestring, 0, NULL, 0)) { regfree(&regex); cJSON_DeleteTopLevel(x); return NULL; } regfree(&regex); }
+                 x->pattern1 = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "pattern1")));
+             }
+             else {
+@@ -171,7 +171,7 @@
+             if (!cJSON_HasObjectItem(j, "pattern2")) { cJSON_DeleteTopLevel(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "pattern2")) {
+                 if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "pattern2"))) { cJSON_DeleteTopLevel(x); return NULL; }
+-                regex_t regex; regcomp(&regex, "b[.]*", REG_EXTENDED); if (regexec(&regex, cJSON_GetObjectItemCaseSensitive(j, "pattern2")->valuestring, 0, NULL, 0)) { regfree(&regex); cJSON_DeleteTopLevel(x); return NULL; } regfree(&regex);
++                regex_t regex; if (0 == regcomp(&regex, "b[.]*", REG_EXTENDED)) { if (regexec(&regex, cJSON_GetObjectItemCaseSensitive(j, "pattern2")->valuestring, 0, NULL, 0)) { regfree(&regex); cJSON_DeleteTopLevel(x); return NULL; } regfree(&regex); }
+                 x->pattern2 = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "pattern2")));
+             }
+             else {
+@@ -187,7 +187,7 @@
+             if (!cJSON_HasObjectItem(j, "union")) { cJSON_DeleteTopLevel(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "union")) {
+                 if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "union"))) { cJSON_DeleteTopLevel(x); return NULL; }
+-                regex_t regex; regcomp(&regex, "(b[.]*)|(c[.]*)", REG_EXTENDED); if (regexec(&regex, cJSON_GetObjectItemCaseSensitive(j, "union")->valuestring, 0, NULL, 0)) { regfree(&regex); cJSON_DeleteTopLevel(x); return NULL; } regfree(&regex);
++                regex_t regex; if (0 == regcomp(&regex, "(b[.]*)|(c[.]*)", REG_EXTENDED)) { if (regexec(&regex, cJSON_GetObjectItemCaseSensitive(j, "union")->valuestring, 0, NULL, 0)) { regfree(&regex); cJSON_DeleteTopLevel(x); return NULL; } regfree(&regex); }
+                 x->top_level_union = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "union")));
+             }
+             else {

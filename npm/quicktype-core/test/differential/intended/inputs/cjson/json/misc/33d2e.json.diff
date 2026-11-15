@@ -1,0 +1,20 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -145,7 +145,7 @@
+ 
+ enum Gender cJSON_GetGenderValue(const cJSON * j) {
+     enum Gender x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "male")) x = GENDER_MALE;
+         else if (!strcmp(cJSON_GetStringValue(j), "female")) x = GENDER_FEMALE;
+         else if (!strcmp(cJSON_GetStringValue(j), "org")) x = GENDER_ORG;
+@@ -165,7 +165,7 @@
+ 
+ enum Category cJSON_GetCategoryValue(const cJSON * j) {
+     enum Category x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "physics")) x = CATEGORY_PHYSICS;
+         else if (!strcmp(cJSON_GetStringValue(j), "chemistry")) x = CATEGORY_CHEMISTRY;
+         else if (!strcmp(cJSON_GetStringValue(j), "peace")) x = CATEGORY_PEACE;

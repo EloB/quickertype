@@ -1,0 +1,234 @@
+// To use this code, add the following Maven dependency to your project:
+//
+//     org.projectlombok : lombok : 1.18.2
+//     com.fasterxml.jackson.core     : jackson-databind          : 2.9.0
+//
+//
+// Import this package:
+//
+//     import io.quicktype.Converter;
+//
+// Then you can deserialize a JSON string with
+//
+//     TopLevel data = Converter.TopLevelFromJsonString(jsonString);
+//     String[] data = Converter.LabelsFromJsonString(jsonString);
+//     Status data = Converter.StatusFromJsonString(jsonString);
+
+package io.quicktype;
+
+import java.io.IOException;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.*;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+
+public class Converter {
+    // Date-time helpers
+
+    private static final String[] DATE_TIME_FORMATS = {
+            "yyyy-MM-dd'T'HH:mm:ss.SX",
+            "yyyy-MM-dd'T'HH:mm:ss.S",
+            "yyyy-MM-dd'T'HH:mm:ssX",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd HH:mm:ss.SX",
+            "yyyy-MM-dd HH:mm:ss.S",
+            "yyyy-MM-dd HH:mm:ssX",
+            "yyyy-MM-dd HH:mm:ss",
+            "HH:mm:ss.SZ",
+            "HH:mm:ss.S",
+            "HH:mm:ssZ",
+            "HH:mm:ss",
+            "yyyy-MM-dd",
+    };
+
+    public static Date parseAllDateTimeString(String str) {
+        str = str.replaceFirst("(\\.\\d{3})\\d+", "$1");
+        for (String format : DATE_TIME_FORMATS) {
+            try {
+                return new SimpleDateFormat(format).parse(str);
+            } catch (Exception ex) {
+                // Ignored
+            }
+        }
+        throw new IllegalArgumentException("Unparseable date: " + str);
+    }
+
+    public static String serializeDateTime(Date datetime) {
+        return new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ").format(datetime);
+    }
+
+    public static String serializeDate(Date datetime) {
+        return new SimpleDateFormat("yyyy-MM-dd").format(datetime);
+    }
+
+    public static String serializeTime(Date datetime) {
+        return new SimpleDateFormat("hh:mm:ssZ").format(datetime);
+    }
+    // Serialize/deserialize helpers
+
+    public static TopLevel TopLevelFromJsonString(String json) throws IOException {
+        return getTopLevelObjectReader().readValue(json);
+    }
+
+    public static String TopLevelToJsonString(TopLevel obj) throws JsonProcessingException {
+        return getTopLevelObjectWriter().writeValueAsString(obj);
+    }
+
+    public static String[] LabelsFromJsonString(String json) throws IOException {
+        return getLabelsObjectReader().readValue(json);
+    }
+
+    public static String LabelsToJsonString(String[] obj) throws JsonProcessingException {
+        return getLabelsObjectWriter().writeValueAsString(obj);
+    }
+
+    public static Status StatusFromJsonString(String json) throws IOException {
+        return getStatusObjectReader().readValue(json);
+    }
+
+    public static String StatusToJsonString(Status obj) throws JsonProcessingException {
+        return getStatusObjectWriter().writeValueAsString(obj);
+    }
+
+    private static ObjectReader TopLevelReader;
+    private static ObjectWriter TopLevelWriter;
+
+    private static void instantiateTopLevelMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        mapper.registerModule(module);
+        TopLevelReader = mapper.readerFor(TopLevel.class);
+        TopLevelWriter = mapper.writerFor(TopLevel.class);
+    }
+
+    private static ObjectReader getTopLevelObjectReader() {
+        if (TopLevelReader == null) instantiateTopLevelMapper();
+        return TopLevelReader;
+    }
+
+    private static ObjectWriter getTopLevelObjectWriter() {
+        if (TopLevelWriter == null) instantiateTopLevelMapper();
+        return TopLevelWriter;
+    }
+
+    private static ObjectReader LabelsReader;
+    private static ObjectWriter LabelsWriter;
+
+    private static void instantiateLabelsMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        mapper.registerModule(module);
+        LabelsReader = mapper.readerFor(String[].class);
+        LabelsWriter = mapper.writerFor(String[].class);
+    }
+
+    private static ObjectReader getLabelsObjectReader() {
+        if (LabelsReader == null) instantiateLabelsMapper();
+        return LabelsReader;
+    }
+
+    private static ObjectWriter getLabelsObjectWriter() {
+        if (LabelsWriter == null) instantiateLabelsMapper();
+        return LabelsWriter;
+    }
+
+    private static ObjectReader StatusReader;
+    private static ObjectWriter StatusWriter;
+
+    private static void instantiateStatusMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        mapper.registerModule(module);
+        StatusReader = mapper.readerFor(Status.class);
+        StatusWriter = mapper.writerFor(Status.class);
+    }
+
+    private static ObjectReader getStatusObjectReader() {
+        if (StatusReader == null) instantiateStatusMapper();
+        return StatusReader;
+    }
+
+    private static ObjectWriter getStatusObjectWriter() {
+        if (StatusWriter == null) instantiateStatusMapper();
+        return StatusWriter;
+    }
+}

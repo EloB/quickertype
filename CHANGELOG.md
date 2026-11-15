@@ -220,6 +220,49 @@ section are absolute.
 - TypeScript input: a tuple label written after a comment
   (`[/** doc */ first: string]`) is titled with the comment, as quicktype
   titles it (`getFullText` of the label).
+- **Bugs in the code quicktype generates, fixed** (until now the port
+  reproduced them for parity; each is reported to quicktype with the same
+  fix, and the golden cases it changes are listed, with their corrected
+  output, in
+  [`tests/intended-differences.txt`](https://github.com/EloB/quickertype/blob/main/tests/intended-differences.txt);
+  [docs/PARITY.md](https://github.com/EloB/quickertype/blob/main/docs/PARITY.md#bugs-fixed-in-quickertype)
+  has the details):
+  - C (cJSON): a top-level map of integers, booleans, doubles or enums
+    allocates its values (the value was stored as the pointer, which did
+    not compile for numbers) and checks their types, and an element of a
+    top-level list or map that cannot be allocated fails the parse;
+    top-level lists of `null` mark elements with `0xDEADBEEF` (not
+    `0xDEADBEAF`), and the delete functions of top-level lists and maps of
+    `null` no longer free the markers; enum getters no longer pass `NULL`
+    to `strcmp` for a value that is not a string (it reads as 0, as an
+    unknown string does: unknown enum values read as 0, as before, and
+    rejecting them is a possible later improvement); the result of `regcomp` is
+    checked (a pattern that does not compile as a POSIX extended one is
+    not checked at all, a known limitation); maps of classes and unions
+    parse each value once.
+  - Ruby: union classes are forward-declared like classes, so a class
+    that names one declared later loads (`NameError` before, with
+    `recursive-union-flattening.schema`).
+  - Java with `--datetime-provider legacy`: a date or time that matches
+    no format throws `IllegalArgumentException` instead of reading as
+    `null`.
+  - Python: a property named like something `from_dict` uses (`from_date`
+    and the other converters it calls, `obj`, `isinstance`, and `len`,
+    `re` and `cast` of its constraint checks) is renamed instead of
+    shadowing it.
+  - TypeScript input: string enums in unions (`E | null`, `E[] | F`, an
+    optional `E` in Python, two enums with the same values) no longer stop
+    with `Internal error: Cannot combine type attribute accessorNames.`;
+    neither do JSON Schema definitions of the same enum with
+    `qt-accessors`. The member names are kept where the enum's copies
+    agree on them. `qt-enum-values` combine when the copies are the same;
+    copies that differ still stop with quicktype's error.
+- Parity: `cargo xtask parity`, the renderer tests and the npm
+  differential suite report those cases as intended differences, apart
+  from the identical ones, and fail when one matches quicktype's output
+  again or differs from its stored corrected output
+  (`--record-intended` writes them; `--as-recorded` compares with
+  quicktype's recording, for checking the corpus against quicktype).
 
 ## [0.2.0] - 2026-11-14
 

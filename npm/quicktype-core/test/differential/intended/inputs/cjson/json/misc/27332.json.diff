@@ -1,0 +1,65 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -301,7 +301,7 @@
+ 
+ enum Domain cJSON_GetDomainValue(const cJSON * j) {
+     enum Domain x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "self.pics")) x = DOMAIN_SELF_PICS;
+         else if (!strcmp(cJSON_GetStringValue(j), "imgur.com")) x = DOMAIN_IMGUR_COM;
+         else if (!strcmp(cJSON_GetStringValue(j), "i.imgur.com")) x = DOMAIN_I_IMGUR_COM;
+@@ -323,7 +323,7 @@
+ 
+ enum PostHint cJSON_GetPostHintValue(const cJSON * j) {
+     enum PostHint x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "link")) x = POSTHINT_LINK;
+         else if (!strcmp(cJSON_GetStringValue(j), "image")) x = POSTHINT_IMAGE;
+     }
+@@ -341,7 +341,7 @@
+ 
+ enum Subreddit cJSON_GetSubredditValue(const cJSON * j) {
+     enum Subreddit x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "pics")) x = SUBREDDIT_PICS;
+     }
+     return x;
+@@ -357,7 +357,7 @@
+ 
+ enum SubredditId cJSON_GetSubredditIdValue(const cJSON * j) {
+     enum SubredditId x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "t5_2qh0u")) x = SUBREDDITID_T5_2_QH0_U;
+     }
+     return x;
+@@ -373,7 +373,7 @@
+ 
+ enum SubredditNamePrefixed cJSON_GetSubredditNamePrefixedValue(const cJSON * j) {
+     enum SubredditNamePrefixed x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "r/pics")) x = SUBREDDITNAMEPREFIXED_R_PICS;
+     }
+     return x;
+@@ -389,7 +389,7 @@
+ 
+ enum SubredditType cJSON_GetSubredditTypeValue(const cJSON * j) {
+     enum SubredditType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "public")) x = SUBREDDITTYPE_PUBLIC;
+     }
+     return x;
+@@ -405,7 +405,7 @@
+ 
+ enum Kind cJSON_GetKindValue(const cJSON * j) {
+     enum Kind x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "t3")) x = KIND_T3;
+     }
+     return x;

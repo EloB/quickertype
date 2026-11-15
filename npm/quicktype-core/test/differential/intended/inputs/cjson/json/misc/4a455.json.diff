@@ -1,0 +1,29 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -145,7 +145,7 @@
+ 
+ enum GeometryType cJSON_GetGeometryTypeValue(const cJSON * j) {
+     enum GeometryType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "MultiPoint")) x = GEOMETRYTYPE_MULTI_POINT;
+     }
+     return x;
+@@ -161,7 +161,7 @@
+ 
+ enum GeometryName cJSON_GetGeometryNameValue(const cJSON * j) {
+     enum GeometryName x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "geom")) x = GEOMETRYNAME_GEOM;
+     }
+     return x;
+@@ -177,7 +177,7 @@
+ 
+ enum FeatureType cJSON_GetFeatureTypeValue(const cJSON * j) {
+     enum FeatureType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Feature")) x = FEATURETYPE_FEATURE;
+     }
+     return x;

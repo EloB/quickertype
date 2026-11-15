@@ -711,7 +711,29 @@ fn combine_values(
                 PropertyDescriptionsTypeAttributeKind,
             >(values)),
         ))),
-        K::AccessorNames | K::EnumValues | K::Transformation => {
+        K::AccessorNames => Some(V::AccessorNames(Rc::new(
+            accessor_names::combine_accessor_names(&refs_of::<AccessorNamesTypeAttributeKind>(
+                values,
+            )),
+        ))),
+        // quicktype cannot combine enum values at all; copies that are all
+        // the same are kept (a fix of ours, docs/PARITY.md, "Bugs fixed in
+        // quickertype"). Any other combination stops as in quicktype:
+        // dropping a value the copies disagree on could give two cases the
+        // same value, which C does not compile.
+        K::EnumValues => {
+            let maps = refs_of::<EnumValuesTypeAttributeKind>(values);
+            if maps.iter().all(|m| m.js_equals(maps[0])) {
+                Some(V::EnumValues(Rc::new(maps[0].clone())))
+            } else {
+                return panic(format!("Cannot combine type attribute {}", kind.name()));
+            }
+        }
+        // Never combined: a transformation is in its type's identity, so a
+        // type found by its identity does not get it again, and it is only
+        // made by the last rewrite, `makeTransformations`, after unions are
+        // built.
+        K::Transformation => {
             return panic(format!("Cannot combine type attribute {}", kind.name()));
         }
         K::UnionIdentifier => Some(V::UnionIdentifier(Rc::new(
@@ -1060,15 +1082,6 @@ mod tests {
 
     #[test]
     fn panicking_kinds_return_errors() {
-        let a = AccessorNamesTypeAttributeKind.make_attributes(AccessorNames::default());
-        assert_eq!(
-            combine_type_attributes(CombinationKind::Union, &[&a, &a])
-                .unwrap_err()
-                .user_message(),
-            "Internal error: Cannot combine type attribute accessorNames"
-        );
-        // A single value is used as is, without calling combine.
-        assert!(combine_type_attributes(CombinationKind::Union, &[&a]).is_ok());
         let m = UnionMemberNamesTypeAttributeKind.make_attributes(IndexMap::default());
         assert_eq!(
             make_type_attributes_inferred(&m)
@@ -1076,6 +1089,72 @@ mod tests {
                 .user_message(),
             "Internal error: Cannot make type attribute unionMemberNames inferred"
         );
+    }
+
+    /// Accessor names combine (quicktype cannot): the entries every type
+    /// agrees on, in first-seen order; a name with different entries is
+    /// dropped, also when a later type has it again.
+    #[test]
+    fn accessor_names_keep_the_entries_they_agree_on() {
+        let accessors = |entries: &[(&str, &str)]| {
+            AccessorNamesTypeAttributeKind.make_attributes(
+                entries
+                    .iter()
+                    .map(|&(k, v)| (k.to_owned(), AccessorEntry::Name(v.to_owned())))
+                    .collect(),
+            )
+        };
+        let e = accessors(&[("a", "A"), ("b", "B")]);
+        let f = accessors(&[("c", "C"), ("b", "X"), ("a", "A")]);
+        let g = accessors(&[("b", "B")]);
+        for kind in [CombinationKind::Union, CombinationKind::Intersect] {
+            let combined = combine_type_attributes(kind, &[&e, &f, &g]).unwrap();
+            let combined = AccessorNamesTypeAttributeKind
+                .try_get_in_attributes(&combined)
+                .unwrap();
+            let keys: Vec<&str> = combined.keys().map(String::as_str).collect();
+            assert_eq!(keys, ["a", "c"]);
+            assert_eq!(combined["a"], AccessorEntry::Name("A".into()));
+            let same = combine_type_attributes(kind, &[&e, &e]).unwrap();
+            assert_eq!(
+                AccessorNamesTypeAttributeKind.try_get_in_attributes(&same),
+                AccessorNamesTypeAttributeKind.try_get_in_attributes(&e)
+            );
+        }
+    }
+
+    /// Enum values (`qt-enum-values`) combine only when every copy is the
+    /// same; otherwise they stop as quicktype does.
+    #[test]
+    fn enum_values_combine_only_when_they_agree() {
+        let values = |entries: &[(&str, &str)]| {
+            EnumValuesTypeAttributeKind.make_attributes(
+                entries
+                    .iter()
+                    .map(|&(k, v)| (k.to_owned(), AccessorEntry::Name(v.to_owned())))
+                    .collect(),
+            )
+        };
+        let e = values(&[("a", "0"), ("b", "1")]);
+        // The same entries in another order are the same values.
+        let same = values(&[("b", "1"), ("a", "0")]);
+        let combined = combine_type_attributes(CombinationKind::Union, &[&e, &same]).unwrap();
+        assert_eq!(
+            EnumValuesTypeAttributeKind.try_get_in_attributes(&combined),
+            EnumValuesTypeAttributeKind.try_get_in_attributes(&e)
+        );
+        for other in [
+            values(&[("a", "0"), ("b", "2")]),
+            values(&[("a", "0")]),
+            values(&[("a", "0"), ("b", "1"), ("c", "2")]),
+        ] {
+            assert_eq!(
+                combine_type_attributes(CombinationKind::Union, &[&e, &other])
+                    .unwrap_err()
+                    .user_message(),
+                "Internal error: Cannot combine type attribute enumValues"
+            );
+        }
     }
 
     #[test]

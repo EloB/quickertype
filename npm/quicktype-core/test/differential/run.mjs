@@ -4,14 +4,19 @@
 // message, properties) and console output.
 //
 //   node test/differential/run.mjs [--only REGEX] [--category corpus,inputs,api,stores,errors,robustness,fuzz]
-//                                  [--shards N] [--report FILE] [--show N]
+//                                  [--shards N] [--report FILE] [--show N] [--record-intended]
 //
 // Each identical scenario is counted by the engine that produced it: on
 // WebAssembly, on the TypeScript fallback (the engine reported the run as
 // unsupported, e.g. for a language without a renderer, which no built-in
 // language is), or on the TypeScript engine because the facade did not
 // consider it eligible (or no run happened).
-// Exits 1 if anything differs, apart from documented known gaps.
+// Intended differences (tests/intended-differences.txt, intended.mjs: bugs
+// quickertype fixes) must differ from the reference exactly as stored, and
+// are counted apart; `--record-intended` writes the diffs of those listed
+// as `npm/<scenario id>`.
+// Exits 1 if anything differs, apart from documented known gaps and the
+// intended differences.
 
 import { fork } from "node:child_process";
 import * as fs from "node:fs";
@@ -19,6 +24,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { listedScenarios, storedDiffs } from "./intended.mjs";
 import { loadPackages, packageRoot } from "./packages.mjs";
 
 /**
@@ -43,6 +49,7 @@ const only = option("--only", "");
 const categories = option("--category", "");
 const reportFile = option("--report", path.join(packageRoot, "build", "differential-report.json"));
 const show = Number(option("--show", 25));
+const recordIntended = args.includes("--record-intended");
 
 const { reference } = loadPackages();
 console.log(`reference: ${reference.label}`);
@@ -53,7 +60,7 @@ const results = [];
 await Promise.all(
     Array.from({ length: shards }, (_, shard) =>
         new Promise((resolve, reject) => {
-            const child = fork(path.join(here, "worker.mjs"), [String(shard), String(shards), only, categories], {
+            const child = fork(path.join(here, "worker.mjs"), [String(shard), String(shards), only, categories, recordIntended ? "record" : ""], {
                 stdio: ["ignore", "inherit", "inherit", "ipc"],
             });
             child.on("message", (m) => results.push(...m.results));
@@ -79,6 +86,7 @@ for (const [category, list] of byCategory) {
     const passOther = pass - passWasm - fallback.length - rerun;
     const known = list.filter((r) => r.status === "fail" && knownGaps.has(r.id));
     const failed = list.filter((r) => r.status === "fail" && !knownGaps.has(r.id));
+    const intended = count((r) => r.status === "intended");
     failures += failed.length;
     summary[category] = {
         total: list.length,
@@ -88,13 +96,14 @@ for (const [category, list] of byCategory) {
         identicalAfterEngineFailure: rerun,
         identicalOnTypeScript: passOther,
         knownGaps: known.length,
+        intendedDifferences: intended,
         different: failed.length,
     };
     console.log(
         `\n${category}: ${list.length} scenarios: ${pass} identical (${passWasm} on WebAssembly, ` +
             `${fallback.length} on the TypeScript fallback, ${rerun} redone on TypeScript after an engine failure, ` +
             `${passOther} on TypeScript by eligibility or without a run), ` +
-            `${known.length} known gaps, ${failed.length} different`,
+            `${known.length} known gaps, ${intended} intended differences, ${failed.length} different`,
     );
     for (const r of known) console.log(`  known gap: ${r.id}: ${knownGaps.get(r.id)}`);
     if (fallback.length > 0) {
@@ -108,6 +117,20 @@ for (const [category, list] of byCategory) {
     }
 
     if (failed.length > show) console.log(`  … and ${failed.length - show} more`);
+}
+
+// The scenarios listed as npm/<id> and the stored diffs agree (when every
+// scenario ran).
+if (only === "" && categories === "") {
+    const ran = new Set(results.map((r) => r.id));
+    const stored = new Set(storedDiffs());
+    const problems = [
+        ...listedScenarios.filter((id) => !ran.has(id)).map((id) => `npm/${id}: listed in tests/intended-differences.txt, but no such scenario`),
+        ...listedScenarios.filter((id) => !stored.has(id)).map((id) => `npm/${id}: listed, but has no intended/${id}.diff`),
+        ...[...stored].filter((id) => !listedScenarios.includes(id)).map((id) => `intended/${id}.diff: not listed in tests/intended-differences.txt as npm/${id}`),
+    ];
+    for (const p of problems) console.log(`\nINTENDED ${p}`);
+    failures += problems.length;
 }
 
 fs.mkdirSync(path.dirname(reportFile), { recursive: true });

@@ -1,0 +1,20 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -232,7 +232,7 @@
+ 
+ enum Rating cJSON_GetRatingValue(const cJSON * j) {
+     enum Rating x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "g")) x = RATING_G;
+         else if (!strcmp(cJSON_GetStringValue(j), "pg")) x = RATING_PG;
+         else if (!strcmp(cJSON_GetStringValue(j), "y")) x = RATING_Y;
+@@ -252,7 +252,7 @@
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j) {
+     enum Type x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "gif")) x = TYPE_GIF;
+     }
+     return x;

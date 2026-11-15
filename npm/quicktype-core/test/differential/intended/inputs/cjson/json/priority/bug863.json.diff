@@ -1,0 +1,56 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -198,7 +198,7 @@
+ 
+ enum Breed cJSON_GetBreedValue(const cJSON * j) {
+     enum Breed x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Atrox")) x = BREED_ATROX;
+         else if (!strcmp(cJSON_GetStringValue(j), "Solitus")) x = BREED_SOLITUS;
+         else if (!strcmp(cJSON_GetStringValue(j), "Opifex")) x = BREED_OPIFEX;
+@@ -220,7 +220,7 @@
+ 
+ enum Firstname cJSON_GetFirstnameValue(const cJSON * j) {
+     enum Firstname x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "")) x = FIRSTNAME_EMPTY;
+         else if (!strcmp(cJSON_GetStringValue(j), "Chi")) x = FIRSTNAME_CHI;
+     }
+@@ -238,7 +238,7 @@
+ 
+ enum Lastname cJSON_GetLastnameValue(const cJSON * j) {
+     enum Lastname x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "")) x = LASTNAME_EMPTY;
+         else if (!strcmp(cJSON_GetStringValue(j), "Washko")) x = LASTNAME_WASHKO;
+     }
+@@ -256,7 +256,7 @@
+ 
+ enum Pvptitle cJSON_GetPvptitleValue(const cJSON * j) {
+     enum Pvptitle x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Freshman")) x = PVPTITLE_FRESHMAN;
+     }
+     return x;
+@@ -272,7 +272,7 @@
+ 
+ enum RankTitle cJSON_GetRankTitleValue(const cJSON * j) {
+     enum RankTitle x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "President")) x = RANKTITLE_PRESIDENT;
+         else if (!strcmp(cJSON_GetStringValue(j), "Advisor")) x = RANKTITLE_ADVISOR;
+         else if (!strcmp(cJSON_GetStringValue(j), "Veteran")) x = RANKTITLE_VETERAN;
+@@ -294,7 +294,7 @@
+ 
+ enum Sex cJSON_GetSexValue(const cJSON * j) {
+     enum Sex x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Neuter")) x = SEX_NEUTER;
+         else if (!strcmp(cJSON_GetStringValue(j), "Male")) x = SEX_MALE;
+         else if (!strcmp(cJSON_GetStringValue(j), "Female")) x = SEX_FEMALE;

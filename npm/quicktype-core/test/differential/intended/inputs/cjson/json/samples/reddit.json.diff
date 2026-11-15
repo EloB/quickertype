@@ -1,0 +1,74 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -287,7 +287,7 @@
+ 
+ enum Domain cJSON_GetDomainValue(const cJSON * j) {
+     enum Domain x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "reddit.com")) x = DOMAIN_REDDIT_COM;
+         else if (!strcmp(cJSON_GetStringValue(j), "i.imgur.com")) x = DOMAIN_I_IMGUR_COM;
+         else if (!strcmp(cJSON_GetStringValue(j), "imgur.com")) x = DOMAIN_IMGUR_COM;
+@@ -309,7 +309,7 @@
+ 
+ enum WhitelistStatus cJSON_GetWhitelistStatusValue(const cJSON * j) {
+     enum WhitelistStatus x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "all_ads")) x = WHITELISTSTATUS_ALL_ADS;
+     }
+     return x;
+@@ -325,7 +325,7 @@
+ 
+ enum PostHint cJSON_GetPostHintValue(const cJSON * j) {
+     enum PostHint x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "link")) x = POSTHINT_LINK;
+         else if (!strcmp(cJSON_GetStringValue(j), "image")) x = POSTHINT_IMAGE;
+     }
+@@ -343,7 +343,7 @@
+ 
+ enum Subreddit cJSON_GetSubredditValue(const cJSON * j) {
+     enum Subreddit x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "funny")) x = SUBREDDIT_FUNNY;
+     }
+     return x;
+@@ -359,7 +359,7 @@
+ 
+ enum SubredditId cJSON_GetSubredditIdValue(const cJSON * j) {
+     enum SubredditId x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "t5_2qh33")) x = SUBREDDITID_T5_2_QH33;
+     }
+     return x;
+@@ -375,7 +375,7 @@
+ 
+ enum SubredditNamePrefixed cJSON_GetSubredditNamePrefixedValue(const cJSON * j) {
+     enum SubredditNamePrefixed x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "r/funny")) x = SUBREDDITNAMEPREFIXED_R_FUNNY;
+     }
+     return x;
+@@ -391,7 +391,7 @@
+ 
+ enum SubredditType cJSON_GetSubredditTypeValue(const cJSON * j) {
+     enum SubredditType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "public")) x = SUBREDDITTYPE_PUBLIC;
+     }
+     return x;
+@@ -407,7 +407,7 @@
+ 
+ enum Kind cJSON_GetKindValue(const cJSON * j) {
+     enum Kind x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "t3")) x = KIND_T3;
+     }
+     return x;

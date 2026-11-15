@@ -1,0 +1,56 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -202,7 +202,7 @@
+ 
+ enum GeometryType cJSON_GetGeometryTypeValue(const cJSON * j) {
+     enum GeometryType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Point")) x = GEOMETRYTYPE_POINT;
+     }
+     return x;
+@@ -218,7 +218,7 @@
+ 
+ enum GeometryName cJSON_GetGeometryNameValue(const cJSON * j) {
+     enum GeometryName x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "geom")) x = GEOMETRYNAME_GEOM;
+     }
+     return x;
+@@ -234,7 +234,7 @@
+ 
+ enum FireBanR cJSON_GetFireBanRValue(const cJSON * j) {
+     enum FireBanR x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "North Central")) x = FIREBANR_NORTH_CENTRAL;
+         else if (!strcmp(cJSON_GetStringValue(j), "Central")) x = FIREBANR_CENTRAL;
+         else if (!strcmp(cJSON_GetStringValue(j), "South West")) x = FIREBANR_SOUTH_WEST;
+@@ -268,7 +268,7 @@
+ 
+ enum Region cJSON_GetRegionValue(const cJSON * j) {
+     enum Region x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Eastern")) x = REGION_EASTERN;
+         else if (!strcmp(cJSON_GetStringValue(j), "Northern Metro")) x = REGION_NORTHERN_METRO;
+         else if (!strcmp(cJSON_GetStringValue(j), "Western")) x = REGION_WESTERN;
+@@ -290,7 +290,7 @@
+ 
+ enum PropertiesType cJSON_GetPropertiesTypeValue(const cJSON * j) {
+     enum PropertiesType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "STREET")) x = PROPERTIESTYPE_STREET;
+         else if (!strcmp(cJSON_GetStringValue(j), "AVENUE")) x = PROPERTIESTYPE_AVENUE;
+         else if (!strcmp(cJSON_GetStringValue(j), "ROAD")) x = PROPERTIESTYPE_ROAD;
+@@ -336,7 +336,7 @@
+ 
+ enum FeatureType cJSON_GetFeatureTypeValue(const cJSON * j) {
+     enum FeatureType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Feature")) x = FEATURETYPE_FEATURE;
+     }
+     return x;

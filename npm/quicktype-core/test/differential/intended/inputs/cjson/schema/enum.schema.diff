@@ -1,0 +1,29 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -106,7 +106,7 @@
+ 
+ enum OtherArr cJSON_GetOtherArrValue(const cJSON * j) {
+     enum OtherArr x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "foo")) x = OTHERARR_FOO;
+         else if (!strcmp(cJSON_GetStringValue(j), "bar")) x = OTHERARR_BAR;
+         else if (!strcmp(cJSON_GetStringValue(j), "if")) x = OTHERARR_IF;
+@@ -126,7 +126,7 @@
+ 
+ enum Gve cJSON_GetGveValue(const cJSON * j) {
+     enum Gve x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "good")) x = GVE_GOOD;
+         else if (!strcmp(cJSON_GetStringValue(j), "neutral")) x = GVE_NEUTRAL;
+         else if (!strcmp(cJSON_GetStringValue(j), "evil")) x = GVE_EVIL;
+@@ -146,7 +146,7 @@
+ 
+ enum Lvc cJSON_GetLvcValue(const cJSON * j) {
+     enum Lvc x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "lawful")) x = LVC_LAWFUL;
+         else if (!strcmp(cJSON_GetStringValue(j), "neutral")) x = LVC_NEUTRAL;
+         else if (!strcmp(cJSON_GetStringValue(j), "chaotic")) x = LVC_CHAOTIC;

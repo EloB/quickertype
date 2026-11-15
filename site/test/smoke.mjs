@@ -1342,7 +1342,7 @@ try {
     })()`);
     assert.equal(
         headline.text,
-        `quicktype rewritten in Rust: the same output, byte for byte. The CLI is up to ${speedNow.upTo}× faster (about ${speedNow.typical}× on typical files) and uses a fraction of the memory. Benchmarks · Install the CLI`,
+        `quicktype rewritten in Rust: the same output, byte for byte, apart from a few fixed bugs. The CLI is up to ${speedNow.upTo}× faster (about ${speedNow.typical}× on typical files) and uses a fraction of the memory. Benchmarks · Install the CLI`,
     );
     assert.deepEqual(headline.links, [["Benchmarks", "../benchmarks.html"], ["Install the CLI", benchLinks.install]]);
     // It leaves the playground in view: the panes start in the first screen.
@@ -3179,7 +3179,7 @@ try {
         })()`);
         assert.equal(pageNow.title, "Benchmarks — quickertype");
         assert.deepEqual(pageNow.h1, ["Benchmarks"]);
-        assert.equal(pageNow.lead, `quicktype rewritten in Rust: the same output, byte for byte. The CLI is up to ${speedNow.upTo}× faster (about ${speedNow.typical}× on typical files) and uses a fraction of the memory.`);
+        assert.equal(pageNow.lead, `quicktype rewritten in Rust: the same output, byte for byte, apart from a few fixed bugs. The CLI is up to ${speedNow.upTo}× faster (about ${speedNow.typical}× on typical files) and uses a fraction of the memory.`);
         const pokedex = data.cli.find((r) => r.name === benchNamed.pokedex).results;
         assert.deepEqual(pageNow.tiles, [
             `${speedNow.upTo}×`,
@@ -3389,6 +3389,7 @@ try {
         const cases = filesIn(golden).filter((f) => path.basename(f) === "case.json");
         const caseIds = cases.map((f) => path.relative(golden, path.dirname(f)).split(path.sep).join("/"));
         const baseline = new Set(fs.readFileSync(path.join(repositoryRoot, "tests", "parity-baseline.txt"), "utf8").split("\n").map((l) => l.trim()));
+        const intended = new Set(fs.readFileSync(path.join(repositoryRoot, "tests", "intended-differences.txt"), "utf8").split("\n").map((l) => l.trim().split(/\s+/)[0]));
         const steps = cases.reduce((n, f) => n + JSON.parse(fs.readFileSync(f, "utf8")).steps.length, 0);
         const inputs = filesIn(path.join(repositoryRoot, "tests", "inputs")).length;
         const { allScenarios } = await import(new URL("../../npm/quicktype-core/test/differential/scenarios.mjs", import.meta.url).href);
@@ -3426,7 +3427,8 @@ try {
             stars: [String(quicktype.repository.stars), `${(quicktype.repository.stars / 1000).toFixed(1).replace(/\.0$/, "")}k`],
             "golden-cases": n(cases.length),
             "golden-steps": n(steps),
-            "golden-passing": n(caseIds.filter((id) => baseline.has(id)).length),
+            "golden-identical": n(caseIds.filter((id) => baseline.has(id) && !intended.has(id)).length),
+            "golden-intended": n(caseIds.filter((id) => baseline.has(id) && intended.has(id)).length),
             scenarios: n(allScenarios().length),
             "roundtrip-fixtures": n(workflows.roundtrip.fixtures),
             "fuzz-targets": n(fs.readdirSync(path.join(repositoryRoot, "fuzz", "fuzz_targets")).filter((f) => f.endsWith(".rs")).length),

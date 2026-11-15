@@ -1,0 +1,157 @@
+require 'json'
+require 'dry-types'
+require 'dry-struct'
+
+module Types
+  include Dry.Types(default: :nominal)
+
+  Integer   = Strict::Integer
+  Nil       = Strict::Nil
+  Bool      = Strict::Bool
+  Hash      = Strict::Hash
+  String    = Strict::String
+  Double    = Strict::Float | Strict::Integer
+  Kind      = Strict::String.enum("one-two", "three \"four\"", "\u{23}{x}", "5")
+  MaybeKind = Strict::String.enum("a", "b")
+  OptKind   = Strict::String.enum("x", "y")
+  Mode      = Strict::String.enum("on", "off")
+end
+
+# (forward declaration)
+class ChoiceUnion < Dry::Struct; end
+
+# (forward declaration)
+class Parent < Dry::Struct; end
+
+# (forward declaration)
+class Child < Dry::Struct; end
+
+module Kind
+  OneTwo    = "one-two"
+  ThreeFour = "three \"four\""
+  X         = "\u{23}{x}"
+  The5N     = "5"
+end
+
+class MaybeChoice < Dry::Struct
+  attribute :integer, Types::Integer.optional
+  attribute :null,    Types::Nil.optional
+  attribute :string,  Types::String.optional
+end
+
+module MaybeKind
+  A = "a"
+  B = "b"
+end
+
+module OptKind
+  X = "x"
+  Y = "y"
+end
+
+class ChoiceUnion < Dry::Struct
+  attribute :child,   Child.optional
+  attribute :integer, Types::Integer.optional
+  attribute :string,  Types::String.optional
+end
+
+# The top level.
+# Second line.
+class Parent < Dry::Struct
+  attribute :the_1,        Types::Integer
+  attribute :anything,     Types::Any
+  attribute :children,     Types::Hash.meta(of: Child)
+  attribute :choice,       Types.Instance(ChoiceUnion)
+  attribute :parent_class, Types::String
+  attribute :counts,       Types::Hash.meta(of: Types::Integer)
+
+  # A flag
+  # over two lines.
+  attribute :flag, Types::Bool
+
+  attribute :id,           Types::String.constrained(format: /\A[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\z/i)
+  attribute :kind,         Types::Kind
+  attribute :list,         Types.Array(Child)
+  attribute :maybe_child,  Child.optional
+  attribute :maybe_choice, Types.Instance(MaybeChoice)
+  attribute :maybe_int,    Types::Integer.optional
+  attribute :maybe_kind,   Types::MaybeKind.optional
+
+  # The name.
+  attribute :parent_name, Types::String.constrained(min_size: 1, max_size: 3).constrained(format: Regexp.new("^[a-z\u{23}\"\\\\]+$"))
+
+  attribute :nothing,     Types::Nil
+  attribute :opt_child,   Child.optional
+  attribute :opt_kind,    Types::OptKind.optional
+  attribute :opt_list,    Types.Array(Types::Double).optional
+  attribute :opt_map,     Types::Hash.meta(of: Types::String).optional
+  attribute :opt_small,   Types::Integer.constrained(gteq: 1).optional
+  attribute :ratio,       Types::Double.constrained(gteq: 0.5, lteq: 1e+21)
+  attribute :parent_self, Parent.optional
+  attribute :small,       Types::Integer.constrained(gteq: -5, lteq: 100)
+  attribute :tags,        Types.Array(Types::String).constrained(min_size: 1, max_size: 4)
+  attribute :parent_when, Types::String.constrained(format: /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)\z/i)
+end
+
+# A child.
+class Child < Dry::Struct
+  attribute :parent, Parent.optional
+  attribute :x,      Types::Double
+end
+
+# The top level.
+# Second line.
+class TopLevel < Dry::Struct
+  attribute :the_1,           Types::Integer
+  attribute :anything,        Types::Any
+  attribute :children,        Types::Hash.meta(of: Child)
+  attribute :choice,          Types.Instance(ChoiceUnion)
+  attribute :top_level_class, Types::String
+  attribute :counts,          Types::Hash.meta(of: Types::Integer)
+
+  # A flag
+  # over two lines.
+  attribute :flag, Types::Bool
+
+  attribute :id,           Types::String.constrained(format: /\A[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\z/i)
+  attribute :kind,         Types::Kind
+  attribute :list,         Types.Array(Child)
+  attribute :maybe_child,  Child.optional
+  attribute :maybe_choice, Types.Instance(MaybeChoice)
+  attribute :maybe_int,    Types::Integer.optional
+  attribute :maybe_kind,   Types::MaybeKind.optional
+
+  # The name.
+  attribute :top_level_name, Types::String.constrained(min_size: 1, max_size: 3).constrained(format: Regexp.new("^[a-z\u{23}\"\\\\]+$"))
+
+  attribute :nothing,        Types::Nil
+  attribute :opt_child,      Child.optional
+  attribute :opt_kind,       Types::OptKind.optional
+  attribute :opt_list,       Types.Array(Types::Double).optional
+  attribute :opt_map,        Types::Hash.meta(of: Types::String).optional
+  attribute :opt_small,      Types::Integer.constrained(gteq: 1).optional
+  attribute :ratio,          Types::Double.constrained(gteq: 0.5, lteq: 1e+21)
+  attribute :top_level_self, Parent.optional
+  attribute :small,          Types::Integer.constrained(gteq: -5, lteq: 100)
+  attribute :tags,           Types.Array(Types::String).constrained(min_size: 1, max_size: 4)
+  attribute :top_level_when, Types::String.constrained(format: /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)\z/i)
+end
+
+class ChildElement < Dry::Struct
+  attribute :y, Types::String
+end
+
+class ChoiceClass < Dry::Struct
+  attribute :z, Types::Bool.optional
+end
+
+class Choice < Dry::Struct
+  attribute :choice_class, ChoiceClass.optional
+  attribute :integer,      Types::Integer.optional
+  attribute :string,       Types::String.optional
+end
+
+module Mode
+  On  = "on"
+  Off = "off"
+end

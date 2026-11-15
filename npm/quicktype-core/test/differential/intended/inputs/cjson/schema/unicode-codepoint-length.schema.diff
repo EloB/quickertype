@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -80,7 +80,7 @@
+             if (!cJSON_HasObjectItem(j, "exact")) { cJSON_DeleteTopLevel(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "exact")) {
+                 if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "exact"))) { cJSON_DeleteTopLevel(x); return NULL; }
+-                regex_t regex; regcomp(&regex, "^[^!]+$", REG_EXTENDED); if (regexec(&regex, cJSON_GetObjectItemCaseSensitive(j, "exact")->valuestring, 0, NULL, 0)) { regfree(&regex); cJSON_DeleteTopLevel(x); return NULL; } regfree(&regex);
++                regex_t regex; if (0 == regcomp(&regex, "^[^!]+$", REG_EXTENDED)) { if (regexec(&regex, cJSON_GetObjectItemCaseSensitive(j, "exact")->valuestring, 0, NULL, 0)) { regfree(&regex); cJSON_DeleteTopLevel(x); return NULL; } regfree(&regex); }
+                 if (quicktype_strlen_codepoints(cJSON_GetObjectItemCaseSensitive(j, "exact")->valuestring) < 2) { cJSON_DeleteTopLevel(x); return NULL; }
+                 if (quicktype_strlen_codepoints(cJSON_GetObjectItemCaseSensitive(j, "exact")->valuestring) > 2) { cJSON_DeleteTopLevel(x); return NULL; }
+                 x->exact = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "exact")));

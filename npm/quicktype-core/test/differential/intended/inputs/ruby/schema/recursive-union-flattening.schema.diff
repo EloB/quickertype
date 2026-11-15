@@ -1,0 +1,152 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -26,42 +26,20 @@
+ # (forward declaration)
+ class XClass < Dry::Struct; end
+ 
+-class X < Dry::Struct
+-  attribute :anything_map, Types::Hash.meta(of: Types::Any).optional
+-  attribute :bool,         Types::Bool.optional
+-  attribute :double,       Types::Double.optional
+-  attribute :null,         Types::Nil.optional
+-  attribute :string,       Types::String.optional
+-  attribute :union_array,  Types.Array(Types.Instance(XElement)).optional
++# (forward declaration)
++class XElement < Dry::Struct; end
+ 
++# (forward declaration)
++class X < Dry::Struct; end
++
++class XClass < Dry::Struct
++  attribute :x, Types.Instance(X).optional
++
+   def self.from_dynamic!(d)
+-    begin
+-      value = Types::Hash[d].map { |k, v| [k, Types::Any[v]] }.to_h
+-      if schema.key(:anything_map).type.right.valid? value
+-        return new(anything_map: value, union_array: nil, bool: nil, double: nil, null: nil, string: nil)
+-      end
+-    rescue
+-    end
+-    if schema.key(:bool).type.right.valid? d
+-      return new(bool: d, union_array: nil, double: nil, anything_map: nil, null: nil, string: nil)
+-    end
+-    if schema.key(:double).type.right.valid? d
+-      return new(double: d, union_array: nil, bool: nil, anything_map: nil, null: nil, string: nil)
+-    end
+-    if schema.key(:null).type.right.valid? d
+-      return new(null: d, union_array: nil, bool: nil, double: nil, anything_map: nil, string: nil)
+-    end
+-    if schema.key(:string).type.right.valid? d
+-      return new(string: d, union_array: nil, bool: nil, double: nil, anything_map: nil, null: nil)
+-    end
+-    begin
+-      value = d.map { |x| XElement.from_dynamic!(x) }
+-      if schema.key(:union_array).type.right.valid? value
+-        return new(union_array: value, bool: nil, double: nil, anything_map: nil, null: nil, string: nil)
+-      end
+-    rescue
+-    end
+-    raise "Invalid union"
++    d = Types::Hash[d]
++    new(
++      x: d["x"] ? X.from_dynamic!(d["x"]) : nil,
++    )
+   end
+ 
+   def self.from_json!(json)
+@@ -69,19 +47,9 @@
+   end
+ 
+   def to_dynamic
+-    if anything_map != nil
+-      anything_map
+-    elsif bool != nil
+-      bool
+-    elsif double != nil
+-      double
+-    elsif string != nil
+-      string
+-    elsif union_array != nil
+-      union_array.map { |x| x.to_dynamic }
+-    else
+-      nil
+-    end
++    {
++      "x" => x&.to_dynamic,
++    }
+   end
+ 
+   def to_json(options = nil)
+@@ -148,14 +116,42 @@
+   end
+ end
+ 
+-class XClass < Dry::Struct
+-  attribute :x, Types.Instance(X).optional
++class X < Dry::Struct
++  attribute :anything_map, Types::Hash.meta(of: Types::Any).optional
++  attribute :bool,         Types::Bool.optional
++  attribute :double,       Types::Double.optional
++  attribute :null,         Types::Nil.optional
++  attribute :string,       Types::String.optional
++  attribute :union_array,  Types.Array(Types.Instance(XElement)).optional
+ 
+   def self.from_dynamic!(d)
+-    d = Types::Hash[d]
+-    new(
+-      x: d["x"] ? X.from_dynamic!(d["x"]) : nil,
+-    )
++    begin
++      value = Types::Hash[d].map { |k, v| [k, Types::Any[v]] }.to_h
++      if schema.key(:anything_map).type.right.valid? value
++        return new(anything_map: value, union_array: nil, bool: nil, double: nil, null: nil, string: nil)
++      end
++    rescue
++    end
++    if schema.key(:bool).type.right.valid? d
++      return new(bool: d, union_array: nil, double: nil, anything_map: nil, null: nil, string: nil)
++    end
++    if schema.key(:double).type.right.valid? d
++      return new(double: d, union_array: nil, bool: nil, anything_map: nil, null: nil, string: nil)
++    end
++    if schema.key(:null).type.right.valid? d
++      return new(null: d, union_array: nil, bool: nil, double: nil, anything_map: nil, string: nil)
++    end
++    if schema.key(:string).type.right.valid? d
++      return new(string: d, union_array: nil, bool: nil, double: nil, anything_map: nil, null: nil)
++    end
++    begin
++      value = d.map { |x| XElement.from_dynamic!(x) }
++      if schema.key(:union_array).type.right.valid? value
++        return new(union_array: value, bool: nil, double: nil, anything_map: nil, null: nil, string: nil)
++      end
++    rescue
++    end
++    raise "Invalid union"
+   end
+ 
+   def self.from_json!(json)
+@@ -163,9 +159,19 @@
+   end
+ 
+   def to_dynamic
+-    {
+-      "x" => x&.to_dynamic,
+-    }
++    if anything_map != nil
++      anything_map
++    elsif bool != nil
++      bool
++    elsif double != nil
++      double
++    elsif string != nil
++      string
++    elsif union_array != nil
++      union_array.map { |x| x.to_dynamic }
++    else
++      nil
++    end
+   end
+ 
+   def to_json(options = nil)

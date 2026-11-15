@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -99,7 +99,7 @@
+ 
+ enum Category cJSON_GetCategoryValue(const cJSON * j) {
+     enum Category x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "physics")) x = CATEGORY_PHYSICS;
+         else if (!strcmp(cJSON_GetStringValue(j), "chemistry")) x = CATEGORY_CHEMISTRY;
+         else if (!strcmp(cJSON_GetStringValue(j), "medicine")) x = CATEGORY_MEDICINE;

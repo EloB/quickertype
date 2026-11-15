@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -68,7 +68,7 @@
+ 
+ enum Health cJSON_GetHealthValue(const cJSON * j) {
+     enum Health x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "ok")) x = HEALTH_OK;
+         else if (!strcmp(cJSON_GetStringValue(j), "error")) x = HEALTH_ERROR;
+     }

@@ -1,0 +1,56 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -292,7 +292,7 @@
+ 
+ enum PostHint cJSON_GetPostHintValue(const cJSON * j) {
+     enum PostHint x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "rich:video")) x = POSTHINT_RICH_VIDEO;
+         else if (!strcmp(cJSON_GetStringValue(j), "link")) x = POSTHINT_LINK;
+     }
+@@ -310,7 +310,7 @@
+ 
+ enum Subreddit cJSON_GetSubredditValue(const cJSON * j) {
+     enum Subreddit x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "todayilearned")) x = SUBREDDIT_TODAYILEARNED;
+     }
+     return x;
+@@ -326,7 +326,7 @@
+ 
+ enum SubredditId cJSON_GetSubredditIdValue(const cJSON * j) {
+     enum SubredditId x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "t5_2qqjc")) x = SUBREDDITID_T5_2_QQJC;
+     }
+     return x;
+@@ -342,7 +342,7 @@
+ 
+ enum SubredditNamePrefixed cJSON_GetSubredditNamePrefixedValue(const cJSON * j) {
+     enum SubredditNamePrefixed x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "r/todayilearned")) x = SUBREDDITNAMEPREFIXED_R_TODAYILEARNED;
+     }
+     return x;
+@@ -358,7 +358,7 @@
+ 
+ enum SubredditType cJSON_GetSubredditTypeValue(const cJSON * j) {
+     enum SubredditType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "public")) x = SUBREDDITTYPE_PUBLIC;
+     }
+     return x;
+@@ -374,7 +374,7 @@
+ 
+ enum Kind cJSON_GetKindValue(const cJSON * j) {
+     enum Kind x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "t3")) x = KIND_T3;
+     }
+     return x;

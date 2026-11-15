@@ -1,0 +1,29 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -158,7 +158,7 @@
+ 
+ enum Status cJSON_GetStatusValue(const cJSON * j) {
+     enum Status x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "active")) x = STATUS_ACTIVE;
+         else if (!strcmp(cJSON_GetStringValue(j), "inactive")) x = STATUS_INACTIVE;
+     }
+@@ -176,7 +176,7 @@
+ 
+ enum CustomIncomeType cJSON_GetCustomIncomeTypeValue(const cJSON * j) {
+     enum CustomIncomeType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "public")) x = CUSTOMINCOMETYPE_PUBLIC;
+         else if (!strcmp(cJSON_GetStringValue(j), "other")) x = CUSTOMINCOMETYPE_OTHER;
+     }
+@@ -194,7 +194,7 @@
+ 
+ enum ResultType cJSON_GetResultTypeValue(const cJSON * j) {
+     enum ResultType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "FinancialDataNGO")) x = RESULTTYPE_FINANCIAL_DATA_NGO;
+         else if (!strcmp(cJSON_GetStringValue(j), "FinancialDataLawyer")) x = RESULTTYPE_FINANCIAL_DATA_LAWYER;
+         else if (!strcmp(cJSON_GetStringValue(j), "FinancialDataTradeAssociation")) x = RESULTTYPE_FINANCIAL_DATA_TRADE_ASSOCIATION;

@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -97,7 +97,7 @@
+             }
+             if (cJSON_HasObjectItem(j, "optPattern")) {
+                 if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "optPattern"))) { cJSON_DeleteTopLevel(x); return NULL; }
+-                regex_t regex; regcomp(&regex, "^[a-z]+$", REG_EXTENDED); if (regexec(&regex, cJSON_GetObjectItemCaseSensitive(j, "optPattern")->valuestring, 0, NULL, 0)) { regfree(&regex); cJSON_DeleteTopLevel(x); return NULL; } regfree(&regex);
++                regex_t regex; if (0 == regcomp(&regex, "^[a-z]+$", REG_EXTENDED)) { if (regexec(&regex, cJSON_GetObjectItemCaseSensitive(j, "optPattern")->valuestring, 0, NULL, 0)) { regfree(&regex); cJSON_DeleteTopLevel(x); return NULL; } regfree(&regex); }
+                 x->opt_pattern = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "optPattern")));
+             }
+             if (cJSON_HasObjectItem(j, "optString")) {

@@ -1,0 +1,521 @@
+# This code may look unusually verbose for Ruby (and it is), but
+# it performs some subtle and complex validation of JSON data.
+#
+# To parse this JSON, add 'dry-struct' and 'dry-types' gems, then do:
+#
+#   top_level = TopLevel.from_json! "{…}"
+#   puts top_level.top_level_self&.tags.first
+#
+#   children = Children.from_json! "[…]"
+#   puts children.first.y
+#
+#   numbers = Numbers.from_json! "[…]"
+#   puts numbers.first.even?
+#
+#   scores = Scores.from_json! "{…}"
+#   puts scores["…"]
+#
+#   choice = Choice.from_json! "…"
+#   puts choice
+#
+#   alias = Alias.from_json! "…"
+#   puts alias
+#
+#   mode = Mode.from_json! "…"
+#   puts mode == Mode::On
+#
+# If from_json! succeeds, the value returned matches the schema.
+
+require 'json'
+require 'dry-types'
+require 'dry-struct'
+
+module Types
+  include Dry.Types(default: :nominal)
+
+  Integer   = Strict::Integer
+  Nil       = Strict::Nil
+  Bool      = Strict::Bool
+  Hash      = Strict::Hash
+  String    = Strict::String
+  Double    = Strict::Float | Strict::Integer
+  Kind      = Strict::String.enum("one-two", "three \"four\"", "\u{23}{x}", "5")
+  MaybeKind = Strict::String.enum("a", "b")
+  OptKind   = Strict::String.enum("x", "y")
+  Mode      = Strict::String.enum("on", "off")
+end
+
+# (forward declaration)
+class ChoiceUnion < Dry::Struct; end
+
+# (forward declaration)
+class Parent < Dry::Struct; end
+
+# (forward declaration)
+class Child < Dry::Struct; end
+
+module Kind
+  OneTwo    = "one-two"
+  ThreeFour = "three \"four\""
+  X         = "\u{23}{x}"
+  The5N     = "5"
+end
+
+class MaybeChoice < Dry::Struct
+  attribute :integer, Types::Integer.optional
+  attribute :null,    Types::Nil.optional
+  attribute :string,  Types::String.optional
+
+  def self.from_dynamic!(d)
+    if schema.key(:integer).type.right.valid? d
+      return new(integer: d, null: nil, string: nil)
+    end
+    if schema.key(:null).type.right.valid? d
+      return new(null: d, integer: nil, string: nil)
+    end
+    if schema.key(:string).type.right.valid? d
+      return new(string: d, integer: nil, null: nil)
+    end
+    raise "Invalid union"
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    if integer != nil
+      integer
+    elsif string != nil
+      string
+    else
+      nil
+    end
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+module MaybeKind
+  A = "a"
+  B = "b"
+end
+
+module OptKind
+  X = "x"
+  Y = "y"
+end
+
+class ChoiceUnion < Dry::Struct
+  attribute :child,   Child.optional
+  attribute :integer, Types::Integer.optional
+  attribute :string,  Types::String.optional
+
+  def self.from_dynamic!(d)
+    begin
+      value = Child.from_dynamic!(d)
+      if schema.key(:child).type.right.valid? value
+        return new(child: value, integer: nil, string: nil)
+      end
+    rescue
+    end
+    if schema.key(:integer).type.right.valid? d
+      return new(integer: d, child: nil, string: nil)
+    end
+    if schema.key(:string).type.right.valid? d
+      return new(string: d, child: nil, integer: nil)
+    end
+    raise "Invalid union"
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    if child != nil
+      child.to_dynamic
+    elsif integer != nil
+      integer
+    elsif string != nil
+      string
+    end
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+# The top level.
+# Second line.
+class Parent < Dry::Struct
+  attribute :anything, Types::Any
+  attribute :children, Types::Hash.meta(of: Child)
+  attribute :choice,   Types.Instance(ChoiceUnion)
+  attribute :counts,   Types::Hash.meta(of: Types::Integer)
+
+  # A flag
+  # over two lines.
+  attribute :flag, Types::Bool
+
+  attribute :id,           Types::String.constrained(format: /\A[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\z/i)
+  attribute :kind,         Types::Kind
+  attribute :list,         Types.Array(Child)
+  attribute :maybe_child,  Child.optional
+  attribute :maybe_choice, Types.Instance(MaybeChoice)
+  attribute :maybe_int,    Types::Integer.optional
+  attribute :maybe_kind,   Types::MaybeKind.optional
+  attribute :nothing,      Types::Nil
+  attribute :opt_child,    Child.optional
+  attribute :opt_kind,     Types::OptKind.optional
+  attribute :opt_list,     Types.Array(Types::Double).optional
+  attribute :opt_map,      Types::Hash.meta(of: Types::String).optional
+  attribute :opt_small,    Types::Integer.constrained(gteq: 1).optional
+  attribute :parent_class, Types::String
+
+  # The name.
+  attribute :parent_name, Types::String.constrained(min_size: 1, max_size: 3).constrained(format: Regexp.new("^[a-z\u{23}\"\\\\]+$"))
+
+  attribute :parent_self, Parent.optional
+  attribute :parent_when, Types::String.constrained(format: /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)\z/i)
+  attribute :ratio,       Types::Double.constrained(gteq: 0.5, lteq: 1e+21)
+  attribute :small,       Types::Integer.constrained(gteq: -5, lteq: 100)
+  attribute :tags,        Types.Array(Types::String).constrained(min_size: 1, max_size: 4)
+  attribute :the_1,       Types::Integer
+
+  def self.from_dynamic!(d)
+    d = Types::Hash[d]
+    new(
+      anything:     d.fetch("anything"),
+      children:     Types::Hash[d.fetch("children")].map { |k, v| [k, Child.from_dynamic!(v)] }.to_h,
+      choice:       ChoiceUnion.from_dynamic!(d.fetch("choice")),
+      counts:       Types::Hash[d.fetch("counts")].map { |k, v| [k, Types::Integer[v]] }.to_h,
+      flag:         d.fetch("flag"),
+      id:           d.fetch("id"),
+      kind:         d.fetch("kind"),
+      list:         d.fetch("list").map { |x| Child.from_dynamic!(x) },
+      maybe_child:  d.fetch("maybeChild") ? Child.from_dynamic!(d.fetch("maybeChild")) : nil,
+      maybe_choice: MaybeChoice.from_dynamic!(d.fetch("maybeChoice")),
+      maybe_int:    d.fetch("maybeInt"),
+      maybe_kind:   d.fetch("maybeKind"),
+      nothing:      d.fetch("nothing"),
+      opt_child:    d.key?("optChild") ? Child.from_dynamic!(d["optChild"]) : nil,
+      opt_kind:     d.key?("optKind") ? Types::OptKind[d["optKind"]] : nil,
+      opt_list:     d.key?("optList") ? d["optList"].map { |x| Types::Double[x] } : nil,
+      opt_map:      d.key?("optMap") ? Types::Hash[d["optMap"]].map { |k, v| [k, Types::String[v]] }.to_h : nil,
+      opt_small:    d.key?("optSmall") ? Types::Integer.constrained(gteq: 1)[d["optSmall"]] : nil,
+      parent_class: d.fetch("class"),
+      parent_name:  d.fetch("name"),
+      parent_self:  d.key?("self") ? Parent.from_dynamic!(d["self"]) : nil,
+      parent_when:  d.fetch("when"),
+      ratio:        d.fetch("ratio"),
+      small:        d.fetch("small"),
+      tags:         d.fetch("tags"),
+      the_1:        d.fetch("_1"),
+    )
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    {
+      "anything"    => anything,
+      "children"    => children.map { |k, v| [k, v.to_dynamic] }.to_h,
+      "choice"      => choice.to_dynamic,
+      "counts"      => counts,
+      "flag"        => flag,
+      "id"          => id,
+      "kind"        => kind,
+      "list"        => list.map { |x| x.to_dynamic },
+      "maybeChild"  => maybe_child&.to_dynamic,
+      "maybeChoice" => maybe_choice.to_dynamic,
+      "maybeInt"    => maybe_int,
+      "maybeKind"   => maybe_kind,
+      "nothing"     => nothing,
+      "optChild"    => opt_child&.to_dynamic,
+      "optKind"     => opt_kind,
+      "optList"     => opt_list,
+      "optMap"      => opt_map,
+      "optSmall"    => opt_small,
+      "class"       => parent_class,
+      "name"        => parent_name,
+      "self"        => parent_self&.to_dynamic,
+      "when"        => parent_when,
+      "ratio"       => ratio,
+      "small"       => small,
+      "tags"        => tags,
+      "_1"          => the_1,
+    }
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+# A child.
+class Child < Dry::Struct
+  attribute :parent, Parent.optional
+  attribute :x,      Types::Double
+
+  def self.from_dynamic!(d)
+    d = Types::Hash[d]
+    new(
+      parent: d.key?("parent") ? Parent.from_dynamic!(d["parent"]) : nil,
+      x:      d.fetch("x"),
+    )
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    {
+      "parent" => parent&.to_dynamic,
+      "x"      => x,
+    }
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+# The top level.
+# Second line.
+class TopLevel < Dry::Struct
+  attribute :anything, Types::Any
+  attribute :children, Types::Hash.meta(of: Child)
+  attribute :choice,   Types.Instance(ChoiceUnion)
+  attribute :counts,   Types::Hash.meta(of: Types::Integer)
+
+  # A flag
+  # over two lines.
+  attribute :flag, Types::Bool
+
+  attribute :id,              Types::String.constrained(format: /\A[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\z/i)
+  attribute :kind,            Types::Kind
+  attribute :list,            Types.Array(Child)
+  attribute :maybe_child,     Child.optional
+  attribute :maybe_choice,    Types.Instance(MaybeChoice)
+  attribute :maybe_int,       Types::Integer.optional
+  attribute :maybe_kind,      Types::MaybeKind.optional
+  attribute :nothing,         Types::Nil
+  attribute :opt_child,       Child.optional
+  attribute :opt_kind,        Types::OptKind.optional
+  attribute :opt_list,        Types.Array(Types::Double).optional
+  attribute :opt_map,         Types::Hash.meta(of: Types::String).optional
+  attribute :opt_small,       Types::Integer.constrained(gteq: 1).optional
+  attribute :ratio,           Types::Double.constrained(gteq: 0.5, lteq: 1e+21)
+  attribute :small,           Types::Integer.constrained(gteq: -5, lteq: 100)
+  attribute :tags,            Types.Array(Types::String).constrained(min_size: 1, max_size: 4)
+  attribute :the_1,           Types::Integer
+  attribute :top_level_class, Types::String
+
+  # The name.
+  attribute :top_level_name, Types::String.constrained(min_size: 1, max_size: 3).constrained(format: Regexp.new("^[a-z\u{23}\"\\\\]+$"))
+
+  attribute :top_level_self, Parent.optional
+  attribute :top_level_when, Types::String.constrained(format: /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)\z/i)
+
+  def self.from_dynamic!(d)
+    d = Types::Hash[d]
+    new(
+      anything:        d.fetch("anything"),
+      children:        Types::Hash[d.fetch("children")].map { |k, v| [k, Child.from_dynamic!(v)] }.to_h,
+      choice:          ChoiceUnion.from_dynamic!(d.fetch("choice")),
+      counts:          Types::Hash[d.fetch("counts")].map { |k, v| [k, Types::Integer[v]] }.to_h,
+      flag:            d.fetch("flag"),
+      id:              d.fetch("id"),
+      kind:            d.fetch("kind"),
+      list:            d.fetch("list").map { |x| Child.from_dynamic!(x) },
+      maybe_child:     d.fetch("maybeChild") ? Child.from_dynamic!(d.fetch("maybeChild")) : nil,
+      maybe_choice:    MaybeChoice.from_dynamic!(d.fetch("maybeChoice")),
+      maybe_int:       d.fetch("maybeInt"),
+      maybe_kind:      d.fetch("maybeKind"),
+      nothing:         d.fetch("nothing"),
+      opt_child:       d.key?("optChild") ? Child.from_dynamic!(d["optChild"]) : nil,
+      opt_kind:        d.key?("optKind") ? Types::OptKind[d["optKind"]] : nil,
+      opt_list:        d.key?("optList") ? d["optList"].map { |x| Types::Double[x] } : nil,
+      opt_map:         d.key?("optMap") ? Types::Hash[d["optMap"]].map { |k, v| [k, Types::String[v]] }.to_h : nil,
+      opt_small:       d.key?("optSmall") ? Types::Integer.constrained(gteq: 1)[d["optSmall"]] : nil,
+      ratio:           d.fetch("ratio"),
+      small:           d.fetch("small"),
+      tags:            d.fetch("tags"),
+      the_1:           d.fetch("_1"),
+      top_level_class: d.fetch("class"),
+      top_level_name:  d.fetch("name"),
+      top_level_self:  d.key?("self") ? Parent.from_dynamic!(d["self"]) : nil,
+      top_level_when:  d.fetch("when"),
+    )
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    {
+      "anything"    => anything,
+      "children"    => children.map { |k, v| [k, v.to_dynamic] }.to_h,
+      "choice"      => choice.to_dynamic,
+      "counts"      => counts,
+      "flag"        => flag,
+      "id"          => id,
+      "kind"        => kind,
+      "list"        => list.map { |x| x.to_dynamic },
+      "maybeChild"  => maybe_child&.to_dynamic,
+      "maybeChoice" => maybe_choice.to_dynamic,
+      "maybeInt"    => maybe_int,
+      "maybeKind"   => maybe_kind,
+      "nothing"     => nothing,
+      "optChild"    => opt_child&.to_dynamic,
+      "optKind"     => opt_kind,
+      "optList"     => opt_list,
+      "optMap"      => opt_map,
+      "optSmall"    => opt_small,
+      "ratio"       => ratio,
+      "small"       => small,
+      "tags"        => tags,
+      "_1"          => the_1,
+      "class"       => top_level_class,
+      "name"        => top_level_name,
+      "self"        => top_level_self&.to_dynamic,
+      "when"        => top_level_when,
+    }
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+class ChildElement < Dry::Struct
+  attribute :y, Types::String
+
+  def self.from_dynamic!(d)
+    d = Types::Hash[d]
+    new(
+      y: d.fetch("y"),
+    )
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    {
+      "y" => y,
+    }
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+class ChoiceClass < Dry::Struct
+  attribute :z, Types::Bool.optional
+
+  def self.from_dynamic!(d)
+    d = Types::Hash[d]
+    new(
+      z: d.key?("z") ? Types::Bool[d["z"]] : nil,
+    )
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    {
+      "z" => z,
+    }
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+class Choice < Dry::Struct
+  attribute :choice_class, ChoiceClass.optional
+  attribute :integer,      Types::Integer.optional
+  attribute :string,       Types::String.optional
+
+  def self.from_dynamic!(d)
+    begin
+      value = ChoiceClass.from_dynamic!(d)
+      if schema.key(:choice_class).type.right.valid? value
+        return new(choice_class: value, integer: nil, string: nil)
+      end
+    rescue
+    end
+    if schema.key(:integer).type.right.valid? d
+      return new(integer: d, choice_class: nil, string: nil)
+    end
+    if schema.key(:string).type.right.valid? d
+      return new(string: d, choice_class: nil, integer: nil)
+    end
+    raise "Invalid union"
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    if choice_class != nil
+      choice_class.to_dynamic
+    elsif integer != nil
+      integer
+    elsif string != nil
+      string
+    end
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+module Mode
+  On  = "on"
+  Off = "off"
+end
+
+class Children
+  def self.from_json!(json)
+    children = JSON.parse(json, quirks_mode: true).map { |x| ChildElement.from_dynamic!(x) }
+    children.define_singleton_method(:to_json) do
+      JSON.generate(self.map { |x| x.to_dynamic })
+    end
+    children
+  end
+end
+
+class Numbers
+  def self.from_json!(json)
+    JSON.parse(json, quirks_mode: true).map { |x| Types::Integer[x] }
+  end
+end
+
+class Scores
+  def self.from_json!(json)
+    Types::Hash[JSON.parse(json, quirks_mode: true)].map { |k, v| [k, Types::Double[v]] }.to_h
+  end
+end
+
+class Alias
+  def self.from_json!(json)
+    JSON.parse(json, quirks_mode: true)
+  end
+end

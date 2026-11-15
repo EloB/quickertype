@@ -1,0 +1,20 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -96,7 +96,7 @@
+ 
+ enum Callsign cJSON_GetCallsignValue(const cJSON * j) {
+     enum Callsign x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "alpha")) x = CALLSIGN_ALPHA;
+         else if (!strcmp(cJSON_GetStringValue(j), "bravo")) x = CALLSIGN_BRAVO;
+         else if (!strcmp(cJSON_GetStringValue(j), "charlie")) x = CALLSIGN_CHARLIE;
+@@ -150,7 +150,7 @@
+ 
+ enum Priority cJSON_GetPriorityValue(const cJSON * j) {
+     enum Priority x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "low")) x = PRIORITY_LOW;
+         else if (!strcmp(cJSON_GetStringValue(j), "medium")) x = PRIORITY_MEDIUM;
+         else if (!strcmp(cJSON_GetStringValue(j), "high")) x = PRIORITY_HIGH;
