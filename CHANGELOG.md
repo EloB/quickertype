@@ -229,11 +229,16 @@ section are absolute.
   has the details):
   - C (cJSON): a top-level map of integers, booleans, doubles or enums
     allocates its values (the value was stored as the pointer, which did
-    not compile for numbers); top-level lists of `null` mark elements with
-    `0xDEADBEEF` (not `0xDEADBEAF`), and the delete functions of top-level
-    lists and maps of `null` no longer free the markers; enum getters
-    check that the value is a string before `strcmp`; a pattern is
-    matched only if `regcomp` compiled it; maps of classes and unions
+    not compile for numbers) and checks their types, and an element of a
+    top-level list or map that cannot be allocated fails the parse;
+    top-level lists of `null` mark elements with `0xDEADBEEF` (not
+    `0xDEADBEAF`), and the delete functions of top-level lists and maps of
+    `null` no longer free the markers; a value of an enum that is not one
+    of its cases fails the parse wherever the enum is (each enum gets
+    `cJSON_Is<Name>Value`; the getter no longer passes `NULL` to `strcmp`,
+    and a case whose value is 0 is accepted); the result of `regcomp` is
+    checked (a pattern that does not compile as a POSIX extended one is
+    not checked at all, a known limitation); maps of classes and unions
     parse each value once.
   - Ruby: union classes are forward-declared like classes, so a class
     that names one declared later loads (`NameError` before, with
@@ -242,14 +247,14 @@ section are absolute.
     no format throws `IllegalArgumentException` instead of reading as
     `null`.
   - Python: a property named like something `from_dict` uses (`from_date`
-    and the other converters, `obj`, `isinstance`) is renamed instead of
-    shadowing it.
+    and the other converters it calls, `obj`, `isinstance`) is renamed
+    instead of shadowing it.
   - TypeScript input: string enums in unions (`E | null`, `E[] | F`, an
     optional `E` in Python, two enums with the same values) no longer stop
     with `Internal error: Cannot combine type attribute accessorNames.`;
     neither do JSON Schema definitions of the same enum with
-    `qt-accessors`. The enum's member names are kept where its copies
-    agree on them.
+    `qt-accessors` or `qt-enum-values`. The member names and values are
+    kept where the enum's copies agree on them.
 - Parity: `cargo xtask parity`, the renderer tests and the npm
   differential suite report those cases as intended differences, apart
   from the identical ones, and fail when one matches quicktype's output

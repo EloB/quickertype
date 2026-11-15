@@ -762,27 +762,42 @@ AddressSanitizer and UndefinedBehaviorSanitizer, Ruby, Java, Python with
 mypy, the TypeScript input).
 
 - **C (`--lang cjson`)**, reported upstream: (link pending).
-  - `cjson-top-level-map-values`: a top-level map of integers, booleans,
+  - `cjson-top-level-collections`: a top-level map of integers, booleans,
     doubles or enums stored the value itself as the pointer
     (`hashtable_add(x->value, e->string, cJSON_GetNumberValue(e),
     sizeof(int64_t *))`), which does not compile for numbers, and for the
     others makes creating JSON dereference address 1, 2, … and deleting
-    free them. Each value is allocated, as the top-level list's are.
+    free them. It did not check its values' types either (a string read
+    into an integer is undefined behavior), and the top-level list
+    dropped an element it could not allocate. Each value is allocated, as
+    the top-level list's are; a map's values are checked as a list's are
+    (nullable ones too), and an element that is the wrong type or cannot
+    be allocated makes the parse fail.
   - `cjson-top-level-null-marker`: top-level lists of `null` marked each
     element with `(void *)0xDEADBEAF` (every other check compares with
     `0xDEADBEEF`), and the delete functions of top-level lists and maps of
     `null` freed the markers. The marker is `0xDEADBEEF`, and it is not
     freed.
-  - `cjson-enum-getter-strcmp`: enum getters called
+  - `cjson-enum-getter`: enum getters called
     `strcmp(cJSON_GetStringValue(j), …)` after checking only `NULL != j`,
     so a value that is not a string (`{"tags": [1]}` for an array of enums)
-    passed `NULL` to `strcmp`. The getters check `cJSON_IsString(j)`; any
-    other value reads as `0`, no case.
+    passed `NULL` to `strcmp`. A string that is no case gave `0`, which
+    lists, maps and unions stored as if it were a case, while a class
+    property rejected `0`, which is a case when `qt-enum-values` gives it
+    the value 0. Each enum gets `bool cJSON_Is<Name>Value(const cJSON * j)`
+    (a string that is one of its cases), which the getters of classes,
+    lists (nested ones too), maps, unions and top-levels check before
+    calling `cJSON_Get<Name>Value`: any other value makes the parse fail.
+    The getter itself checks `cJSON_IsString(j)` and still gives `0` for
+    any other value.
   - `cjson-pattern-regcomp`: pattern constraints ignored what `regcomp`
     returns, so `regexec` and `regfree` ran on a regex that never compiled
-    (JSON Schema patterns are ECMAScript syntax, often not POSIX extended:
-    `\d`, lookahead), and on macOS every value was rejected. A pattern is
-    checked only if it compiles.
+    (undefined behavior; on macOS every value was rejected). The generated
+    code checks what `regcomp` returns. Known limitation, not a fix: JSON
+    Schema patterns are ECMAScript syntax, often not POSIX extended (`\d`,
+    lookahead), and a pattern that does not compile as one is not checked
+    at all; rejecting every value instead would make the type unusable
+    wherever the pattern does not compile.
   - `cjson-map-parsed-twice`: maps of classes or unions parsed every value
     twice, once to validate it (then deleted) and once for the value
     stored, which doubles the work at every level of nested maps. The
@@ -813,13 +828,21 @@ mypy, the TypeScript input).
   `from_dict` uses shadowed it: `from_date` (`python` with
   `misc/a0496.json`: `from_date(obj["to_date"])` fails, mypy reports
   `"date" not callable`, Python an `UnboundLocalError`), and likewise
-  `obj`, `isinstance` and the other converters. Those names are forbidden
-  for properties, which are then renamed as other forbidden names are
-  (`top_level_from_date` in `TopLevel`). Upstream CI sets `QUICKTEST`,
+  `obj`, `isinstance` and the other converters `from_dict` calls. Those
+  names are forbidden for properties (`obj`, `isinstance`, `from_none`,
+  `from_bool`, `from_int`, `from_float`, `from_str`, `from_list`,
+  `from_dict`, `from_union`, `from_date`, `from_time`, `from_datetime`,
+  `from_stringified_bool`, derived from the converter functions
+  `deserializer` and the decoding transformers use), and a property named
+  like one is renamed as other forbidden names are (`top_level_from_date`
+  in `TopLevel`). The converters only `to_dict` calls (`to_float`,
+  `to_enum`, `to_class`, `is_type`) are no such names: properties named
+  like them keep their names. Upstream CI sets `QUICKTEST`,
   which leaves out the `misc` inputs.
-- **TypeScript input with string enums (`--src-lang typescript`), and JSON
-  Schema `qt-accessors`**, `typescript-enum-accessor-names`, reported
-  upstream: (link pending). `export enum E { A = "a", B = "b" } export
+- **Accessor names and enum values that cannot combine: TypeScript input
+  with string enums (`--src-lang typescript`), and JSON Schema
+  `qt-accessors` and `qt-enum-values`**, `accessor-names-combine`,
+  reported upstream: (link pending). `export enum E { A = "a", B = "b" } export
   interface X { f: E | null }` stopped with `Internal error: Cannot
   combine type attribute accessorNames.`, as did two optional properties
   of the same enum with Python (which makes them `E | None`), `E[] | F`,
@@ -830,9 +853,15 @@ mypy, the TypeScript input).
   inline in the union and its definition, which the type builder merges
   on rewriting the union, or two enums with the same cases) the base
   class's `combine` panics. A JSON Schema with two definitions of the same
-  enum, each with `qt-accessors`, fails the same way. Accessor names now
-  combine to the entries the combined types agree on; a name they give
-  different entries is dropped, so it gets its default name. So `f: E |
+  enum, each with `qt-accessors`, fails the same way, and so does one
+  with `qt-enum-values` (`Cannot combine type attribute enumValues.`):
+  `EnumValuesTypeAttributeKind` has no `combine` either. Both now combine
+  to the entries the combined types agree on; a name they give different
+  entries is dropped, so it gets its default name (or value). The one
+  other attribute without a `combine`, a type's transformation, never
+  meets itself: it is part of the type's identity, so a type found by its
+  identity does not get it again, and only the last rewrite
+  (`makeTransformations`, after the unions are built) adds it. So `f: E |
   null` names the cases as `f: E` does (and as the string-literal alias
   `type E = "a" | "b"` does whenever the member names are the values'
   default names, as in every example above), and two enums that disagree
