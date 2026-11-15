@@ -181,6 +181,9 @@ fn normalize_uri_string(uri: &str) -> Result<Uri> {
 pub struct Ref {
     address_uri: Option<Uri>,
     path: Vec<PathElement>,
+    /// Its [`DeepHash`], made when first asked for (a ref is never
+    /// changed): `Uri::equals_hash` normalizes a copy of the address.
+    deep_hash: std::cell::OnceCell<u64>,
 }
 
 impl Ref {
@@ -245,7 +248,11 @@ impl Ref {
             }
             None => None,
         };
-        Ok(Ref { address_uri, path })
+        Ok(Ref {
+            address_uri,
+            path,
+            deep_hash: std::cell::OnceCell::new(),
+        })
     }
 
     /// `addressURI`.
@@ -510,11 +517,13 @@ impl DeepHash for Ref {
     /// normalized, query parameters in any order), and the path, which
     /// compares exactly.
     fn deep_hash(&self) -> u64 {
-        let address = match &self.address_uri {
-            None => 0,
-            Some(uri) => uri.equals_hash(deep_state()),
-        };
-        deep_combine(&[address, deep_hash_of(&self.path)])
+        *self.deep_hash.get_or_init(|| {
+            let address = match &self.address_uri {
+                None => 0,
+                Some(uri) => uri.equals_hash(deep_state()),
+            };
+            deep_combine(&[address, deep_hash_of(&self.path)])
+        })
     }
 }
 

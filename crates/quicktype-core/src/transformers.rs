@@ -182,13 +182,13 @@ fn number_of_nodes(xfer: Option<&Rc<Transformer>>) -> usize {
     xfer.map_or(0, |x| x.get_number_of_nodes())
 }
 
-/// `hashCodeOf(xfer)` for an optional transformer.
 /// The deep hash of an optional transformer: consistent with
 /// [`optional_are_equal`] (identical objects, or `equals`).
 fn optional_deep_hash(xfer: Option<&Rc<Transformer>>) -> u64 {
     xfer.map_or(deep_combine(&[0]), |x| deep_combine(&[1, x.deep_hash()]))
 }
 
+/// `hashCodeOf(xfer)` for an optional transformer.
 fn optional_hash(xfer: Option<&Rc<Transformer>>) -> i64 {
     xfer.map_or(crate::support::collection_utils::HASH_CODE_INIT, |x| {
         x.hash_code()
