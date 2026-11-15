@@ -2863,6 +2863,27 @@ the machine runs at once if that is fewer. Natively the CLI reads the
 threads](#json-lines-on-several-threads)); the browser takes 1.8–1.9
 times that.
 
+**What reading in one go holds.** Where a file cannot be read in parts,
+the playground reads it in one go: its bytes and their compressed form in
+the engine's WebAssembly memory, at most 4 GiB. JSON past the longest
+string (512 MiB) cannot be read so anyway; JSON Lines can (their errors are
+read value by value), so their size in one go is bounded by what the
+engine holds, measured on distinct generated cards as JSON Lines (written
+in batches of 5,000, each its own seed), in one go in Chrome, the memory as
+above:
+
+| JSON Lines | 1.02 GB | 1.26 GB | 1.50 GB | 1.77 GB | 2.01 GB |
+|---|---:|---:|---:|---:|---:|
+| Engine's WebAssembly memory | 2,874 MiB | 3,326 MiB | 3,659 MiB | 3,968 MiB | out of memory |
+
+At 2.0 GB the engine ran out of memory, and the run went to the
+TypeScript engine, which failed too ("Too many properties to enumerate")
+after 30 s. The real cards take more per byte (1,710 MiB at 656 MB, the
+table above), which at 1.34 GB comes to about 3.5 GiB. So JSON Lines are
+read in one go up to 1.25 GiB (`linesInOneGo`), and past that the page
+says the file is too large to read in one go, and why it could not be read
+in parts.
+
 To reproduce (after `node site/build.mjs`; the generated inputs are
 `generateRulings` and `generateCards` of
 `npm/quicktype-core/test/bench/generate.mjs`):

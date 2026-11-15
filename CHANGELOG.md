@@ -104,18 +104,27 @@ section are absolute.
   in 0.57 s instead of 2.8 s, the engine's WebAssembly memory 45 MiB
   instead of 1.7 GiB, with 280 MiB in the part workers
   ([BENCHMARKS.md](https://github.com/EloB/quickertype/blob/main/docs/BENCHMARKS.md#reading-on-several-workers)). quickertype
-  now opens files of up to 2 GiB in the playground: JSON past the longest
-  string a browser holds (512 MiB) when it reads in parts, JSON Lines in
-  any case; quicktype, and broken JSON that large, still say the file is
-  too large for the browser. The status under a file read so says
-  "reading it on N workers".
+  now opens files of up to 2 GiB in the playground: those it reads in
+  parts at any size; in one go, JSON up to the longest string a browser
+  holds (512 MiB) and JSON Lines up to 1.25 GiB (what its engine holds,
+  measured), and past those it says the file is too large to read in one
+  go, and why it could not be read in parts; quicktype still says the file
+  is too large for the browser, now only when the file's text, counted in
+  UTF-16 units, does not fit one string (its bytes may be more: a 537 MB
+  slice of the cards fits), and never with an empty text, which Chrome
+  decodes such a text to without an error. Why a file was read in one go is
+  remembered for it only where that is the file's own (no split, not JSON
+  there); part workers that fail are replaced, and the next reading tries
+  again. The status under a file read so says "reading it on N workers".
 - **Reading in parts in quickertype-core (internal, not public API):**
   `src/native/parallel.ts` reads one sample of a fresh JSON input in parts
   on several engine instances (bindings in `crates/quicktype-wasm`'s
   `parts.rs`, the rules in quickertype-core's `input/parts.rs`); the input
   then holds the sample as `addSource` would add it, its runs use the
   tallies, and should anything read the `CompressedJSON`'s tables, they are
-  filled by reading the sample again with TypeScript. In Rust,
+  filled by reading the sample again with TypeScript, or, if that fails,
+  the input is left as it was and the error says the tables cannot be had.
+  In Rust,
   `JsonInput::from_tallies` and the portable trees' bytes
   (`PortableTree::to_bytes`/`from_bytes`); the CLI's parallel reader
   shares its plan and split helpers.

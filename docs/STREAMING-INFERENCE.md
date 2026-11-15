@@ -658,7 +658,18 @@ memory (for the 656 MB cards, 45 MiB in the instance that runs, against
 tables if anything reads them (a run that goes to the TypeScript engine):
 they are filled by reading the sample again (the playground hands
 quickertype-core a `FileReaderSync` read of the File) with TypeScript, as
-`addSource` would have filled them.
+`addSource` would have filled them, JSON Lines value by value. That is
+read into a `CompressedJSON` of its own, and only once it succeeded does
+the input take its tables: if reading again fails (the text is longer
+than one string, say), the input is as it was, its tallies kept for runs
+on the engine, and the use of its tables throws an error that says they
+cannot be had (and tries again next time).
+
+Why a sample is read in one go comes with whether it is the sample's own
+(`always`: not an array, no split, not JSON in a part, trees far larger
+than their text), which a caller may remember for the sample, or only
+this reading's (a worker that failed, an input or engine that cannot), so
+that the next reading tries again.
 
 ### Testing it
 
@@ -733,13 +744,20 @@ quickertype-core a `FileReaderSync` read of the File) with TypeScript, as
   go into the same tree and root index (a part that reads where one go
   does not fails the test), and nine in ten intact samples read in parts;
   whole runs on the tallies give the code of the engine's one-go path;
-  broken tree bytes give an error or a tree. quickertype-core's
+  broken tree bytes give an error or a tree, and a count anywhere in them
+  of more than the bytes left hold (2^31, 2^63) an error before anything
+  is made room for (and what is made room for ahead is at most 4,096
+  entries: what is allocated follows the entries read). The fuzz target
+  `parts_bytes` corrupts real tree bytes (bytes changed, huge counts) and
+  appends them: 1,274,931 runs in 4 minutes, no crash. quickertype-core's
   `test/parallel.test.mjs` reads records, text-heavy and URI-heavy arrays
   and cards, and their JSON Lines, on 2 to 5 engine instances of their
   own: every file of every run in six configurations, and the tables, are
-  reading in one go's; broken inputs give its errors. The playground's
-  smoke test reads 20 MB of cards and their JSON Lines on its part workers
-  (the CLI's output, reading in one go's, quicktype's).
+  reading in one go's; broken inputs give its errors; why each is read in
+  one go, and whether that is the sample's own; tables that cannot be had
+  leave the input as it was. The playground's smoke test reads 20 MB of
+  cards and their JSON Lines on its part workers (the CLI's output,
+  reading in one go's, quicktype's), and part workers that do not start.
 - The fuzz target `json_split` reads arbitrary bytes both ways, as a JSON
   sample or as JSON Lines (bit 2 of its flags), and compares the source's
   error or the type graph. The differential fuzzer's `jsonl` mode has our
