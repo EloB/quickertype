@@ -711,7 +711,12 @@ fn combine_values(
                 PropertyDescriptionsTypeAttributeKind,
             >(values)),
         ))),
-        K::AccessorNames | K::EnumValues | K::Transformation => {
+        K::AccessorNames => Some(V::AccessorNames(Rc::new(
+            accessor_names::combine_accessor_names(&refs_of::<AccessorNamesTypeAttributeKind>(
+                values,
+            )),
+        ))),
+        K::EnumValues | K::Transformation => {
             return panic(format!("Cannot combine type attribute {}", kind.name()));
         }
         K::UnionIdentifier => Some(V::UnionIdentifier(Rc::new(
@@ -1060,12 +1065,12 @@ mod tests {
 
     #[test]
     fn panicking_kinds_return_errors() {
-        let a = AccessorNamesTypeAttributeKind.make_attributes(AccessorNames::default());
+        let a = EnumValuesTypeAttributeKind.make_attributes(AccessorNames::default());
         assert_eq!(
             combine_type_attributes(CombinationKind::Union, &[&a, &a])
                 .unwrap_err()
                 .user_message(),
-            "Internal error: Cannot combine type attribute accessorNames"
+            "Internal error: Cannot combine type attribute enumValues"
         );
         // A single value is used as is, without calling combine.
         assert!(combine_type_attributes(CombinationKind::Union, &[&a]).is_ok());
@@ -1076,6 +1081,38 @@ mod tests {
                 .user_message(),
             "Internal error: Cannot make type attribute unionMemberNames inferred"
         );
+    }
+
+    /// Accessor names combine (quicktype cannot): the entries every type
+    /// agrees on, in first-seen order; a name with different entries is
+    /// dropped, also when a later type has it again.
+    #[test]
+    fn accessor_names_keep_the_entries_they_agree_on() {
+        let accessors = |entries: &[(&str, &str)]| {
+            AccessorNamesTypeAttributeKind.make_attributes(
+                entries
+                    .iter()
+                    .map(|&(k, v)| (k.to_owned(), AccessorEntry::Name(v.to_owned())))
+                    .collect(),
+            )
+        };
+        let e = accessors(&[("a", "A"), ("b", "B")]);
+        let f = accessors(&[("c", "C"), ("b", "X"), ("a", "A")]);
+        let g = accessors(&[("b", "B")]);
+        for kind in [CombinationKind::Union, CombinationKind::Intersect] {
+            let combined = combine_type_attributes(kind, &[&e, &f, &g]).unwrap();
+            let combined = AccessorNamesTypeAttributeKind
+                .try_get_in_attributes(&combined)
+                .unwrap();
+            let keys: Vec<&str> = combined.keys().map(String::as_str).collect();
+            assert_eq!(keys, ["a", "c"]);
+            assert_eq!(combined["a"], AccessorEntry::Name("A".into()));
+            let same = combine_type_attributes(kind, &[&e, &e]).unwrap();
+            assert_eq!(
+                AccessorNamesTypeAttributeKind.try_get_in_attributes(&same),
+                AccessorNamesTypeAttributeKind.try_get_in_attributes(&e)
+            );
+        }
     }
 
     #[test]

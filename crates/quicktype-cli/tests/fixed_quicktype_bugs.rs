@@ -636,3 +636,128 @@ fn python_properties_do_not_shadow_what_from_dict_uses() {
         }
     }
 }
+
+// ---- TypeScript input: string enums -------------------------------------
+
+/// Runs `args` on TypeScript sources in a fresh directory: stdout, or
+/// `None` (with a note) without the TypeScript 7 compiler.
+fn typescript(name: &str, source: &str, args: &[&str]) -> Option<String> {
+    let dir = work_dir(name);
+    fs::write(dir.join("input.ts"), source).unwrap();
+    let output = Command::new(BIN)
+        .args(args)
+        .args(["--src-lang", "typescript", "input.ts"])
+        .current_dir(&dir)
+        .output()
+        .unwrap();
+    let error = String::from_utf8_lossy(&output.stderr);
+    if error.contains("requires the TypeScript 7.0.2 compiler") {
+        skipped(name, &error);
+        return None;
+    }
+    assert!(output.status.success(), "{name}: {}", text(&output));
+    Some(String::from_utf8(output.stdout).unwrap())
+}
+
+/// String enums where quicktype stops with "Cannot combine type attribute
+/// accessorNames": the enum's member names (`qt-accessors`) are on every
+/// copy of it that meets another. With the names they agree on kept, each
+/// gives what the same declarations with a string-literal type alias give
+/// (their member names are the values' default names).
+#[test]
+fn typescript_string_enums_in_unions_are_named_as_their_aliases() {
+    let cases = [
+        ("union-with-null", "export interface X { f: E | null }"),
+        ("optional-twice", "export interface X { f?: E; g?: E }"),
+        (
+            "array-or-enum",
+            "export enum F { C = \"c\", D = \"d\" }\nexport interface X { f: E[] | F }",
+        ),
+        (
+            "same-values",
+            "export enum F { A = \"a\", B = \"b\" }\nexport interface X { e: E; f: F }",
+        ),
+    ];
+    for (name, rest) in cases {
+        let enums = format!("export enum E {{ A = \"a\", B = \"b\" }}\n{rest}\n");
+        let aliases = enums
+            .replace("enum E { A = \"a\", B = \"b\" }", "type E = \"a\" | \"b\";")
+            .replace("enum F { C = \"c\", D = \"d\" }", "type F = \"c\" | \"d\";")
+            .replace("enum F { A = \"a\", B = \"b\" }", "type F = \"a\" | \"b\";");
+        for lang in ["cs", "python", "go", "typescript"] {
+            let id = format!("ts-enum-{name}-{lang}");
+            let Some(from_enums) = typescript(&id, &enums, &["--lang", lang]) else {
+                return;
+            };
+            let from_aliases =
+                typescript(&format!("{id}-alias"), &aliases, &["--lang", lang]).unwrap();
+            assert_eq!(from_enums, from_aliases, "{id}");
+        }
+    }
+}
+
+/// Member names that are not the values' default names: the enum in a
+/// union is named as the same enum on its own is.
+#[test]
+fn typescript_string_enums_in_unions_keep_their_member_names() {
+    let plain =
+        "export enum Color { Red = \"r\", Green = \"g\" }\nexport interface X { c: Color }\n";
+    let Some(alone) = typescript("ts-enum-names-alone", plain, &["--lang", "cs"]) else {
+        return;
+    };
+    let in_union = typescript(
+        "ts-enum-names-in-union",
+        &plain.replace("c: Color }", "c: Color | null }"),
+        &["--lang", "cs"],
+    )
+    .unwrap();
+    let declaration = "public enum ColorEnum { Red, Green };";
+    assert!(alone.contains(declaration), "{alone}");
+    assert!(in_union.contains(declaration), "{in_union}");
+}
+
+/// The JSON Schema the TypeScript input makes of `E | null` (the enum's
+/// definition with `qt-accessors`, and the enum again inline), without
+/// the compiler. Two enums with the same values whose member names
+/// differ keep only the names they agree on.
+#[test]
+fn json_schema_enums_with_accessors_combine() {
+    let dir = work_dir("schema-accessor-names");
+    let schema = r#"{
+        "definitions": {
+            "E": {"type": "string", "enum": ["a", "b"], "qt-accessors": {"a": "Alpha", "b": "Beta"}},
+            "F": {"type": "string", "enum": ["a", "b"], "qt-accessors": {"a": "Alpha", "b": "Other"}},
+            "X": {"type": "object", "required": ["f"], "properties": {
+                "f": {"anyOf": [{"type": "string", "enum": ["a", "b"]}, {"type": "null"}]}}}
+        }
+    }"#;
+    fs::write(dir.join("input.schema"), schema).unwrap();
+    let run = |definitions: &[&str]| {
+        let mut args = vec!["--src-lang", "schema", "--lang", "cs"];
+        let sources: Vec<String> = definitions
+            .iter()
+            .map(|d| format!("input.schema#/definitions/{d}"))
+            .collect();
+        for source in &sources {
+            args.extend(["--src", source.as_str()]);
+        }
+        let output = Command::new(BIN)
+            .args(&args)
+            .current_dir(&dir)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{definitions:?}: {}",
+            text(&output)
+        );
+        String::from_utf8(output.stdout).unwrap()
+    };
+    let code = run(&["E", "X"]);
+    assert!(
+        code.contains("public enum EEnum { Alpha, Beta };"),
+        "{code}"
+    );
+    let code = run(&["E", "F"]);
+    assert!(code.contains("{ Alpha, B };"), "{code}");
+}

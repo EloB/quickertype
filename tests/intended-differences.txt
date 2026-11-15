@@ -31,6 +31,7 @@ bug cjson-top-level-null-marker (link pending)
 bug java-legacy-date-null (link pending)
 bug python-property-shadows-converter (link pending)
 bug ruby-union-forward-declaration (link pending)
+bug typescript-enum-accessor-names (link pending)
 
 # Golden cases (tests/golden).
 cjson-default/json/priority/nbl-stats.json/b2d393358b cjson-enum-getter-strcmp cjson-map-parsed-twice
