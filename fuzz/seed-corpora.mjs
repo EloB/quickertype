@@ -82,6 +82,13 @@ jsonFiles.forEach((path, i) => {
   // Threads, range size, flags (`handleRefs`, a tiny tree budget, JSON
   // Lines).
   seed("json_split", cat(Buffer.from([i, byte(), i & 3]), text));
+  // Corruptions (none to three), flags (JSON Lines, `handleRefs`), where
+  // and what, then a part: the array's text without its brackets.
+  const trimmed = text.toString("utf8").trim();
+  if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+    const edits = Array.from({ length: i % 4 }, (_, j) => [byte(), byte(), j % 2 === 0 ? byte() & 0x7f : 0x80 | (j & 1)]).flat();
+    seed("parts_bytes", cat(Buffer.from([i % 4, (i >> 1) & 2, ...edits]), trimmed.slice(1, -1)));
+  }
   // An array's elements as JSON Lines, now and then on several lines each,
   // with CRLF line breaks and blank lines.
   let elements;
