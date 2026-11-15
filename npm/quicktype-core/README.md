@@ -372,6 +372,17 @@ which frees the form of an input they will not use again right away. That
 function is not part of the public API: the input must not be used
 afterwards, and using it throws.
 
+The playground also reads a large file (a JSON array or JSON Lines of 16
+MiB or more) in parts, on several engine instances in Web Workers of their
+own, with `readJSONInputInParts` in `dist/native/parallel.js`, which is not
+part of the public API either. The input then holds the sample as
+`addSource` would have added it, giving every run what reading it in one
+go gives, but the engine keeps tallies of it rather than its compressed
+form; should anything read its `CompressedJSON`'s tables, they are filled
+by reading the sample again with TypeScript, so they are what TypeScript
+would have built (see the repository's docs/STREAMING-INFERENCE.md, "In
+the browser").
+
 **Why this cannot be told apart from TypeScript reading the samples:**
 
 - *Errors surface where they did.* `addSource`/`addSourceSync` still call
