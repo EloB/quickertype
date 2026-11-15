@@ -2,11 +2,12 @@
 # it as a custom job of dist's `global-artifacts-jobs` (dist-workspace.toml)
 # after every build-local-artifacts job, and its `host` job, which creates
 # the GitHub Release before anything is published, runs only if this
-# passed. It checks every archive and the MSI that the build jobs uploaded:
-# each must have its target's compiler, as release/typescript/pins.json
-# pins it (release/check-release.mjs), and the archives and the MSI that
-# these runners can run must convert TypeScript with it alone
-# (release/check-bundle.mjs).
+# passed. It checks every archive and the MSI that the build jobs uploaded,
+# each once: each must have its target's compiler, as
+# release/typescript/pins.json pins it (release/check-release.mjs), and
+# those these runners can run (the Linux x86_64 archives, the zip and the
+# MSI) must also convert TypeScript with it alone (release/check-bundle.mjs,
+# which makes check-release.mjs's checks first).
 name: Check the bundled TypeScript compiler
 
 on:
@@ -35,9 +36,12 @@ jobs:
           pattern: artifacts-build-local-*
           path: target/distrib/
           merge-multiple: true
-      - name: Every archive bundles its target's compiler, as pinned
-        run: node release/check-release.mjs target/distrib
-      - name: The Linux x86_64 archives convert TypeScript with it
+      # Each archive is checked once: check-bundle.mjs checks the ones it
+      # converts TypeScript with (here and in the windows job) as
+      # check-release.mjs does, and check-release.mjs the others.
+      - name: The other archives bundle their target's compiler, as pinned
+        run: node release/check-release.mjs target/distrib --except x86_64-unknown-linux-gnu x86_64-unknown-linux-musl x86_64-pc-windows-msvc
+      - name: The Linux x86_64 archives bundle it and convert TypeScript with it
         run: |
           node release/check-bundle.mjs target/distrib/quickertype-x86_64-unknown-linux-gnu.tar.xz
           node release/check-bundle.mjs target/distrib/quickertype-x86_64-unknown-linux-musl.tar.xz
@@ -56,7 +60,7 @@ jobs:
         with:
           name: artifacts-build-local-x86_64-pc-windows-msvc
           path: target/distrib/
-      - name: The MSI and the zip convert TypeScript with their compiler
+      - name: The MSI and the zip bundle the compiler and convert TypeScript with it
         shell: bash
         run: |
           node release/check-bundle.mjs target/distrib/quickertype-x86_64-pc-windows-msvc.msi

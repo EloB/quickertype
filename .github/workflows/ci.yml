@@ -88,10 +88,10 @@ jobs:
   # The release archives bundle the TypeScript compiler (docs/RELEASING.md).
   # This builds the archive for this runner's target the way release.yml
   # does (the build setup's action, then `dist build`; without LTO, which
-  # does not change what is packaged), checks it as the release gate does
-  # (release/check-release.mjs), and runs its quickertype on a TypeScript
-  # file with no other compiler around (release/check-bundle.mjs), in the
-  # archive's and Homebrew's layouts.
+  # does not change what is packaged), then release/check-bundle.mjs checks
+  # it as the release gate does and runs its quickertype on a TypeScript
+  # file with no other compiler around, in the archive's and Homebrew's
+  # layouts.
   release-bundle:
     runs-on: ubuntu-latest
     steps:
@@ -115,8 +115,7 @@ jobs:
         env:
           CARGO_PROFILE_DIST_LTO: "false"
           CARGO_PROFILE_DIST_CODEGEN_UNITS: "16"
-      # The release gate's check, then the conversion.
-      - run: node release/check-release.mjs target/distrib x86_64-unknown-linux-gnu
+      # The release gate's checks of the archive, then the conversions.
       - run: node release/check-bundle.mjs target/distrib/quickertype-x86_64-unknown-linux-gnu.tar.xz
 
   # Byte-for-byte parity with the TypeScript quicktype. Fails only if a case
