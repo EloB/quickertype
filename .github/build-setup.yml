@@ -1,0 +1,13 @@
+# Steps that release.yml runs in every build-local-artifacts job, before
+# `dist build` (`github-build-setup` in dist-workspace.toml; run
+# `dist generate` after changing them). They stage the TypeScript compiler
+# for the job's target in release/typescript, downloaded from the npm
+# registry and verified against release/typescript/pins.json, for the
+# archives and the MSI (docs/RELEASING.md).
+- name: Set up Node.js for the TypeScript compiler
+  uses: actions/setup-node@v4
+  with:
+    node-version: 24
+- name: Stage the TypeScript compiler
+  shell: bash
+  run: node release/bundle-typescript.mjs ${{ join(matrix.targets, ' ') }}

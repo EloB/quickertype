@@ -45,5 +45,26 @@ pr-run-mode = "plan"
 # bindings or xtask, no features unified from other members)
 precise-builds = true
 # Files to copy into the archives and installers besides the auto-included
-# README.md, LICENSE and CHANGELOG.md (paths relative to the workspace root)
-include = ["NOTICE"]
+# README.md, LICENSE and CHANGELOG.md (paths relative to the workspace root).
+# release/typescript becomes the archives' `typescript` directory: the
+# TypeScript compiler for the archive's target, the npm platform package,
+# unmodified (with its LICENSE and NOTICE.txt), beside pins.json, which pins
+# it. The build setup below stages the package there before `dist build`
+# (locally, run `node release/bundle-typescript.mjs <target>` first).
+# quickertype finds it next to its executable, where the archives, the MSI
+# and the npm package (which unpacks the archive) put it, or in
+# share/quickertype, where the Homebrew formula does; the shell and
+# PowerShell installers install the binary only. dist copies `include` into
+# the npm installer package too, where it is pins.json alone: the global
+# build job has no build setup.
+include = ["NOTICE", "release/typescript"]
+# Steps release.yml runs in each build-local-artifacts job before
+# `dist build` (path relative to .github/workflows): they stage the
+# TypeScript compiler for the job's target, verified against its pins.
+github-build-setup = "../build-setup.yml"
+# crates/quicktype-cli/wix/main.wxs is dist's rendering plus one line, the
+# reference to the TypeScript compiler's components (the WiX fragment
+# wix/typescript.wxs that release/bundle-typescript.mjs writes for a Windows
+# target), so `dist generate` leaves it alone. CI's `dist` job checks that
+# the rest is still what dist renders.
+allow-dirty = ["msi"]
