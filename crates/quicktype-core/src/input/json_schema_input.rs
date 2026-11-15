@@ -64,7 +64,9 @@ use crate::messages::{
     ErrorKind, JsErrorName, MessageValue, QuickTypeError, RefValue, Result, message_error,
 };
 use crate::run::RunContext;
-use crate::support::collection_utils::{EqualityMap, JsEquals, JsHash, add_hash_code, hash_string};
+use crate::support::collection_utils::{
+    DeepHash, EqualityMap, JsEquals, JsHash, add_hash_code, deep_hash_of, hash_string,
+};
 use crate::support::fast_hash::{HashMap, HashSet, IndexMap, IndexSet};
 use crate::support::parse_json::parse_json;
 use crate::support::recursion::stack_overflow;
@@ -499,6 +501,16 @@ impl JsEquals for Ref {
             _ => false,
         };
         addresses_equal && self.path == other.path
+    }
+}
+
+impl DeepHash for Ref {
+    /// The path only: equal refs have equal paths, while urijs's `equals`
+    /// on the addresses (normalized, query parameters in any order) has no
+    /// hash of its own. Refs into different documents at one path share a
+    /// deep hash, which costs only an equality check each.
+    fn deep_hash(&self) -> u64 {
+        deep_hash_of(&self.path)
     }
 }
 

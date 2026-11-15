@@ -14,7 +14,7 @@ use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::attributes::type_attributes::{AttributeKind, TypeAttributes};
 use crate::messages::{ErrorKind, MessageValue, Result, message_assert};
-use crate::support::collection_utils::{JsEquals, JsHash};
+use crate::support::collection_utils::{DeepHash, JsEquals, JsHash, deep_combine};
 use crate::support::support::defined;
 use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;
@@ -44,6 +44,15 @@ impl JsEquals for AccessorEntry {
             (AccessorEntry::Name(a), AccessorEntry::Name(b)) => a == b,
             (AccessorEntry::ByLanguage(a), AccessorEntry::ByLanguage(b)) => a.js_equals(b),
             _ => false,
+        }
+    }
+}
+
+impl DeepHash for AccessorEntry {
+    fn deep_hash(&self) -> u64 {
+        match self {
+            AccessorEntry::Name(s) => deep_combine(&[1, s.deep_hash()]),
+            AccessorEntry::ByLanguage(m) => deep_combine(&[2, m.deep_hash()]),
         }
     }
 }

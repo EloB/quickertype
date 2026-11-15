@@ -9,7 +9,7 @@
 use std::fmt;
 
 use crate::messages::Result;
-use crate::support::collection_utils::{JsEquals, JsHash};
+use crate::support::collection_utils::{DeepHash, JsEquals, JsHash, deep_hash_of};
 use crate::support::support::assert;
 
 const INDEX_BITS: u32 = 26;
@@ -69,6 +69,12 @@ impl JsHash for TypeRef {
 impl JsEquals for TypeRef {
     fn js_equals(&self, other: &Self) -> bool {
         self == other
+    }
+}
+
+impl DeepHash for TypeRef {
+    fn deep_hash(&self) -> u64 {
+        deep_hash_of(self)
     }
 }
 

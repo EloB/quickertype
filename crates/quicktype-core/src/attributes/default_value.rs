@@ -6,7 +6,7 @@
 
 use crate::attributes::type_attributes::{AttributeKind, SchemaObject, set_schema_property};
 use crate::messages::Result;
-use crate::support::collection_utils::{HASH_CODE_INIT, JsEquals, JsHash};
+use crate::support::collection_utils::{DeepHash, HASH_CODE_INIT, JsEquals, JsHash, deep_combine};
 use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;
 use quicktype_js_compat::json;
@@ -51,6 +51,17 @@ impl JsHash for DefaultValue {
 impl JsEquals for DefaultValue {
     fn js_equals(&self, other: &Self) -> bool {
         self.strict_equals(other)
+    }
+}
+
+impl DeepHash for DefaultValue {
+    fn deep_hash(&self) -> u64 {
+        match self {
+            DefaultValue::Bool(b) => deep_combine(&[1, b.deep_hash()]),
+            DefaultValue::Number(n) => deep_combine(&[2, n.deep_hash()]),
+            DefaultValue::String(s) => deep_combine(&[3, s.deep_hash()]),
+            DefaultValue::Null => deep_combine(&[4]),
+        }
     }
 }
 

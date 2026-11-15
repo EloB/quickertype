@@ -12,7 +12,9 @@ use crate::attributes::type_attributes::{
     AttributeKind, SchemaObject, TypeAttributeKind, set_schema_property,
 };
 use crate::messages::{ErrorKind, MessageValue, Result, message_error};
-use crate::support::collection_utils::{HASH_CODE_INIT, JsEquals, JsHash, add_hash_code};
+use crate::support::collection_utils::{
+    DeepHash, HASH_CODE_INIT, JsEquals, JsHash, add_hash_code, deep_combine,
+};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;
@@ -32,6 +34,12 @@ impl JsHash for MinMaxConstraint {
 impl JsEquals for MinMaxConstraint {
     fn js_equals(&self, other: &Self) -> bool {
         self.0.js_equals(&other.0) && self.1.js_equals(&other.1)
+    }
+}
+
+impl DeepHash for MinMaxConstraint {
+    fn deep_hash(&self) -> u64 {
+        deep_combine(&[self.0.deep_hash(), self.1.deep_hash()])
     }
 }
 

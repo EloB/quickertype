@@ -46,7 +46,9 @@ use crate::attributes::string_types::{StringTypes, StringTypesTypeAttributeKind}
 use crate::attributes::type_names::{self, NamesTypeAttributeKind, TypeNames};
 use crate::attributes::uri_attributes::{self, UriAttributes, UriTypeAttributeKind};
 use crate::messages::Result;
-use crate::support::collection_utils::{HASH_CODE_INIT, JsEquals, JsHash, add_hash_code};
+use crate::support::collection_utils::{
+    DeepHash, HASH_CODE_INIT, JsEquals, JsHash, add_hash_code, deep_combine, deep_unordered,
+};
 use crate::support::support::panic;
 use crate::ty::provenance_type_attribute_kind::{self, ProvenanceTypeAttributeKind};
 use crate::ty::transformed_string_type::TypeKind;
@@ -343,6 +345,29 @@ impl JsEquals for TypeAttributeValue {
     }
 }
 
+impl DeepHash for TypeAttributeValue {
+    /// The content's, as `js_equals` compares it, for two values of the
+    /// same kind ([`TypeAttributes`] adds the kind). `names` compare by
+    /// identity and transformations by their own `equals`, so they hash as
+    /// a constant (consistent, if coarse).
+    fn deep_hash(&self) -> u64 {
+        use TypeAttributeValue as V;
+        match self {
+            V::Names(_) | V::Transformation(_) => deep_combine(&[0]),
+            V::Description(d) => d.deep_hash(),
+            V::PropertyDescriptions(p) => p.deep_hash(),
+            V::AccessorNames(a) | V::EnumValues(a) => a.deep_hash(),
+            V::UnionIdentifier(s) | V::Provenance(s) => s.deep_hash(),
+            V::UnionMemberNames(m) => m.deep_hash(),
+            V::MinMax(c) | V::MinMaxLength(c) | V::MinMaxItems(c) => c.deep_hash(),
+            V::Pattern(p) => p.deep_hash(),
+            V::DefaultValue(v) => v.deep_hash(),
+            V::StringTypes(st) => st.deep_hash(),
+            V::UriAttributes(u) => u.deep_hash(),
+        }
+    }
+}
+
 /// `TypeAttributes`: a type's attributes, a map from kind to value in
 /// JavaScript `Map` insertion order.
 #[derive(Clone, Debug, Default)]
@@ -467,6 +492,17 @@ impl JsEquals for TypeAttributes {
                 .0
                 .iter()
                 .all(|v| other.get(v.kind()).is_some_and(|w| v.js_equals(w)))
+    }
+}
+
+impl DeepHash for TypeAttributes {
+    /// Each kind with its value, in any order.
+    fn deep_hash(&self) -> u64 {
+        deep_unordered(
+            self.0
+                .iter()
+                .map(|v| deep_combine(&[v.kind().name().deep_hash(), v.deep_hash()])),
+        )
     }
 }
 

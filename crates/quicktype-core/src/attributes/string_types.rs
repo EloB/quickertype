@@ -7,7 +7,9 @@
 use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::messages::Result;
-use crate::support::collection_utils::{JsEquals, JsHash, add_hash_code, set_intersect};
+use crate::support::collection_utils::{
+    DeepHash, JsEquals, JsHash, add_hash_code, deep_combine, set_intersect,
+};
 use crate::support::support::assert;
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder_utils::StringTypeMapping;
@@ -197,6 +199,12 @@ impl JsHash for StringTypes {
 impl JsEquals for StringTypes {
     fn js_equals(&self, other: &Self) -> bool {
         self.cases.js_equals(&other.cases) && self.transformations.js_equals(&other.transformations)
+    }
+}
+
+impl DeepHash for StringTypes {
+    fn deep_hash(&self) -> u64 {
+        deep_combine(&[self.cases.deep_hash(), self.transformations.deep_hash()])
     }
 }
 

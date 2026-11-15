@@ -12,7 +12,7 @@ use crate::attributes::type_attributes::TypeAttributes;
 use crate::attributes::uri_attributes::uri_inference_attributes_producer;
 use std::fmt;
 
-use crate::support::collection_utils::{JsEquals, JsHash};
+use crate::support::collection_utils::{DeepHash, JsEquals, JsHash, deep_hash_of};
 
 /// `TypeKind`: every kind of type in the type graph.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -188,6 +188,12 @@ impl JsHash for TypeKind {
 impl JsEquals for TypeKind {
     fn js_equals(&self, other: &Self) -> bool {
         self == other
+    }
+}
+
+impl DeepHash for TypeKind {
+    fn deep_hash(&self) -> u64 {
+        deep_hash_of(self)
     }
 }
 

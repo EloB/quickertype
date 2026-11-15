@@ -19,7 +19,8 @@ use crate::attributes::type_attributes::TypeAttributes;
 use crate::graph_rewriting::TypeReconstituter;
 use crate::messages::{ErrorKind, MessageValue, Result, message_assert};
 use crate::support::collection_utils::{
-    HASH_CODE_INIT, JsEquals, JsHash, add_hash_code, compare_string_keys, map_sort_by_key,
+    DeepHash, HASH_CODE_INIT, JsEquals, JsHash, add_hash_code, compare_string_keys, deep_combine,
+    map_sort_by_key,
 };
 use crate::support::support::{assert, assert_default, defined, panic};
 use crate::ty::transformed_string_type::TypeKind;
@@ -55,6 +56,12 @@ impl JsHash for ClassProperty {
 impl JsEquals for ClassProperty {
     fn js_equals(&self, other: &Self) -> bool {
         self == other
+    }
+}
+
+impl DeepHash for ClassProperty {
+    fn deep_hash(&self) -> u64 {
+        deep_combine(&[self.type_ref.deep_hash(), self.is_optional.deep_hash()])
     }
 }
 
@@ -464,6 +471,8 @@ pub struct TypeIdentity {
     kind: TypeKind,
     components: IdentityComponents,
     hash_code: i64,
+    /// Its [`DeepHash`], made with it.
+    deep_hash: u64,
 }
 
 impl TypeIdentity {
@@ -489,11 +498,39 @@ impl TypeIdentity {
                 h = add_hash_code(h, members.hash_code());
             }
         }
+        let k = kind.deep_hash();
+        let deep_hash = match &components {
+            IdentityComponents::Primitive(a) => deep_combine(&[1, k, a.deep_hash()]),
+            IdentityComponents::Array(a, items) => {
+                deep_combine(&[2, k, a.deep_hash(), items.deep_hash()])
+            }
+            IdentityComponents::Object(a, properties, additional) => deep_combine(&[
+                3,
+                k,
+                a.deep_hash(),
+                properties.deep_hash(),
+                additional.deep_hash(),
+            ]),
+            IdentityComponents::Enum(a, cases) => {
+                deep_combine(&[4, k, a.deep_hash(), cases.deep_hash()])
+            }
+            IdentityComponents::SetOperation(a, members) => {
+                deep_combine(&[5, k, a.deep_hash(), members.deep_hash()])
+            }
+        };
         TypeIdentity {
             kind,
             components,
             hash_code: h,
+            deep_hash,
         }
+    }
+}
+
+impl DeepHash for TypeIdentity {
+    /// The kind and the components, as `js_equals` compares them.
+    fn deep_hash(&self) -> u64 {
+        self.deep_hash
     }
 }
 
