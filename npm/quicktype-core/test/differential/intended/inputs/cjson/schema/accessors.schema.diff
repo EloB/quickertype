@@ -1,14 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -70,6 +70,7 @@
- };
- 
- enum Enum cJSON_GetEnumValue(const cJSON * j);
-+bool cJSON_IsEnumValue(const cJSON * j);
- cJSON * cJSON_CreateEnum(const enum Enum x);
- 
- #define cJSON_IsUnion(j) (cJSON_IsBool(j) || cJSON_IsNumber(j))
-@@ -87,7 +88,7 @@
+@@ -87,7 +87,7 @@
  
  enum Enum cJSON_GetEnumValue(const cJSON * j) {
      enum Enum x = 0;
@@ -17,29 +9,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "red")) x = ENUM_FIRE;
          else if (!strcmp(cJSON_GetStringValue(j), "green")) x = ENUM_GRASS;
          else if (!strcmp(cJSON_GetStringValue(j), "blue")) x = ENUM_BLUE;
-@@ -95,6 +96,15 @@
-     return x;
- }
- 
-+bool cJSON_IsEnumValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "red")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "green")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "blue")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateEnum(const enum Enum x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -176,8 +186,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "enum")) { cJSON_DeleteTopLevel(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "enum")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "enum")) || 0 == cJSON_GetEnumValue(cJSON_GetObjectItemCaseSensitive(j, "enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
-+                if (!cJSON_IsEnumValue(cJSON_GetObjectItemCaseSensitive(j, "enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                 x->enumerification = cJSON_GetEnumValue(cJSON_GetObjectItemCaseSensitive(j, "enum"));
-             }
-             if (!cJSON_HasObjectItem(j, "foo")) { cJSON_DeleteTopLevel(x); return NULL; }

@@ -1,18 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -107,9 +107,11 @@
- };
- 
- enum Gender cJSON_GetGenderValue(const cJSON * j);
-+bool cJSON_IsGenderValue(const cJSON * j);
- cJSON * cJSON_CreateGender(const enum Gender x);
- 
- enum Category cJSON_GetCategoryValue(const cJSON * j);
-+bool cJSON_IsCategoryValue(const cJSON * j);
- cJSON * cJSON_CreateCategory(const enum Category x);
- 
- #define cJSON_IsAffiliationElement(j) (cJSON_IsObject(j) || cJSON_IsArray(j))
-@@ -145,7 +147,7 @@
+@@ -145,7 +145,7 @@
  
  enum Gender cJSON_GetGenderValue(const cJSON * j) {
      enum Gender x = 0;
@@ -21,23 +9,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "male")) x = GENDER_MALE;
          else if (!strcmp(cJSON_GetStringValue(j), "female")) x = GENDER_FEMALE;
          else if (!strcmp(cJSON_GetStringValue(j), "org")) x = GENDER_ORG;
-@@ -153,6 +155,15 @@
-     return x;
- }
- 
-+bool cJSON_IsGenderValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "male")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "female")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "org")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateGender(const enum Gender x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -165,7 +176,7 @@
+@@ -165,7 +165,7 @@
  
  enum Category cJSON_GetCategoryValue(const cJSON * j) {
      enum Category x = 0;
@@ -46,42 +18,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "physics")) x = CATEGORY_PHYSICS;
          else if (!strcmp(cJSON_GetStringValue(j), "chemistry")) x = CATEGORY_CHEMISTRY;
          else if (!strcmp(cJSON_GetStringValue(j), "peace")) x = CATEGORY_PEACE;
-@@ -176,6 +187,18 @@
-     return x;
- }
- 
-+bool cJSON_IsCategoryValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "physics")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "chemistry")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "peace")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "medicine")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "literature")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "economics")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateCategory(const enum Category x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -357,8 +380,7 @@
-                 x->year = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "year")));
-             }
-             if (cJSON_HasObjectItem(j, "category")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeletePrize(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "category")) || 0 == cJSON_GetCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeletePrize(x); return NULL; }
-+                if (!cJSON_IsCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeletePrize(x); return NULL; }
-                 if (NULL != (x->category = cJSON_malloc(sizeof(enum Category)))) {
-                     *x->category = cJSON_GetCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"));
-                 }
-@@ -554,8 +576,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "gender")) { cJSON_DeleteLaureate(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "gender")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "gender"))) { cJSON_DeleteLaureate(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "gender")) || 0 == cJSON_GetGenderValue(cJSON_GetObjectItemCaseSensitive(j, "gender"))) { cJSON_DeleteLaureate(x); return NULL; }
-+                if (!cJSON_IsGenderValue(cJSON_GetObjectItemCaseSensitive(j, "gender"))) { cJSON_DeleteLaureate(x); return NULL; }
-                 x->gender = cJSON_GetGenderValue(cJSON_GetObjectItemCaseSensitive(j, "gender"));
-             }
-             if (!cJSON_HasObjectItem(j, "prizes")) { cJSON_DeleteLaureate(x); return NULL; }

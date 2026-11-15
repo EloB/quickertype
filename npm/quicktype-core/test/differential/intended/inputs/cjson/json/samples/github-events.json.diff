@@ -1,14 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -344,6 +344,7 @@
- };
- 
- enum Type cJSON_GetTypeValue(const cJSON * j);
-+bool cJSON_IsTypeValue(const cJSON * j);
- cJSON * cJSON_CreateType(const enum Type x);
- 
- struct Actor * cJSON_ParseActor(const char * s);
-@@ -456,11 +457,19 @@
+@@ -456,7 +456,7 @@
  
  enum Type cJSON_GetTypeValue(const cJSON * j) {
      enum Type x = 0;
@@ -17,25 +9,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "User")) x = TYPE_USER;
          else if (!strcmp(cJSON_GetStringValue(j), "Organization")) x = TYPE_ORGANIZATION;
      }
-     return x;
-+}
-+
-+bool cJSON_IsTypeValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "User")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Organization")) return true;
-+    }
-+    return false;
- }
- 
- cJSON * cJSON_CreateType(const enum Type x) {
-@@ -777,8 +786,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteUser(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "type")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteUser(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteUser(x); return NULL; }
-+                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteUser(x); return NULL; }
-                 x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
-             }
-             if (!cJSON_HasObjectItem(j, "site_admin")) { cJSON_DeleteUser(x); return NULL; }

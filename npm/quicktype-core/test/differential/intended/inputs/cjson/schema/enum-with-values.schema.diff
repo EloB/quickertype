@@ -1,14 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -63,6 +63,7 @@
- };
- 
- enum Weekdays cJSON_GetWeekdaysValue(const cJSON * j);
-+bool cJSON_IsWeekdaysValue(const cJSON * j);
- cJSON * cJSON_CreateWeekdays(const enum Weekdays x);
- 
- struct TopLevel * cJSON_ParseTopLevel(const char * s);
-@@ -73,7 +74,7 @@
+@@ -73,7 +73,7 @@
  
  enum Weekdays cJSON_GetWeekdaysValue(const cJSON * j) {
      enum Weekdays x = 0;
@@ -17,33 +9,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "Monday")) x = WEEKDAYS_MONDAY;
          else if (!strcmp(cJSON_GetStringValue(j), "Tuesday")) x = WEEKDAYS_TUESDAY;
          else if (!strcmp(cJSON_GetStringValue(j), "Wednesday")) x = WEEKDAYS_WEDNESDAY;
-@@ -85,6 +86,19 @@
-     return x;
- }
- 
-+bool cJSON_IsWeekdaysValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Monday")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Tuesday")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Wednesday")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Thursday")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Friday")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Saturday")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Sunday")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateWeekdays(const enum Weekdays x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -118,8 +132,7 @@
-             memset(x, 0, sizeof(struct TopLevel));
-             if (!cJSON_HasObjectItem(j, "weekdays")) { cJSON_DeleteTopLevel(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "weekdays")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "weekdays"))) { cJSON_DeleteTopLevel(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "weekdays")) || 0 == cJSON_GetWeekdaysValue(cJSON_GetObjectItemCaseSensitive(j, "weekdays"))) { cJSON_DeleteTopLevel(x); return NULL; }
-+                if (!cJSON_IsWeekdaysValue(cJSON_GetObjectItemCaseSensitive(j, "weekdays"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                 x->weekdays = cJSON_GetWeekdaysValue(cJSON_GetObjectItemCaseSensitive(j, "weekdays"));
-             }
-         }

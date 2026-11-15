@@ -1,14 +1,6 @@
 --- $.ok.lines
 +++ $.ok.lines
-@@ -59,6 +59,7 @@
- };
- 
- enum Subscription cJSON_GetSubscriptionValue(const cJSON * j);
-+bool cJSON_IsSubscriptionValue(const cJSON * j);
- cJSON * cJSON_CreateSubscription(const enum Subscription x);
- 
- struct TopLevel * cJSON_ParseTopLevel(const char * s);
-@@ -69,7 +70,7 @@
+@@ -69,7 +69,7 @@
  
  enum Subscription cJSON_GetSubscriptionValue(const cJSON * j) {
      enum Subscription x = 0;
@@ -17,29 +9,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "state")) x = SUBSCRIPTION_STATE;
          else if (!strcmp(cJSON_GetStringValue(j), "config")) x = SUBSCRIPTION_CONFIG;
          else if (!strcmp(cJSON_GetStringValue(j), "heartbeat")) x = SUBSCRIPTION_HEARTBEAT;
-@@ -77,6 +78,15 @@
-     return x;
- }
- 
-+bool cJSON_IsSubscriptionValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "state")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "config")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "heartbeat")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateSubscription(const enum Subscription x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -106,8 +116,7 @@
-             memset(x, 0, sizeof(struct TopLevel));
-             if (!cJSON_HasObjectItem(j, "subscription")) { cJSON_DeleteTopLevel(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "subscription")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "subscription"))) { cJSON_DeleteTopLevel(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "subscription")) || 0 == cJSON_GetSubscriptionValue(cJSON_GetObjectItemCaseSensitive(j, "subscription"))) { cJSON_DeleteTopLevel(x); return NULL; }
-+                if (!cJSON_IsSubscriptionValue(cJSON_GetObjectItemCaseSensitive(j, "subscription"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                 x->subscription = cJSON_GetSubscriptionValue(cJSON_GetObjectItemCaseSensitive(j, "subscription"));
-             }
-         }

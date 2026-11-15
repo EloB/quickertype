@@ -82,15 +82,12 @@ struct TopLevel {
 typedef struct TopLevel TopLevel;
 
 enum Level cJSON_GetLevelValue(const cJSON * j);
-bool cJSON_IsLevelValue(const cJSON * j);
 cJSON * cJSON_CreateLevel(const enum Level x);
 
 enum Mode cJSON_GetModeValue(const cJSON * j);
-bool cJSON_IsModeValue(const cJSON * j);
 cJSON * cJSON_CreateMode(const enum Mode x);
 
 enum Other cJSON_GetOtherValue(const cJSON * j);
-bool cJSON_IsOtherValue(const cJSON * j);
 cJSON * cJSON_CreateOther(const enum Other x);
 
 struct TopLevel * cJSON_ParseTopLevel(const char * s);
@@ -108,16 +105,6 @@ enum Level cJSON_GetLevelValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "max")) x = LEVEL_max;
     }
     return x;
-}
-
-bool cJSON_IsLevelValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "low")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "mid")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "high")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "max")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateLevel(const enum Level x) {
@@ -142,16 +129,6 @@ enum Mode cJSON_GetModeValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsModeValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "a\"b")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "tab\tc")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "nl\nd")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "u\003e")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateMode(const enum Mode x) {
     cJSON * j = NULL;
     switch (x) {
@@ -170,14 +147,6 @@ enum Other cJSON_GetOtherValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "y")) x = OTHER_y;
     }
     return x;
-}
-
-bool cJSON_IsOtherValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "x")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "y")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateOther(const enum Other x) {
@@ -208,16 +177,19 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
             memset(x, 0, sizeof(struct TopLevel));
             if (!cJSON_HasObjectItem(j, "level")) { cJSON_DeleteTopLevel(x); return NULL; }
             if (cJSON_HasObjectItem(j, "level")) {
-                if (!cJSON_IsLevelValue(cJSON_GetObjectItemCaseSensitive(j, "level"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "level"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "level")) || 0 == cJSON_GetLevelValue(cJSON_GetObjectItemCaseSensitive(j, "level"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 x->level = cJSON_GetLevelValue(cJSON_GetObjectItemCaseSensitive(j, "level"));
             }
             if (!cJSON_HasObjectItem(j, "mode")) { cJSON_DeleteTopLevel(x); return NULL; }
             if (cJSON_HasObjectItem(j, "mode")) {
-                if (!cJSON_IsModeValue(cJSON_GetObjectItemCaseSensitive(j, "mode"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "mode"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "mode")) || 0 == cJSON_GetModeValue(cJSON_GetObjectItemCaseSensitive(j, "mode"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 x->mode = cJSON_GetModeValue(cJSON_GetObjectItemCaseSensitive(j, "mode"));
             }
             if (cJSON_HasObjectItem(j, "other")) {
-                if (!cJSON_IsOtherValue(cJSON_GetObjectItemCaseSensitive(j, "other"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "other"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "other")) || 0 == cJSON_GetOtherValue(cJSON_GetObjectItemCaseSensitive(j, "other"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 if (NULL != (x->other = cJSON_malloc(sizeof(enum Other)))) {
                     *x->other = cJSON_GetOtherValue(cJSON_GetObjectItemCaseSensitive(j, "other"));
                 }

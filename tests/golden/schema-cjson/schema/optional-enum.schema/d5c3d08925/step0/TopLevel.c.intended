@@ -14,14 +14,6 @@ enum Shortcut cJSON_GetShortcutValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsShortcutValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "hidden")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "visible")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateShortcut(const enum Shortcut x) {
     cJSON * j = NULL;
     switch (x) {
@@ -59,7 +51,8 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
                 }
             }
             if (cJSON_HasObjectItem(j, "shortcut")) {
-                if (!cJSON_IsShortcutValue(cJSON_GetObjectItemCaseSensitive(j, "shortcut"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "shortcut"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "shortcut")) || 0 == cJSON_GetShortcutValue(cJSON_GetObjectItemCaseSensitive(j, "shortcut"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 if (NULL != (x->shortcut = cJSON_malloc(sizeof(enum Shortcut)))) {
                     *x->shortcut = cJSON_GetShortcutValue(cJSON_GetObjectItemCaseSensitive(j, "shortcut"));
                 }

@@ -1,18 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -92,9 +92,11 @@
- };
- 
- enum Scheme cJSON_GetSchemeValue(const cJSON * j);
-+bool cJSON_IsSchemeValue(const cJSON * j);
- cJSON * cJSON_CreateScheme(const enum Scheme x);
- 
- enum Keyword cJSON_GetKeywordValue(const cJSON * j);
-+bool cJSON_IsKeywordValue(const cJSON * j);
- cJSON * cJSON_CreateKeyword(const enum Keyword x);
- 
- struct Identifier * cJSON_ParseIdentifier(const char * s);
-@@ -129,7 +131,7 @@
+@@ -129,7 +129,7 @@
  
  enum Scheme cJSON_GetSchemeValue(const cJSON * j) {
      enum Scheme x = 0;
@@ -21,23 +9,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "SPDX")) x = SCHEME_SPDX;
          else if (!strcmp(cJSON_GetStringValue(j), "DEP5")) x = SCHEME_DEP5;
          else if (!strcmp(cJSON_GetStringValue(j), "Trove")) x = SCHEME_TROVE;
-@@ -137,6 +139,15 @@
-     return x;
- }
- 
-+bool cJSON_IsSchemeValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "SPDX")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "DEP5")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Trove")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateScheme(const enum Scheme x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -149,7 +160,7 @@
+@@ -149,7 +149,7 @@
  
  enum Keyword cJSON_GetKeywordValue(const cJSON * j) {
      enum Keyword x = 0;
@@ -46,37 +18,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "discouraged")) x = KEYWORD_DISCOURAGED;
          else if (!strcmp(cJSON_GetStringValue(j), "obsolete")) x = KEYWORD_OBSOLETE;
          else if (!strcmp(cJSON_GetStringValue(j), "osi-approved")) x = KEYWORD_OSI_APPROVED;
-@@ -157,6 +168,15 @@
-     return x;
- }
- 
-+bool cJSON_IsKeywordValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "discouraged")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "obsolete")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "osi-approved")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateKeyword(const enum Keyword x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -196,8 +216,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "scheme")) { cJSON_DeleteIdentifier(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "scheme")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "scheme")) || 0 == cJSON_GetSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
-+                if (!cJSON_IsSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
-                 x->scheme = cJSON_GetSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"));
-             }
-         }
-@@ -547,6 +566,7 @@
-                     cJSON * e1 = NULL;
-                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "keywords");
-                     cJSON_ArrayForEach(e1, j1) {
-+                        if (!cJSON_IsKeywordValue(e1)) { x->keywords = x1; cJSON_DeleteTopLevelElement(x); return NULL; }
-                         enum Keyword * tmp = cJSON_malloc(sizeof(enum Keyword));
-                         if (NULL != tmp) {
-                             * tmp = cJSON_GetKeywordValue(e1);

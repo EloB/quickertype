@@ -1,22 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -133,12 +133,15 @@
- };
- 
- enum DetailLanguage cJSON_GetDetailLanguageValue(const cJSON * j);
-+bool cJSON_IsDetailLanguageValue(const cJSON * j);
- cJSON * cJSON_CreateDetailLanguage(const enum DetailLanguage x);
- 
- enum Type cJSON_GetTypeValue(const cJSON * j);
-+bool cJSON_IsTypeValue(const cJSON * j);
- cJSON * cJSON_CreateType(const enum Type x);
- 
- enum ResultLanguage cJSON_GetResultLanguageValue(const cJSON * j);
-+bool cJSON_IsResultLanguageValue(const cJSON * j);
- cJSON * cJSON_CreateResultLanguage(const enum ResultLanguage x);
- 
- struct Collection * cJSON_ParseCollection(const char * s);
-@@ -191,13 +194,21 @@
+@@ -191,7 +191,7 @@
  
  enum DetailLanguage cJSON_GetDetailLanguageValue(const cJSON * j) {
      enum DetailLanguage x = 0;
@@ -25,21 +9,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "en")) x = DETAILLANGUAGE_EN;
          else if (!strcmp(cJSON_GetStringValue(j), "th")) x = DETAILLANGUAGE_TH;
      }
-     return x;
- }
- 
-+bool cJSON_IsDetailLanguageValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "en")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "th")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateDetailLanguage(const enum DetailLanguage x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -209,13 +220,21 @@
+@@ -209,7 +209,7 @@
  
  enum Type cJSON_GetTypeValue(const cJSON * j) {
      enum Type x = 0;
@@ -48,21 +18,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "Poster")) x = TYPE_POSTER;
          else if (!strcmp(cJSON_GetStringValue(j), "Backdrop")) x = TYPE_BACKDROP;
      }
-     return x;
- }
- 
-+bool cJSON_IsTypeValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Poster")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Backdrop")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateType(const enum Type x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -227,13 +246,21 @@
+@@ -227,7 +227,7 @@
  
  enum ResultLanguage cJSON_GetResultLanguageValue(const cJSON * j) {
      enum ResultLanguage x = 0;
@@ -71,57 +27,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "en")) x = RESULTLANGUAGE_EN;
          else if (!strcmp(cJSON_GetStringValue(j), "-")) x = RESULTLANGUAGE_EMPTY;
      }
-     return x;
- }
- 
-+bool cJSON_IsResultLanguageValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "en")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "-")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateResultLanguage(const enum ResultLanguage x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -398,8 +425,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "language")) { cJSON_DeleteDetail(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "language")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteDetail(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "language")) || 0 == cJSON_GetDetailLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteDetail(x); return NULL; }
-+                if (!cJSON_IsDetailLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteDetail(x); return NULL; }
-                 x->language = cJSON_GetDetailLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"));
-             }
-             if (!cJSON_HasObjectItem(j, "title")) { cJSON_DeleteDetail(x); return NULL; }
-@@ -632,8 +658,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteImage(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "type")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteImage(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteImage(x); return NULL; }
-+                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteImage(x); return NULL; }
-                 x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
-             }
-             if (!cJSON_HasObjectItem(j, "thumbnail")) { cJSON_DeleteImage(x); return NULL; }
-@@ -753,8 +778,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "language")) { cJSON_DeleteVideo(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "language")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteVideo(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "language")) || 0 == cJSON_GetResultLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteVideo(x); return NULL; }
-+                if (!cJSON_IsResultLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteVideo(x); return NULL; }
-                 x->language = cJSON_GetResultLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"));
-             }
-         }
-@@ -918,8 +942,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "language")) { cJSON_DeleteResult(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "language")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteResult(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "language")) || 0 == cJSON_GetResultLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteResult(x); return NULL; }
-+                if (!cJSON_IsResultLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteResult(x); return NULL; }
-                 x->language = cJSON_GetResultLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"));
-             }
-             if (!cJSON_HasObjectItem(j, "release_date")) { cJSON_DeleteResult(x); return NULL; }

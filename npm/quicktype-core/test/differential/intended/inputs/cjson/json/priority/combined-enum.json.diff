@@ -1,14 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -64,6 +64,7 @@
- };
- 
- enum X cJSON_GetXValue(const cJSON * j);
-+bool cJSON_IsXValue(const cJSON * j);
- cJSON * cJSON_CreateX(const enum X x);
- 
- struct Bar * cJSON_ParseBar(const char * s);
-@@ -80,7 +81,7 @@
+@@ -80,7 +80,7 @@
  
  enum X cJSON_GetXValue(const cJSON * j) {
      enum X x = 0;
@@ -17,29 +9,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "three")) x = X_THREE;
          else if (!strcmp(cJSON_GetStringValue(j), "one")) x = X_ONE;
          else if (!strcmp(cJSON_GetStringValue(j), "two")) x = X_TWO;
-@@ -88,6 +89,15 @@
-     return x;
- }
- 
-+bool cJSON_IsXValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "three")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "one")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "two")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateX(const enum X x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -117,8 +127,7 @@
-             memset(x, 0, sizeof(struct Bar));
-             if (!cJSON_HasObjectItem(j, "x")) { cJSON_DeleteBar(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "x")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "x"))) { cJSON_DeleteBar(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "x")) || 0 == cJSON_GetXValue(cJSON_GetObjectItemCaseSensitive(j, "x"))) { cJSON_DeleteBar(x); return NULL; }
-+                if (!cJSON_IsXValue(cJSON_GetObjectItemCaseSensitive(j, "x"))) { cJSON_DeleteBar(x); return NULL; }
-                 x->x = cJSON_GetXValue(cJSON_GetObjectItemCaseSensitive(j, "x"));
-             }
-         }

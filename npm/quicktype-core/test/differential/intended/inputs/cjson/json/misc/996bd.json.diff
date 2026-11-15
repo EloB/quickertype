@@ -1,26 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -103,15 +103,19 @@
- };
- 
- enum Scheme cJSON_GetSchemeValue(const cJSON * j);
-+bool cJSON_IsSchemeValue(const cJSON * j);
- cJSON * cJSON_CreateScheme(const enum Scheme x);
- 
- enum Keyword cJSON_GetKeywordValue(const cJSON * j);
-+bool cJSON_IsKeywordValue(const cJSON * j);
- cJSON * cJSON_CreateKeyword(const enum Keyword x);
- 
- enum MediaType cJSON_GetMediaTypeValue(const cJSON * j);
-+bool cJSON_IsMediaTypeValue(const cJSON * j);
- cJSON * cJSON_CreateMediaType(const enum MediaType x);
- 
- enum Title cJSON_GetTitleValue(const cJSON * j);
-+bool cJSON_IsTitleValue(const cJSON * j);
- cJSON * cJSON_CreateTitle(const enum Title x);
- 
- struct Identifier * cJSON_ParseIdentifier(const char * s);
-@@ -146,7 +150,7 @@
+@@ -146,7 +146,7 @@
  
  enum Scheme cJSON_GetSchemeValue(const cJSON * j) {
      enum Scheme x = 0;
@@ -29,23 +9,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "DEP5")) x = SCHEME_DEP5;
          else if (!strcmp(cJSON_GetStringValue(j), "SPDX")) x = SCHEME_SPDX;
          else if (!strcmp(cJSON_GetStringValue(j), "Trove")) x = SCHEME_TROVE;
-@@ -154,6 +158,15 @@
-     return x;
- }
- 
-+bool cJSON_IsSchemeValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "DEP5")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "SPDX")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Trove")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateScheme(const enum Scheme x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -166,7 +179,7 @@
+@@ -166,7 +166,7 @@
  
  enum Keyword cJSON_GetKeywordValue(const cJSON * j) {
      enum Keyword x = 0;
@@ -54,24 +18,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "osi-approved")) x = KEYWORD_OSI_APPROVED;
          else if (!strcmp(cJSON_GetStringValue(j), "popular")) x = KEYWORD_POPULAR;
          else if (!strcmp(cJSON_GetStringValue(j), "copyleft")) x = KEYWORD_COPYLEFT;
-@@ -175,6 +188,16 @@
-     return x;
- }
- 
-+bool cJSON_IsKeywordValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "osi-approved")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "popular")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "copyleft")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "international")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateKeyword(const enum Keyword x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -188,13 +211,21 @@
+@@ -188,7 +188,7 @@
  
  enum MediaType cJSON_GetMediaTypeValue(const cJSON * j) {
      enum MediaType x = 0;
@@ -80,21 +27,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "text/plain")) x = MEDIATYPE_TEXT_PLAIN;
          else if (!strcmp(cJSON_GetStringValue(j), "text/html")) x = MEDIATYPE_TEXT_HTML;
      }
-     return x;
- }
- 
-+bool cJSON_IsMediaTypeValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "text/plain")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "text/html")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateMediaType(const enum MediaType x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -206,11 +237,19 @@
+@@ -206,7 +206,7 @@
  
  enum Title cJSON_GetTitleValue(const cJSON * j) {
      enum Title x = 0;
@@ -103,50 +36,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "Plain Text")) x = TITLE_PLAIN_TEXT;
          else if (!strcmp(cJSON_GetStringValue(j), "HTML")) x = TITLE_HTML;
      }
-     return x;
-+}
-+
-+bool cJSON_IsTitleValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Plain Text")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "HTML")) return true;
-+    }
-+    return false;
- }
- 
- cJSON * cJSON_CreateTitle(const enum Title x) {
-@@ -251,8 +290,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "scheme")) { cJSON_DeleteIdentifier(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "scheme")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "scheme")) || 0 == cJSON_GetSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
-+                if (!cJSON_IsSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
-                 x->scheme = cJSON_GetSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"));
-             }
-         }
-@@ -403,14 +441,12 @@
-             memset(x, 0, sizeof(struct Text));
-             if (!cJSON_HasObjectItem(j, "media_type")) { cJSON_DeleteText(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "media_type")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "media_type"))) { cJSON_DeleteText(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "media_type")) || 0 == cJSON_GetMediaTypeValue(cJSON_GetObjectItemCaseSensitive(j, "media_type"))) { cJSON_DeleteText(x); return NULL; }
-+                if (!cJSON_IsMediaTypeValue(cJSON_GetObjectItemCaseSensitive(j, "media_type"))) { cJSON_DeleteText(x); return NULL; }
-                 x->media_type = cJSON_GetMediaTypeValue(cJSON_GetObjectItemCaseSensitive(j, "media_type"));
-             }
-             if (!cJSON_HasObjectItem(j, "title")) { cJSON_DeleteText(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "title")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteText(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "title")) || 0 == cJSON_GetTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteText(x); return NULL; }
-+                if (!cJSON_IsTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteText(x); return NULL; }
-                 x->title = cJSON_GetTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"));
-             }
-             if (!cJSON_HasObjectItem(j, "url")) { cJSON_DeleteText(x); return NULL; }
-@@ -573,6 +609,7 @@
-                     cJSON * e1 = NULL;
-                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "keywords");
-                     cJSON_ArrayForEach(e1, j1) {
-+                        if (!cJSON_IsKeywordValue(e1)) { x->keywords = x1; cJSON_DeleteTopLevelElement(x); return NULL; }
-                         enum Keyword * tmp = cJSON_malloc(sizeof(enum Keyword));
-                         if (NULL != tmp) {
-                             * tmp = cJSON_GetKeywordValue(e1);

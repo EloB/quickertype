@@ -1,18 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -83,9 +83,11 @@
- };
- 
- enum Callsign cJSON_GetCallsignValue(const cJSON * j);
-+bool cJSON_IsCallsignValue(const cJSON * j);
- cJSON * cJSON_CreateCallsign(const enum Callsign x);
- 
- enum Priority cJSON_GetPriorityValue(const cJSON * j);
-+bool cJSON_IsPriorityValue(const cJSON * j);
- cJSON * cJSON_CreatePriority(const enum Priority x);
- 
- struct TopLevel * cJSON_ParseTopLevel(const char * s);
-@@ -96,7 +98,7 @@
+@@ -96,7 +96,7 @@
  
  enum Callsign cJSON_GetCallsignValue(const cJSON * j) {
      enum Callsign x = 0;
@@ -21,40 +9,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "alpha")) x = CALLSIGN_ALPHA;
          else if (!strcmp(cJSON_GetStringValue(j), "bravo")) x = CALLSIGN_BRAVO;
          else if (!strcmp(cJSON_GetStringValue(j), "charlie")) x = CALLSIGN_CHARLIE;
-@@ -121,6 +123,32 @@
-     return x;
- }
- 
-+bool cJSON_IsCallsignValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "alpha")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "bravo")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "charlie")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "delta")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "echo")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "foxtrot")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "golf")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "hotel")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "india")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "juliett")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "kilo")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "lima")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "mike")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "november")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "oscar")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "papa")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "quebec")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "romeo")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "sierra")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "tango")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateCallsign(const enum Callsign x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -150,7 +178,7 @@
+@@ -150,7 +150,7 @@
  
  enum Priority cJSON_GetPriorityValue(const cJSON * j) {
      enum Priority x = 0;
@@ -63,36 +18,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "low")) x = PRIORITY_LOW;
          else if (!strcmp(cJSON_GetStringValue(j), "medium")) x = PRIORITY_MEDIUM;
          else if (!strcmp(cJSON_GetStringValue(j), "high")) x = PRIORITY_HIGH;
-@@ -158,6 +186,15 @@
-     return x;
- }
- 
-+bool cJSON_IsPriorityValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "low")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "medium")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "high")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreatePriority(const enum Priority x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -187,14 +224,12 @@
-             memset(x, 0, sizeof(struct TopLevel));
-             if (!cJSON_HasObjectItem(j, "callsign")) { cJSON_DeleteTopLevel(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "callsign")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "callsign"))) { cJSON_DeleteTopLevel(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "callsign")) || 0 == cJSON_GetCallsignValue(cJSON_GetObjectItemCaseSensitive(j, "callsign"))) { cJSON_DeleteTopLevel(x); return NULL; }
-+                if (!cJSON_IsCallsignValue(cJSON_GetObjectItemCaseSensitive(j, "callsign"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                 x->callsign = cJSON_GetCallsignValue(cJSON_GetObjectItemCaseSensitive(j, "callsign"));
-             }
-             if (!cJSON_HasObjectItem(j, "priority")) { cJSON_DeleteTopLevel(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "priority")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "priority"))) { cJSON_DeleteTopLevel(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "priority")) || 0 == cJSON_GetPriorityValue(cJSON_GetObjectItemCaseSensitive(j, "priority"))) { cJSON_DeleteTopLevel(x); return NULL; }
-+                if (!cJSON_IsPriorityValue(cJSON_GetObjectItemCaseSensitive(j, "priority"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                 x->priority = cJSON_GetPriorityValue(cJSON_GetObjectItemCaseSensitive(j, "priority"));
-             }
-         }

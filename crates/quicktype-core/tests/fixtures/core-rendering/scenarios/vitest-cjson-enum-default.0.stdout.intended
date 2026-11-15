@@ -59,7 +59,6 @@ struct TopLevel {
 };
 
 enum Subscription cJSON_GetSubscriptionValue(const cJSON * j);
-bool cJSON_IsSubscriptionValue(const cJSON * j);
 cJSON * cJSON_CreateSubscription(const enum Subscription x);
 
 struct TopLevel * cJSON_ParseTopLevel(const char * s);
@@ -76,15 +75,6 @@ enum Subscription cJSON_GetSubscriptionValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "heartbeat")) x = SUBSCRIPTION_HEARTBEAT;
     }
     return x;
-}
-
-bool cJSON_IsSubscriptionValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "state")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "config")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "heartbeat")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateSubscription(const enum Subscription x) {
@@ -116,7 +106,8 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
             memset(x, 0, sizeof(struct TopLevel));
             if (!cJSON_HasObjectItem(j, "subscription")) { cJSON_DeleteTopLevel(x); return NULL; }
             if (cJSON_HasObjectItem(j, "subscription")) {
-                if (!cJSON_IsSubscriptionValue(cJSON_GetObjectItemCaseSensitive(j, "subscription"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "subscription"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "subscription")) || 0 == cJSON_GetSubscriptionValue(cJSON_GetObjectItemCaseSensitive(j, "subscription"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 x->subscription = cJSON_GetSubscriptionValue(cJSON_GetObjectItemCaseSensitive(j, "subscription"));
             }
         }

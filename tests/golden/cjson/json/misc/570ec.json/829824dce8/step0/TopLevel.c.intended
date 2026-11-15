@@ -15,15 +15,6 @@ enum Scheme cJSON_GetSchemeValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsSchemeValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "DEP5")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "SPDX")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "Trove")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateScheme(const enum Scheme x) {
     cJSON * j = NULL;
     switch (x) {
@@ -63,7 +54,8 @@ struct Identifier * cJSON_GetIdentifierValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "scheme")) { cJSON_DeleteIdentifier(x); return NULL; }
             if (cJSON_HasObjectItem(j, "scheme")) {
-                if (!cJSON_IsSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "scheme")) || 0 == cJSON_GetSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
                 x->scheme = cJSON_GetSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"));
             }
         }

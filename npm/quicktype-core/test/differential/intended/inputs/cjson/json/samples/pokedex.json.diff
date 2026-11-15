@@ -1,18 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -107,9 +107,11 @@
- };
- 
- enum Egg cJSON_GetEggValue(const cJSON * j);
-+bool cJSON_IsEggValue(const cJSON * j);
- cJSON * cJSON_CreateEgg(const enum Egg x);
- 
- enum Type cJSON_GetTypeValue(const cJSON * j);
-+bool cJSON_IsTypeValue(const cJSON * j);
- cJSON * cJSON_CreateType(const enum Type x);
- 
- struct Evolution * cJSON_ParseEvolution(const char * s);
-@@ -132,7 +134,7 @@
+@@ -132,7 +132,7 @@
  
  enum Egg cJSON_GetEggValue(const cJSON * j) {
      enum Egg x = 0;
@@ -21,25 +9,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "2 km")) x = EGG_THE_2_KM;
          else if (!strcmp(cJSON_GetStringValue(j), "Not in Eggs")) x = EGG_NOT_IN_EGGS;
          else if (!strcmp(cJSON_GetStringValue(j), "5 km")) x = EGG_THE_5_KM;
-@@ -142,6 +144,17 @@
-     return x;
- }
- 
-+bool cJSON_IsEggValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "2 km")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Not in Eggs")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "5 km")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "10 km")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Omanyte Candy")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateEgg(const enum Egg x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -156,7 +169,7 @@
+@@ -156,7 +156,7 @@
  
  enum Type cJSON_GetTypeValue(const cJSON * j) {
      enum Type x = 0;
@@ -48,60 +18,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "Fire")) x = TYPE_FIRE;
          else if (!strcmp(cJSON_GetStringValue(j), "Ice")) x = TYPE_ICE;
          else if (!strcmp(cJSON_GetStringValue(j), "Flying")) x = TYPE_FLYING;
-@@ -177,6 +190,30 @@
-         else if (!strcmp(cJSON_GetStringValue(j), "Normal")) x = TYPE_NORMAL;
-     }
-     return x;
-+}
-+
-+bool cJSON_IsTypeValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Fire")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Ice")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Flying")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Psychic")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Water")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Ground")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Rock")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Electric")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Grass")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Fighting")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Poison")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Bug")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Fairy")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Ghost")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Dark")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Steel")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Dragon")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Normal")) return true;
-+    }
-+    return false;
- }
- 
- cJSON * cJSON_CreateType(const enum Type x) {
-@@ -351,6 +388,7 @@
-                     cJSON * e1 = NULL;
-                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "type");
-                     cJSON_ArrayForEach(e1, j1) {
-+                        if (!cJSON_IsTypeValue(e1)) { x->type = x1; cJSON_DeletePokemon(x); return NULL; }
-                         enum Type * tmp = cJSON_malloc(sizeof(enum Type));
-                         if (NULL != tmp) {
-                             * tmp = cJSON_GetTypeValue(e1);
-@@ -401,8 +439,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "egg")) { cJSON_DeletePokemon(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "egg")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "egg"))) { cJSON_DeletePokemon(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "egg")) || 0 == cJSON_GetEggValue(cJSON_GetObjectItemCaseSensitive(j, "egg"))) { cJSON_DeletePokemon(x); return NULL; }
-+                if (!cJSON_IsEggValue(cJSON_GetObjectItemCaseSensitive(j, "egg"))) { cJSON_DeletePokemon(x); return NULL; }
-                 x->egg = cJSON_GetEggValue(cJSON_GetObjectItemCaseSensitive(j, "egg"));
-             }
-             if (!cJSON_HasObjectItem(j, "spawn_chance")) { cJSON_DeletePokemon(x); return NULL; }
-@@ -450,6 +487,7 @@
-                     cJSON * e1 = NULL;
-                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "weaknesses");
-                     cJSON_ArrayForEach(e1, j1) {
-+                        if (!cJSON_IsTypeValue(e1)) { x->weaknesses = x1; cJSON_DeletePokemon(x); return NULL; }
-                         enum Type * tmp = cJSON_malloc(sizeof(enum Type));
-                         if (NULL != tmp) {
-                             * tmp = cJSON_GetTypeValue(e1);

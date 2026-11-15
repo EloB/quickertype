@@ -14,14 +14,6 @@ enum IssueState cJSON_GetIssueStateValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsIssueStateValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "OPEN")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "CLOSED")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateIssueState(const enum IssueState x) {
     cJSON * j = NULL;
     switch (x) {
@@ -53,7 +45,8 @@ struct IssueOrPullRequest * cJSON_GetIssueOrPullRequestValue(const cJSON * j) {
                 x->title = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "title")));
             }
             if (cJSON_HasObjectItem(j, "state")) {
-                if (!cJSON_IsIssueStateValue(cJSON_GetObjectItemCaseSensitive(j, "state"))) { cJSON_DeleteIssueOrPullRequest(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "state"))) { cJSON_DeleteIssueOrPullRequest(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "state")) || 0 == cJSON_GetIssueStateValue(cJSON_GetObjectItemCaseSensitive(j, "state"))) { cJSON_DeleteIssueOrPullRequest(x); return NULL; }
                 if (NULL != (x->state = cJSON_malloc(sizeof(enum IssueState)))) {
                     *x->state = cJSON_GetIssueStateValue(cJSON_GetObjectItemCaseSensitive(j, "state"));
                 }

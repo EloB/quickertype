@@ -1,14 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -62,6 +62,7 @@
- };
- 
- enum Category cJSON_GetCategoryValue(const cJSON * j);
-+bool cJSON_IsCategoryValue(const cJSON * j);
- cJSON * cJSON_CreateCategory(const enum Category x);
- 
- struct TopLevelElement * cJSON_ParseTopLevelElement(const char * s);
-@@ -78,13 +79,21 @@
+@@ -78,7 +78,7 @@
  
  enum Category cJSON_GetCategoryValue(const cJSON * j) {
      enum Category x = 0;
@@ -17,27 +9,3 @@
          if (!strcmp(cJSON_GetStringValue(j), " ")) x = CATEGORY_EMPTY;
          else if (!strcmp(cJSON_GetStringValue(j), "")) x = CATEGORY_CATEGORY;
      }
-     return x;
- }
- 
-+bool cJSON_IsCategoryValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), " ")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateCategory(const enum Category x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -113,8 +122,7 @@
-             memset(x, 0, sizeof(struct TopLevelElement));
-             if (!cJSON_HasObjectItem(j, "category")) { cJSON_DeleteTopLevelElement(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "category")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "category")) || 0 == cJSON_GetCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
-+                if (!cJSON_IsCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
-                 x->category = cJSON_GetCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"));
-             }
-         }

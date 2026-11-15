@@ -15,15 +15,6 @@ enum FooEnum cJSON_GetFooEnumValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsFooEnumValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "a")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "b")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "c")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateFooEnum(const enum FooEnum x) {
     cJSON * j = NULL;
     switch (x) {
@@ -50,7 +41,7 @@ struct FooUnion * cJSON_GetFooUnionValue(const cJSON * j) {
             x->type = cJSON_Bool;
             x->value.boolean = cJSON_IsTrue(j);
         }
-        else if (cJSON_IsFooEnumValue(j)) {
+        else if (cJSON_IsString(j)) {
             x->type = cJSON_Enum;
             x->value.purple_enum = cJSON_GetFooEnumValue(j);
         }

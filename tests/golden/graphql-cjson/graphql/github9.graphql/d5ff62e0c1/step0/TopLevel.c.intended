@@ -18,18 +18,6 @@ enum ReactionContent cJSON_GetReactionContentValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsReactionContentValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "THUMBS_UP")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "THUMBS_DOWN")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "LAUGH")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "HOORAY")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "CONFUSED")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "HEART")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateReactionContent(const enum ReactionContent x) {
     cJSON * j = NULL;
     switch (x) {
@@ -62,7 +50,8 @@ struct Reaction * cJSON_GetReactionValue(const cJSON * j) {
             memset(x, 0, sizeof(struct Reaction));
             if (!cJSON_HasObjectItem(j, "content")) { cJSON_DeleteReaction(x); return NULL; }
             if (cJSON_HasObjectItem(j, "content")) {
-                if (!cJSON_IsReactionContentValue(cJSON_GetObjectItemCaseSensitive(j, "content"))) { cJSON_DeleteReaction(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "content"))) { cJSON_DeleteReaction(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "content")) || 0 == cJSON_GetReactionContentValue(cJSON_GetObjectItemCaseSensitive(j, "content"))) { cJSON_DeleteReaction(x); return NULL; }
                 x->content = cJSON_GetReactionContentValue(cJSON_GetObjectItemCaseSensitive(j, "content"));
             }
         }

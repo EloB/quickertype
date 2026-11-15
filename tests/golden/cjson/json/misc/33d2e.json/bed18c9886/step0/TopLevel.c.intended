@@ -15,15 +15,6 @@ enum Gender cJSON_GetGenderValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsGenderValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "male")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "female")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "org")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateGender(const enum Gender x) {
     cJSON * j = NULL;
     switch (x) {
@@ -45,18 +36,6 @@ enum Category cJSON_GetCategoryValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "economics")) x = CATEGORY_ECONOMICS;
     }
     return x;
-}
-
-bool cJSON_IsCategoryValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "physics")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "chemistry")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "peace")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "medicine")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "literature")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "economics")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateCategory(const enum Category x) {
@@ -254,7 +233,8 @@ struct Prize * cJSON_GetPrizeValue(const cJSON * j) {
                 x->affiliations = list_create(false, NULL);
             }
             if (cJSON_HasObjectItem(j, "category")) {
-                if (!cJSON_IsCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeletePrize(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeletePrize(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "category")) || 0 == cJSON_GetCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeletePrize(x); return NULL; }
                 if (NULL != (x->category = cJSON_malloc(sizeof(enum Category)))) {
                     *x->category = cJSON_GetCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"));
                 }
@@ -422,7 +402,8 @@ struct Laureate * cJSON_GetLaureateValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "gender")) { cJSON_DeleteLaureate(x); return NULL; }
             if (cJSON_HasObjectItem(j, "gender")) {
-                if (!cJSON_IsGenderValue(cJSON_GetObjectItemCaseSensitive(j, "gender"))) { cJSON_DeleteLaureate(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "gender"))) { cJSON_DeleteLaureate(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "gender")) || 0 == cJSON_GetGenderValue(cJSON_GetObjectItemCaseSensitive(j, "gender"))) { cJSON_DeleteLaureate(x); return NULL; }
                 x->gender = cJSON_GetGenderValue(cJSON_GetObjectItemCaseSensitive(j, "gender"));
             }
             if (!cJSON_HasObjectItem(j, "id")) { cJSON_DeleteLaureate(x); return NULL; }

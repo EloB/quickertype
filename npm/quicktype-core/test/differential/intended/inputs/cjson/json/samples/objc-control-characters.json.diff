@@ -1,14 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -60,6 +60,7 @@
- };
- 
- enum Value cJSON_GetValueValue(const cJSON * j);
-+bool cJSON_IsValueValue(const cJSON * j);
- cJSON * cJSON_CreateValue(const enum Value x);
- 
- struct TopLevel * cJSON_ParseTopLevel(const char * s);
-@@ -70,13 +71,21 @@
+@@ -70,7 +70,7 @@
  
  enum Value cJSON_GetValueValue(const cJSON * j) {
      enum Value x = 0;
@@ -17,25 +9,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "c0\001\033\037")) x = VALUE_C0;
          else if (!strcmp(cJSON_GetStringValue(j), "c1\177\302\200\302\205\302\237")) x = VALUE_C1;
      }
-     return x;
- }
- 
-+bool cJSON_IsValueValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "c0\001\033\037")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "c1\177\302\200\302\205\302\237")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateValue(const enum Value x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -121,6 +130,7 @@
-                     cJSON * e1 = NULL;
-                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "values");
-                     cJSON_ArrayForEach(e1, j1) {
-+                        if (!cJSON_IsValueValue(e1)) { x->values = x1; cJSON_DeleteTopLevel(x); return NULL; }
-                         enum Value * tmp = cJSON_malloc(sizeof(enum Value));
-                         if (NULL != tmp) {
-                             * tmp = cJSON_GetValueValue(e1);

@@ -15,15 +15,6 @@ enum Keyword cJSON_GetKeywordValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsKeywordValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "discouraged")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "retired")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "osi-approved")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateKeyword(const enum Keyword x) {
     cJSON * j = NULL;
     switch (x) {
@@ -368,7 +359,6 @@ struct TopLevelElement * cJSON_GetTopLevelElementValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "keywords");
                     cJSON_ArrayForEach(e1, j1) {
-                        if (!cJSON_IsKeywordValue(e1)) { x->keywords = x1; cJSON_DeleteTopLevelElement(x); return NULL; }
                         enum Keyword * tmp = cJSON_malloc(sizeof(enum Keyword));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetKeywordValue(e1);

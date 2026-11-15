@@ -1,14 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -248,6 +248,7 @@
- };
- 
- enum TypeName cJSON_GetTypeNameValue(const cJSON * j);
-+bool cJSON_IsTypeNameValue(const cJSON * j);
- cJSON * cJSON_CreateTypeName(const enum TypeName x);
- 
- #define cJSON_IsDatum(j) (quicktype_cJSON_IsInteger(j) || cJSON_IsNull(j) || cJSON_IsString(j))
-@@ -403,12 +404,21 @@
+@@ -403,7 +403,7 @@
  
  enum TypeName cJSON_GetTypeNameValue(const cJSON * j) {
      enum TypeName x = 0;
@@ -17,37 +9,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "meta_data")) x = TYPENAME_META_DATA;
          else if (!strcmp(cJSON_GetStringValue(j), "calendar_date")) x = TYPENAME_CALENDAR_DATE;
          else if (!strcmp(cJSON_GetStringValue(j), "text")) x = TYPENAME_TEXT;
-     }
-     return x;
-+}
-+
-+bool cJSON_IsTypeNameValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "meta_data")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "calendar_date")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "text")) return true;
-+    }
-+    return false;
- }
- 
- cJSON * cJSON_CreateTypeName(const enum TypeName x) {
-@@ -783,8 +793,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "dataTypeName")) { cJSON_DeleteColumn(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "dataTypeName")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName")) || 0 == cJSON_GetTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
-+                if (!cJSON_IsTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
-                 x->data_type_name = cJSON_GetTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName"));
-             }
-             if (!cJSON_HasObjectItem(j, "fieldName")) { cJSON_DeleteColumn(x); return NULL; }
-@@ -804,8 +813,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "renderTypeName")) { cJSON_DeleteColumn(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "renderTypeName")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName")) || 0 == cJSON_GetTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
-+                if (!cJSON_IsTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
-                 x->render_type_name = cJSON_GetTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName"));
-             }
-             if (!cJSON_HasObjectItem(j, "format")) { cJSON_DeleteColumn(x); return NULL; }

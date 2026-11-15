@@ -14,14 +14,6 @@ enum Category cJSON_GetCategoryValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsCategoryValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), " ")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateCategory(const enum Category x) {
     cJSON * j = NULL;
     switch (x) {
@@ -50,7 +42,8 @@ struct TopLevelElement * cJSON_GetTopLevelElementValue(const cJSON * j) {
             memset(x, 0, sizeof(struct TopLevelElement));
             if (!cJSON_HasObjectItem(j, "category")) { cJSON_DeleteTopLevelElement(x); return NULL; }
             if (cJSON_HasObjectItem(j, "category")) {
-                if (!cJSON_IsCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "category")) || 0 == cJSON_GetCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
                 x->category = cJSON_GetCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"));
             }
         }

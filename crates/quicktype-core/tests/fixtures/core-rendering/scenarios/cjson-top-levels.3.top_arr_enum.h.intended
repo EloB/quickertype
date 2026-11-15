@@ -90,7 +90,7 @@ struct top_arr_enum * cJSON_Gettop_arr_enumValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
-                    if (!cJSON_Istop_arr_enum_elementValue(e)) { cJSON_Deletetop_arr_enum(x); return NULL; }
+                    if (!cJSON_IsString(e)) { cJSON_Deletetop_arr_enum(x); return NULL; }
                     enum top_arr_enum_element * item = cJSON_malloc(sizeof(*item));
                     if (NULL == item) { cJSON_Deletetop_arr_enum(x); return NULL; }
                     *item = cJSON_Gettop_arr_enum_elementValue(e);

@@ -1,18 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -144,9 +144,11 @@
- };
- 
- enum Axis cJSON_GetAxisValue(const cJSON * j);
-+bool cJSON_IsAxisValue(const cJSON * j);
- cJSON * cJSON_CreateAxis(const enum Axis x);
- 
- enum Name cJSON_GetNameValue(const cJSON * j);
-+bool cJSON_IsNameValue(const cJSON * j);
- cJSON * cJSON_CreateName(const enum Name x);
- 
- struct Color * cJSON_ParseColor(const char * s);
-@@ -235,7 +237,7 @@
+@@ -235,7 +235,7 @@
  
  enum Axis cJSON_GetAxisValue(const cJSON * j) {
      enum Axis x = 0;
@@ -21,26 +9,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "X")) x = AXIS_X;
          else if (!strcmp(cJSON_GetStringValue(j), "Y")) x = AXIS_Y;
          else if (!strcmp(cJSON_GetStringValue(j), "Z")) x = AXIS_Z;
-@@ -244,6 +246,18 @@
-         else if (!strcmp(cJSON_GetStringValue(j), "ZX")) x = AXIS_ZX;
-     }
-     return x;
-+}
-+
-+bool cJSON_IsAxisValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "X")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Y")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Z")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "XY")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "YZ")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "ZX")) return true;
-+    }
-+    return false;
- }
- 
- cJSON * cJSON_CreateAxis(const enum Axis x) {
-@@ -261,7 +275,7 @@
+@@ -261,7 +261,7 @@
  
  enum Name cJSON_GetNameValue(const cJSON * j) {
      enum Name x = 0;
@@ -49,55 +18,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "truck")) x = NAME_TRUCK;
          else if (!strcmp(cJSON_GetStringValue(j), "bus")) x = NAME_BUS;
          else if (!strcmp(cJSON_GetStringValue(j), "car")) x = NAME_CAR;
-@@ -273,6 +287,21 @@
-         else if (!strcmp(cJSON_GetStringValue(j), "Trolley")) x = NAME_TROLLEY;
-     }
-     return x;
-+}
-+
-+bool cJSON_IsNameValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "truck")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "bus")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "car")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "van")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "train")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Bike")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Aeroplane")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Jeep")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Trolley")) return true;
-+    }
-+    return false;
- }
- 
- cJSON * cJSON_CreateName(const enum Name x) {
-@@ -1156,22 +1185,19 @@
-         if (NULL != (x = cJSON_malloc(sizeof(struct VehicleType)))) {
-             memset(x, 0, sizeof(struct VehicleType));
-             if (cJSON_HasObjectItem(j, "name")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "name"))) { cJSON_DeleteVehicleType(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "name")) || 0 == cJSON_GetNameValue(cJSON_GetObjectItemCaseSensitive(j, "name"))) { cJSON_DeleteVehicleType(x); return NULL; }
-+                if (!cJSON_IsNameValue(cJSON_GetObjectItemCaseSensitive(j, "name"))) { cJSON_DeleteVehicleType(x); return NULL; }
-                 if (NULL != (x->name = cJSON_malloc(sizeof(enum Name)))) {
-                     *x->name = cJSON_GetNameValue(cJSON_GetObjectItemCaseSensitive(j, "name"));
-                 }
-             }
-             if (cJSON_HasObjectItem(j, "width")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "width"))) { cJSON_DeleteVehicleType(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "width")) || 0 == cJSON_GetAxisValue(cJSON_GetObjectItemCaseSensitive(j, "width"))) { cJSON_DeleteVehicleType(x); return NULL; }
-+                if (!cJSON_IsAxisValue(cJSON_GetObjectItemCaseSensitive(j, "width"))) { cJSON_DeleteVehicleType(x); return NULL; }
-                 if (NULL != (x->width = cJSON_malloc(sizeof(enum Axis)))) {
-                     *x->width = cJSON_GetAxisValue(cJSON_GetObjectItemCaseSensitive(j, "width"));
-                 }
-             }
-             if (cJSON_HasObjectItem(j, "length")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "length"))) { cJSON_DeleteVehicleType(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "length")) || 0 == cJSON_GetAxisValue(cJSON_GetObjectItemCaseSensitive(j, "length"))) { cJSON_DeleteVehicleType(x); return NULL; }
-+                if (!cJSON_IsAxisValue(cJSON_GetObjectItemCaseSensitive(j, "length"))) { cJSON_DeleteVehicleType(x); return NULL; }
-                 if (NULL != (x->length = cJSON_malloc(sizeof(enum Axis)))) {
-                     *x->length = cJSON_GetAxisValue(cJSON_GetObjectItemCaseSensitive(j, "length"));
-                 }
-@@ -1359,7 +1385,7 @@
+@@ -1359,7 +1359,7 @@
              memset(x, 0, sizeof(struct TopLevel));
              if (cJSON_HasObjectItem(j, "version")) {
                  if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "version"))) { cJSON_DeleteTopLevel(x); return NULL; }

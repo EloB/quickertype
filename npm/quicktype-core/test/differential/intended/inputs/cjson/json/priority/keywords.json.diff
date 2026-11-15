@@ -1,14 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -1873,6 +1873,7 @@
- };
- 
- enum EnumValue cJSON_GetEnumValueValue(const cJSON * j);
-+bool cJSON_IsEnumValueValue(const cJSON * j);
- cJSON * cJSON_CreateEnumValue(const enum EnumValue x);
- 
- struct Abstract * cJSON_ParseAbstract(const char * s);
-@@ -4061,11 +4062,19 @@
+@@ -4061,7 +4061,7 @@
  
  enum EnumValue cJSON_GetEnumValueValue(const cJSON * j) {
      enum EnumValue x = 0;
@@ -17,23 +9,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "ready")) x = ENUMVALUE_READY;
          else if (!strcmp(cJSON_GetStringValue(j), "done")) x = ENUMVALUE_DONE;
      }
-     return x;
-+}
-+
-+bool cJSON_IsEnumValueValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "ready")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "done")) return true;
-+    }
-+    return false;
- }
- 
- cJSON * cJSON_CreateEnumValue(const enum EnumValue x) {
-@@ -9870,6 +9879,7 @@
-                     cJSON * e1 = NULL;
-                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "EnumValues");
-                     cJSON_ArrayForEach(e1, j1) {
-+                        if (!cJSON_IsEnumValueValue(e1)) { x->enum_values = x1; cJSON_DeleteEnumValues(x); return NULL; }
-                         enum EnumValue * tmp = cJSON_malloc(sizeof(enum EnumValue));
-                         if (NULL != tmp) {
-                             * tmp = cJSON_GetEnumValueValue(e1);

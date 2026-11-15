@@ -1,14 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -69,6 +69,7 @@
- };
- 
- enum Kind cJSON_GetKindValue(const cJSON * j);
-+bool cJSON_IsKindValue(const cJSON * j);
- cJSON * cJSON_CreateKind(const enum Kind x);
- 
- struct TopLevel * cJSON_ParseTopLevel(const char * s);
-@@ -79,12 +80,19 @@
+@@ -79,7 +79,7 @@
  
  enum Kind cJSON_GetKindValue(const cJSON * j) {
      enum Kind x = 0;
@@ -17,25 +9,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "ok")) x = KIND_OK;
      }
      return x;
- }
- 
-+bool cJSON_IsKindValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "ok")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateKind(const enum Kind x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -112,8 +120,7 @@
-             memset(x, 0, sizeof(struct TopLevel));
-             if (!cJSON_HasObjectItem(j, "kind")) { cJSON_DeleteTopLevel(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "kind")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "kind"))) { cJSON_DeleteTopLevel(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "kind")) || 0 == cJSON_GetKindValue(cJSON_GetObjectItemCaseSensitive(j, "kind"))) { cJSON_DeleteTopLevel(x); return NULL; }
-+                if (!cJSON_IsKindValue(cJSON_GetObjectItemCaseSensitive(j, "kind"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                 x->kind = cJSON_GetKindValue(cJSON_GetObjectItemCaseSensitive(j, "kind"));
-             }
-         }

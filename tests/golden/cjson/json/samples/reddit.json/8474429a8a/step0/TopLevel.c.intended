@@ -16,16 +16,6 @@ enum Domain cJSON_GetDomainValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsDomainValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "reddit.com")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "i.imgur.com")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "imgur.com")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "i.redd.it")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateDomain(const enum Domain x) {
     cJSON * j = NULL;
     switch (x) {
@@ -45,13 +35,6 @@ enum WhitelistStatus cJSON_GetWhitelistStatusValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsWhitelistStatusValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "all_ads")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateWhitelistStatus(const enum WhitelistStatus x) {
     cJSON * j = NULL;
     switch (x) {
@@ -67,14 +50,6 @@ enum PostHint cJSON_GetPostHintValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "image")) x = POSTHINT_IMAGE;
     }
     return x;
-}
-
-bool cJSON_IsPostHintValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "link")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "image")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreatePostHint(const enum PostHint x) {
@@ -94,13 +69,6 @@ enum Subreddit cJSON_GetSubredditValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsSubredditValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "funny")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateSubreddit(const enum Subreddit x) {
     cJSON * j = NULL;
     switch (x) {
@@ -115,13 +83,6 @@ enum SubredditId cJSON_GetSubredditIdValue(const cJSON * j) {
         if (!strcmp(cJSON_GetStringValue(j), "t5_2qh33")) x = SUBREDDITID_T5_2_QH33;
     }
     return x;
-}
-
-bool cJSON_IsSubredditIdValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "t5_2qh33")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateSubredditId(const enum SubredditId x) {
@@ -140,13 +101,6 @@ enum SubredditNamePrefixed cJSON_GetSubredditNamePrefixedValue(const cJSON * j) 
     return x;
 }
 
-bool cJSON_IsSubredditNamePrefixedValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "r/funny")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateSubredditNamePrefixed(const enum SubredditNamePrefixed x) {
     cJSON * j = NULL;
     switch (x) {
@@ -163,13 +117,6 @@ enum SubredditType cJSON_GetSubredditTypeValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsSubredditTypeValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "public")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateSubredditType(const enum SubredditType x) {
     cJSON * j = NULL;
     switch (x) {
@@ -184,13 +131,6 @@ enum Kind cJSON_GetKindValue(const cJSON * j) {
         if (!strcmp(cJSON_GetStringValue(j), "t3")) x = KIND_T3;
     }
     return x;
-}
-
-bool cJSON_IsKindValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "t3")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateKind(const enum Kind x) {
@@ -830,7 +770,8 @@ struct ChildData * cJSON_GetChildDataValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "domain")) { cJSON_DeleteChildData(x); return NULL; }
             if (cJSON_HasObjectItem(j, "domain")) {
-                if (!cJSON_IsDomainValue(cJSON_GetObjectItemCaseSensitive(j, "domain"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "domain"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "domain")) || 0 == cJSON_GetDomainValue(cJSON_GetObjectItemCaseSensitive(j, "domain"))) { cJSON_DeleteChildData(x); return NULL; }
                 x->domain = cJSON_GetDomainValue(cJSON_GetObjectItemCaseSensitive(j, "domain"));
             }
             if (!cJSON_HasObjectItem(j, "downs")) { cJSON_DeleteChildData(x); return NULL; }
@@ -964,7 +905,8 @@ struct ChildData * cJSON_GetChildDataValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "parent_whitelist_status")) { cJSON_DeleteChildData(x); return NULL; }
             if (cJSON_HasObjectItem(j, "parent_whitelist_status")) {
-                if (!cJSON_IsWhitelistStatusValue(cJSON_GetObjectItemCaseSensitive(j, "parent_whitelist_status"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "parent_whitelist_status"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "parent_whitelist_status")) || 0 == cJSON_GetWhitelistStatusValue(cJSON_GetObjectItemCaseSensitive(j, "parent_whitelist_status"))) { cJSON_DeleteChildData(x); return NULL; }
                 x->parent_whitelist_status = cJSON_GetWhitelistStatusValue(cJSON_GetObjectItemCaseSensitive(j, "parent_whitelist_status"));
             }
             if (!cJSON_HasObjectItem(j, "permalink")) { cJSON_DeleteChildData(x); return NULL; }
@@ -979,7 +921,8 @@ struct ChildData * cJSON_GetChildDataValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "post_hint")) { cJSON_DeleteChildData(x); return NULL; }
             if (cJSON_HasObjectItem(j, "post_hint")) {
-                if (!cJSON_IsPostHintValue(cJSON_GetObjectItemCaseSensitive(j, "post_hint"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "post_hint"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "post_hint")) || 0 == cJSON_GetPostHintValue(cJSON_GetObjectItemCaseSensitive(j, "post_hint"))) { cJSON_DeleteChildData(x); return NULL; }
                 x->post_hint = cJSON_GetPostHintValue(cJSON_GetObjectItemCaseSensitive(j, "post_hint"));
             }
             if (!cJSON_HasObjectItem(j, "preview")) { cJSON_DeleteChildData(x); return NULL; }
@@ -1063,22 +1006,26 @@ struct ChildData * cJSON_GetChildDataValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "subreddit")) { cJSON_DeleteChildData(x); return NULL; }
             if (cJSON_HasObjectItem(j, "subreddit")) {
-                if (!cJSON_IsSubredditValue(cJSON_GetObjectItemCaseSensitive(j, "subreddit"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "subreddit"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "subreddit")) || 0 == cJSON_GetSubredditValue(cJSON_GetObjectItemCaseSensitive(j, "subreddit"))) { cJSON_DeleteChildData(x); return NULL; }
                 x->subreddit = cJSON_GetSubredditValue(cJSON_GetObjectItemCaseSensitive(j, "subreddit"));
             }
             if (!cJSON_HasObjectItem(j, "subreddit_id")) { cJSON_DeleteChildData(x); return NULL; }
             if (cJSON_HasObjectItem(j, "subreddit_id")) {
-                if (!cJSON_IsSubredditIdValue(cJSON_GetObjectItemCaseSensitive(j, "subreddit_id"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "subreddit_id"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "subreddit_id")) || 0 == cJSON_GetSubredditIdValue(cJSON_GetObjectItemCaseSensitive(j, "subreddit_id"))) { cJSON_DeleteChildData(x); return NULL; }
                 x->subreddit_id = cJSON_GetSubredditIdValue(cJSON_GetObjectItemCaseSensitive(j, "subreddit_id"));
             }
             if (!cJSON_HasObjectItem(j, "subreddit_name_prefixed")) { cJSON_DeleteChildData(x); return NULL; }
             if (cJSON_HasObjectItem(j, "subreddit_name_prefixed")) {
-                if (!cJSON_IsSubredditNamePrefixedValue(cJSON_GetObjectItemCaseSensitive(j, "subreddit_name_prefixed"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "subreddit_name_prefixed"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "subreddit_name_prefixed")) || 0 == cJSON_GetSubredditNamePrefixedValue(cJSON_GetObjectItemCaseSensitive(j, "subreddit_name_prefixed"))) { cJSON_DeleteChildData(x); return NULL; }
                 x->subreddit_name_prefixed = cJSON_GetSubredditNamePrefixedValue(cJSON_GetObjectItemCaseSensitive(j, "subreddit_name_prefixed"));
             }
             if (!cJSON_HasObjectItem(j, "subreddit_type")) { cJSON_DeleteChildData(x); return NULL; }
             if (cJSON_HasObjectItem(j, "subreddit_type")) {
-                if (!cJSON_IsSubredditTypeValue(cJSON_GetObjectItemCaseSensitive(j, "subreddit_type"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "subreddit_type"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "subreddit_type")) || 0 == cJSON_GetSubredditTypeValue(cJSON_GetObjectItemCaseSensitive(j, "subreddit_type"))) { cJSON_DeleteChildData(x); return NULL; }
                 x->subreddit_type = cJSON_GetSubredditTypeValue(cJSON_GetObjectItemCaseSensitive(j, "subreddit_type"));
             }
             if (!cJSON_HasObjectItem(j, "suggested_sort")) { cJSON_DeleteChildData(x); return NULL; }
@@ -1168,7 +1115,8 @@ struct ChildData * cJSON_GetChildDataValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "whitelist_status")) { cJSON_DeleteChildData(x); return NULL; }
             if (cJSON_HasObjectItem(j, "whitelist_status")) {
-                if (!cJSON_IsWhitelistStatusValue(cJSON_GetObjectItemCaseSensitive(j, "whitelist_status"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "whitelist_status"))) { cJSON_DeleteChildData(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "whitelist_status")) || 0 == cJSON_GetWhitelistStatusValue(cJSON_GetObjectItemCaseSensitive(j, "whitelist_status"))) { cJSON_DeleteChildData(x); return NULL; }
                 x->whitelist_status = cJSON_GetWhitelistStatusValue(cJSON_GetObjectItemCaseSensitive(j, "whitelist_status"));
             }
         }
@@ -1441,7 +1389,8 @@ struct Child * cJSON_GetChildValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "kind")) { cJSON_DeleteChild(x); return NULL; }
             if (cJSON_HasObjectItem(j, "kind")) {
-                if (!cJSON_IsKindValue(cJSON_GetObjectItemCaseSensitive(j, "kind"))) { cJSON_DeleteChild(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "kind"))) { cJSON_DeleteChild(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "kind")) || 0 == cJSON_GetKindValue(cJSON_GetObjectItemCaseSensitive(j, "kind"))) { cJSON_DeleteChild(x); return NULL; }
                 x->kind = cJSON_GetKindValue(cJSON_GetObjectItemCaseSensitive(j, "kind"));
             }
         }

@@ -13,13 +13,6 @@ enum Country cJSON_GetCountryValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsCountryValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "United States")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateCountry(const enum Country x) {
     cJSON * j = NULL;
     switch (x) {
@@ -52,7 +45,8 @@ struct TopLevelElement * cJSON_GetTopLevelElementValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "country")) { cJSON_DeleteTopLevelElement(x); return NULL; }
             if (cJSON_HasObjectItem(j, "country")) {
-                if (!cJSON_IsCountryValue(cJSON_GetObjectItemCaseSensitive(j, "country"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "country"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "country")) || 0 == cJSON_GetCountryValue(cJSON_GetObjectItemCaseSensitive(j, "country"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
                 x->country = cJSON_GetCountryValue(cJSON_GetObjectItemCaseSensitive(j, "country"));
             }
             if (!cJSON_HasObjectItem(j, "females")) { cJSON_DeleteTopLevelElement(x); return NULL; }

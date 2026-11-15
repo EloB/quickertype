@@ -14,14 +14,6 @@ enum TopArrEnumElement cJSON_GetTopArrEnumElementValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsTopArrEnumElementValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "one")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "two")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateTopArrEnumElement(const enum TopArrEnumElement x) {
     cJSON * j = NULL;
     switch (x) {
@@ -38,14 +30,6 @@ enum TopEnum cJSON_GetTopEnumValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "b")) x = TOPENUM_B;
     }
     return x;
-}
-
-bool cJSON_IsTopEnumValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "a")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "b")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateTopEnum(const enum TopEnum x) {
@@ -1370,7 +1354,7 @@ struct TopArrEnum * cJSON_GetTopArrEnumValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
-                    if (!cJSON_IsTopArrEnumElementValue(e)) { cJSON_DeleteTopArrEnum(x); return NULL; }
+                    if (!cJSON_IsString(e)) { cJSON_DeleteTopArrEnum(x); return NULL; }
                     enum TopArrEnumElement * item = cJSON_malloc(sizeof(*item));
                     if (NULL == item) { cJSON_DeleteTopArrEnum(x); return NULL; }
                     *item = cJSON_GetTopArrEnumElementValue(e);

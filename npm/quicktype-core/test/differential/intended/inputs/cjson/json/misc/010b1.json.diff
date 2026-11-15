@@ -1,14 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -66,6 +66,7 @@
- };
- 
- enum Country cJSON_GetCountryValue(const cJSON * j);
-+bool cJSON_IsCountryValue(const cJSON * j);
- cJSON * cJSON_CreateCountry(const enum Country x);
- 
- struct TopLevelElement * cJSON_ParseTopLevelElement(const char * s);
-@@ -82,12 +83,19 @@
+@@ -82,7 +82,7 @@
  
  enum Country cJSON_GetCountryValue(const cJSON * j) {
      enum Country x = 0;
@@ -17,25 +9,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "United States")) x = COUNTRY_UNITED_STATES;
      }
      return x;
- }
- 
-+bool cJSON_IsCountryValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "United States")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateCountry(const enum Country x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -120,8 +128,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "country")) { cJSON_DeleteTopLevelElement(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "country")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "country"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "country")) || 0 == cJSON_GetCountryValue(cJSON_GetObjectItemCaseSensitive(j, "country"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
-+                if (!cJSON_IsCountryValue(cJSON_GetObjectItemCaseSensitive(j, "country"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
-                 x->country = cJSON_GetCountryValue(cJSON_GetObjectItemCaseSensitive(j, "country"));
-             }
-             if (!cJSON_HasObjectItem(j, "age")) { cJSON_DeleteTopLevelElement(x); return NULL; }

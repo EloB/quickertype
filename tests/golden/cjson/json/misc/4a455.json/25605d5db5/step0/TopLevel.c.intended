@@ -13,13 +13,6 @@ enum GeometryType cJSON_GetGeometryTypeValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsGeometryTypeValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "MultiPoint")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateGeometryType(const enum GeometryType x) {
     cJSON * j = NULL;
     switch (x) {
@@ -36,13 +29,6 @@ enum GeometryName cJSON_GetGeometryNameValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsGeometryNameValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "geom")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateGeometryName(const enum GeometryName x) {
     cJSON * j = NULL;
     switch (x) {
@@ -57,13 +43,6 @@ enum FeatureType cJSON_GetFeatureTypeValue(const cJSON * j) {
         if (!strcmp(cJSON_GetStringValue(j), "Feature")) x = FEATURETYPE_FEATURE;
     }
     return x;
-}
-
-bool cJSON_IsFeatureTypeValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "Feature")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateFeatureType(const enum FeatureType x) {
@@ -266,7 +245,8 @@ struct Geometry * cJSON_GetGeometryValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteGeometry(x); return NULL; }
             if (cJSON_HasObjectItem(j, "type")) {
-                if (!cJSON_IsGeometryTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGeometry(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGeometry(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetGeometryTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGeometry(x); return NULL; }
                 x->type = cJSON_GetGeometryTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
             }
         }
@@ -521,7 +501,8 @@ struct Feature * cJSON_GetFeatureValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "geometry_name")) { cJSON_DeleteFeature(x); return NULL; }
             if (cJSON_HasObjectItem(j, "geometry_name")) {
-                if (!cJSON_IsGeometryNameValue(cJSON_GetObjectItemCaseSensitive(j, "geometry_name"))) { cJSON_DeleteFeature(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "geometry_name"))) { cJSON_DeleteFeature(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "geometry_name")) || 0 == cJSON_GetGeometryNameValue(cJSON_GetObjectItemCaseSensitive(j, "geometry_name"))) { cJSON_DeleteFeature(x); return NULL; }
                 x->geometry_name = cJSON_GetGeometryNameValue(cJSON_GetObjectItemCaseSensitive(j, "geometry_name"));
             }
             if (!cJSON_HasObjectItem(j, "id")) { cJSON_DeleteFeature(x); return NULL; }
@@ -542,7 +523,8 @@ struct Feature * cJSON_GetFeatureValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteFeature(x); return NULL; }
             if (cJSON_HasObjectItem(j, "type")) {
-                if (!cJSON_IsFeatureTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFeature(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFeature(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetFeatureTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFeature(x); return NULL; }
                 x->type = cJSON_GetFeatureTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
             }
         }

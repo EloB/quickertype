@@ -56,7 +56,6 @@ enum top_enum {
 typedef enum top_enum top_enum;
 
 enum top_enum cJSON_Gettop_enumValue(const cJSON * j);
-bool cJSON_Istop_enumValue(const cJSON * j);
 cJSON * cJSON_Createtop_enum(const enum top_enum x);
 
 enum top_enum cJSON_Gettop_enumValue(const cJSON * j) {
@@ -66,14 +65,6 @@ enum top_enum cJSON_Gettop_enumValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "b")) x = TOP_ENUM_B;
     }
     return x;
-}
-
-bool cJSON_Istop_enumValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "a")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "b")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_Createtop_enum(const enum top_enum x) {

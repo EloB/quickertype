@@ -14,14 +14,6 @@ enum TopArrEnumElement cJSON_GetTopArrEnumElementValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsTopArrEnumElementValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "one")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "two")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateTopArrEnumElement(const enum TopArrEnumElement x) {
     cJSON * j = NULL;
     switch (x) {

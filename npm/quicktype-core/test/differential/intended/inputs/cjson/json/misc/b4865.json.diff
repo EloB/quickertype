@@ -1,22 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -86,12 +86,15 @@
- };
- 
- enum Fall cJSON_GetFallValue(const cJSON * j);
-+bool cJSON_IsFallValue(const cJSON * j);
- cJSON * cJSON_CreateFall(const enum Fall x);
- 
- enum Type cJSON_GetTypeValue(const cJSON * j);
-+bool cJSON_IsTypeValue(const cJSON * j);
- cJSON * cJSON_CreateType(const enum Type x);
- 
- enum Nametype cJSON_GetNametypeValue(const cJSON * j);
-+bool cJSON_IsNametypeValue(const cJSON * j);
- cJSON * cJSON_CreateNametype(const enum Nametype x);
- 
- struct Geolocation * cJSON_ParseGeolocation(const char * s);
-@@ -114,13 +117,21 @@
+@@ -114,7 +114,7 @@
  
  enum Fall cJSON_GetFallValue(const cJSON * j) {
      enum Fall x = 0;
@@ -25,21 +9,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "Fell")) x = FALL_FELL;
          else if (!strcmp(cJSON_GetStringValue(j), "Found")) x = FALL_FOUND;
      }
-     return x;
- }
- 
-+bool cJSON_IsFallValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Fell")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Found")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateFall(const enum Fall x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -132,10 +143,17 @@
+@@ -132,7 +132,7 @@
  
  enum Type cJSON_GetTypeValue(const cJSON * j) {
      enum Type x = 0;
@@ -48,17 +18,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "Point")) x = TYPE_POINT;
      }
      return x;
-+}
-+
-+bool cJSON_IsTypeValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Point")) return true;
-+    }
-+    return false;
- }
- 
- cJSON * cJSON_CreateType(const enum Type x) {
-@@ -148,12 +166,19 @@
+@@ -148,7 +148,7 @@
  
  enum Nametype cJSON_GetNametypeValue(const cJSON * j) {
      enum Nametype x = 0;
@@ -67,45 +27,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "Valid")) x = NAMETYPE_VALID;
      }
      return x;
- }
- 
-+bool cJSON_IsNametypeValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Valid")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateNametype(const enum Nametype x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -181,8 +206,7 @@
-             memset(x, 0, sizeof(struct Geolocation));
-             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteGeolocation(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "type")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGeolocation(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGeolocation(x); return NULL; }
-+                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGeolocation(x); return NULL; }
-                 x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
-             }
-             if (!cJSON_HasObjectItem(j, "coordinates")) { cJSON_DeleteGeolocation(x); return NULL; }
-@@ -275,8 +299,7 @@
-             memset(x, 0, sizeof(struct TopLevelElement));
-             if (!cJSON_HasObjectItem(j, "fall")) { cJSON_DeleteTopLevelElement(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "fall")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fall"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fall")) || 0 == cJSON_GetFallValue(cJSON_GetObjectItemCaseSensitive(j, "fall"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
-+                if (!cJSON_IsFallValue(cJSON_GetObjectItemCaseSensitive(j, "fall"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
-                 x->fall = cJSON_GetFallValue(cJSON_GetObjectItemCaseSensitive(j, "fall"));
-             }
-             if (cJSON_HasObjectItem(j, "geolocation")) {
-@@ -310,8 +333,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "nametype")) { cJSON_DeleteTopLevelElement(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "nametype")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "nametype"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "nametype")) || 0 == cJSON_GetNametypeValue(cJSON_GetObjectItemCaseSensitive(j, "nametype"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
-+                if (!cJSON_IsNametypeValue(cJSON_GetObjectItemCaseSensitive(j, "nametype"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
-                 x->nametype = cJSON_GetNametypeValue(cJSON_GetObjectItemCaseSensitive(j, "nametype"));
-             }
-             if (!cJSON_HasObjectItem(j, "recclass")) { cJSON_DeleteTopLevelElement(x); return NULL; }

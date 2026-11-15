@@ -55,7 +55,6 @@ enum SubType {
 };
 
 enum SubType cJSON_GetSubTypeValue(const cJSON * j);
-bool cJSON_IsSubTypeValue(const cJSON * j);
 cJSON * cJSON_CreateSubType(const enum SubType x);
 
 enum SubType cJSON_GetSubTypeValue(const cJSON * j) {
@@ -66,15 +65,6 @@ enum SubType cJSON_GetSubTypeValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "dunk")) x = SUBTYPE_DUNK;
     }
     return x;
-}
-
-bool cJSON_IsSubTypeValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "jumpshot")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "layup")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "dunk")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateSubType(const enum SubType x) {

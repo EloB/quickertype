@@ -543,13 +543,6 @@ impl<'a> CJsonRenderer<'a> {
             " * j);"
         ]);
         self.emit_line(sl![
-            "bool cJSON_Is",
-            enum_name,
-            "Value(",
-            with_const("cJSON"),
-            " * j);"
-        ]);
-        self.emit_line(sl![
             "cJSON * cJSON_Create",
             enum_name,
             "(",
@@ -602,36 +595,6 @@ impl<'a> CJsonRenderer<'a> {
                     })
                 })?;
                 r.emit_line("return x;");
-                Ok(())
-            },
-        )?;
-        self.ensure_blank_line();
-
-        // Whether `j` is one of the enum's values (not in quicktype, whose
-        // getter's `0` for any other value was taken as a case: a fix of
-        // ours, docs/PARITY.md, "Bugs fixed in quickertype"). The getters
-        // of classes, lists, maps, unions and top-levels check it first.
-        self.emit_block(
-            sl![
-                "bool cJSON_Is",
-                enum_name,
-                "Value(",
-                with_const("cJSON"),
-                " * j)"
-            ],
-            |r| {
-                r.emit_block(sl!["if (cJSON_IsString(j))"], |r| {
-                    r.for_each_enum_case(e, BlankLinePosition::None, |r, _, json_name, _| {
-                        let json_name = c_string_escape(json_name);
-                        r.emit_line(sl![
-                            "if (!strcmp(cJSON_GetStringValue(j), \"",
-                            json_name,
-                            "\")) return true;"
-                        ]);
-                        Ok(())
-                    })
-                })?;
-                r.emit_line("return false;");
                 Ok(())
             },
         )?;
@@ -1626,7 +1589,7 @@ impl<'a> CJsonRenderer<'a> {
         self.emit_parse_function(class_name)?;
 
         // Create cJSON to className generator function.
-        self.emit_get_value_function(class_name, |r| r.class_get_recur(class_name, c, 0, ""))?;
+        self.emit_get_value_function(class_name, |r| r.class_get_recur(class_name, c, 0))?;
 
         // Create className to cJSON generator function.
         self.emit_block(
@@ -1681,16 +1644,7 @@ impl<'a> CJsonRenderer<'a> {
 
     /// The `recur(type, level)` of `emitClassFunctions`' getter: the
     /// statements reading `t` (an array or a class) at `level`.
-    /// `fail` is what a list nested in a property's list does with an
-    /// element it rejects: link the lists built so far into the property
-    /// and delete the class (only an enum's elements are checked there).
-    fn class_get_recur(
-        &mut self,
-        class_name: Name,
-        t: TypeRef,
-        level: usize,
-        fail: &str,
-    ) -> Result<()> {
+    fn class_get_recur(&mut self, class_name: Name, t: TypeRef, level: usize) -> Result<()> {
         // Endless on a cycle through a nullable union (V8 overflows its stack).
         guard(|| {
             let ty = self.type_graph().type_at(t)?;
@@ -1717,12 +1671,8 @@ impl<'a> CJsonRenderer<'a> {
                         |r| {
                             if c.is("cJSON_Array") {
                                 let child2 = child + 1;
+                                r.class_get_recur(class_name, item_type, child)?;
                                 let items = defined(c.items.as_deref())?;
-                                let c_type = r.sourcelike_to_string(&items.c_type)?;
-                                let fail = format!(
-                                    "list_add_tail(x{cs}, x{child2}, sizeof({c_type} *)); {fail}"
-                                );
-                                r.class_get_recur(class_name, item_type, child, &fail)?;
                                 r.emit_line(sl![
                                     "list_add_tail(x",
                                     cs.as_str(),
@@ -1750,12 +1700,6 @@ impl<'a> CJsonRenderer<'a> {
                                 ]);
                                 Ok(())
                             } else {
-                                if c.is("cJSON_Enum") {
-                                    // Not in quicktype (a fix of ours,
-                                    // see `emit_enum_functions`).
-                                    let is_type = r.sourcelike_to_string(&c.is_type)?;
-                                    r.emit_line(format!("if (!{is_type}(e{cs})) {{ {fail} }}"));
-                                }
                                 r.emit_add_scalar(Container::List, &c, level, child)
                             }
                         },
@@ -1878,11 +1822,14 @@ impl<'a> CJsonRenderer<'a> {
                     num(max_length)
                 ));
             }
-            // quicktype adds `if (!cJSON_IsString(v) || 0 == cJSON_Get<E>Value(v))`
-            // for an enum, which takes a case whose value is 0
-            // (`qt-enum-values`) for an unknown value; the is_type check
-            // above is `cJSON_Is<E>Value` (a fix of ours, see
-            // `emit_enum_functions`).
+            if c.is("cJSON_Enum") {
+                // Enum getters return zero for unknown strings, so every
+                // direct enum property needs this guard.
+                let get_value = r.sourcelike_to_string(&c.get_value)?;
+                r.emit_line(format!(
+                    "if (!cJSON_IsString({value}) || 0 == {get_value}({value})) {fail}"
+                ));
+            }
             r.class_get_property_value(class_name, level, name, &json_name, p, &c)
         })?;
         if !p.is_optional && !c.is_nullable {
@@ -2176,14 +2123,7 @@ impl<'a> CJsonRenderer<'a> {
                 return panic("Invalid type");
             }
             let child2 = child + 1;
-            let fail = self.property_fail(
-                class_name,
-                level,
-                name,
-                &format!("list_add_tail(x{cs}, x{child2}, sizeof("),
-                items,
-            )?;
-            self.class_get_recur(class_name, ty.items()?, child, &fail)?;
+            self.class_get_recur(class_name, ty.items()?, child)?;
             self.emit_line(sl![
                 "list_add_tail(x",
                 cs.as_str(),
@@ -2231,41 +2171,8 @@ impl<'a> CJsonRenderer<'a> {
             ]);
             Ok(())
         } else {
-            if items.is("cJSON_Enum") {
-                // Not in quicktype, whose enum getter gives 0 for any other
-                // value (a fix of ours, see `emit_enum_functions`).
-                let l = lvl(level);
-                let property = self.sourcelike_to_string(&name.into())?;
-                let class = self.sourcelike_to_string(&class_name.into())?;
-                let is_type = self.sourcelike_to_string(&items.is_type)?;
-                self.emit_line(format!(
-                    "if (!{is_type}(e{child})) {{ x{l}->{property} = x{child}; cJSON_Delete{class}(x); return NULL; }}"
-                ));
-            }
             self.emit_add_scalar(Container::List, items, level, child)
         }
-    }
-
-    /// What a list nested in property `name`'s list or map (at `level`)
-    /// does with an element it rejects: `add` (the call that adds the
-    /// nested list, up to `sizeof(`) the nested list, set the property and
-    /// delete the class.
-    fn property_fail(
-        &mut self,
-        class_name: Name,
-        level: usize,
-        name: Name,
-        add: &str,
-        items: &TypeCJSON,
-    ) -> Result<String> {
-        let child = level + 1;
-        let l = lvl(level);
-        let c_type = self.sourcelike_to_string(&items.c_type)?;
-        let property = self.sourcelike_to_string(&name.into())?;
-        let class = self.sourcelike_to_string(&class_name.into())?;
-        Ok(format!(
-            "{add}{c_type} *)); x{l}->{property} = x{child}; cJSON_Delete{class}(x); return NULL;"
-        ))
     }
 
     /// The `add` of a map property in `emitClassFunctions`' getter: one
@@ -2286,14 +2193,7 @@ impl<'a> CJsonRenderer<'a> {
                 return panic("Invalid type");
             }
             let child2 = child + 1;
-            let fail = self.property_fail(
-                class_name,
-                level,
-                name,
-                &format!("hashtable_add(x{cs}, e{cs}->string, x{child2}, sizeof("),
-                items,
-            )?;
-            self.class_get_recur(class_name, ty.map_values()?, child, &fail)?;
+            self.class_get_recur(class_name, ty.map_values()?, child)?;
             self.emit_line(sl![
                 "hashtable_add(x",
                 cs.as_str(),
@@ -3031,17 +2931,6 @@ if (NULL == validated) {{
             self.emit_line(sl!["x->value = strdup(", &c.get_value, "(j));"]);
             Ok(())
         } else {
-            if c.is("cJSON_Enum") {
-                // Not in quicktype, whose enum getter gives 0 for any other
-                // value (a fix of ours, see `emit_enum_functions`).
-                self.emit_line(sl![
-                    "if (!",
-                    &c.is_type,
-                    "(j)) { cJSON_Delete",
-                    class_name,
-                    "(x); return NULL; }"
-                ]);
-            }
             self.emit_line(sl!["x->value = ", &c.get_value, "(j);"]);
             Ok(())
         }
@@ -3355,9 +3244,7 @@ if (NULL == validated) {{
                         c_type: sl!["enum ", name],
                         optional_qualifier: optional,
                         cjson_type: "cJSON_Enum",
-                        // quicktype's is `cJSON_IsString` (a fix of ours,
-                        // see `emit_enum_functions`).
-                        is_type: sl!["cJSON_Is", name, "Value"],
+                        is_type: "cJSON_IsString".into(),
                         get_value: sl!["cJSON_Get", name, "Value"],
                         add_to_object: "cJSON_AddItemToObject".into(),
                         create_object: sl!["cJSON_Create", name],

@@ -13,13 +13,6 @@ enum GeometryType cJSON_GetGeometryTypeValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsGeometryTypeValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "Point")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateGeometryType(const enum GeometryType x) {
     cJSON * j = NULL;
     switch (x) {
@@ -34,13 +27,6 @@ enum MaintainingAuthority cJSON_GetMaintainingAuthorityValue(const cJSON * j) {
         if (!strcmp(cJSON_GetStringValue(j), "City of Ballarat")) x = MAINTAININGAUTHORITY_CITY_OF_BALLARAT;
     }
     return x;
-}
-
-bool cJSON_IsMaintainingAuthorityValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "City of Ballarat")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateMaintainingAuthority(const enum MaintainingAuthority x) {
@@ -60,16 +46,6 @@ enum Class cJSON_GetClassValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "OS-Regional")) x = CLASS_OS_REGIONAL;
     }
     return x;
-}
-
-bool cJSON_IsClassValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "No Code Allocated")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "OS-District")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "OS-Neighbourhood")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "OS-Regional")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateClass(const enum Class x) {
@@ -93,15 +69,6 @@ enum Ward cJSON_GetWardValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsWardValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "South")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "North")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "Central")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateWard(const enum Ward x) {
     cJSON * j = NULL;
     switch (x) {
@@ -118,13 +85,6 @@ enum FeatureType cJSON_GetFeatureTypeValue(const cJSON * j) {
         if (!strcmp(cJSON_GetStringValue(j), "Feature")) x = FEATURETYPE_FEATURE;
     }
     return x;
-}
-
-bool cJSON_IsFeatureTypeValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "Feature")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateFeatureType(const enum FeatureType x) {
@@ -174,7 +134,8 @@ struct Geometry * cJSON_GetGeometryValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteGeometry(x); return NULL; }
             if (cJSON_HasObjectItem(j, "type")) {
-                if (!cJSON_IsGeometryTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGeometry(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGeometry(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetGeometryTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGeometry(x); return NULL; }
                 x->type = cJSON_GetGeometryTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
             }
         }
@@ -287,7 +248,8 @@ struct Properties * cJSON_GetPropertiesValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "Maintaining Authority")) { cJSON_DeleteProperties(x); return NULL; }
             if (cJSON_HasObjectItem(j, "Maintaining Authority")) {
-                if (!cJSON_IsMaintainingAuthorityValue(cJSON_GetObjectItemCaseSensitive(j, "Maintaining Authority"))) { cJSON_DeleteProperties(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "Maintaining Authority"))) { cJSON_DeleteProperties(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "Maintaining Authority")) || 0 == cJSON_GetMaintainingAuthorityValue(cJSON_GetObjectItemCaseSensitive(j, "Maintaining Authority"))) { cJSON_DeleteProperties(x); return NULL; }
                 x->maintaining_authority = cJSON_GetMaintainingAuthorityValue(cJSON_GetObjectItemCaseSensitive(j, "Maintaining Authority"));
             }
             if (!cJSON_HasObjectItem(j, "Number")) { cJSON_DeleteProperties(x); return NULL; }
@@ -302,7 +264,8 @@ struct Properties * cJSON_GetPropertiesValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "Class")) { cJSON_DeleteProperties(x); return NULL; }
             if (cJSON_HasObjectItem(j, "Class")) {
-                if (!cJSON_IsClassValue(cJSON_GetObjectItemCaseSensitive(j, "Class"))) { cJSON_DeleteProperties(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "Class"))) { cJSON_DeleteProperties(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "Class")) || 0 == cJSON_GetClassValue(cJSON_GetObjectItemCaseSensitive(j, "Class"))) { cJSON_DeleteProperties(x); return NULL; }
                 x->properties_class = cJSON_GetClassValue(cJSON_GetObjectItemCaseSensitive(j, "Class"));
             }
             if (!cJSON_HasObjectItem(j, "long")) { cJSON_DeleteProperties(x); return NULL; }
@@ -327,7 +290,8 @@ struct Properties * cJSON_GetPropertiesValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "Ward")) { cJSON_DeleteProperties(x); return NULL; }
             if (cJSON_HasObjectItem(j, "Ward")) {
-                if (!cJSON_IsWardValue(cJSON_GetObjectItemCaseSensitive(j, "Ward"))) { cJSON_DeleteProperties(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "Ward"))) { cJSON_DeleteProperties(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "Ward")) || 0 == cJSON_GetWardValue(cJSON_GetObjectItemCaseSensitive(j, "Ward"))) { cJSON_DeleteProperties(x); return NULL; }
                 x->ward = cJSON_GetWardValue(cJSON_GetObjectItemCaseSensitive(j, "Ward"));
             }
         }
@@ -459,7 +423,8 @@ struct Feature * cJSON_GetFeatureValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteFeature(x); return NULL; }
             if (cJSON_HasObjectItem(j, "type")) {
-                if (!cJSON_IsFeatureTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFeature(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFeature(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetFeatureTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFeature(x); return NULL; }
                 x->type = cJSON_GetFeatureTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
             }
         }

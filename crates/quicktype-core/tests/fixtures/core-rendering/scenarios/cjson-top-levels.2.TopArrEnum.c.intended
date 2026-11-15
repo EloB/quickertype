@@ -26,7 +26,7 @@ struct TopArrEnum * cJSON_GetTopArrEnumValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
-                    if (!cJSON_IsTopArrEnumElementValue(e)) { cJSON_DeleteTopArrEnum(x); return NULL; }
+                    if (!cJSON_IsString(e)) { cJSON_DeleteTopArrEnum(x); return NULL; }
                     enum TopArrEnumElement * item = cJSON_malloc(sizeof(*item));
                     if (NULL == item) { cJSON_DeleteTopArrEnum(x); return NULL; }
                     *item = cJSON_GetTopArrEnumElementValue(e);

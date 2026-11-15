@@ -15,15 +15,6 @@ enum TypeName cJSON_GetTypeNameValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsTypeNameValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "meta_data")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "number")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "text")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateTypeName(const enum TypeName x) {
     cJSON * j = NULL;
     switch (x) {
@@ -416,7 +407,8 @@ struct Column * cJSON_GetColumnValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "dataTypeName")) { cJSON_DeleteColumn(x); return NULL; }
             if (cJSON_HasObjectItem(j, "dataTypeName")) {
-                if (!cJSON_IsTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName")) || 0 == cJSON_GetTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
                 x->data_type_name = cJSON_GetTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName"));
             }
             if (cJSON_HasObjectItem(j, "description")) {
@@ -473,7 +465,8 @@ struct Column * cJSON_GetColumnValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "renderTypeName")) { cJSON_DeleteColumn(x); return NULL; }
             if (cJSON_HasObjectItem(j, "renderTypeName")) {
-                if (!cJSON_IsTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName")) || 0 == cJSON_GetTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
                 x->render_type_name = cJSON_GetTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName"));
             }
             if (cJSON_HasObjectItem(j, "tableColumnId")) {

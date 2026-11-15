@@ -16,16 +16,6 @@ enum DisplayType cJSON_GetDisplayTypeValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsDisplayTypeValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "table")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "data_lens")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "fatrow")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "page")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateDisplayType(const enum DisplayType x) {
     cJSON * j = NULL;
     switch (x) {
@@ -47,15 +37,6 @@ enum TopLevelFlag cJSON_GetTopLevelFlagValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsTopLevelFlagValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "default")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "restorable")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "restorePossibleForType")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateTopLevelFlag(const enum TopLevelFlag x) {
     cJSON * j = NULL;
     switch (x) {
@@ -74,13 +55,6 @@ enum GrantFlag cJSON_GetGrantFlagValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsGrantFlagValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "public")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateGrantFlag(const enum GrantFlag x) {
     cJSON * j = NULL;
     switch (x) {
@@ -95,13 +69,6 @@ enum GrantType cJSON_GetGrantTypeValue(const cJSON * j) {
         if (!strcmp(cJSON_GetStringValue(j), "viewer")) x = GRANTTYPE_VIEWER;
     }
     return x;
-}
-
-bool cJSON_IsGrantTypeValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "viewer")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateGrantType(const enum GrantType x) {
@@ -122,15 +89,6 @@ enum OrderColumnFieldName cJSON_GetOrderColumnFieldNameValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsOrderColumnFieldNameValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "date_received")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "agreement_date")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "in_effect_as_of_1_1_2012")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateOrderColumnFieldName(const enum OrderColumnFieldName x) {
     cJSON * j = NULL;
     switch (x) {
@@ -148,14 +106,6 @@ enum ChildOperator cJSON_GetChildOperatorValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "IS_NOT_BLANK")) x = CHILDOPERATOR_IS_NOT_BLANK;
     }
     return x;
-}
-
-bool cJSON_IsChildOperatorValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "EQUALS")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "IS_NOT_BLANK")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateChildOperator(const enum ChildOperator x) {
@@ -178,16 +128,6 @@ enum ChildColumnFieldName cJSON_GetChildColumnFieldNameValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsChildColumnFieldNameValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "product")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "complaint_what_happened")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "sub_product")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "issue")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateChildColumnFieldName(const enum ChildColumnFieldName x) {
     cJSON * j = NULL;
     switch (x) {
@@ -208,14 +148,6 @@ enum MetadataOperator cJSON_GetMetadataOperatorValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsMetadataOperatorValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "EQUALS")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "blank?")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateMetadataOperator(const enum MetadataOperator x) {
     cJSON * j = NULL;
     switch (x) {
@@ -234,14 +166,6 @@ enum WhereOperator cJSON_GetWhereOperatorValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsWhereOperatorValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "EQUALS")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "AND")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateWhereOperator(const enum WhereOperator x) {
     cJSON * j = NULL;
     switch (x) {
@@ -258,14 +182,6 @@ enum FieldType cJSON_GetFieldTypeValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "columnData")) x = FIELDTYPE_COLUMN_DATA;
     }
     return x;
-}
-
-bool cJSON_IsFieldTypeValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "columnLabel")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "columnData")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateFieldType(const enum FieldType x) {
@@ -288,16 +204,6 @@ enum Width cJSON_GetWidthValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsWidthValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "27%")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "40%")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "30%")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "33%")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateWidth(const enum Width x) {
     cJSON * j = NULL;
     switch (x) {
@@ -317,13 +223,6 @@ enum ModifyingViewUid cJSON_GetModifyingViewUidValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsModifyingViewUidValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "s6ew-h6mp")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateModifyingViewUid(const enum ModifyingViewUid x) {
     cJSON * j = NULL;
     switch (x) {
@@ -339,14 +238,6 @@ enum RoleName cJSON_GetRoleNameValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "publisher")) x = ROLENAME_PUBLISHER;
     }
     return x;
-}
-
-bool cJSON_IsRoleNameValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "administrator")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "publisher")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateRoleName(const enum RoleName x) {
@@ -366,13 +257,6 @@ enum Provenance cJSON_GetProvenanceValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsProvenanceValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "official")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateProvenance(const enum Provenance x) {
     cJSON * j = NULL;
     switch (x) {
@@ -389,13 +273,6 @@ enum PublicationStage cJSON_GetPublicationStageValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsPublicationStageValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "published")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreatePublicationStage(const enum PublicationStage x) {
     cJSON * j = NULL;
     switch (x) {
@@ -410,13 +287,6 @@ enum Right cJSON_GetRightValue(const cJSON * j) {
         if (!strcmp(cJSON_GetStringValue(j), "read")) x = RIGHT_READ;
     }
     return x;
-}
-
-bool cJSON_IsRightValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "read")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateRight(const enum Right x) {
@@ -438,16 +308,6 @@ enum RowsUpdatedBy cJSON_GetRowsUpdatedByValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsRowsUpdatedByValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "pjxg-ve4m")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "54a3-qyun")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "9e3m-2843")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "vvca-fr6g")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateRowsUpdatedBy(const enum RowsUpdatedBy x) {
     cJSON * j = NULL;
     switch (x) {
@@ -465,13 +325,6 @@ enum ViewType cJSON_GetViewTypeValue(const cJSON * j) {
         if (!strcmp(cJSON_GetStringValue(j), "tabular")) x = VIEWTYPE_TABULAR;
     }
     return x;
-}
-
-bool cJSON_IsViewTypeValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "tabular")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateViewType(const enum ViewType x) {
@@ -507,7 +360,6 @@ struct Grant * cJSON_GetGrantValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "flags");
                     cJSON_ArrayForEach(e1, j1) {
-                        if (!cJSON_IsGrantFlagValue(e1)) { x->flags = x1; cJSON_DeleteGrant(x); return NULL; }
                         enum GrantFlag * tmp = cJSON_malloc(sizeof(enum GrantFlag));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetGrantFlagValue(e1);
@@ -527,7 +379,8 @@ struct Grant * cJSON_GetGrantValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteGrant(x); return NULL; }
             if (cJSON_HasObjectItem(j, "type")) {
-                if (!cJSON_IsGrantTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGrant(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGrant(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetGrantTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGrant(x); return NULL; }
                 x->type = cJSON_GetGrantTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
             }
         }
@@ -801,7 +654,8 @@ struct Order * cJSON_GetOrderValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "columnFieldName")) { cJSON_DeleteOrder(x); return NULL; }
             if (cJSON_HasObjectItem(j, "columnFieldName")) {
-                if (!cJSON_IsOrderColumnFieldNameValue(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName"))) { cJSON_DeleteOrder(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName"))) { cJSON_DeleteOrder(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName")) || 0 == cJSON_GetOrderColumnFieldNameValue(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName"))) { cJSON_DeleteOrder(x); return NULL; }
                 x->column_field_name = cJSON_GetOrderColumnFieldNameValue(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName"));
             }
         }
@@ -1013,7 +867,8 @@ struct ChildMetadata * cJSON_GetChildMetadataValue(const cJSON * j) {
                 }
             }
             if (cJSON_HasObjectItem(j, "operator")) {
-                if (!cJSON_IsMetadataOperatorValue(cJSON_GetObjectItemCaseSensitive(j, "operator"))) { cJSON_DeleteChildMetadata(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "operator"))) { cJSON_DeleteChildMetadata(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "operator")) || 0 == cJSON_GetMetadataOperatorValue(cJSON_GetObjectItemCaseSensitive(j, "operator"))) { cJSON_DeleteChildMetadata(x); return NULL; }
                 if (NULL != (x->metadata_operator = cJSON_malloc(sizeof(enum MetadataOperator)))) {
                     *x->metadata_operator = cJSON_GetMetadataOperatorValue(cJSON_GetObjectItemCaseSensitive(j, "operator"));
                 }
@@ -1128,12 +983,14 @@ struct Child * cJSON_GetChildValue(const cJSON * j) {
             memset(x, 0, sizeof(struct Child));
             if (!cJSON_HasObjectItem(j, "operator")) { cJSON_DeleteChild(x); return NULL; }
             if (cJSON_HasObjectItem(j, "operator")) {
-                if (!cJSON_IsChildOperatorValue(cJSON_GetObjectItemCaseSensitive(j, "operator"))) { cJSON_DeleteChild(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "operator"))) { cJSON_DeleteChild(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "operator")) || 0 == cJSON_GetChildOperatorValue(cJSON_GetObjectItemCaseSensitive(j, "operator"))) { cJSON_DeleteChild(x); return NULL; }
                 x->child_operator = cJSON_GetChildOperatorValue(cJSON_GetObjectItemCaseSensitive(j, "operator"));
             }
             if (!cJSON_HasObjectItem(j, "columnFieldName")) { cJSON_DeleteChild(x); return NULL; }
             if (cJSON_HasObjectItem(j, "columnFieldName")) {
-                if (!cJSON_IsChildColumnFieldNameValue(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName"))) { cJSON_DeleteChild(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName"))) { cJSON_DeleteChild(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName")) || 0 == cJSON_GetChildColumnFieldNameValue(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName"))) { cJSON_DeleteChild(x); return NULL; }
                 x->column_field_name = cJSON_GetChildColumnFieldNameValue(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName"));
             }
             if (cJSON_HasObjectItem(j, "metadata")) {
@@ -1224,7 +1081,8 @@ struct Where * cJSON_GetWhereValue(const cJSON * j) {
                 }
             }
             if (cJSON_HasObjectItem(j, "columnFieldName")) {
-                if (!cJSON_IsChildColumnFieldNameValue(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName"))) { cJSON_DeleteWhere(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName"))) { cJSON_DeleteWhere(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName")) || 0 == cJSON_GetChildColumnFieldNameValue(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName"))) { cJSON_DeleteWhere(x); return NULL; }
                 if (NULL != (x->column_field_name = cJSON_malloc(sizeof(enum ChildColumnFieldName)))) {
                     *x->column_field_name = cJSON_GetChildColumnFieldNameValue(cJSON_GetObjectItemCaseSensitive(j, "columnFieldName"));
                 }
@@ -1240,7 +1098,8 @@ struct Where * cJSON_GetWhereValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "operator")) { cJSON_DeleteWhere(x); return NULL; }
             if (cJSON_HasObjectItem(j, "operator")) {
-                if (!cJSON_IsWhereOperatorValue(cJSON_GetObjectItemCaseSensitive(j, "operator"))) { cJSON_DeleteWhere(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "operator"))) { cJSON_DeleteWhere(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "operator")) || 0 == cJSON_GetWhereOperatorValue(cJSON_GetObjectItemCaseSensitive(j, "operator"))) { cJSON_DeleteWhere(x); return NULL; }
                 x->where_operator = cJSON_GetWhereOperatorValue(cJSON_GetObjectItemCaseSensitive(j, "operator"));
             }
         }
@@ -1627,7 +1486,8 @@ struct Field * cJSON_GetFieldValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteField(x); return NULL; }
             if (cJSON_HasObjectItem(j, "type")) {
-                if (!cJSON_IsFieldTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteField(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteField(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetFieldTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteField(x); return NULL; }
                 x->type = cJSON_GetFieldTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
             }
         }
@@ -1769,7 +1629,8 @@ struct Styles * cJSON_GetStylesValue(const cJSON * j) {
             memset(x, 0, sizeof(struct Styles));
             if (!cJSON_HasObjectItem(j, "width")) { cJSON_DeleteStyles(x); return NULL; }
             if (cJSON_HasObjectItem(j, "width")) {
-                if (!cJSON_IsWidthValue(cJSON_GetObjectItemCaseSensitive(j, "width"))) { cJSON_DeleteStyles(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "width"))) { cJSON_DeleteStyles(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "width")) || 0 == cJSON_GetWidthValue(cJSON_GetObjectItemCaseSensitive(j, "width"))) { cJSON_DeleteStyles(x); return NULL; }
                 x->width = cJSON_GetWidthValue(cJSON_GetObjectItemCaseSensitive(j, "width"));
             }
         }
@@ -2340,7 +2201,6 @@ struct TopLevelMetadata * cJSON_GetTopLevelMetadataValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "availableDisplayTypes");
                     cJSON_ArrayForEach(e1, j1) {
-                        if (!cJSON_IsDisplayTypeValue(e1)) { x->available_display_types = x1; cJSON_DeleteTopLevelMetadata(x); return NULL; }
                         enum DisplayType * tmp = cJSON_malloc(sizeof(enum DisplayType));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetDisplayTypeValue(e1);
@@ -2575,7 +2435,8 @@ struct Owner * cJSON_GetOwnerValue(const cJSON * j) {
                 }
             }
             if (cJSON_HasObjectItem(j, "roleName")) {
-                if (!cJSON_IsRoleNameValue(cJSON_GetObjectItemCaseSensitive(j, "roleName"))) { cJSON_DeleteOwner(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "roleName"))) { cJSON_DeleteOwner(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "roleName")) || 0 == cJSON_GetRoleNameValue(cJSON_GetObjectItemCaseSensitive(j, "roleName"))) { cJSON_DeleteOwner(x); return NULL; }
                 if (NULL != (x->role_name = cJSON_malloc(sizeof(enum RoleName)))) {
                     *x->role_name = cJSON_GetRoleNameValue(cJSON_GetObjectItemCaseSensitive(j, "roleName"));
                 }
@@ -2820,7 +2681,8 @@ struct TableAuthor * cJSON_GetTableAuthorValue(const cJSON * j) {
                 }
             }
             if (cJSON_HasObjectItem(j, "roleName")) {
-                if (!cJSON_IsRoleNameValue(cJSON_GetObjectItemCaseSensitive(j, "roleName"))) { cJSON_DeleteTableAuthor(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "roleName"))) { cJSON_DeleteTableAuthor(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "roleName")) || 0 == cJSON_GetRoleNameValue(cJSON_GetObjectItemCaseSensitive(j, "roleName"))) { cJSON_DeleteTableAuthor(x); return NULL; }
                 if (NULL != (x->role_name = cJSON_malloc(sizeof(enum RoleName)))) {
                     *x->role_name = cJSON_GetRoleNameValue(cJSON_GetObjectItemCaseSensitive(j, "roleName"));
                 }
@@ -2954,7 +2816,8 @@ struct TopLevelElement * cJSON_GetTopLevelElementValue(const cJSON * j) {
                 x->description = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "description")));
             }
             if (cJSON_HasObjectItem(j, "displayType")) {
-                if (!cJSON_IsDisplayTypeValue(cJSON_GetObjectItemCaseSensitive(j, "displayType"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "displayType"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "displayType")) || 0 == cJSON_GetDisplayTypeValue(cJSON_GetObjectItemCaseSensitive(j, "displayType"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
                 if (NULL != (x->display_type = cJSON_malloc(sizeof(enum DisplayType)))) {
                     *x->display_type = cJSON_GetDisplayTypeValue(cJSON_GetObjectItemCaseSensitive(j, "displayType"));
                 }
@@ -2971,7 +2834,6 @@ struct TopLevelElement * cJSON_GetTopLevelElementValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "flags");
                     cJSON_ArrayForEach(e1, j1) {
-                        if (!cJSON_IsTopLevelFlagValue(e1)) { x->flags = x1; cJSON_DeleteTopLevelElement(x); return NULL; }
                         enum TopLevelFlag * tmp = cJSON_malloc(sizeof(enum TopLevelFlag));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetTopLevelFlagValue(e1);
@@ -3049,7 +2911,8 @@ struct TopLevelElement * cJSON_GetTopLevelElementValue(const cJSON * j) {
                 }
             }
             if (cJSON_HasObjectItem(j, "modifyingViewUid")) {
-                if (!cJSON_IsModifyingViewUidValue(cJSON_GetObjectItemCaseSensitive(j, "modifyingViewUid"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "modifyingViewUid"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "modifyingViewUid")) || 0 == cJSON_GetModifyingViewUidValue(cJSON_GetObjectItemCaseSensitive(j, "modifyingViewUid"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
                 if (NULL != (x->modifying_view_uid = cJSON_malloc(sizeof(enum ModifyingViewUid)))) {
                     *x->modifying_view_uid = cJSON_GetModifyingViewUidValue(cJSON_GetObjectItemCaseSensitive(j, "modifyingViewUid"));
                 }
@@ -3087,7 +2950,8 @@ struct TopLevelElement * cJSON_GetTopLevelElementValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "provenance")) { cJSON_DeleteTopLevelElement(x); return NULL; }
             if (cJSON_HasObjectItem(j, "provenance")) {
-                if (!cJSON_IsProvenanceValue(cJSON_GetObjectItemCaseSensitive(j, "provenance"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "provenance"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "provenance")) || 0 == cJSON_GetProvenanceValue(cJSON_GetObjectItemCaseSensitive(j, "provenance"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
                 x->provenance = cJSON_GetProvenanceValue(cJSON_GetObjectItemCaseSensitive(j, "provenance"));
             }
             if (!cJSON_HasObjectItem(j, "publicationAppendEnabled")) { cJSON_DeleteTopLevelElement(x); return NULL; }
@@ -3108,7 +2972,8 @@ struct TopLevelElement * cJSON_GetTopLevelElementValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "publicationStage")) { cJSON_DeleteTopLevelElement(x); return NULL; }
             if (cJSON_HasObjectItem(j, "publicationStage")) {
-                if (!cJSON_IsPublicationStageValue(cJSON_GetObjectItemCaseSensitive(j, "publicationStage"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "publicationStage"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "publicationStage")) || 0 == cJSON_GetPublicationStageValue(cJSON_GetObjectItemCaseSensitive(j, "publicationStage"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
                 x->publication_stage = cJSON_GetPublicationStageValue(cJSON_GetObjectItemCaseSensitive(j, "publicationStage"));
             }
             if (cJSON_HasObjectItem(j, "ratings")) {
@@ -3128,7 +2993,6 @@ struct TopLevelElement * cJSON_GetTopLevelElementValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "rights");
                     cJSON_ArrayForEach(e1, j1) {
-                        if (!cJSON_IsRightValue(e1)) { x->rights = x1; cJSON_DeleteTopLevelElement(x); return NULL; }
                         enum Right * tmp = cJSON_malloc(sizeof(enum Right));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetRightValue(e1);
@@ -3158,7 +3022,8 @@ struct TopLevelElement * cJSON_GetTopLevelElementValue(const cJSON * j) {
                 }
             }
             if (cJSON_HasObjectItem(j, "rowsUpdatedBy")) {
-                if (!cJSON_IsRowsUpdatedByValue(cJSON_GetObjectItemCaseSensitive(j, "rowsUpdatedBy"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "rowsUpdatedBy"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "rowsUpdatedBy")) || 0 == cJSON_GetRowsUpdatedByValue(cJSON_GetObjectItemCaseSensitive(j, "rowsUpdatedBy"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
                 if (NULL != (x->rows_updated_by = cJSON_malloc(sizeof(enum RowsUpdatedBy)))) {
                     *x->rows_updated_by = cJSON_GetRowsUpdatedByValue(cJSON_GetObjectItemCaseSensitive(j, "rowsUpdatedBy"));
                 }
@@ -3203,7 +3068,8 @@ struct TopLevelElement * cJSON_GetTopLevelElementValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "viewType")) { cJSON_DeleteTopLevelElement(x); return NULL; }
             if (cJSON_HasObjectItem(j, "viewType")) {
-                if (!cJSON_IsViewTypeValue(cJSON_GetObjectItemCaseSensitive(j, "viewType"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "viewType"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "viewType")) || 0 == cJSON_GetViewTypeValue(cJSON_GetObjectItemCaseSensitive(j, "viewType"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
                 x->view_type = cJSON_GetViewTypeValue(cJSON_GetObjectItemCaseSensitive(j, "viewType"));
             }
         }

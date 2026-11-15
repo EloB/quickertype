@@ -1,34 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -154,21 +154,27 @@
- };
- 
- enum Breed cJSON_GetBreedValue(const cJSON * j);
-+bool cJSON_IsBreedValue(const cJSON * j);
- cJSON * cJSON_CreateBreed(const enum Breed x);
- 
- enum Firstname cJSON_GetFirstnameValue(const cJSON * j);
-+bool cJSON_IsFirstnameValue(const cJSON * j);
- cJSON * cJSON_CreateFirstname(const enum Firstname x);
- 
- enum Lastname cJSON_GetLastnameValue(const cJSON * j);
-+bool cJSON_IsLastnameValue(const cJSON * j);
- cJSON * cJSON_CreateLastname(const enum Lastname x);
- 
- enum Pvptitle cJSON_GetPvptitleValue(const cJSON * j);
-+bool cJSON_IsPvptitleValue(const cJSON * j);
- cJSON * cJSON_CreatePvptitle(const enum Pvptitle x);
- 
- enum RankTitle cJSON_GetRankTitleValue(const cJSON * j);
-+bool cJSON_IsRankTitleValue(const cJSON * j);
- cJSON * cJSON_CreateRankTitle(const enum RankTitle x);
- 
- enum Sex cJSON_GetSexValue(const cJSON * j);
-+bool cJSON_IsSexValue(const cJSON * j);
- cJSON * cJSON_CreateSex(const enum Sex x);
- 
- #define cJSON_IsTopLevelUnion(j) (cJSON_IsObject(j) || cJSON_IsArray(j) || cJSON_IsString(j))
-@@ -198,7 +204,7 @@
+@@ -198,7 +198,7 @@
  
  enum Breed cJSON_GetBreedValue(const cJSON * j) {
      enum Breed x = 0;
@@ -37,24 +9,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "Atrox")) x = BREED_ATROX;
          else if (!strcmp(cJSON_GetStringValue(j), "Solitus")) x = BREED_SOLITUS;
          else if (!strcmp(cJSON_GetStringValue(j), "Opifex")) x = BREED_OPIFEX;
-@@ -207,6 +213,16 @@
-     return x;
- }
- 
-+bool cJSON_IsBreedValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Atrox")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Solitus")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Opifex")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Nano")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateBreed(const enum Breed x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -220,11 +236,19 @@
+@@ -220,7 +220,7 @@
  
  enum Firstname cJSON_GetFirstnameValue(const cJSON * j) {
      enum Firstname x = 0;
@@ -63,19 +18,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "")) x = FIRSTNAME_EMPTY;
          else if (!strcmp(cJSON_GetStringValue(j), "Chi")) x = FIRSTNAME_CHI;
      }
-     return x;
-+}
-+
-+bool cJSON_IsFirstnameValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Chi")) return true;
-+    }
-+    return false;
- }
- 
- cJSON * cJSON_CreateFirstname(const enum Firstname x) {
-@@ -238,13 +262,21 @@
+@@ -238,7 +238,7 @@
  
  enum Lastname cJSON_GetLastnameValue(const cJSON * j) {
      enum Lastname x = 0;
@@ -84,21 +27,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "")) x = LASTNAME_EMPTY;
          else if (!strcmp(cJSON_GetStringValue(j), "Washko")) x = LASTNAME_WASHKO;
      }
-     return x;
- }
- 
-+bool cJSON_IsLastnameValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Washko")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateLastname(const enum Lastname x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -256,10 +288,17 @@
+@@ -256,7 +256,7 @@
  
  enum Pvptitle cJSON_GetPvptitleValue(const cJSON * j) {
      enum Pvptitle x = 0;
@@ -107,17 +36,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "Freshman")) x = PVPTITLE_FRESHMAN;
      }
      return x;
-+}
-+
-+bool cJSON_IsPvptitleValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Freshman")) return true;
-+    }
-+    return false;
- }
- 
- cJSON * cJSON_CreatePvptitle(const enum Pvptitle x) {
-@@ -272,7 +311,7 @@
+@@ -272,7 +272,7 @@
  
  enum RankTitle cJSON_GetRankTitleValue(const cJSON * j) {
      enum RankTitle x = 0;
@@ -126,24 +45,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "President")) x = RANKTITLE_PRESIDENT;
          else if (!strcmp(cJSON_GetStringValue(j), "Advisor")) x = RANKTITLE_ADVISOR;
          else if (!strcmp(cJSON_GetStringValue(j), "Veteran")) x = RANKTITLE_VETERAN;
-@@ -281,6 +320,16 @@
-     return x;
- }
- 
-+bool cJSON_IsRankTitleValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "President")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Advisor")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Veteran")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Applicant")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateRankTitle(const enum RankTitle x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -294,7 +343,7 @@
+@@ -294,7 +294,7 @@
  
  enum Sex cJSON_GetSexValue(const cJSON * j) {
      enum Sex x = 0;
@@ -152,70 +54,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "Neuter")) x = SEX_NEUTER;
          else if (!strcmp(cJSON_GetStringValue(j), "Male")) x = SEX_MALE;
          else if (!strcmp(cJSON_GetStringValue(j), "Female")) x = SEX_FEMALE;
-@@ -302,6 +351,15 @@
-     return x;
- }
- 
-+bool cJSON_IsSexValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Neuter")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Male")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Female")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateSex(const enum Sex x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -408,14 +466,12 @@
-             memset(x, 0, sizeof(struct PurpleTopLevel));
-             if (!cJSON_HasObjectItem(j, "SEX")) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "SEX")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "SEX"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "SEX")) || 0 == cJSON_GetSexValue(cJSON_GetObjectItemCaseSensitive(j, "SEX"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-+                if (!cJSON_IsSexValue(cJSON_GetObjectItemCaseSensitive(j, "SEX"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-                 x->sex = cJSON_GetSexValue(cJSON_GetObjectItemCaseSensitive(j, "SEX"));
-             }
-             if (!cJSON_HasObjectItem(j, "BREED")) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "BREED")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "BREED"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "BREED")) || 0 == cJSON_GetBreedValue(cJSON_GetObjectItemCaseSensitive(j, "BREED"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-+                if (!cJSON_IsBreedValue(cJSON_GetObjectItemCaseSensitive(j, "BREED"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-                 x->breed = cJSON_GetBreedValue(cJSON_GetObjectItemCaseSensitive(j, "BREED"));
-             }
-             if (!cJSON_HasObjectItem(j, "PVPRATING")) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-@@ -435,20 +491,17 @@
-             }
-             if (!cJSON_HasObjectItem(j, "FIRSTNAME")) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "FIRSTNAME")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "FIRSTNAME"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "FIRSTNAME")) || 0 == cJSON_GetFirstnameValue(cJSON_GetObjectItemCaseSensitive(j, "FIRSTNAME"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-+                if (!cJSON_IsFirstnameValue(cJSON_GetObjectItemCaseSensitive(j, "FIRSTNAME"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-                 x->firstname = cJSON_GetFirstnameValue(cJSON_GetObjectItemCaseSensitive(j, "FIRSTNAME"));
-             }
-             if (!cJSON_HasObjectItem(j, "PVPTITLE")) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "PVPTITLE")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "PVPTITLE"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "PVPTITLE")) || 0 == cJSON_GetPvptitleValue(cJSON_GetObjectItemCaseSensitive(j, "PVPTITLE"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-+                if (!cJSON_IsPvptitleValue(cJSON_GetObjectItemCaseSensitive(j, "PVPTITLE"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-                 x->pvptitle = cJSON_GetPvptitleValue(cJSON_GetObjectItemCaseSensitive(j, "PVPTITLE"));
-             }
-             if (!cJSON_HasObjectItem(j, "LASTNAME")) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "LASTNAME")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "LASTNAME"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "LASTNAME")) || 0 == cJSON_GetLastnameValue(cJSON_GetObjectItemCaseSensitive(j, "LASTNAME"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-+                if (!cJSON_IsLastnameValue(cJSON_GetObjectItemCaseSensitive(j, "LASTNAME"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-                 x->lastname = cJSON_GetLastnameValue(cJSON_GetObjectItemCaseSensitive(j, "LASTNAME"));
-             }
-             if (!cJSON_HasObjectItem(j, "CHAR_DIMENSION")) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-@@ -458,8 +511,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "RANK_TITLE")) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "RANK_TITLE")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "RANK_TITLE"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "RANK_TITLE")) || 0 == cJSON_GetRankTitleValue(cJSON_GetObjectItemCaseSensitive(j, "RANK_TITLE"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-+                if (!cJSON_IsRankTitleValue(cJSON_GetObjectItemCaseSensitive(j, "RANK_TITLE"))) { cJSON_DeletePurpleTopLevel(x); return NULL; }
-                 x->rank_title = cJSON_GetRankTitleValue(cJSON_GetObjectItemCaseSensitive(j, "RANK_TITLE"));
-             }
-             if (!cJSON_HasObjectItem(j, "RANK")) { cJSON_DeletePurpleTopLevel(x); return NULL; }

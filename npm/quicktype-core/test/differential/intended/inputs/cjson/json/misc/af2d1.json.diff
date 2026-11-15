@@ -1,50 +1,6 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -171,33 +171,43 @@
- };
- 
- enum GeometryType cJSON_GetGeometryTypeValue(const cJSON * j);
-+bool cJSON_IsGeometryTypeValue(const cJSON * j);
- cJSON * cJSON_CreateGeometryType(const enum GeometryType x);
- 
- enum GeometryName cJSON_GetGeometryNameValue(const cJSON * j);
-+bool cJSON_IsGeometryNameValue(const cJSON * j);
- cJSON * cJSON_CreateGeometryName(const enum GeometryName x);
- 
- enum AddImprov cJSON_GetAddImprovValue(const cJSON * j);
-+bool cJSON_IsAddImprovValue(const cJSON * j);
- cJSON * cJSON_CreateAddImprov(const enum AddImprov x);
- 
- enum FundingBa cJSON_GetFundingBaValue(const cJSON * j);
-+bool cJSON_IsFundingBaValue(const cJSON * j);
- cJSON * cJSON_CreateFundingBa(const enum FundingBa x);
- 
- enum LevelAccu cJSON_GetLevelAccuValue(const cJSON * j);
-+bool cJSON_IsLevelAccuValue(const cJSON * j);
- cJSON * cJSON_CreateLevelAccu(const enum LevelAccu x);
- 
- enum Material cJSON_GetMaterialValue(const cJSON * j);
-+bool cJSON_IsMaterialValue(const cJSON * j);
- cJSON * cJSON_CreateMaterial(const enum Material x);
- 
- enum MiSymbolo cJSON_GetMiSymboloValue(const cJSON * j);
-+bool cJSON_IsMiSymboloValue(const cJSON * j);
- cJSON * cJSON_CreateMiSymbolo(const enum MiSymbolo x);
- 
- enum Status cJSON_GetStatusValue(const cJSON * j);
-+bool cJSON_IsStatusValue(const cJSON * j);
- cJSON * cJSON_CreateStatus(const enum Status x);
- 
- enum PropertiesType cJSON_GetPropertiesTypeValue(const cJSON * j);
-+bool cJSON_IsPropertiesTypeValue(const cJSON * j);
- cJSON * cJSON_CreatePropertiesType(const enum PropertiesType x);
- 
- enum FeatureType cJSON_GetFeatureTypeValue(const cJSON * j);
-+bool cJSON_IsFeatureTypeValue(const cJSON * j);
- cJSON * cJSON_CreateFeatureType(const enum FeatureType x);
- 
- struct CrsProperties * cJSON_ParseCrsProperties(const char * s);
-@@ -238,10 +248,17 @@
+@@ -238,7 +238,7 @@
  
  enum GeometryType cJSON_GetGeometryTypeValue(const cJSON * j) {
      enum GeometryType x = 0;
@@ -53,17 +9,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "MultiPolygon")) x = GEOMETRYTYPE_MULTI_POLYGON;
      }
      return x;
-+}
-+
-+bool cJSON_IsGeometryTypeValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "MultiPolygon")) return true;
-+    }
-+    return false;
- }
- 
- cJSON * cJSON_CreateGeometryType(const enum GeometryType x) {
-@@ -254,12 +271,19 @@
+@@ -254,7 +254,7 @@
  
  enum GeometryName cJSON_GetGeometryNameValue(const cJSON * j) {
      enum GeometryName x = 0;
@@ -72,19 +18,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "geom")) x = GEOMETRYNAME_GEOM;
      }
      return x;
- }
- 
-+bool cJSON_IsGeometryNameValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "geom")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateGeometryName(const enum GeometryName x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -270,12 +294,21 @@
+@@ -270,7 +270,7 @@
  
  enum AddImprov cJSON_GetAddImprovValue(const cJSON * j) {
      enum AddImprov x = 0;
@@ -93,21 +27,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "f")) x = ADDIMPROV_F;
          else if (!strcmp(cJSON_GetStringValue(j), "F")) x = ADDIMPROV_ADD_IMPROV_F;
          else if (!strcmp(cJSON_GetStringValue(j), "t")) x = ADDIMPROV_T;
-     }
-     return x;
-+}
-+
-+bool cJSON_IsAddImprovValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "f")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "F")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "t")) return true;
-+    }
-+    return false;
- }
- 
- cJSON * cJSON_CreateAddImprov(const enum AddImprov x) {
-@@ -290,7 +323,7 @@
+@@ -290,7 +290,7 @@
  
  enum FundingBa cJSON_GetFundingBaValue(const cJSON * j) {
      enum FundingBa x = 0;
@@ -116,24 +36,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "Non GCCC")) x = FUNDINGBA_NON_GCCC;
          else if (!strcmp(cJSON_GetStringValue(j), "Capex")) x = FUNDINGBA_CAPEX;
          else if (!strcmp(cJSON_GetStringValue(j), "Initial")) x = FUNDINGBA_INITIAL;
-@@ -299,6 +332,16 @@
-     return x;
- }
- 
-+bool cJSON_IsFundingBaValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Non GCCC")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Capex")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Initial")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Contribute")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateFundingBa(const enum FundingBa x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -312,7 +355,7 @@
+@@ -312,7 +312,7 @@
  
  enum LevelAccu cJSON_GetLevelAccuValue(const cJSON * j) {
      enum LevelAccu x = 0;
@@ -142,23 +45,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "GPS Corrected 1.0M")) x = LEVELACCU_GPS_CORRECTED_10_M;
          else if (!strcmp(cJSON_GetStringValue(j), "APPROX")) x = LEVELACCU_APPROX;
          else if (!strcmp(cJSON_GetStringValue(j), "GPS COrrected 1.0M")) x = LEVELACCU_GPS_C_ORRECTED_10_M;
-@@ -320,6 +363,15 @@
-     return x;
- }
- 
-+bool cJSON_IsLevelAccuValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "GPS Corrected 1.0M")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "APPROX")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "GPS COrrected 1.0M")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateLevelAccu(const enum LevelAccu x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -332,7 +384,7 @@
+@@ -332,7 +332,7 @@
  
  enum Material cJSON_GetMaterialValue(const cJSON * j) {
      enum Material x = 0;
@@ -167,26 +54,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "Gravel")) x = MATERIAL_GRAVEL;
          else if (!strcmp(cJSON_GetStringValue(j), "Concrete")) x = MATERIAL_CONCRETE;
          else if (!strcmp(cJSON_GetStringValue(j), "Bitumen")) x = MATERIAL_BITUMEN;
-@@ -343,6 +395,18 @@
-     return x;
- }
- 
-+bool cJSON_IsMaterialValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Gravel")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Concrete")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Bitumen")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Interlock Conc Block")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Other")) return true;
-+        if (!strcmp(cJSON_GetStringValue(j), "Earth")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateMaterial(const enum Material x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -358,12 +422,19 @@
+@@ -358,7 +358,7 @@
  
  enum MiSymbolo cJSON_GetMiSymboloValue(const cJSON * j) {
      enum MiSymbolo x = 0;
@@ -195,19 +63,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "Pen (2, 2, 65535) Brush (1, 0, 16777215)")) x = MISYMBOLO_PEN_2265535_BRUSH_1016777215;
      }
      return x;
- }
- 
-+bool cJSON_IsMiSymboloValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Pen (2, 2, 65535) Brush (1, 0, 16777215)")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateMiSymbolo(const enum MiSymbolo x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -374,12 +445,19 @@
+@@ -374,7 +374,7 @@
  
  enum Status cJSON_GetStatusValue(const cJSON * j) {
      enum Status x = 0;
@@ -216,19 +72,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "CURRENT")) x = STATUS_CURRENT;
      }
      return x;
- }
- 
-+bool cJSON_IsStatusValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "CURRENT")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreateStatus(const enum Status x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -390,12 +468,19 @@
+@@ -390,7 +390,7 @@
  
  enum PropertiesType cJSON_GetPropertiesTypeValue(const cJSON * j) {
      enum PropertiesType x = 0;
@@ -237,19 +81,7 @@
          if (!strcmp(cJSON_GetStringValue(j), "Boat Ramp")) x = PROPERTIESTYPE_BOAT_RAMP;
      }
      return x;
- }
- 
-+bool cJSON_IsPropertiesTypeValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Boat Ramp")) return true;
-+    }
-+    return false;
-+}
-+
- cJSON * cJSON_CreatePropertiesType(const enum PropertiesType x) {
-     cJSON * j = NULL;
-     switch (x) {
-@@ -406,10 +491,17 @@
+@@ -406,7 +406,7 @@
  
  enum FeatureType cJSON_GetFeatureTypeValue(const cJSON * j) {
      enum FeatureType x = 0;
@@ -258,120 +90,3 @@
          if (!strcmp(cJSON_GetStringValue(j), "Feature")) x = FEATURETYPE_FEATURE;
      }
      return x;
-+}
-+
-+bool cJSON_IsFeatureTypeValue(const cJSON * j) {
-+    if (cJSON_IsString(j)) {
-+        if (!strcmp(cJSON_GetStringValue(j), "Feature")) return true;
-+    }
-+    return false;
- }
- 
- cJSON * cJSON_CreateFeatureType(const enum FeatureType x) {
-@@ -585,8 +677,7 @@
-             memset(x, 0, sizeof(struct Geometry));
-             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteGeometry(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "type")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGeometry(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetGeometryTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGeometry(x); return NULL; }
-+                if (!cJSON_IsGeometryTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteGeometry(x); return NULL; }
-                 x->type = cJSON_GetGeometryTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
-             }
-             if (!cJSON_HasObjectItem(j, "coordinates")) { cJSON_DeleteGeometry(x); return NULL; }
-@@ -744,8 +835,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "status")) { cJSON_DeleteFeatureProperties(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "status")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "status")) || 0 == cJSON_GetStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-+                if (!cJSON_IsStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-                 x->status = cJSON_GetStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"));
-             }
-             if (!cJSON_HasObjectItem(j, "asset_numb")) { cJSON_DeleteFeatureProperties(x); return NULL; }
-@@ -760,16 +850,14 @@
-             }
-             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteFeatureProperties(x); return NULL; }
-             if ((cJSON_HasObjectItem(j, "type")) && (!cJSON_IsNull(cJSON_GetObjectItemCaseSensitive(j, "type")))) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetPropertiesTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-+                if (!cJSON_IsPropertiesTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-                 if (NULL != (x->type = cJSON_malloc(sizeof(enum PropertiesType)))) {
-                     *x->type = cJSON_GetPropertiesTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
-                 }
-             }
-             if (!cJSON_HasObjectItem(j, "material")) { cJSON_DeleteFeatureProperties(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "material")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "material"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "material")) || 0 == cJSON_GetMaterialValue(cJSON_GetObjectItemCaseSensitive(j, "material"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-+                if (!cJSON_IsMaterialValue(cJSON_GetObjectItemCaseSensitive(j, "material"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-                 x->material = cJSON_GetMaterialValue(cJSON_GetObjectItemCaseSensitive(j, "material"));
-             }
-             if (!cJSON_HasObjectItem(j, "number_lan")) { cJSON_DeleteFeatureProperties(x); return NULL; }
-@@ -779,8 +867,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "add_improv")) { cJSON_DeleteFeatureProperties(x); return NULL; }
-             if ((cJSON_HasObjectItem(j, "add_improv")) && (!cJSON_IsNull(cJSON_GetObjectItemCaseSensitive(j, "add_improv")))) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "add_improv"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "add_improv")) || 0 == cJSON_GetAddImprovValue(cJSON_GetObjectItemCaseSensitive(j, "add_improv"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-+                if (!cJSON_IsAddImprovValue(cJSON_GetObjectItemCaseSensitive(j, "add_improv"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-                 if (NULL != (x->add_improv = cJSON_malloc(sizeof(enum AddImprov)))) {
-                     *x->add_improv = cJSON_GetAddImprovValue(cJSON_GetObjectItemCaseSensitive(j, "add_improv"));
-                 }
-@@ -871,16 +958,14 @@
-             }
-             if (!cJSON_HasObjectItem(j, "positional")) { cJSON_DeleteFeatureProperties(x); return NULL; }
-             if ((cJSON_HasObjectItem(j, "positional")) && (!cJSON_IsNull(cJSON_GetObjectItemCaseSensitive(j, "positional")))) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "positional"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "positional")) || 0 == cJSON_GetLevelAccuValue(cJSON_GetObjectItemCaseSensitive(j, "positional"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-+                if (!cJSON_IsLevelAccuValue(cJSON_GetObjectItemCaseSensitive(j, "positional"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-                 if (NULL != (x->positional = cJSON_malloc(sizeof(enum LevelAccu)))) {
-                     *x->positional = cJSON_GetLevelAccuValue(cJSON_GetObjectItemCaseSensitive(j, "positional"));
-                 }
-             }
-             if (!cJSON_HasObjectItem(j, "level_accu")) { cJSON_DeleteFeatureProperties(x); return NULL; }
-             if ((cJSON_HasObjectItem(j, "level_accu")) && (!cJSON_IsNull(cJSON_GetObjectItemCaseSensitive(j, "level_accu")))) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "level_accu"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "level_accu")) || 0 == cJSON_GetLevelAccuValue(cJSON_GetObjectItemCaseSensitive(j, "level_accu"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-+                if (!cJSON_IsLevelAccuValue(cJSON_GetObjectItemCaseSensitive(j, "level_accu"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-                 if (NULL != (x->level_accu = cJSON_malloc(sizeof(enum LevelAccu)))) {
-                     *x->level_accu = cJSON_GetLevelAccuValue(cJSON_GetObjectItemCaseSensitive(j, "level_accu"));
-                 }
-@@ -930,16 +1015,14 @@
-             }
-             if (!cJSON_HasObjectItem(j, "funding_ba")) { cJSON_DeleteFeatureProperties(x); return NULL; }
-             if ((cJSON_HasObjectItem(j, "funding_ba")) && (!cJSON_IsNull(cJSON_GetObjectItemCaseSensitive(j, "funding_ba")))) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "funding_ba"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "funding_ba")) || 0 == cJSON_GetFundingBaValue(cJSON_GetObjectItemCaseSensitive(j, "funding_ba"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-+                if (!cJSON_IsFundingBaValue(cJSON_GetObjectItemCaseSensitive(j, "funding_ba"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-                 if (NULL != (x->funding_ba = cJSON_malloc(sizeof(enum FundingBa)))) {
-                     *x->funding_ba = cJSON_GetFundingBaValue(cJSON_GetObjectItemCaseSensitive(j, "funding_ba"));
-                 }
-             }
-             if (!cJSON_HasObjectItem(j, "mi_symbolo")) { cJSON_DeleteFeatureProperties(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "mi_symbolo")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "mi_symbolo"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "mi_symbolo")) || 0 == cJSON_GetMiSymboloValue(cJSON_GetObjectItemCaseSensitive(j, "mi_symbolo"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-+                if (!cJSON_IsMiSymboloValue(cJSON_GetObjectItemCaseSensitive(j, "mi_symbolo"))) { cJSON_DeleteFeatureProperties(x); return NULL; }
-                 x->mi_symbolo = cJSON_GetMiSymboloValue(cJSON_GetObjectItemCaseSensitive(j, "mi_symbolo"));
-             }
-             if (!cJSON_HasObjectItem(j, "mi_prinx")) { cJSON_DeleteFeatureProperties(x); return NULL; }
-@@ -1214,8 +1297,7 @@
-             memset(x, 0, sizeof(struct Feature));
-             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteFeature(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "type")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFeature(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetFeatureTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFeature(x); return NULL; }
-+                if (!cJSON_IsFeatureTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFeature(x); return NULL; }
-                 x->type = cJSON_GetFeatureTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
-             }
-             if (!cJSON_HasObjectItem(j, "id")) { cJSON_DeleteFeature(x); return NULL; }
-@@ -1236,8 +1318,7 @@
-             }
-             if (!cJSON_HasObjectItem(j, "geometry_name")) { cJSON_DeleteFeature(x); return NULL; }
-             if (cJSON_HasObjectItem(j, "geometry_name")) {
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "geometry_name"))) { cJSON_DeleteFeature(x); return NULL; }
--                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "geometry_name")) || 0 == cJSON_GetGeometryNameValue(cJSON_GetObjectItemCaseSensitive(j, "geometry_name"))) { cJSON_DeleteFeature(x); return NULL; }
-+                if (!cJSON_IsGeometryNameValue(cJSON_GetObjectItemCaseSensitive(j, "geometry_name"))) { cJSON_DeleteFeature(x); return NULL; }
-                 x->geometry_name = cJSON_GetGeometryNameValue(cJSON_GetObjectItemCaseSensitive(j, "geometry_name"));
-             }
-             if (!cJSON_HasObjectItem(j, "properties")) { cJSON_DeleteFeature(x); return NULL; }

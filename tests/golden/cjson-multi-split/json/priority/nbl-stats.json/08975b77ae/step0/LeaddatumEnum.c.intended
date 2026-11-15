@@ -17,17 +17,6 @@ enum LeaddatumEnum cJSON_GetLeaddatumEnumValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsLeaddatumEnumValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "P1")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "P2")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "P3")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "P4")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateLeaddatumEnum(const enum LeaddatumEnum x) {
     cJSON * j = NULL;
     switch (x) {

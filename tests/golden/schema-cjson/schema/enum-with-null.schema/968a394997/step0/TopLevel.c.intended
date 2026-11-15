@@ -14,14 +14,6 @@ enum Enum cJSON_GetEnumValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsEnumValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "foo")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "bar")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateEnum(const enum Enum x) {
     cJSON * j = NULL;
     switch (x) {
@@ -50,7 +42,8 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
             memset(x, 0, sizeof(struct TopLevel));
             if (!cJSON_HasObjectItem(j, "enum")) { cJSON_DeleteTopLevel(x); return NULL; }
             if ((cJSON_HasObjectItem(j, "enum")) && (!cJSON_IsNull(cJSON_GetObjectItemCaseSensitive(j, "enum")))) {
-                if (!cJSON_IsEnumValue(cJSON_GetObjectItemCaseSensitive(j, "enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "enum")) || 0 == cJSON_GetEnumValue(cJSON_GetObjectItemCaseSensitive(j, "enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 if (NULL != (x->top_level_enum = cJSON_malloc(sizeof(enum Enum)))) {
                     *x->top_level_enum = cJSON_GetEnumValue(cJSON_GetObjectItemCaseSensitive(j, "enum"));
                 }

@@ -342,12 +342,7 @@ render-scenarios/vitest-cjson-enum-default cjson-enum-getter
 # as a diff of the reference's (its corpus/<case> scenarios use the golden
 # cases' .intended files).
 npm/api/cjson-enum-default/invalid-value-does-not-collide cjson-enum-getter
-npm/corpus/cjson/json/misc/00ec5.json/e6324d6d12 cjson-enum-getter cjson-map-parsed-twice
-npm/corpus/cjson/json/misc/29f47.json/b2d70728f6 cjson-enum-getter
 npm/corpus/cjson/json/misc/76ae1.json/229486e67d cjson-enum-getter cjson-map-parsed-twice
-npm/corpus/cjson/json/misc/7d397.json/28adede6d2 cjson-enum-getter cjson-map-parsed-twice
-npm/corpus/cjson/json/misc/e324e.json/3c285a614d cjson-enum-getter cjson-map-parsed-twice
-npm/corpus/cjson/json/misc/f82d9.json/95e62dc78f cjson-enum-getter
 npm/inputs-bytes/python/json/misc/0e0c2.json python-property-shadows-converter
 npm/inputs-bytes/python/json/misc/a0496.json python-property-shadows-converter
 npm/inputs/cjson/json/misc/00c36.json cjson-enum-getter

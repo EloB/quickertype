@@ -13,13 +13,6 @@ enum Kind cJSON_GetKindValue(const cJSON * j) {
     return x;
 }
 
-bool cJSON_IsKindValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "widget")) return true;
-    }
-    return false;
-}
-
 cJSON * cJSON_CreateKind(const enum Kind x) {
     cJSON * j = NULL;
     switch (x) {
@@ -57,7 +50,8 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "kind")) { cJSON_DeleteTopLevel(x); return NULL; }
             if (cJSON_HasObjectItem(j, "kind")) {
-                if (!cJSON_IsKindValue(cJSON_GetObjectItemCaseSensitive(j, "kind"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "kind"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "kind")) || 0 == cJSON_GetKindValue(cJSON_GetObjectItemCaseSensitive(j, "kind"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 x->kind = cJSON_GetKindValue(cJSON_GetObjectItemCaseSensitive(j, "kind"));
             }
             if (!cJSON_HasObjectItem(j, "ratio")) { cJSON_DeleteTopLevel(x); return NULL; }

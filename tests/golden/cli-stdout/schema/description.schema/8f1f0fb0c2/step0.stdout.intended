@@ -104,7 +104,6 @@ struct Description {
 };
 
 enum Enum cJSON_GetEnumValue(const cJSON * j);
-bool cJSON_IsEnumValue(const cJSON * j);
 cJSON * cJSON_CreateEnum(const enum Enum x);
 
 #define cJSON_IsUnion(j) (cJSON_IsNumber(j) || cJSON_IsString(j))
@@ -140,14 +139,6 @@ enum Enum cJSON_GetEnumValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "bar")) x = ENUM_BAR;
     }
     return x;
-}
-
-bool cJSON_IsEnumValue(const cJSON * j) {
-    if (cJSON_IsString(j)) {
-        if (!strcmp(cJSON_GetStringValue(j), "foo")) return true;
-        if (!strcmp(cJSON_GetStringValue(j), "bar")) return true;
-    }
-    return false;
 }
 
 cJSON * cJSON_CreateEnum(const enum Enum x) {
@@ -327,7 +318,8 @@ struct Description * cJSON_GetDescriptionValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "enum")) { cJSON_DeleteDescription(x); return NULL; }
             if (cJSON_HasObjectItem(j, "enum")) {
-                if (!cJSON_IsEnumValue(cJSON_GetObjectItemCaseSensitive(j, "enum"))) { cJSON_DeleteDescription(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "enum"))) { cJSON_DeleteDescription(x); return NULL; }
+                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "enum")) || 0 == cJSON_GetEnumValue(cJSON_GetObjectItemCaseSensitive(j, "enum"))) { cJSON_DeleteDescription(x); return NULL; }
                 x->description_enum = cJSON_GetEnumValue(cJSON_GetObjectItemCaseSensitive(j, "enum"));
             }
             if (cJSON_HasObjectItem(j, "foo")) {
