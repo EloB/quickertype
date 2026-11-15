@@ -232,10 +232,16 @@ fn build_cjson(test: &str, src_lang: &str, input: &str) -> Option<PathBuf> {
 
 /// Runs the C driver in `dir` on `sample`: the JSON it prints, or `None`
 /// if the sample was rejected (exit 1). Any memory error or undefined
-/// behavior (a sanitizer report, a signal) fails the test.
-fn run_cjson(dir: &Path, sample: &str) -> Option<Value> {
+/// behavior (a sanitizer report, a signal) fails the test. Leaks are
+/// checked (where LeakSanitizer runs) unless `rejected`: quicktype's code
+/// leaks a map's elements when it rejects one of them.
+fn run_cjson(dir: &Path, sample: &str, rejected: bool) -> Option<Value> {
     fs::write(dir.join("sample.json"), sample).unwrap();
-    let output = Command::new(dir.join("prog"))
+    let mut command = Command::new(dir.join("prog"));
+    if rejected {
+        command.env("ASAN_OPTIONS", "detect_leaks=0");
+    }
+    let output = command
         .arg("sample.json")
         .current_dir(dir)
         .output()
@@ -254,31 +260,45 @@ fn check_cjson(test: &str, src_lang: &str, input: &str, samples: &[(&str, Option
         return;
     };
     for (sample, expected) in samples {
-        assert_eq!(&run_cjson(&dir, sample), expected, "{test}: {sample}");
+        assert_eq!(
+            &run_cjson(&dir, sample, expected.is_none()),
+            expected,
+            "{test}: {sample}"
+        );
     }
 }
 
 /// A top-level map of integers, booleans, doubles or enums: quicktype
 /// stores each value itself as the pointer (`cJSON_GetNumberValue(e)` as
-/// a `void *`), which does not even compile for numbers.
+/// a `void *`), which does not even compile for numbers, and does not
+/// check the values' types (a string read as an integer is undefined
+/// behavior).
 #[test]
 fn cjson_top_level_maps_of_scalars_allocate_their_values() {
-    for (name, items, sample) in [
+    for (name, items, sample, wrong) in [
         (
             "integers",
             r#"{"type": "integer"}"#,
             json!({"a": 1, "b": -2}),
+            r#"{"a": "x"}"#,
         ),
         (
             "booleans",
             r#"{"type": "boolean"}"#,
             json!({"a": true, "b": false}),
+            r#"{"a": 1}"#,
         ),
-        ("doubles", r#"{"type": "number"}"#, json!({"a": 1.5})),
+        (
+            "doubles",
+            r#"{"type": "number"}"#,
+            json!({"a": 1.5}),
+            r#"{"a": "x"}"#,
+        ),
         (
             "enums",
             r#"{"enum": ["x", "y"]}"#,
             json!({"a": "y", "b": "x"}),
+            r#"{"a": "z"}"#,
         ),
     ] {
         let schema = format!(r#"{{"type": "object", "additionalProperties": {items}}}"#);
@@ -286,7 +306,7 @@ fn cjson_top_level_maps_of_scalars_allocate_their_values() {
             &format!("cjson-top-level-map-of-{name}"),
             "schema",
             &schema,
-            &[(&sample.to_string(), Some(sample.clone()))],
+            &[(&sample.to_string(), Some(sample.clone())), (wrong, None)],
         );
     }
 }
@@ -314,22 +334,40 @@ fn cjson_top_level_lists_and_maps_of_null_keep_their_markers() {
 }
 
 /// An enum's getter calls `strcmp` on `cJSON_GetStringValue(j)`, `NULL`
-/// for a value that is not a string; an array of enums reaches it
-/// unchecked.
+/// for a value that is not a string, and gives `0` for a value that is no
+/// case, which quicktype's code reads as a case (in lists, maps and
+/// unions), or rejects even when a case's value is 0 (`qt-enum-values`).
+/// Any such value makes the parse fail, wherever the enum is.
 #[test]
-fn cjson_enum_getters_compare_only_strings() {
-    let schema = r#"{"type": "object", "required": ["tags"],
-        "properties": {"tags": {"type": "array", "items": {"enum": ["a", "b"]}}}}"#;
+fn cjson_enums_reject_values_that_are_no_case() {
+    let schema = r##"{"type": "object", "required": ["req"], "properties": {
+        "req": {"$ref": "#/definitions/E"},
+        "nul": {"anyOf": [{"$ref": "#/definitions/E"}, {"type": "null"}]},
+        "arr": {"type": "array", "items": {"$ref": "#/definitions/E"}},
+        "nested": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/definitions/E"}}},
+        "map": {"type": "object", "additionalProperties": {"$ref": "#/definitions/E"}},
+        "uni": {"anyOf": [{"$ref": "#/definitions/E"}, {"type": "integer"}]},
+        "zero": {"enum": ["nl", "d"], "qt-enum-values": {"nl": "0", "d": "1"}}},
+        "definitions": {"E": {"enum": ["a", "b"]}}}"##;
     let Some(dir) = build_cjson("cjson-enum-getter", "schema", schema) else {
         return;
     };
-    let good = json!({"tags": ["b", "a"]});
-    assert_eq!(run_cjson(&dir, &good.to_string()), Some(good));
-    // Not a string: no case (0), which the array leaves out when printed.
-    assert_eq!(
-        run_cjson(&dir, r#"{"tags": [1, "a"]}"#),
-        Some(json!({"tags": ["a"]}))
-    );
+    let good = json!({"req": "a", "nul": null, "arr": ["b", "a"], "nested": [["a"], []],
+        "map": {"k": "b"}, "uni": "b", "zero": "nl"});
+    assert_eq!(run_cjson(&dir, &good.to_string(), false), Some(good));
+    for wrong in [
+        r#"{"req": "c"}"#,
+        r#"{"req": 1}"#,
+        r#"{"req": "a", "nul": "c"}"#,
+        r#"{"req": "a", "arr": [1, "a"]}"#,
+        r#"{"req": "a", "arr": ["a", "c"]}"#,
+        r#"{"req": "a", "nested": [["a"], ["c"]]}"#,
+        r#"{"req": "a", "map": {"k": "c"}}"#,
+        r#"{"req": "a", "uni": "c"}"#,
+        r#"{"req": "a", "zero": "x"}"#,
+    ] {
+        assert_eq!(run_cjson(&dir, wrong, true), None, "{wrong}");
+    }
 }
 
 /// `regcomp`'s result is ignored, so `regexec` and `regfree` run on a
@@ -369,8 +407,8 @@ fn cjson_maps_of_classes_parse_each_value_once() {
     assert_eq!(code.matches("cJSON_GetVValue(e1)").count(), 1, "{code}");
     assert!(!code.contains("cJSON_DeleteV(validated)"), "{code}");
     let sample = json!({"m": {"a": {"n": 1}, "b": {"n": 2}}});
-    assert_eq!(run_cjson(&dir, &sample.to_string()), Some(sample));
-    assert_eq!(run_cjson(&dir, r#"{"m": {"a": {"n": "x"}}}"#), None);
+    assert_eq!(run_cjson(&dir, &sample.to_string(), false), Some(sample));
+    assert_eq!(run_cjson(&dir, r#"{"m": {"a": {"n": "x"}}}"#, true), None);
 }
 
 // ---- Ruby ---------------------------------------------------------------
@@ -444,30 +482,51 @@ fn ruby_union_classes_are_forward_declared() {
 
 // ---- Java ---------------------------------------------------------------
 
-/// The class path with Jackson, or `None`.
+/// The class path with Jackson, or `None`: `$QUICKTYPE_JACKSON_CLASSPATH`,
+/// or the newest version of jackson-core, -databind and -annotations that
+/// the local Maven repository has all three jars of.
 fn jackson_classpath() -> Option<String> {
     if let Ok(classpath) = std::env::var("QUICKTYPE_JACKSON_CLASSPATH") {
         return Some(classpath);
     }
     let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
     let repository = Path::new(&home).join(".m2/repository/com/fasterxml/jackson/core");
-    let mut jars = vec![];
-    for artifact in ["jackson-core", "jackson-databind", "jackson-annotations"] {
-        let dir = repository.join(artifact);
-        let mut versions: Vec<PathBuf> = fs::read_dir(&dir)
-            .ok()?
-            .flatten()
-            .map(|e| e.path())
-            .collect();
-        versions.sort();
-        let jar = versions.iter().rev().find_map(|v| {
-            let version = v.file_name()?.to_str()?;
-            let jar = v.join(format!("{artifact}-{version}.jar"));
-            jar.is_file().then_some(jar)
-        })?;
-        jars.push(jar.to_string_lossy().into_owned());
-    }
+    const ARTIFACTS: [&str; 3] = ["jackson-core", "jackson-databind", "jackson-annotations"];
+    let jar = |artifact: &str, version: &str| {
+        repository
+            .join(artifact)
+            .join(version)
+            .join(format!("{artifact}-{version}.jar"))
+    };
+    let versions = fs::read_dir(repository.join(ARTIFACTS[0])).ok()?;
+    let newest = versions
+        .flatten()
+        .filter_map(|e| e.file_name().into_string().ok())
+        .filter(|version| ARTIFACTS.iter().all(|a| jar(a, version).is_file()))
+        .max_by_key(|version| version_key(version))?;
+    let jars: Vec<String> = ARTIFACTS
+        .iter()
+        .map(|a| jar(a, &newest).to_string_lossy().into_owned())
+        .collect();
     Some(jars.join(if cfg!(windows) { ";" } else { ":" }))
+}
+
+#[test]
+fn jackson_versions_sort_as_semver() {
+    let mut versions = ["2.10.0", "2.9.0", "2.9.10", "2.9.0-rc1"];
+    versions.sort_by_key(|v| version_key(v));
+    assert_eq!(versions, ["2.9.0-rc1", "2.9.0", "2.9.10", "2.10.0"]);
+}
+
+/// A version's parts in semver order: `2.10.0` after `2.9.0`, a release
+/// after its pre-releases (`2.9.0` after `2.9.0-rc1`).
+fn version_key(version: &str) -> (Vec<u64>, bool, String) {
+    let (release, pre) = version.split_once('-').unwrap_or((version, ""));
+    let numbers = release
+        .split('.')
+        .map(|part| part.parse().unwrap_or(0))
+        .collect();
+    (numbers, pre.is_empty(), pre.to_owned())
 }
 
 /// optional-date-time.schema with `--datetime-provider legacy`:
@@ -565,7 +624,9 @@ fn java_legacy_dates_that_do_not_parse_are_rejected() {
 /// misc/a0496.json: `from_dict` assigns every property to a local variable
 /// of its name, so the property `from_date` shadows the converter
 /// `from_date` (`UnboundLocalError`; mypy: `"date" not callable`). The
-/// same goes for `obj`, `isinstance` and the other converters.
+/// same goes for `obj`, `isinstance` and the other converters `from_dict`
+/// calls; the converters only `to_dict` calls (`to_class`, `is_type`) are
+/// no such names, and keep theirs.
 #[test]
 fn python_properties_do_not_shadow_what_from_dict_uses() {
     const TEST: &str = "python-shadowed-converter";
@@ -577,7 +638,7 @@ fn python_properties_do_not_shadow_what_from_dict_uses() {
     let sample = inputs().join("json/misc/a0496.json");
     fs::write(
         dir.join("names.json"),
-        r#"{"obj": "a", "isinstance": "b", "from_str": "c", "from_date": "2020-01-02", "x": "d"}"#,
+        r#"{"obj": "a", "isinstance": "b", "from_str": "c", "from_date": "2020-01-02", "to_class": "e", "is_type": "f"}"#,
     )
     .unwrap();
     for (module, input) in [("a0496", sample.to_str().unwrap()), ("names", "names.json")] {
@@ -595,12 +656,19 @@ fn python_properties_do_not_shadow_what_from_dict_uses() {
             ],
         );
     }
+    let names = fs::read_to_string(dir.join("names.py")).unwrap();
+    for kept in ["    to_class: str\n", "    is_type: str\n"] {
+        assert!(names.contains(kept), "{kept:?} in {names}");
+    }
+    for renamed in ["    from_str: str\n", "    obj: str\n"] {
+        assert!(!names.contains(renamed), "{renamed:?} in {names}");
+    }
     let script = "import json, sys\n\
                   import a0496, names\n\
                   a = json.load(open(sys.argv[1]))\n\
                   b = a0496.top_level_to_dict(a0496.top_level_from_dict(a))\n\
                   assert (b['from_date'], b['to_date']) == (a['from_date'], a['to_date']), b\n\
-                  n = {'obj': 'a', 'isinstance': 'b', 'from_str': 'c', 'from_date': '2020-01-02', 'x': 'd'}\n\
+                  n = {'obj': 'a', 'isinstance': 'b', 'from_str': 'c', 'from_date': '2020-01-02', 'to_class': 'e', 'is_type': 'f'}\n\
                   assert names.top_level_to_dict(names.top_level_from_dict(n)) == n\n\
                   print('ok')\n";
     let output = Command::new("python3")
@@ -760,4 +828,25 @@ fn json_schema_enums_with_accessors_combine() {
     );
     let code = run(&["E", "F"]);
     assert!(code.contains("{ Alpha, B };"), "{code}");
+}
+
+/// Enum values (`qt-enum-values`) combine the same way: two enums with
+/// the same cases keep the values they agree on.
+#[test]
+fn json_schema_enum_values_combine() {
+    let dir = work_dir("schema-enum-values");
+    let schema = r#"{"definitions": {
+        "E": {"type": "string", "enum": ["a", "b"], "qt-enum-values": {"a": "0", "b": "1"}},
+        "F": {"type": "string", "enum": ["a", "b"], "qt-enum-values": {"a": "0", "b": "2"}}}}"#;
+    fs::write(dir.join("input.schema"), schema).unwrap();
+    let output = Command::new(BIN)
+        .args(["--src-lang", "schema", "--lang", "cjson"])
+        .args(["--src", "input.schema#/definitions/E"])
+        .args(["--src", "input.schema#/definitions/F"])
+        .current_dir(&dir)
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{}", text(&output));
+    let code = String::from_utf8(output.stdout).unwrap();
+    assert!(code.contains("    F_A = 0,\n    F_B,\n"), "{code}");
 }

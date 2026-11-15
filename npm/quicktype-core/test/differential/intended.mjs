@@ -92,7 +92,7 @@ function linesArrays(value, at = "$", out = new Map()) {
 }
 
 /** `lines` with the hunks of a unified diff section applied. */
-function applyHunks(lines, hunks, where) {
+export function applyHunks(lines, hunks, where) {
     const out = [];
     let next = 0;
     for (const hunk of hunks) {
@@ -120,30 +120,52 @@ function applyHunks(lines, hunks, where) {
     return out;
 }
 
-/** The sections of a unified diff: path → hunks. */
-function parseDiff(text, file) {
+/**
+ * The sections of a unified diff: path → hunks. A hunk takes as many lines
+ * as its `@@` ranges say, so a line inside it that starts with `--- ` or
+ * `+++ ` (a removed `-- comment`, an added `++ x`) is part of it; the
+ * headers are only recognized between hunks.
+ */
+export function parseDiff(text, file) {
     const sections = new Map();
     let hunks;
-    for (const line of text.split("\n")) {
-        if (line.startsWith("--- ")) continue;
-        if (line.startsWith("+++ ")) {
+    let hunk;
+    let oldLeft = 0;
+    let newLeft = 0;
+    const lines = text.split("\n");
+    if (lines.at(-1) === "") lines.pop();
+    for (const line of lines) {
+        if (oldLeft > 0 || newLeft > 0) {
+            const op = line[0];
+            if (op === " " || op === "-") oldLeft--;
+            if (op === " " || op === "+") newLeft--;
+            if (!" -+".includes(op) || oldLeft < 0 || newLeft < 0) {
+                throw new Error(`${file}: a hunk line that does not fit its ranges: ${line}`);
+            }
+
+            hunk.lines.push(line);
+        } else if (line.startsWith("--- ")) {
+            continue;
+        } else if (line.startsWith("+++ ")) {
             hunks = [];
             sections.set(line.slice(4), hunks);
-        } else if (line.startsWith("@@ ")) {
-            const m = /^@@ -(\d+)(?:,\d+)? \+\d+(?:,\d+)? @@/.exec(line);
-            if (m === null || hunks === undefined) throw new Error(`${file}: bad hunk header ${line}`);
+        } else {
+            const m = /^@@ -(\d+)(?:,(\d+))? \+\d+(?:,(\d+))? @@/.exec(line);
+            if (m === null || hunks === undefined) throw new Error(`${file}: expected a header or a hunk, not ${line}`);
+            oldLeft = m[2] === undefined ? 1 : Number(m[2]);
+            newLeft = m[3] === undefined ? 1 : Number(m[3]);
             // An empty range starts after its line.
-            hunks.push({ start: Number(m[1]) + (/^@@ -\d+,0 /.test(line) ? 1 : 0), lines: [] });
-        } else if (line !== "") {
-            hunks?.at(-1)?.lines.push(line);
+            hunk = { start: Number(m[1]) + (oldLeft === 0 ? 1 : 0), lines: [] };
+            hunks.push(hunk);
         }
     }
 
+    if (oldLeft > 0 || newLeft > 0) throw new Error(`${file}: the last hunk is cut short`);
     return sections;
 }
 
 /** The hunks that turn `before` into `after` (arrays of lines), as `diff -U3` prints them. */
-function unifiedDiff(before, after) {
+export function unifiedDiff(before, after) {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "qt-intended-"));
     const a = path.join(tmp, "a");
     const b = path.join(tmp, "b");
