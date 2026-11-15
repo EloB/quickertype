@@ -1,23 +1,22 @@
-// Checks that a release archive's quickertype converts TypeScript with the
-// compiler it bundles, and with nothing else.
+// Checks that a release archive's (or the MSI's) quickertype converts
+// TypeScript with the compiler it bundles, and with nothing else.
 //
-//   node release/check-bundle.mjs <archive>
+//   node release/check-bundle.mjs <archive or MSI>
 //
-// <archive> is what `dist build` made for this machine
-// (target/distrib/quickertype-<target>.tar.xz, or .zip on Windows). It is
-// unpacked into a temporary directory, checked for the bundled package
-// (the version release/typescript/pins.json pins, with its LICENSE and
-// NOTICE.txt, and those pins) and TypeScript's attribution in NOTICE, and
-// its quickertype converts
-// release/check-bundle/person.ts to Rust, which must print exactly
+// The file is one `dist build` made for this machine's platform:
+// target/distrib/quickertype-<target>.tar.xz, .zip, or .msi (Windows; it
+// is unpacked with `msiexec /a`, an administrative install into a
+// directory). It must pass release/check-release.mjs's checks of the
+// bundled compiler, and its quickertype must convert
+// release/check-bundle/person.ts to Rust, printing exactly
 // release/check-bundle/person.expected.rs (what the TypeScript quicktype
 // prints for it). Every run has an environment without another TypeScript
 // compiler: PATH is one empty directory, QUICKTYPE_TSC is unset, and no
-// directory above the working directory has a node_modules. It runs in
-// the layouts the installers make:
+// directory above the working directory has a node_modules. It runs in the
+// layouts the installers make:
 //
-// 1. the unpacked archive, quickertype next to typescript/ (also the MSI's
-//    bin directory, and the npm package, which unpacks the archive);
+// 1. as unpacked, quickertype next to typescript/ (the archive, which the
+//    npm package unpacks too, or the MSI's bin directory);
 // 2. Homebrew's (not on Windows): quickertype in <prefix>/bin, reached
 //    through a symbolic link as Homebrew's bin links do, and typescript/
 //    in <prefix>/share/quickertype, where the formula puts what is left of
@@ -32,14 +31,13 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { layoutFailures, packageOf, pins, targetOf, unpackArchive } from "./check-release.mjs";
+
 const here = path.dirname(fileURLToPath(import.meta.url));
-const pinsText = fs.readFileSync(path.join(here, "typescript", "pins.json"), "utf8");
-const pins = JSON.parse(pinsText);
 const fixture = path.join(here, "check-bundle");
 const expected = fs.readFileSync(path.join(fixture, "person.expected.rs"), "utf8");
 const windows = process.platform === "win32";
 const exe = (name) => (windows ? `${name}.exe` : name);
-const platformPackage = `@typescript/typescript-${process.platform}-${process.arch}@${pins.version}`;
 
 let failures = 0;
 function check(condition, message) {
@@ -47,35 +45,47 @@ function check(condition, message) {
     if (!condition) failures++;
 }
 
-const archive = process.argv[2];
-if (!archive || !fs.existsSync(archive)) {
-    console.error("usage: node release/check-bundle.mjs <archive made by dist build>");
+/** The directory of quickertype.exe in an administrative install of `msi`. */
+function unpackMsi(msi, into) {
+    fs.mkdirSync(into, { recursive: true });
+    const log = path.join(into, "..", "msiexec.log");
+    const run = spawnSync("msiexec", ["/a", path.resolve(msi), "/qn", `TARGETDIR=${into}`, "/L*v", log], { stdio: "inherit" });
+    if (run.status !== 0) throw new Error(`msiexec /a ${msi} exited with ${run.status} (log: ${log})`);
+    const find = (dir) => {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            if (entry.isFile() && entry.name.toLowerCase() === "quickertype.exe") return dir;
+            if (entry.isDirectory()) {
+                const found = find(full);
+                if (found) return found;
+            }
+        }
+        return undefined;
+    };
+    const bin = find(into);
+    if (!bin) throw new Error(`no quickertype.exe in the administrative install of ${msi}`);
+    return bin;
+}
+
+const file = process.argv[2];
+if (!file || !fs.existsSync(file)) {
+    console.error("usage: node release/check-bundle.mjs <archive or MSI made by dist build>");
     process.exit(2);
 }
 
 const scratch = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), "quickertype-bundle-"));
 try {
-    // The archive, unpacked as the installers do (a .tar.xz has one
-    // top-level directory, a .zip none).
-    const unpacked = path.join(scratch, "archive");
-    fs.mkdirSync(unpacked);
-    const tar = spawnSync("tar", ["-xf", path.resolve(archive), "-C", unpacked], { stdio: "inherit" });
-    if (tar.status !== 0) throw new Error(`tar -xf ${archive} failed`);
-    const top = fs.readdirSync(unpacked);
-    const single = top.length === 1 && fs.statSync(path.join(unpacked, top[0])).isDirectory();
-    const root = single ? path.join(unpacked, top[0]) : unpacked;
-
+    const target = targetOf(file);
+    const [key] = packageOf(target);
+    if (key !== `${process.platform}-${process.arch}`) throw new Error(`${file} is for ${key}, not this machine`);
+    const msi = file.endsWith(".msi");
+    // The MSI installs quickertype.exe and typescript\ into bin, LICENSE and
+    // NOTICE into the directory above it.
+    const root = msi ? unpackMsi(file, path.join(scratch, "msi")) : unpackArchive(file, path.join(scratch, "archive"));
+    const layout = layoutFailures(root, target, msi ? path.dirname(root) : root);
+    for (const failure of layout) check(false, failure);
+    check(layout.length === 0, `${path.basename(file)} bundles ${packageOf(target)[1].name}@${pins.version}, as pinned`);
     const bundled = path.join(root, "typescript");
-    const manifest = JSON.parse(fs.readFileSync(path.join(bundled, "package.json"), "utf8"));
-    check(
-        manifest.name === `@typescript/typescript-${process.platform}-${process.arch}` && manifest.version === pins.version,
-        `the archive bundles ${platformPackage} (it has ${manifest.name}@${manifest.version})`,
-    );
-    check(fs.readFileSync(path.join(bundled, "pins.json"), "utf8") === pinsText, "typescript/pins.json is release/typescript/pins.json");
-    for (const file of ["LICENSE", "NOTICE.txt", path.join("lib", exe("tsc"))]) {
-        check(fs.existsSync(path.join(bundled, file)), `typescript/${file.replaceAll(path.sep, "/")} is in the archive`);
-    }
-    check(/TypeScript/.test(fs.readFileSync(path.join(root, "NOTICE"), "utf8")), "NOTICE attributes TypeScript");
 
     // Where quickertype runs: no compiler on PATH or in node_modules.
     const work = path.join(scratch, "work");
@@ -100,9 +110,9 @@ try {
         if (!ok) console.log(`exit ${run.status}\n--- stderr\n${run.stderr}--- stdout\n${run.stdout}`);
     };
 
-    // 1. The unpacked archive.
+    // 1. As unpacked.
     let quickertype = path.join(root, exe("quickertype"));
-    converts(quickertype, "the archive");
+    converts(quickertype, msi ? "the MSI" : "the archive");
 
     // 2. Homebrew's layout, through a symbolic link.
     if (!windows) {
@@ -125,10 +135,11 @@ try {
     const run = convert(quickertype);
     const error =
         `Error: TypeScript input requires the TypeScript ${pins.version} compiler (tsc), but it was not found. ` +
-        `Install it with "npm install -g typescript@${pins.version}" (for this platform, that installs ${platformPackage}), ` +
-        "or set QUICKTYPE_TSC to its path.\n";
-    check(run.status === 1 && run.stderr === error, "without the bundled compiler, quickertype names the package to install");
-    if (run.stderr !== error) console.log(`exit ${run.status}\n--- stderr\n${run.stderr}`);
+        `Install it with "npm install -g typescript@${pins.version}" (for this platform, that installs ` +
+        `@typescript/typescript-${key}@${pins.version}), or set QUICKTYPE_TSC to its path.`;
+    const stderr = run.stderr?.replace(/\r?\n$/, "");
+    check(run.status === 1 && stderr === error, "without the bundled compiler, quickertype names the package to install");
+    if (stderr !== error) console.log(`exit ${run.status}\n--- stderr\n${run.stderr}`);
 } catch (error) {
     check(false, error.message);
 } finally {

@@ -32,9 +32,17 @@ tap = "EloB/homebrew-tap"
 # (NPM_TOKEN), the crates on crates.io (.github/workflows/publish-crates.yml)
 # and the `quickertype-core` npm package (.github/workflows/publish-npm-core.yml)
 publish-jobs = ["homebrew", "npm", "./publish-crates", "./publish-npm-core"]
+# The release gate for the bundled TypeScript compiler
+# (.github/workflows/check-release.yml): it runs after every
+# build-local-artifacts job, and `host`, which creates the GitHub Release
+# before any publish job runs, waits for it and runs only if it passed. It
+# fails unless every archive and the MSI have their target's compiler as
+# release/typescript/pins.json pins it.
+global-artifacts-jobs = ["./check-release"]
 # The custom publish jobs check the repository out and get an OIDC token
-# (crates.io trusted publishing, npm provenance)
-github-custom-job-permissions = { "publish-crates" = { contents = "read", id-token = "write" }, "publish-npm-core" = { contents = "read", id-token = "write" } }
+# (crates.io trusted publishing, npm provenance); the release gate only
+# reads
+github-custom-job-permissions = { "check-release" = { contents = "read" }, "publish-crates" = { contents = "read", id-token = "write" }, "publish-npm-core" = { contents = "read", id-token = "write" } }
 # On pull requests, only run `dist plan` (CI's `dist` job does too): the
 # six targets and the MSI take about 13 minutes. For a full release build
 # without releasing, a branch can set "upload" and run `dist generate`
@@ -50,17 +58,19 @@ precise-builds = true
 # TypeScript compiler for the archive's target, the npm platform package,
 # unmodified (with its LICENSE and NOTICE.txt), beside pins.json, which pins
 # it. The build setup below stages the package there before `dist build`
-# (locally, run `node release/bundle-typescript.mjs <target>` first).
-# quickertype finds it next to its executable, where the archives, the MSI
-# and the npm package (which unpacks the archive) put it, or in
-# share/quickertype, where the Homebrew formula does; the shell and
-# PowerShell installers install the binary only. dist copies `include` into
-# the npm installer package too, where it is pins.json alone: the global
-# build job has no build setup.
+# (locally, run `node release/bundle-typescript.mjs <target>` first); git
+# tracks only pins.json, so an archive built without staging lacks the
+# compiler, which the release gate above catches. quickertype finds it next
+# to its executable, where the archives, the MSI and the npm package (which
+# unpacks the archive) put it, or in share/quickertype, where the Homebrew
+# formula does; the shell and PowerShell installers install the binary
+# only. dist copies `include` into the npm installer package too, where it
+# is pins.json alone: the global build job has no build setup.
 include = ["NOTICE", "release/typescript"]
 # Steps release.yml runs in each build-local-artifacts job before
-# `dist build` (path relative to .github/workflows): they stage the
-# TypeScript compiler for the job's target, verified against its pins.
+# `dist build` (path relative to .github/workflows): the action
+# .github/actions/stage-typescript stages the TypeScript compiler for the
+# job's target, verified against its pins and run once.
 github-build-setup = "../build-setup.yml"
 # crates/quicktype-cli/wix/main.wxs is dist's rendering plus one line, the
 # reference to the MSI's bundled files: the WiX fragment wix/bundled.wxs,

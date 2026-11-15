@@ -1,0 +1,21 @@
+# Stages the TypeScript compiler that release archives bundle, for the given
+# release targets, in release/typescript (release/bundle-typescript.mjs:
+# downloaded from the npm registry, checked against
+# release/typescript/pins.json, and run with --version, which every release
+# runner can). release.yml's build-local-artifacts jobs use it through
+# .github/build-setup.yml, and CI's release-bundle job directly, so both
+# stage the compiler the same way.
+name: Stage the TypeScript compiler
+description: Downloads, verifies and unpacks the pinned TypeScript platform package into release/typescript
+inputs:
+  targets:
+    description: The release targets (Rust target triples) to stage the compiler for, separated by spaces
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+    - shell: bash
+      run: node release/bundle-typescript.mjs --run ${{ inputs.targets }}
