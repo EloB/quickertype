@@ -25,7 +25,7 @@ type Schema = SchemaObject;
 
 /// A schema object literal: `entries` in order, `None` for `undefined`.
 fn schema_of<const N: usize>(entries: [(&str, Option<JsonValue>); N]) -> Schema {
-    let mut schema = Schema::new();
+    let mut schema = Schema::default();
     for (key, value) in entries {
         set_schema_property(&mut schema, key, value);
     }
@@ -111,7 +111,7 @@ impl<'a> JsonSchemaRenderer<'a> {
             let ty = graph.type_at(t)?;
             let mut schema = match ty.kind() {
                 TypeKind::None => return panic("none type should have been replaced"),
-                TypeKind::Any => Schema::new(),
+                TypeKind::Any => Schema::default(),
                 TypeKind::Null => type_schema("null"),
                 TypeKind::Bool => type_schema("boolean"),
                 TypeKind::Integer => type_schema("integer"),
@@ -163,7 +163,7 @@ impl<'a> JsonSchemaRenderer<'a> {
         let (properties, required) = if properties.is_empty() {
             (None, None)
         } else {
-            let mut props = Schema::new();
+            let mut props = Schema::default();
             let mut req: Vec<String> = Vec::new();
             for (name, p) in properties {
                 let mut prop = self.schema_for_type(p.type_ref)?;
@@ -280,7 +280,7 @@ impl<'a> ConvenienceRenderer<'a> for JsonSchemaRenderer<'a> {
             let (_, &t) = defined(self.top_levels().first())?;
             self.schema_for_type(t)?
         } else {
-            Schema::new()
+            Schema::default()
         };
         // `{ $schema: ..., ...topLevelType }`: the spread copies every own
         // property, `undefined` ones included.
@@ -294,7 +294,7 @@ impl<'a> ConvenienceRenderer<'a> for JsonSchemaRenderer<'a> {
             json::insert_js_property(&mut schema, key, value);
         }
 
-        let mut definitions = Schema::new();
+        let mut definitions = Schema::default();
         self.for_each_object(BlankLinePosition::None, |r, o, name, _| {
             let title = r.assigned_name(name)?;
             let definition = r.definition_for_object(o, Some(&title))?;

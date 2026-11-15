@@ -19,10 +19,8 @@ use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
 
-use indexmap::{IndexMap, IndexSet};
-
 use crate::messages::Result;
-use crate::support::fast_hash::{HashMap, HashSet};
+use crate::support::fast_hash::{HashMap, HashSet, IndexMap, IndexSet};
 use crate::support::support::{assert, defined, panic};
 
 /// A name to be assigned (TS `Name`). Resolve it with [`Names::get`] once
@@ -444,7 +442,7 @@ impl Naming {
         order: u32,
         propose: Proposer,
     ) -> Name {
-        let mut dependencies = IndexSet::new();
+        let mut dependencies = IndexSet::default();
         propose(&mut |n| {
             dependencies.insert(n);
             "0xDEADBEEF".to_owned()
@@ -474,8 +472,8 @@ impl Naming {
             name: name.into(),
             forbidden_namespaces: forbidden_namespaces.into_iter().collect(),
             additional_forbidden: additional_forbidden.into_iter().collect(),
-            children: IndexSet::new(),
-            members: IndexSet::new(),
+            children: IndexSet::default(),
+            members: IndexSet::default(),
         });
         if let Some(parent) = parent {
             self.namespaces[parent.0 as usize].children.insert(id);
@@ -826,7 +824,7 @@ pub fn assign_names(naming: &Naming, root_namespaces: &[NamespaceId]) -> Result<
                 .filter(|&n| naming.order(n) == min_order)
                 .collect();
 
-            let mut by_naming_function: IndexMap<usize, (Namer, Vec<Name>)> = IndexMap::new();
+            let mut by_naming_function: IndexMap<usize, (Namer, Vec<Name>)> = IndexMap::default();
             for &n in &ready {
                 let namer = naming.naming_function(n)?;
                 by_naming_function
@@ -836,7 +834,7 @@ pub fn assign_names(naming: &Naming, root_namespaces: &[NamespaceId]) -> Result<
                     .push(n);
             }
             for (_, (namer, nameds_for_naming_function)) in by_naming_function {
-                let mut by_proposed: IndexMap<String, Vec<Name>> = IndexMap::new();
+                let mut by_proposed: IndexMap<String, Vec<Name>> = IndexMap::default();
                 for &n in &nameds_for_naming_function {
                     let key = naming
                         .naming_function(n)?

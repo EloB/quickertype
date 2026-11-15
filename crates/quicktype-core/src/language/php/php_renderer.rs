@@ -6,7 +6,7 @@
 //!
 //! `phpDocConvertType` is never called in TypeScript and is not ported.
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_js_compat::number;
 
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
@@ -162,7 +162,7 @@ impl<'a> PhpRenderer<'a> {
         PhpRenderer {
             core: ConvenienceRendererCore::new(target_language, render_context),
             options,
-            getters_and_setters_for_property_name: IndexMap::new(),
+            getters_and_setters_for_property_name: IndexMap::default(),
             have_emitted_leading_comments: false,
         }
     }
@@ -281,7 +281,7 @@ impl<'a> PhpRenderer<'a> {
         let graph = self.type_graph();
         // The TypeScript key is the index in the order (a number); two
         // digits compare the same way as strings.
-        let mut keys: IndexMap<TypeRef, String> = IndexMap::new();
+        let mut keys: IndexMap<TypeRef, String> = IndexMap::default();
         for &member in graph.type_at(u)?.members()? {
             let kind = graph.kind(member)?;
             let index = UNION_MEMBER_ORDER
@@ -321,7 +321,7 @@ impl<'a> PhpRenderer<'a> {
             };
             let (members, null_type) = self.sorted_union_members(u)?;
             let mut parts: Vec<Source> = Vec::new();
-            let mut seen: IndexSet<&'static str> = IndexSet::new();
+            let mut seen: IndexSet<&'static str> = IndexSet::default();
             for member in members {
                 let kind = graph.kind(member)?;
                 let hint: Source = if let Some(label) = label(kind) {

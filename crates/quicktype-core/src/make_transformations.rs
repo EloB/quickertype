@@ -15,7 +15,7 @@
 
 use std::rc::Rc;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::attributes::constraints::{min_max_length_for_type, min_max_value_for_type};
 use crate::attributes::string_types::StringTypes;
@@ -114,7 +114,7 @@ fn replace_union(
     // Transformed string kinds with a target kind (`integer-string`,
     // `bool-string`) are represented by a member of that kind: an existing
     // one, or a new one.
-    let mut reconstituted_members_by_kind: IndexMap<TypeKind, TypeRef> = IndexMap::new();
+    let mut reconstituted_members_by_kind: IndexMap<TypeKind, TypeRef> = IndexMap::default();
     for &m in members {
         let kind = graph.kind(m)?;
         let mut reconstituted = None;
@@ -453,7 +453,7 @@ pub fn make_transformations(
     debug_print_reconstitution: bool,
     debug_print_transformations: bool,
 ) -> Result<Option<TypeGraph>> {
-    let mut transformed_types: IndexSet<TypeRef> = IndexSet::new();
+    let mut transformed_types: IndexSet<TypeRef> = IndexSet::default();
     for t in graph.all_types_unordered() {
         let needs = if needs_transformer_for_type(graph, t)? {
             true

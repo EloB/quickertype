@@ -26,7 +26,7 @@ use std::any::Any;
 use std::fmt;
 use std::rc::Rc;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_js_compat::json::{JsonValue, insert_js_property};
 
 use crate::attributes::accessor_names::{
@@ -46,7 +46,9 @@ use crate::attributes::string_types::{StringTypes, StringTypesTypeAttributeKind}
 use crate::attributes::type_names::{self, NamesTypeAttributeKind, TypeNames};
 use crate::attributes::uri_attributes::{self, UriAttributes, UriTypeAttributeKind};
 use crate::messages::Result;
-use crate::support::collection_utils::{HASH_CODE_INIT, JsEquals, JsHash, add_hash_code};
+use crate::support::collection_utils::{
+    DeepHash, HASH_CODE_INIT, JsEquals, JsHash, add_hash_code, deep_combine, deep_unordered,
+};
 use crate::support::support::panic;
 use crate::ty::provenance_type_attribute_kind::{self, ProvenanceTypeAttributeKind};
 use crate::ty::transformed_string_type::TypeKind;
@@ -154,6 +156,9 @@ impl JsHash for TypeAttributeKind {
 pub trait TransformationAttribute: fmt::Debug {
     /// `Transformation.hashCode()`.
     fn hash_code(&self) -> i64;
+    /// A seeded hash consistent with `js_equals` (see
+    /// [`DeepHash`](crate::support::collection_utils::DeepHash)).
+    fn deep_hash(&self) -> u64;
     /// `Transformation.equals(other)`.
     fn js_equals(&self, other: &dyn TransformationAttribute) -> bool;
     /// `Transformation.getChildren()`, as refs in the same graph.
@@ -270,7 +275,7 @@ impl TypeAttributeValue {
     pub fn children(&self) -> IndexSet<TypeRef> {
         match self {
             TypeAttributeValue::Transformation(xf) => xf.children(),
-            _ => IndexSet::new(),
+            _ => IndexSet::default(),
         }
     }
 
@@ -339,6 +344,30 @@ impl JsEquals for TypeAttributeValue {
                 Rc::ptr_eq(a, b) || a.js_equals(b.as_ref())
             }
             _ => false,
+        }
+    }
+}
+
+impl DeepHash for TypeAttributeValue {
+    /// The content's, as `js_equals` compares it, for two values of the
+    /// same kind ([`TypeAttributes`] adds the kind). `names` compare by
+    /// identity, so they hash by their address, and transformations by
+    /// their own `equals`, which their deep hash follows.
+    fn deep_hash(&self) -> u64 {
+        use TypeAttributeValue as V;
+        match self {
+            V::Names(n) => deep_combine(&[0, Rc::as_ptr(n) as usize as u64]),
+            V::Transformation(xf) => xf.deep_hash(),
+            V::Description(d) => d.deep_hash(),
+            V::PropertyDescriptions(p) => p.deep_hash(),
+            V::AccessorNames(a) | V::EnumValues(a) => a.deep_hash(),
+            V::UnionIdentifier(s) | V::Provenance(s) => s.deep_hash(),
+            V::UnionMemberNames(m) => m.deep_hash(),
+            V::MinMax(c) | V::MinMaxLength(c) | V::MinMaxItems(c) => c.deep_hash(),
+            V::Pattern(p) => p.deep_hash(),
+            V::DefaultValue(v) => v.deep_hash(),
+            V::StringTypes(st) => st.deep_hash(),
+            V::UriAttributes(u) => u.deep_hash(),
         }
     }
 }
@@ -467,6 +496,17 @@ impl JsEquals for TypeAttributes {
                 .0
                 .iter()
                 .all(|v| other.get(v.kind()).is_some_and(|w| v.js_equals(w)))
+    }
+}
+
+impl DeepHash for TypeAttributes {
+    /// Each kind (its discriminant) with its value, in any order.
+    fn deep_hash(&self) -> u64 {
+        deep_unordered(
+            self.0
+                .iter()
+                .map(|v| deep_combine(&[v.kind() as u64, v.deep_hash()])),
+        )
     }
 }
 
@@ -745,7 +785,7 @@ fn make_value_inferred(value: &TypeAttributeValue) -> Result<Option<TypeAttribut
     use TypeAttributeValue as V;
     Ok(match value {
         V::Names(tn) => Some(V::Names(Rc::new(tn.make_inferred()))),
-        V::UnionIdentifier(_) => Some(V::UnionIdentifier(Rc::new(IndexSet::new()))),
+        V::UnionIdentifier(_) => Some(V::UnionIdentifier(Rc::new(IndexSet::default()))),
         V::Provenance(p) => Some(V::Provenance(Rc::clone(p))),
         V::UnionMemberNames(_) | V::Transformation(_) => {
             return panic(format!(
@@ -914,7 +954,7 @@ mod add_to_schema_tests {
 
     #[test]
     fn schema_properties_follow_javascript_object_order() {
-        let mut schema = SchemaObject::new();
+        let mut schema = SchemaObject::default();
         set_schema_property(&mut schema, "b", Some(JsonValue::Bool(true)));
         set_schema_property(&mut schema, "title", None);
         set_schema_property(&mut schema, "42", Some(JsonValue::Null));
@@ -935,10 +975,10 @@ mod add_to_schema_tests {
 
     #[test]
     fn attributes_add_their_keywords_for_their_type_kinds() {
-        let mut schema = SchemaObject::new();
+        let mut schema = SchemaObject::default();
         let uri = TypeAttributeValue::UriAttributes(Rc::new((
             ["https", "ftp"].into_iter().map(String::from).collect(),
-            IndexSet::new(),
+            IndexSet::default(),
         )));
         let length = TypeAttributeValue::MinMaxLength(MinMaxConstraint(Some(1.0), None));
         let range = TypeAttributeValue::MinMax(MinMaxConstraint(None, Some(1e21)));
@@ -955,7 +995,7 @@ mod add_to_schema_tests {
             r#"{"qt-uri-protocols":["ftp","https"],"minLength":1,"pattern":"^a$","default":null,"description":"one\ntwo"}"#
         );
 
-        let mut schema = SchemaObject::new();
+        let mut schema = SchemaObject::default();
         for attribute in [&uri, &length, &range, &pattern] {
             attribute.add_to_schema(&mut schema, TypeKind::Integer);
         }
@@ -1020,7 +1060,7 @@ mod tests {
 
     #[test]
     fn panicking_kinds_return_errors() {
-        let a = AccessorNamesTypeAttributeKind.make_attributes(AccessorNames::new());
+        let a = AccessorNamesTypeAttributeKind.make_attributes(AccessorNames::default());
         assert_eq!(
             combine_type_attributes(CombinationKind::Union, &[&a, &a])
                 .unwrap_err()
@@ -1029,7 +1069,7 @@ mod tests {
         );
         // A single value is used as is, without calling combine.
         assert!(combine_type_attributes(CombinationKind::Union, &[&a]).is_ok());
-        let m = UnionMemberNamesTypeAttributeKind.make_attributes(IndexMap::new());
+        let m = UnionMemberNamesTypeAttributeKind.make_attributes(IndexMap::default());
         assert_eq!(
             make_type_attributes_inferred(&m)
                 .unwrap_err()
@@ -1041,7 +1081,7 @@ mod tests {
     #[test]
     fn make_inferred_drops_or_transforms() {
         let a = make_names_type_attributes("a", false)
-            .with(DescriptionTypeAttributeKind.wrap_value(IndexSet::new()))
+            .with(DescriptionTypeAttributeKind.wrap_value(IndexSet::default()))
             .with(UnionIdentifierTypeAttributeKind.wrap_value([3].into_iter().collect()));
         let inferred = make_type_attributes_inferred(&a).unwrap();
         assert_eq!(

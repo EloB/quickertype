@@ -3,23 +3,26 @@
 // `CompressedJSON`s and the runs must be what TypeScript gives, whether
 // the samples were read by the engine or by TypeScript.
 //
-//   node --test test/samples.test.mjs   (after `npm run build`)
+//   node --test test/samples.test.mjs test/samples.hooks.test.mjs   (after `npm run build`
+//   and `node script/test-hooks.mjs`; npm test runs both)
+//
+// The tests that call no test hook run on the shipped package; those that
+// trap an instance or count the engine's compressed forms (`__panicForTests`,
+// `__jsonCount`, ...), which the shipped engine does not export, run from
+// samples.hooks.test.mjs on the test-hooks package (test/hooks.mjs). The
+// tests that only also check that no lease is left (`noLeases`) run on both.
 
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import * as path from "node:path";
 import { test } from "node:test";
-import { fileURLToPath } from "node:url";
 
 import { generateJson } from "./bench/generate.mjs";
+import { hookTest, runPackage, shippedTest } from "./hooks.mjs";
 
 const require = createRequire(import.meta.url);
-const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const qt = require(packageRoot);
-const { engineStats } = require(path.join(packageRoot, "dist", "native", "bridge.js"));
-const engine = require(path.join(packageRoot, "dist", "native", "engine.js"));
-const nativeSamples = require(path.join(packageRoot, "dist", "native", "samples.js"));
+const { root: packageRoot, qt, engineStats, engine, nativeSamples, hasHooks } = runPackage();
 const { CompressedJSONFromString } = require(path.join(packageRoot, "dist", "input", "CompressedJSON.js"));
 const { DefaultDateTimeRecognizer } = require(path.join(packageRoot, "dist", "DateTime.js"));
 
@@ -30,9 +33,10 @@ const engineKey = Symbol.for("quicktype-core.engine");
 // sample only if it is large"); here it is from the start.
 engine.engineSync();
 
-/** No run holds samples it did not take over or let go of. */
+/** No run holds samples it did not take over or let go of (only the
+ * test-hooks engine counts its leases, `__jsonLeases`). */
 function noLeases() {
-    assert.equal(engine.engineSync().__jsonLeases(), 0);
+    if (hasHooks) assert.equal(engine.engineSync().__jsonLeases(), 0);
 }
 
 /** `f()` with the engine mode `mode` ("ts": TypeScript reads everything). */
@@ -106,7 +110,7 @@ async function addAll(lang, groups, { handleRefs = false, rendererOptions = {}, 
     return input;
 }
 
-test("samples are read by the engine, and the tables are TypeScript's once read", async () => {
+shippedTest("samples are read by the engine, and the tables are TypeScript's once read", async () => {
     for (const lang of languages) {
         for (const [handleRefs, rendererOptions] of [
             [false, {}],
@@ -198,7 +202,7 @@ test("a run keeps its samples while a run on TypeScript fills the tables", async
     noLeases();
 });
 
-test("a run keeps its samples when another input is read into the engine meanwhile", () => {
+hookTest("a run keeps its samples when another input is read into the engine meanwhile", () => {
     // In a fresh process, so that the second input would take the first's
     // place in the engine (its slot) if ids were reused.
     const script = `
@@ -233,7 +237,7 @@ test("a run keeps its samples when another input is read into the engine meanwhi
     assert.deepEqual(stats, [2, 1, 0]);
 });
 
-test("the tables are TypeScript's, string for string", async () => {
+shippedTest("the tables are TypeScript's, string for string", async () => {
     // `JSON.parse` keeps one of two "__proto__" members, and TypeScript
     // interns its key once; a sample that is not JSON interns nothing.
     for (const groups of [
@@ -259,7 +263,7 @@ test("the tables are TypeScript's, string for string", async () => {
     }
 });
 
-test("the engine is compiled for a sample only if it is large", () => {
+shippedTest("the engine is compiled for a sample only if it is large", () => {
     const script = `
         const qt = require(${JSON.stringify(packageRoot)});
         const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
@@ -322,7 +326,7 @@ const invalid = [
     "x".repeat(100),
 ];
 
-test("a sample that is not JSON fails in addSource, with V8's error", async () => {
+shippedTest("a sample that is not JSON fails in addSource, with V8's error", async () => {
     for (const bad of invalid) {
         for (const sync of [false, true]) {
             const attempt = async () => {
@@ -340,7 +344,7 @@ test("a sample that is not JSON fails in addSource, with V8's error", async () =
     }
 });
 
-test("addSource settles after as many ticks as in TypeScript", async () => {
+shippedTest("addSource settles after as many ticks as in TypeScript", async () => {
     const ticks = async (samples) => {
         const input = qt.jsonInputForTargetLanguage("typescript");
         let done = false;
@@ -362,7 +366,7 @@ test("addSource settles after as many ticks as in TypeScript", async () => {
     }
 });
 
-test("concurrent addSource calls on one input interleave as in TypeScript", async () => {
+shippedTest("concurrent addSource calls on one input interleave as in TypeScript", async () => {
     const attempt = async () => {
         const input = qt.jsonInputForTargetLanguage("cs");
         await Promise.all([
@@ -375,7 +379,7 @@ test("concurrent addSource calls on one input interleave as in TypeScript", asyn
     assert.deepEqual(await attempt(), await inMode("ts", attempt));
 });
 
-test("samples TypeScript reads itself, and the samples after them", async () => {
+shippedTest("samples TypeScript reads itself, and the samples after them", async () => {
     const deep = (n) => "[".repeat(n) + "]".repeat(n);
     const cases = [
         ["deeper than the engine reads", [deep(10), deep(257), deep(3)]],
@@ -409,7 +413,7 @@ test("samples TypeScript reads itself, and the samples after them", async () => 
     assert.deepEqual(await tooDeep(), expected);
 });
 
-test("CompressedJSONs that are not quicktype's own are read by TypeScript", async () => {
+shippedTest("CompressedJSONs that are not quicktype's own are read by TypeScript", async () => {
     class Mine extends CompressedJSONFromString {}
     const before = { ...engineStats };
     const input = new qt.JSONInput(new Mine(new DefaultDateTimeRecognizer(), false));
@@ -442,7 +446,7 @@ test("CompressedJSONs that are not quicktype's own are read by TypeScript", asyn
     assert.deepEqual(await attempt(), await inMode("ts", attempt));
 });
 
-test("a configuration changed between samples reads each sample with its own", async () => {
+shippedTest("a configuration changed between samples reads each sample with its own", async () => {
     const attempt = async () => {
         const input = qt.jsonInputForTargetLanguage("typescript");
         const cjson = input._compressedJSON;
@@ -472,7 +476,7 @@ async function patched(object, name, value, f) {
     }
 }
 
-test("a date/time recognizer with a method replaced is TypeScript's", async () => {
+shippedTest("a date/time recognizer with a method replaced is TypeScript's", async () => {
     const dates = ['{"d": "2020-01-01", "t": "12:30:00Z", "dt": "2020-01-01T00:00:00Z"}', '[{"d": "2021-02-03", "e": "x"}]'];
     const notDate = () => false;
     for (const lang of ["typescript", "kotlin"]) {
@@ -505,7 +509,7 @@ test("a date/time recognizer with a method replaced is TypeScript's", async () =
     assert.equal(engineStats.samplesRead, before.samplesRead + dates.length);
 });
 
-test("CompressedJSONFromString methods replaced on a prototype or the instance are TypeScript's", async () => {
+shippedTest("CompressedJSONFromString methods replaced on a prototype or the instance are TypeScript's", async () => {
     const CompressedJSONPrototype = Object.getPrototypeOf(CompressedJSONFromString.prototype);
     const samples = ['{"a": "x", "n": 1, "list": [2, "y", [3, 4]]}', '[{"a": "z", "n": 5, "m": [6, "w"]}, 7]'];
     const cases = [
@@ -559,7 +563,7 @@ test("CompressedJSONFromString methods replaced on a prototype or the instance a
 // name (src/native/samples.ts, `readMethods`): each one, wrapped, leaves
 // the sample to TypeScript, and the others are not part of the read. A
 // method upstream adds fails this until it is in one list or the other.
-test("every method TypeScript's read calls is the original", async () => {
+shippedTest("every method TypeScript's read calls is the original", async () => {
     const notRead = ["equals", "getStringForValue", "getStringFormatTypeKind", "hashCode", "parse", "parseSync"];
     const readByEngine = new Set();
     let wrapped = 0;
@@ -597,7 +601,7 @@ test("every method TypeScript's read calls is the original", async () => {
     assert.deepEqual([...readByEngine].sort(), notRead);
 });
 
-test("many small samples", async () => {
+shippedTest("many small samples", async () => {
     const list = Array.from({ length: 3000 }, (_, i) => `{"id": ${i}, "v${i % 7}": [${i % 3 === 0 ? "1.5" : i}], "s": "${"ab".repeat(i % 5)}"}`);
     const attempt = async () => {
         const input = qt.jsonInputForTargetLanguage("go");
@@ -610,7 +614,7 @@ test("many small samples", async () => {
     assert.equal(engineStats.samplesRead, before.samplesRead + 3500);
 });
 
-test("a sample added while a run uses the input is read by TypeScript", async () => {
+shippedTest("a sample added while a run uses the input is read by TypeScript", async () => {
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const attempt = async () => {
         class Store extends qt.JSONSchemaStore {
@@ -641,7 +645,7 @@ test("a sample added while a run uses the input is read by TypeScript", async ()
     assert.equal(engineStats.tablesFilled, before.tablesFilled + 1);
 });
 
-test("samples read by an instance that failed are read again by TypeScript", async () => {
+hookTest("samples read by an instance that failed are read again by TypeScript", async () => {
     const input = await addAll("rust", plainGroups);
     const expected = await inMode("ts", async () => run(await addAll("rust", plainGroups), "rust"));
     const glue = engine.engineSync();
@@ -653,7 +657,7 @@ test("samples read by an instance that failed are read again by TypeScript", asy
     assert.equal(engineStats.wasm, before.wasm + 1);
 });
 
-test("the samples of a large input are taken from an instance that failed", async () => {
+hookTest("the samples of a large input are taken from an instance that failed", async () => {
     // A large input's samples are not kept: here, every input is large.
     const old = nativeSamples.setKeptTexts(0);
     try {
@@ -682,7 +686,7 @@ test("the samples of a large input are taken from an instance that failed", asyn
     }
 });
 
-test("the engine drops the samples of inputs that are gone", () => {
+hookTest("the engine drops the samples of inputs that are gone", () => {
     const script = `
         const qt = require(${JSON.stringify(packageRoot)});
         const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
@@ -815,7 +819,7 @@ test("a run over two forms counts both before it evicts, and keeps both", async 
 // the limit, the least recently used compressed forms are evicted: their
 // tables are exported to JavaScript, and the inputs are TypeScript's from
 // then on.
-test("the engine holds at most its limit of compressed forms, however many inputs are kept", { timeout: 300_000 }, async () => {
+hookTest("the engine holds at most its limit of compressed forms, however many inputs are kept", { timeout: 300_000 }, async () => {
     const limit = 16 << 20;
     const old = nativeSamples.setHeldLimit(limit);
     try {
@@ -862,7 +866,7 @@ test("the engine holds at most its limit of compressed forms, however many input
     }
 });
 
-test("inputs that are gone but not finalized are evicted too, and nothing is filled for them", () => {
+hookTest("inputs that are gone but not finalized are evicted too, and nothing is filled for them", () => {
     const script = `
         const qt = require(${JSON.stringify(packageRoot)});
         const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
@@ -906,7 +910,7 @@ test("inputs that are gone but not finalized are evicted too, and nothing is fil
 // kept alive for the rest of the job its weak reference was made or read
 // in (KeepDuringJob: a `WeakRef` keeps its target until the job ends) is
 // evicted too, as one in use, and collected with its tables afterwards.
-test("a live input past the limit is exported, also one kept alive by its weak reference", () => {
+hookTest("a live input past the limit is exported, also one kept alive by its weak reference", () => {
     const script = `
         const qt = require(${JSON.stringify(packageRoot)});
         const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
@@ -976,7 +980,7 @@ test("a live input past the limit is exported, also one kept alive by its weak r
 // are kept most recently used first while they fit: a form past the limit
 // on its own evicts nothing while it is read into (the small inputs used
 // before it stay), and is the one evicted once another input is read.
-test("a form past the limit on its own evicts nothing while it is read into, and goes first after", () => {
+shippedTest("a form past the limit on its own evicts nothing while it is read into, and goes first after", () => {
     const script = `
         const qt = require(${JSON.stringify(packageRoot)});
         const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
@@ -1046,7 +1050,7 @@ test("a form past the limit on its own evicts nothing while it is read into, and
 // other inputs' tables are then taken from its memory, which only works
 // if the read held no borrow of the engine's table of inputs (a borrow
 // that a trap never releases).
-test("an instance that traps while it reads a sample still gives the other inputs' tables", async () => {
+hookTest("an instance that traps while it reads a sample still gives the other inputs' tables", async () => {
     const old = nativeSamples.setKeptTexts(0);
     try {
         const bSamples = ['{"b": [1, {"c": "x"}]}', "[2]"];
@@ -1195,7 +1199,7 @@ test("bytes: a byte order mark, bytes that are not UTF-8, an empty buffer", asyn
     noLeases();
 });
 
-test("bytes changed after addSource change nothing", async () => {
+hookTest("bytes changed after addSource change nothing", async () => {
     const bytes = utf8('{"a": [1, {"b": "c"}]}');
     const input = qt.jsonInputForTargetLanguage("typescript");
     await input.addSource({ name: "T", samples: [bytes] });
@@ -1220,7 +1224,7 @@ test("bytes changed after addSource change nothing", async () => {
 // (`releaseJSONInput`, not public): its form is freed in the engine at once,
 // so that reading the next input does not find the engine past its limit
 // and evict it, as it would an input that is gone but not finalized yet.
-test("an input released is freed in the engine at once, and is not evicted", async () => {
+hookTest("an input released is freed in the engine at once, and is not evicted", async () => {
     const glue = engine.engineSync();
     const count = glue.__jsonCount();
     const held = glue.jsonHeld();
@@ -1364,7 +1368,7 @@ test("bytes from another realm are bytes", async () => {
 // How an input's samples are read, for the playground's reuse of an input
 // (`readingKey`, not public): from the configuration the engine reads them
 // with, so that two inputs share it exactly when they read alike.
-test("the reading key follows the CompressedJSON's configuration", () => {
+shippedTest("the reading key follows the CompressedJSON's configuration", () => {
     const key = (lang, handleRefs = false, rendererOptions = {}) =>
         nativeSamples.readingKey(qt.jsonInputForTargetLanguage(lang, undefined, handleRefs, rendererOptions));
     assert.equal(key("go"), key("cs"));

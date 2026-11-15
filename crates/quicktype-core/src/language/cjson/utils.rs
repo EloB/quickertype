@@ -68,7 +68,7 @@ pub struct TypeRecord {
 
 /// `IncludeMap`: the include kind of every type a file uses, by type name,
 /// in insertion order (a JavaScript `Map`).
-pub type IncludeMap = indexmap::IndexMap<String, IncludeRecord>;
+pub type IncludeMap = crate::support::fast_hash::IndexMap<String, IncludeRecord>;
 
 /// `TypeCJSON`: what the generated code needs to know about a type.
 #[derive(Clone, Debug)]

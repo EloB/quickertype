@@ -4,10 +4,12 @@
 //! set of string cases with their occurrence counts plus the transformed
 //! string kinds (dates, UUIDs, ...) the strings may be.
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::messages::Result;
-use crate::support::collection_utils::{JsEquals, JsHash, add_hash_code, set_intersect};
+use crate::support::collection_utils::{
+    DeepHash, JsEquals, JsHash, add_hash_code, deep_combine, set_intersect,
+};
 use crate::support::support::assert;
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder_utils::StringTypeMapping;
@@ -38,7 +40,7 @@ impl StringTypes {
     pub fn unrestricted() -> StringTypes {
         StringTypes {
             cases: None,
-            transformations: IndexSet::new(),
+            transformations: IndexSet::default(),
         }
     }
 
@@ -64,7 +66,7 @@ impl StringTypes {
     pub fn from_case(s: &str, count: u64) -> StringTypes {
         StringTypes {
             cases: Some([(s.to_owned(), count)].into_iter().collect()),
-            transformations: IndexSet::new(),
+            transformations: IndexSet::default(),
         }
     }
 
@@ -72,7 +74,7 @@ impl StringTypes {
     pub fn from_cases(cases: &[String]) -> StringTypes {
         StringTypes {
             cases: Some(cases.iter().map(|s| (s.clone(), 1)).collect()),
-            transformations: IndexSet::new(),
+            transformations: IndexSet::default(),
         }
     }
 
@@ -157,11 +159,11 @@ impl StringTypes {
         if !self.is_restricted() {
             return (None, self.transformations.clone());
         }
-        let mut kinds = IndexSet::new();
+        let mut kinds = IndexSet::default();
         for &kind in &self.transformations {
             let mapped = mapping.get(kind);
             if mapped == TypeKind::String {
-                return (None, IndexSet::new());
+                return (None, IndexSet::default());
             }
             kinds.insert(mapped);
         }
@@ -197,6 +199,12 @@ impl JsHash for StringTypes {
 impl JsEquals for StringTypes {
     fn js_equals(&self, other: &Self) -> bool {
         self.cases.js_equals(&other.cases) && self.transformations.js_equals(&other.transformations)
+    }
+}
+
+impl DeepHash for StringTypes {
+    fn deep_hash(&self) -> u64 {
+        deep_combine(&[self.cases.deep_hash(), self.transformations.deep_hash()])
     }
 }
 
@@ -471,7 +479,7 @@ mod tests {
         st.transformations.insert(TypeKind::Date);
         assert_eq!(st.to_string(), "1 enums: hello (1), ...,date");
         assert_eq!(StringTypes::unrestricted().to_string(), "unrestricted");
-        let empty = StringTypes::new(Some(IndexMap::new()), IndexSet::new()).unwrap();
+        let empty = StringTypes::new(Some(IndexMap::default()), IndexSet::default()).unwrap();
         let e = StringTypes::new(None, [TypeKind::Date].into_iter().collect()).unwrap_err();
         assert_eq!(
             e.user_message(),
@@ -485,11 +493,14 @@ mod tests {
         let mut st = StringTypes::from_case("2020-01-01", 1);
         st.transformations.insert(TypeKind::Date);
         let mut m = StringTypeMapping::new();
-        assert_eq!(st.apply_string_type_mapping(&m), (None, IndexSet::new()));
+        assert_eq!(
+            st.apply_string_type_mapping(&m),
+            (None, IndexSet::default())
+        );
         m.set(TypeKind::Date, TypeKind::Date);
         let (cases, transformations) = st.apply_string_type_mapping(&m);
         assert_eq!(cases, st.cases.as_ref());
-        assert_eq!(transformations, IndexSet::from([TypeKind::Date]));
+        assert_eq!(transformations, IndexSet::from_iter([TypeKind::Date]));
     }
 
     struct NoDates;

@@ -35,11 +35,11 @@ npm/quicktype-core         → loads the .wasm that quicktype-wasm compiles to
 
 | Crate | Ports (TS path) | Notable external crates |
 |---|---|---|
-| [`crates/quicktype-core`](../crates/quicktype-core) | `packages/quicktype-core/src`; also the CLI's `src/CompressedJSONFromStream.ts` with stream-json's parser (`input/compressed_json_from_stream.rs`), `collection-utils` (`support/collection_utils.rs`) and Node's `fetch` (`input/io/fetch.rs`) | `indexmap`, `regex`, `stacker`; with feature `http`: `ureq`, `url`, `flate2`, `brotli-decompressor` |
-| [`crates/quicktype-cli`](../crates/quicktype-cli) | `src/` (`index.ts`, `TypeSource.ts`, `URLGrammar.ts`, `GraphQLIntrospection.ts`); also `command-line-args`, `command-line-usage` (with `table-layout`, `wordwrapjs`) and `chalk`/`supports-color`/`chalk-template` | `indexmap` |
-| [`crates/quicktype-graphql-input`](../crates/quicktype-graphql-input) | `packages/quicktype-graphql-input/src`; also graphql-js 16.14.2's lexer and parser (`src/graphql/`) | `indexmap` |
+| [`crates/quicktype-core`](../crates/quicktype-core) | `packages/quicktype-core/src`; also the CLI's `src/CompressedJSONFromStream.ts` with stream-json's parser (`input/compressed_json_from_stream.rs`), `collection-utils` (`support/collection_utils.rs`) and Node's `fetch` (`input/io/fetch.rs`) | `indexmap`, `hashbrown`, `regex`, `stacker`; with feature `http`: `ureq`, `url`, `flate2`, `brotli-decompressor` |
+| [`crates/quicktype-cli`](../crates/quicktype-cli) | `src/` (`index.ts`, `TypeSource.ts`, `URLGrammar.ts`, `GraphQLIntrospection.ts`); also `command-line-args`, `command-line-usage` (with `table-layout`, `wordwrapjs`) and `chalk`/`supports-color`/`chalk-template` | `mimalloc` |
+| [`crates/quicktype-graphql-input`](../crates/quicktype-graphql-input) | `packages/quicktype-graphql-input/src`; also graphql-js 16.14.2's lexer and parser (`src/graphql/`) | none |
 | [`crates/quicktype-typescript-input`](../crates/quicktype-typescript-input) | `packages/quicktype-typescript-input/src/index.ts`; also typescript-json-schema 0.67.4 (`src/tjs/`) and a client for TypeScript 7.0.2's `tsc --api` protocol (`src/tsc/`) | `serde`, `serde_json`, `stacker` |
-| [`crates/quicktype-js-compat`](../crates/quicktype-js-compat) | no TS file: JavaScript runtime behavior and npm packages the output depends on (section 4) | `ryu`, `saphyr-parser`, `regex`, `indexmap`, `stacker`; `wasm-bindgen` under `js-host-math` |
+| [`crates/quicktype-js-compat`](../crates/quicktype-js-compat) | no TS file: JavaScript runtime behavior and npm packages the output depends on (section 4) | `ryu`, `saphyr-parser`, `regex`, `indexmap`, `foldhash`, `stacker`; `wasm-bindgen` under `js-host-math` and `js-host-random` |
 | [`crates/quicktype-wasm`](../crates/quicktype-wasm) | no TS file: the bindings the npm facade calls (section 5) | `wasm-bindgen`, `js-sys`, pinned to the `wasm-bindgen` CLI version |
 | [`xtask`](../xtask) | no TS file: `cargo xtask parity`, `diff`, `golden` (`xtask/src/`) and the Node recorders (`xtask/*/`) | `serde`, `serde_json` |
 | [`npm/quicktype-core`](../npm/quicktype-core) | `packages/quicktype-core/src` verbatim except `Run.ts`, plus `src/native/` | npm package |
@@ -225,9 +225,39 @@ others default to the function of the same name in
 - **Deduplication** depends on collection-utils' hashes and linear probing,
   so `JsHash`, `JsEquals` and `EqualityMap`
   ([`support/collection_utils.rs`](../crates/quicktype-core/src/support/collection_utils.rs))
-  reproduce them bit for bit, keyed by `TypeIdentity`.
+  reproduce them bit for bit, keyed by `TypeIdentity`. `EqualityMap`
+  keeps the original's slots. A key's own slot settles most lookups;
+  otherwise a probe run's end comes from "next free slot" links, and the
+  keys that may match from an index by a seeded `DeepHash` (consistent
+  with `JsEquals`), sorted by slot so that a lookup visits only its own
+  run. So keys whose Java string hashes collide do not make it
+  quadratic. Builds with debug assertions also walk the slots as the
+  original does and assert the same answer.
 - **`Map`/`Set`** become `IndexMap`/`IndexSet`. Where an object is a JS `Map`
   key, `SameValueZeroKey` and `JsObject` model SameValueZero.
+- **Hashing**: every hash map and set, in every crate, is one of
+  `quicktype_js_compat::hash`'s `IndexMap`, `IndexSet`, `HashMap` and
+  `HashSet` (quickertype-core re-exports them as `support::fast_hash`),
+  with its one hasher, `SeededState`: foldhash with a secret seed, because
+  the keys come from the input. The seed is 16 bytes: natively two hashes
+  of a fresh `std` `RandomState`, which is keyed from the operating
+  system's random source, once per process; in WebAssembly
+  `crypto.getRandomValues`, per instance (the `js-host-random` feature).
+  foldhash with a secret seed is a fast hash, not a keyed pseudorandom
+  function: the `siphash` feature makes `SeededState` `std`'s SipHash-1-3
+  natively, for an embedder that hashes untrusted input on a server.
+  `IndexMap`/`IndexSet` iterate in insertion order whatever the seed;
+  `HashMap`/`HashSet` are for lookups only, since their order changes with
+  it (docs/PARITY.md, rule 1). Maps are made with `default()`,
+  `index_map_with_capacity`, `collect()`, or a copy's source map's hasher.
+  indexmap is built without `std`, so it has no `RandomState` default, and
+  clippy's `disallowed-types` and `disallowed-methods`
+  ([`clippy.toml`](../clippy.toml)) reject every other map, `RandomState`,
+  `DefaultHasher` and foldhash's own states outside that module.
+  `EqualityMap` keeps collection-utils' Java string hash for its slots,
+  which parity needs, and indexes its keys by the seeded hash (above).
+  Not hashed with it: regex-automata's own maps, and pluralize's word
+  tables, which are ordered instead.
 - **`===` on emitted items** (`emitLineOnce`, `emitItemOnce`): a
   `Source::Text` equals an earlier one with the same text, a `Source::Name`
   the same name, and a sequence (`sl![...]`, a TS array literal) nothing
@@ -422,7 +452,7 @@ suite (see below); the xtask tools reject it.
 | Stage-level differential tests | `type_graph_scenarios.rs`, `json_input.rs`, `json_schema_input.rs`, `js_vectors.rs` (quicktype-core); `graphql_input.rs` (graphql-input); `graphql_introspect.rs` (cli); `differential.rs` (typescript-input, skipped without TypeScript 7.0.2); `tests/vectors/` (js-compat) | `cargo test` | `xtask/core-type-graph/`, `core-json-input/`, `core-json-schema-input/`, `graphql-input/`, `typescript-input/`, `js-compat/` (each script's header or the directory's README names its outputs) |
 | Ported Vitest tests (`test/unit/*.test.ts`, names kept) | `crates/quicktype-core/tests/*vitest*.rs`, `render_java_kotlin.rs`, `run.rs`, `windows_schema_paths.rs`; `crates/quicktype-cli/tests/cli.rs`, `url_input.rs`; some module unit tests (`naming.rs`, `markov_chain.rs`, ...); API-level ones in `npm/quicktype-core/test/differential/scenarios/api/` | `cargo test`, `npm run test:differential` | |
 | Unit tests | `#[cfg(test)] mod tests` next to each module | `cargo test` | |
-| npm package | `npm/quicktype-core/test/`: `package.test.mjs`, `engine.test.mjs`, `differential/` (the same API calls on the reference quicktype-core and this package), `browser/` | `npm test`, `npm run test:differential`, `npm run test:browser`, `npm run check:upstream` | |
+| npm package | `npm/quicktype-core/test/`: `package.test.mjs`, `engine.test.mjs`, `differential/` (the same API calls on the reference quicktype-core and this package), `browser/`; the tests that trap an instance or read its counters load a package with an engine built with quicktype-wasm's `test-hooks` feature (`script/test-hooks.mjs`, `test/hooks.mjs`), which the shipped engine lacks | `npm test`, `npm run test:differential`, `npm run test:browser`, `npm run check:upstream` | |
 
 CI ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) runs fmt and
 clippy, `cargo test --workspace`, `cargo xtask parity`, the `wasm32` build and

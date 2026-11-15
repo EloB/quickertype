@@ -5,8 +5,8 @@
 //! cartesian product), and `{"oneOf": [...]}` is the union of its options'
 //! expansions.
 
-use indexmap::IndexMap;
 use quicktype_core::support::recursion;
+use quicktype_js_compat::hash::IndexMap;
 use quicktype_js_compat::json::{self, JsonValue};
 
 use crate::messages::CliError;
@@ -92,7 +92,7 @@ pub fn urls_from_url_grammar(json: &JsonValue) -> Result<IndexMap<String, Vec<St
             js_string(json)?
         ));
     };
-    let mut results = IndexMap::new();
+    let mut results = IndexMap::default();
     for (name, value) in top_level_map {
         results.insert(name.clone(), expand(value, 1)?);
     }

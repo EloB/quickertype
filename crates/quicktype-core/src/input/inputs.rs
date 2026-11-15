@@ -22,7 +22,7 @@ use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::OnceLock;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use super::compressed_json::{
     CompressedJson, CompressedJsonTables, Framing, JsonSample, ParseError, SampleStream, Value,
@@ -477,7 +477,7 @@ impl JsonInput {
     pub fn new(compressed_json: CompressedJson) -> Self {
         JsonInput {
             compressed_json: Rc::new(compressed_json),
-            top_levels: IndexMap::new(),
+            top_levels: IndexMap::default(),
             tallies: (!compressed_json_inference_requested()).then(RunningTallies::new),
             tally_compressed: false,
             keep_tallies: false,
@@ -516,7 +516,7 @@ impl JsonInput {
         let (objects, arrays) = compressed_json.counts();
         let mut input = JsonInput {
             compressed_json,
-            top_levels: IndexMap::new(),
+            top_levels: IndexMap::default(),
             tallies: None,
             tally_compressed: !compressed_json_inference_requested(),
             keep_tallies: false,

@@ -202,7 +202,7 @@ impl Trie {
                 SubTrie::Trie(trie) => trie.to_json(),
             })
             .collect();
-        let mut object = IndexMap::new();
+        let mut object = IndexMap::default();
         object.insert("count".to_owned(), JsonValue::Number(self.count as f64));
         object.insert("arr".to_owned(), JsonValue::Array(arr));
         JsonValue::Object(object)
@@ -221,7 +221,7 @@ pub struct TrainingMarkovChain {
 impl TrainingMarkovChain {
     /// `JSON.stringify(mc)`, as `quicktype --build-markov-chain` prints it.
     pub fn to_json(&self) -> String {
-        let mut object = IndexMap::new();
+        let mut object = IndexMap::default();
         object.insert("trie".to_owned(), self.trie.to_json());
         object.insert("depth".to_owned(), JsonValue::Number(self.depth as f64));
         json::stringify(&JsonValue::Object(object), None)

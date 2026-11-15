@@ -13,7 +13,7 @@ mod render_support;
 use std::fs;
 use std::path::Path;
 
-use indexmap::IndexMap;
+use quicktype_core::support::fast_hash::IndexMap;
 use render_support::{build_graph, gather_and_render};
 use serde_json::Value;
 

@@ -5,10 +5,10 @@
 //! plus the `--http-header`s) and returns the result as the text of a
 //! `--graphql-schema` file.
 
-use indexmap::IndexMap;
 use quicktype_core::support::recursion::stack_overflow;
 use quicktype_core::{Io, JsErrorName, QuickTypeError, RequestInit};
 use quicktype_graphql_input::graphql::get_introspection_query;
+use quicktype_js_compat::hash::IndexMap;
 use quicktype_js_compat::json::{self, JsonValue, insert_js_property};
 use quicktype_js_compat::whitespace;
 
@@ -82,7 +82,7 @@ pub async fn introspect_server(
 ) -> Result<String, QuickTypeError> {
     // `headers` is a plain object: the defaults, then each header in turn,
     // a later one of the same name replacing it in place.
-    let mut headers: IndexMap<String, String> = IndexMap::new();
+    let mut headers: IndexMap<String, String> = IndexMap::default();
     headers.insert("Accept".to_owned(), "application/json".to_owned());
     headers.insert("Content-Type".to_owned(), "application/json".to_owned());
     for s in header_strings {

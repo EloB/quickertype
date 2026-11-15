@@ -6,7 +6,7 @@
 
 use crate::attributes::type_attributes::{AttributeKind, SchemaObject, set_schema_property};
 use crate::messages::Result;
-use crate::support::collection_utils::{HASH_CODE_INIT, JsEquals, JsHash};
+use crate::support::collection_utils::{DeepHash, HASH_CODE_INIT, JsEquals, JsHash, deep_combine};
 use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;
 use quicktype_js_compat::json;
@@ -54,6 +54,17 @@ impl JsEquals for DefaultValue {
     }
 }
 
+impl DeepHash for DefaultValue {
+    fn deep_hash(&self) -> u64 {
+        match self {
+            DefaultValue::Bool(b) => deep_combine(&[1, b.deep_hash()]),
+            DefaultValue::Number(n) => deep_combine(&[2, n.deep_hash()]),
+            DefaultValue::String(s) => deep_combine(&[3, s.deep_hash()]),
+            DefaultValue::Null => deep_combine(&[4]),
+        }
+    }
+}
+
 /// `defaultValueTypeAttributeKind`: `defaultValue`.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct DefaultValueTypeAttributeKind;
@@ -95,7 +106,7 @@ pub fn default_value_for_type(graph: &TypeGraph, t: TypeRef) -> Result<Option<De
 pub fn default_value_attribute_producer(
     schema: &crate::input::json_schema_store::JsonSchema,
     _ref: &crate::input::json_schema_input::Ref,
-    types: &indexmap::IndexSet<crate::input::json_schema_input::JsonSchemaType>,
+    types: &crate::support::fast_hash::IndexSet<crate::input::json_schema_input::JsonSchemaType>,
     _cases: Option<&[crate::input::json_schema_store::JsonSchema]>,
 ) -> Result<Option<crate::input::json_schema_input::JsonSchemaAttributes>> {
     use crate::input::json_schema_input::{JsonSchemaAttributes, JsonSchemaType as T};

@@ -5,7 +5,7 @@
 //! properties with compatible types, and each clique of more than one class
 //! is replaced by the unification of its members.
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::attributes::type_attributes::CombinationKind;
 use crate::graph_rewriting::make_replacer;

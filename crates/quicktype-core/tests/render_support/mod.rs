@@ -13,7 +13,6 @@
 
 #![allow(dead_code)]
 
-use indexmap::{IndexMap, IndexSet};
 use quicktype_core::attributes::accessor_names::AccessorEntry;
 use quicktype_core::attributes::constraints::MinMaxConstraint;
 use quicktype_core::attributes::default_value::DefaultValue;
@@ -24,6 +23,7 @@ use quicktype_core::gather_names::gather_names;
 use quicktype_core::language::all::{ALL, language_named};
 use quicktype_core::messages::{QuickTypeError, Result};
 use quicktype_core::renderer_options::{OptionValue, RendererOptions};
+use quicktype_core::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_core::target_language::MultiFileRenderResult;
 use quicktype_core::transformers::{DecodingChoiceCases, Transformation, Transformer};
 use quicktype_core::ty::transformed_string_type::TypeKind;
@@ -71,7 +71,7 @@ fn accessor_entry(v: &Value) -> Result<AccessorEntry> {
     if let Some(s) = v.as_str() {
         return Ok(AccessorEntry::Name(s.to_owned()));
     }
-    let mut by_language = IndexMap::new();
+    let mut by_language = IndexMap::default();
     for pair in array_of(v)? {
         let pair = array_of(pair)?;
         by_language.insert(str_of(&pair[0])?.to_owned(), str_of(&pair[1])?.to_owned());
@@ -80,7 +80,7 @@ fn accessor_entry(v: &Value) -> Result<AccessorEntry> {
 }
 
 fn accessor_names(v: &Value) -> Result<IndexMap<String, AccessorEntry>> {
-    let mut result = IndexMap::new();
+    let mut result = IndexMap::default();
     for pair in array_of(v)? {
         let pair = array_of(pair)?;
         result.insert(str_of(&pair[0])?.to_owned(), accessor_entry(&pair[1])?);
@@ -241,7 +241,7 @@ pub fn attributes_in_graph(v: &Value, refs: &[TypeRef]) -> Result<TypeAttributes
             }
             "description" => TypeAttributeValue::Description(Rc::new(strings(value)?)),
             "propertyDescriptions" => {
-                let mut map = IndexMap::new();
+                let mut map = IndexMap::default();
                 for pair in array_of(value)? {
                     let pair = array_of(pair)?;
                     map.insert(str_of(&pair[0])?.to_owned(), strings(&pair[1])?);
@@ -257,7 +257,7 @@ pub fn attributes_in_graph(v: &Value, refs: &[TypeRef]) -> Result<TypeAttributes
                     .collect::<Result<_>>()?,
             )),
             "unionMemberNames" => {
-                let mut map = IndexMap::new();
+                let mut map = IndexMap::default();
                 for pair in array_of(value)? {
                     let pair = array_of(pair)?;
                     map.insert(index(&pair[0])? as u32, accessor_entry(&pair[1])?);
@@ -279,7 +279,7 @@ pub fn attributes_in_graph(v: &Value, refs: &[TypeRef]) -> Result<TypeAttributes
                 let cases = if value["cases"].is_null() {
                     None
                 } else {
-                    let mut cases = IndexMap::new();
+                    let mut cases = IndexMap::default();
                     for pair in array_of(&value["cases"])? {
                         let pair = array_of(pair)?;
                         cases.insert(str_of(&pair[0])?.to_owned(), index(&pair[1])? as u64);
@@ -311,7 +311,7 @@ pub fn attributes_in_graph(v: &Value, refs: &[TypeRef]) -> Result<TypeAttributes
 }
 
 fn properties(v: &Value, refs: &[TypeRef]) -> Result<IndexMap<String, ClassProperty>> {
-    let mut result = IndexMap::new();
+    let mut result = IndexMap::default();
     for p in array_of(v)? {
         let p = array_of(p)?;
         let t = refs[index(&p[1])?];

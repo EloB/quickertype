@@ -21,8 +21,9 @@ pub mod order;
 mod prefetch;
 pub mod text;
 
-use std::collections::HashMap;
 use std::rc::Rc;
+
+use quicktype_js_compat::hash::HashMap;
 
 use crate::error::{Error, Result};
 use crate::js::{self, Obj, Value};
@@ -214,16 +215,16 @@ impl<'s> Generator<'s> {
         let mut g = Generator {
             s,
             warnings: Vec::new(),
-            all_symbols: HashMap::new(),
+            all_symbols: HashMap::default(),
             user_symbols: Vec::new(),
-            user_index: HashMap::new(),
-            inheriting_types: HashMap::new(),
+            user_index: HashMap::default(),
+            inheriting_types: HashMap::default(),
             reffed_definitions: Value::object(),
-            type_names_by_id: HashMap::new(),
-            type_ids_by_name: HashMap::new(),
-            recursive_type_ref: HashMap::new(),
-            fqn_cache: HashMap::new(),
-            index_cache: HashMap::new(),
+            type_names_by_id: HashMap::default(),
+            type_ids_by_name: HashMap::default(),
+            recursive_type_ref: HashMap::default(),
+            fqn_cache: HashMap::default(),
+            index_cache: HashMap::default(),
             order,
             docs: Default::default(),
             main_files: user_files

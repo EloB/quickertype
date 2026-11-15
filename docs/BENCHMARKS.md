@@ -2180,23 +2180,210 @@ quickertype-core's `js-host-random` feature, which the bindings turn on:
   than before (5,446,238 bytes against 5,448,495, with the error
   reporting above), and no phase moved by more than 0.5%.
 
-Covered: the JSON reader's string and key tables, the `fast_hash`
-`HashMap`s and `HashSet`s, and the tallies' `IndexMap`s.
+Covered at first: the JSON reader's string and key tables, the
+`fast_hash` `HashMap`s and `HashSet`s, and the tallies' `IndexMap`s. The
+output did not depend on the seed: every scenario of the differential
+suite (19,078, of which 18,957 run on WebAssembly) gave byte-identical
+results with two different seeds.
 
-Not covered yet:
-- The `IndexMap`s and `IndexSet`s that use `std`'s `RandomState`. Many of
-  them hold names from the input (class properties, enum and string
-  cases, `JsonValue` objects), so in WebAssembly crafted property names
-  can still slow inference. `std` has no way to seed them; they move to
-  `fast_hash`'s hasher in `fix/seeded-index-maps`.
-- In dependencies, regex-automata's maps. Their keys are capture names of
-  the engine's own patterns, and the lazy DFA's states, which the input
-  only selects among. saphyr-parser hashes nothing.
+#### Every map and set
 
-The output does not depend on the seed. Every scenario of the
-differential suite (19,078, of which 18,957 run on WebAssembly) gave
-byte-identical results with two different seeds. The differential test
-against TypeScript passes as before.
+The rest had `std`'s `RandomState`, with fixed keys in WebAssembly: the
+`IndexMap`s and `IndexSet`s, many of them holding names from the input
+(class properties, enum and string cases, `JsonValue` objects), and the
+bindings' `std` `HashMap`s (natively, the GraphQL and TypeScript inputs'
+too). Crafted property names could still slow inference. Now there is
+one hasher for all of them, `SeededState`, in quickertype-js-compat's
+`hash` module: the crate every other one depends on, and the one with
+`JsonValue`. quickertype-core re-exports it as `support::fast_hash`. It is
+the seeding above, moved, with aliases of `IndexMap`, `IndexSet`,
+`HashMap` and `HashSet` and the reader's `StrHasher`:
+- It is the same on every target: foldhash with a shared seed and a seed
+  of its own for each map, from a sequence. The 16 bytes behind them are,
+  natively, two hashes of a fresh `std` `RandomState`, which takes its
+  keys from the operating system's random source, once per process; in
+  WebAssembly, `crypto.getRandomValues` with `js-host-random`, per
+  instance. (Natively the lookup maps and the reader's tables had
+  foldhash's own seed, made from addresses and the clock, and the
+  `IndexMap`s SipHash with keys from the system's random source.)
+- foldhash with a secret seed is a fast hash, not a keyed pseudorandom
+  function like SipHash: whoever learns some hashes may learn something
+  of the seed. The CLI and the engine never show a hash. For an embedder
+  that hashes untrusted input on a server, the `siphash` feature
+  (quickertype-core's, which turns on quickertype-js-compat's) makes
+  `SeededState` `std`'s `RandomState` natively, SipHash-1-3 with keys
+  from the system's random source, for every map, set and the reader's
+  tables; it is one `cfg` in the `hash` module. CI runs clippy and the
+  core and js-compat tests with it. It has no effect on wasm32, where
+  `std`'s keys are fixed.
+- Nothing else can make a map. indexmap is built without `std`, and no
+  crate in the tree turns it on (serde_json's `preserve_order` depends on
+  indexmap without default features), so its types have no
+  `RandomState` default and no `new()`. clippy's `disallowed-types`
+  (`clippy.toml`) rejects `std`'s `HashMap`, `HashSet`, `RandomState`,
+  `DefaultHasher`, `SipHasher` and `BuildHasherDefault`, indexmap's and
+  hashbrown's map types, and foldhash's aliases, `SharedSeed` and every
+  state and hasher of its `fast` and `quality`, everywhere but the `hash`
+  module. `disallowed-methods` rejects `std`'s and indexmap's `new()` and
+  `with_capacity()` (indexmap's in case a dependency ever turns `std`
+  on). A scratch file that used each of the 32 entries got a warning for
+  each.
+- In WebAssembly, an embedder without `js-host-random` must call
+  `fast_hash::seed` before any other use of the crates, since every map
+  now takes its seed when it is made and parsing JSON makes maps; later,
+  it panics and says so. pluralize's word tables hold the library's own
+  words and are only looked up, so they are ordered (`BTreeMap`), not
+  hashed. The bindings' start calls `init()` before anything makes a map.
+- `npm/quicktype-core/test/seed.test.mjs` checks the property that
+  matters: a key hashes differently in a new map of class properties in
+  another process, in the fresh instance the facade makes after a trap
+  (its own recovery path: `discardEngine`, then `createGlue`), and in
+  another map of the same instance. With the entropy fixed, the test
+  fails. The export it uses, `__hashForTests`, is a test hook: every
+  export only the tests use (`__panicForTests`, `__pow`, the engine's
+  counters) is behind quicktype-wasm's `test-hooks` feature, and
+  `__heapBytes`/`__heapPeak` behind `heap-stats`. `script/test-hooks.mjs`,
+  which `npm test` runs first, builds the tests' package: the shipped
+  facade with an engine built with the feature and a `test-hooks` profile
+  (release without fat LTO, written to `target/<triple>/test-hooks/`):
+  29.7 s from cold at load 11 to 15, 0.67 s when nothing changed. The
+  facade loads it as it loads the shipped one. Only the tests that call a
+  hook use it: engine.test.mjs and samples.test.mjs run on the shipped
+  engine and again, from their `*.hooks.test.mjs` twins, on the tests'
+  engine, each test on the one it needs (and the samples tests that only
+  also check the engine's leases on both). `package.test.mjs` checks that
+  the shipped module and its glue have no test hook.
+
+**`EqualityMap`** (`support::collection_utils`), which deduplicates types
+by identity and resolves JSON Schema `$ref`s, reproduces collection-utils:
+Java's `h * 31 + c` string hash with linear probing. Which entry a lookup
+finds depends on the exact slots, and keys that are equal but hash apart
+are found only where their probe runs meet: `Ref`s whose addresses differ
+only in their query's order, since urijs `equals` normalizes them, and
+string-match transformers, which quicktype finds equal exactly when their
+cases differ while hashing the case. So its hash cannot be seeded. But
+colliding Java hashes are easy to craft ("Aa" and "BB" hash alike, and so
+does every string made of them), and each lookup walked the run of taken
+slots: a JSON Schema with 4,000 definitions named so took 70.1 s to turn
+into TypeScript (load 12). Now the map keeps exactly the original's
+slots, and answers what the walk would without walking:
+- a key's own slot is checked first: free, or holding an equal key,
+  settles it, as it does the walk, without anything more;
+- otherwise the first free slot after it comes from "next free slot"
+  links with path compression, and the keys that may be equal from an
+  index by a seeded `DeepHash`, which equal keys share. Each deep hash
+  keeps its entries sorted by slot, so a lookup visits only those in its
+  own probe run, in the walk's order, and stops at the first equal one;
+- the deep hashes follow equality, as fine as it allows: sets and maps in
+  any order; a `Ref` by its path and its address as urijs compares it
+  (`Uri::equals_hash`: the normalized URI without its query, the query's
+  length, its parameters in any order); a transformation field by field,
+  without a string matcher's case; type names by their address, since
+  they compare by identity; attribute kinds by discriminant. A
+  `TypeIdentity` takes its deep hash only when asked for.
+
+The same 4,000 definitions take 0.23 s, 16,000 take 1.24 s, with the same
+output. Builds with debug assertions also walk the slots as the original
+does and assert the same answer on every lookup (core's 497 tests pass
+so). Unit tests compare the map with the original implementation on 600
+random sequences of sets, gets and updates (clustered and wrapping
+hashes, equal keys that hash apart, and in half of them one deep hash for
+every key), and on 2^10 colliding strings; they fail with the run bound
+removed. Another counts under two comparisons per operation with one deep
+hash for 20,000 keys in runs of two. A property test of 4,000 generated
+URI pairs that `equals` finds equal but are written differently (case,
+default ports, dot segments, percent-encoding, reordered and repeated
+parameters) checks that each pair hashes alike, and fails if the query
+is hashed as written.
+
+Against main (`73361a510`), interleaved, `-l cs` (minimum and median of
+9 runs, outputs identical; another agent's builds and tests ran beside,
+load average 5.3 to 18):
+
+| Input | Main: min / median | Branch: min / median | Change |
+|---|---:|---:|---:|
+| 5,000 `$id` schemas, each referred to twice | 459.2 / 466.0 ms | 460.2 / 463.9 ms | +0.2% / −0.5% |
+| 20,000 `$id` schemas | 1,952 / 2,002 ms | 1,950 / 2,058 ms | −0.1% / +2.8% |
+| 2,000 classes with date-time and enum unions (transformations) | 562.4 / 583.9 ms | 553.9 / 565.6 ms | −1.5% / −3.1% |
+| 8,000 such classes | 2,310 / 3,278 ms | 2,331 / 2,561 ms | +0.9% / −21.9% (load 7 to 18) |
+
+`cargo xtask parity -j 6` with each CLI, in turn, three times: 13.3,
+19.0 and 17.8 s of wall time for main against 14.0, 17.1 and 16.7 s (load
+average 7 rising to 33), all 11,177 cases passing for both.
+
+Not covered: in dependencies, regex-automata's maps. Their keys are
+capture names of the engine's own patterns, and the lazy DFA's states,
+which the input only selects among. saphyr-parser hashes nothing.
+
+**The output does not depend on the seed.** An `IndexMap` iterates in
+insertion order whatever its hasher. A `HashMap` or `HashSet` iterates in
+an order that changes with the seed, so it must never reach output
+(docs/PARITY.md, rule 1). An audit of every hashed map and set in the six
+crates found none that does. The one iteration, naming's forbidden names
+grouped by lowercase, feeds an `any` that gives the same answer in any
+order. Every other is only looked up, sorted, or filled from an ordered
+collection. `expand_strings` sums the seeded hashes of a set's cases to
+bucket sets, but returns the first equal set among a bucket's candidates,
+whatever the seed. `EqualityMap`'s results are the original's whatever
+its index's seed. Every run takes new seeds, and all of these passed:
+`cargo xtask parity -j 6` three times (11,177 of 11,177 cases each), the
+workspace's tests (782) and core's and js-compat's with `siphash` (584),
+`npm test` in npm/quicktype-core twice (90 tests on the shipped and the
+test-hooks engines, one skipped because every renderer is ported), the differential suite (`npm run
+test:differential`: 20,604 scenarios, 20,471 of them on WebAssembly,
+none different; one known gap, as before), `npm run test:browser` and
+the playground's smoke test, all after the last review's fixes (parity
+once, there), and `npm test` on a `build.mjs --trace` dist. Before
+them, these passed in each earlier round too, the differential suite
+four times and parity nine.
+
+**Speed.** Interleaved against main, on an Apple M2 Max with another
+agent's builds and tests running beside:
+- The CLI (`-l ts -o <file>`, 15 rounds, wall time; load average 3.9 to
+  4.0), main (`73361a510`) against this branch after the first review's
+  fixes (the seed from the operating system and the first rewrite of
+  `EqualityMap`; the second's is timed above):
+
+  | Input | Main: min / median | Branch: min / median | Change |
+  |---|---:|---:|---:|
+  | generated (40 MB) | 154.7 / 156.8 ms | 150.3 / 151.9 ms | −2.9% / −3.2% |
+  | 1M records (267 MB), all cores | 47.6 / 49.2 ms | 48.2 / 49.4 ms | +1.3% / +0.3% (CPU time −0.6%) |
+  | 100k records (26.8 MB), all cores | 9.6 / 10.0 ms | 9.6 / 10.2 ms | +0.7% / +2.1% (CPU time +0.9%) |
+
+  Before the review's fixes (foldhash's own seed natively, the old
+  `EqualityMap`), against `b65fa2212`, two blocks gave −2.6% and −3.0%,
+  +1.4% and −1.7%, +0.5% and +0.1% at the minimum (load 6.6 and 7.5).
+  The records are within noise; generating the 40 MB input, where the
+  run hashes many class properties and string cases, is faster.
+- The engine natively (the `phases` example, before the review's fixes,
+  15 rounds of 21 runs, load average 2.7 to 2.9): the rulings' read and
+  run within 1%. On the 40 MB input (9 rounds of 11, load 6.3 to 9.4),
+  the run (inference and rendering) 6.0% faster (54.0 to 50.8 ms, faster
+  in 8 of 9 rounds), the read within noise.
+- WebAssembly in headless Chrome (`compare.mjs --browser --variant`, the
+  two packages interleaved in one page), main (`73361a510`) against this
+  branch after the first review's fixes (before the second's `EqualityMap`
+  changes); load average 14.4 falling to 5.3. The
+  median of three runs of the benchmark, each a median, in ms; Chrome's
+  timer steps by 0.1 ms here:
+
+  | Input | Main: read / generate / total | Branch: read / generate / total |
+  |---|---:|---:|
+  | pokedex (82 KB) | 0.50 / 1.20 / 1.70 | 0.50 / 1.20 / 1.70 |
+  | generated (2 MB) | 9.00 / 5.20 / 14.2 | 8.90 / 5.00 / 13.8 |
+  | generated (20 MB) | 89.4 / 32.8 / 122 | 89.7 / 31.8 / 121 |
+  | rulings (27 MB) | 46.5 / 6.40 / 53.0 | 46.5 / 6.60 / 53.0 |
+  | cards (22 MB) | 88.9 / 23.7 / 112 | 89.5 / 23.4 / 113 |
+
+  Generating the 20 MB input is 4% faster in two runs (32.7 to 31.3,
+  33.1 to 31.8) and 9% slower in the first, at load 14; the 2 MB input
+  2–4% faster in each. Generating the rulings is two timer steps slower
+  in two runs and equal in the third. Everything else is the same within
+  the timer's step and the noise. Before the review's fixes, against
+  `b65fa2212` (load 5.7 falling to 3.3), generating the 20 MB input was
+  2–3% faster in each of three runs (32.6 to 31.9 ms, the medians).
+- The engine is 5,478,565 bytes, 1,440 (0.03%) larger than main's
+  (5,477,125), without its test hooks.
 
 ### Hashing strings in WebAssembly
 
@@ -2297,8 +2484,24 @@ engine runs, which interns into the compressed form's string table and
 keeps the `JSON.parse` reader's key table. The CLI's running tallies
 intern into the same kind of string table, but the CLI is not measurably
 affected: built at the same two commits, it took 29.9 and 30.0 ms on the 100k rulings and 86.7 and
-85.4 ms on the 20 MB input (`-l ts`, 15 interleaved runs each). The `cfg`
-above has not been made.
+85.4 ms on the 20 MB input (`-l ts`, 15 interleaved runs each).
+
+**Re-checked again** with every map seeded (see "Every map and set"
+above): the `cfg`, natively `hash_one` (`Hash for str`) and in
+WebAssembly `write` and `finish`, against `write` and `finish` everywhere,
+on the `phases` example and the CLI, interleaved:
+- Rulings, `read: commit`: −1.4% (11.22 to 11.05 ms, 25 rounds of 21
+  runs, faster in 21; load average 4.1 to 4.5) and −0.3% (15 rounds,
+  load 2.7 to 2.9). The re-check above found `write` alone 4.9% slower
+  here; now it is 0.3 to 1.4% slower.
+- The 40 MB input, `read: commit`: +1.1%, within the noise (9 rounds,
+  load 6.3 to 9.4).
+- The CLI: the same within noise on the 100k and 1M records and the 40
+  MB input (−0.5% to +2% at the minimum, 11 to 21 rounds).
+
+About 1% in one phase and nothing in the CLI is not worth a second way
+to hash strings, which the native tests would no longer cover, so the
+`cfg` is not made: `hash_str` is `write` and `finish` on every target.
 
 #### Tried and dropped: a 32-bit hasher for WebAssembly
 

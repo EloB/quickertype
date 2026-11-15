@@ -7,7 +7,7 @@
 
 use std::cell::OnceCell;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::prelude::*;
@@ -111,7 +111,7 @@ fn js_to_string(source: &Source) -> String {
 /// The imports for the JavaScript strings of the Go types in `used_types`
 /// (see [`js_to_string`]): `time` if one of them is in `time_types`.
 fn imports_for(used_types: &IndexSet<String>, time_types: &[&str]) -> IndexSet<String> {
-    let mut imports = IndexSet::new();
+    let mut imports = IndexSet::default();
     if used_types.iter().any(|k| time_types.contains(&k.as_str())) {
         imports.insert("time".to_owned());
     }
@@ -137,7 +137,7 @@ impl<'a> GoRenderer<'a> {
             core: ConvenienceRendererCore::new(target_language, render_context),
             options,
             naming_function: naming_function(),
-            top_level_unmarshal_names: IndexMap::new(),
+            top_level_unmarshal_names: IndexMap::default(),
             current_filename: None,
             non_nullable_union_children: OnceCell::new(),
         }
@@ -396,7 +396,7 @@ impl<'a> GoRenderer<'a> {
     fn emit_class(&mut self, c: TypeRef, class_name: Name) -> Result<()> {
         self.start_file(class_name.into())?;
         let mut columns: Vec<Vec<Source>> = Vec::new();
-        let mut used_types: IndexSet<String> = IndexSet::new();
+        let mut used_types: IndexSet<String> = IndexSet::default();
         self.for_each_class_property(c, BlankLinePosition::None, |r, name, json_name, p, _| {
             let description = r.description_for_class_property(c, json_name)?;
             let doc_strings: Vec<String> = match description {
@@ -493,7 +493,7 @@ func (x *{type_name}) UnmarshalJSON(data []byte) error {{
             return Ok(children);
         }
         let graph = self.type_graph();
-        let mut children = IndexSet::new();
+        let mut children = IndexSet::default();
         for t in graph.all_types_unordered() {
             if graph.kind(t)? == TypeKind::Union && nullable_from_union(graph, t)?.is_none() {
                 children.extend(graph.children(t)?);
@@ -675,7 +675,7 @@ func (x *{type_name}) UnmarshalJSON(data []byte) error {{
     fn emit_helper_functions(&mut self) -> Result<()> {
         if self.have_named_unions()? {
             self.start_file("JSONSchemaSupport".into())?;
-            let mut imports = IndexSet::new();
+            let mut imports = IndexSet::default();
             if self.options.multi_file_output {
                 imports.insert("bytes".to_owned());
                 imports.insert("errors".to_owned());
@@ -691,7 +691,7 @@ func (x *{type_name}) UnmarshalJSON(data []byte) error {{
 
     /// `collectAllImports()`: the imports of every class and union.
     fn collect_all_imports(&mut self) -> Result<IndexSet<String>> {
-        let mut imports: IndexSet<String> = IndexSet::new();
+        let mut imports: IndexSet<String> = IndexSet::default();
         self.for_each_object(BlankLinePosition::LeadingAndInterposing, |r, c, _, _| {
             imports.extend(r.collect_class_imports(c)?);
             Ok(())
@@ -708,7 +708,7 @@ func (x *{type_name}) UnmarshalJSON(data []byte) error {{
     /// pointer to it or a slice of it (judged by the JavaScript string of
     /// its Go type).
     fn collect_class_imports(&mut self, c: TypeRef) -> Result<IndexSet<String>> {
-        let mut used_types: IndexSet<String> = IndexSet::new();
+        let mut used_types: IndexSet<String> = IndexSet::default();
         self.for_each_class_property(c, BlankLinePosition::None, |r, _, _, p, _| {
             let go_type = r.property_go_type(&p)?;
             used_types.insert(js_to_string(&go_type));
@@ -721,7 +721,7 @@ func (x *{type_name}) UnmarshalJSON(data []byte) error {{
     /// `collectUnionImports(u)`: `time` if a member is `time.Time` or a
     /// pointer to it.
     fn collect_union_imports(&mut self, u: TypeRef) -> Result<IndexSet<String>> {
-        let mut used_types: IndexSet<String> = IndexSet::new();
+        let mut used_types: IndexSet<String> = IndexSet::default();
         self.for_each_union_member(u, None, BlankLinePosition::None, None, |r, _, t, _| {
             let go_type = r.nullable_go_type(t, true)?;
             used_types.insert(js_to_string(&go_type));

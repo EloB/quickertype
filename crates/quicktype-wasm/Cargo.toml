@@ -17,7 +17,6 @@ dist = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-indexmap.workspace = true
 js-sys.workspace = true
 quickertype-core = { workspace = true, default-features = false, features = ["js-host-random"] }
 quickertype-js-compat = { workspace = true, features = ["js-host-math"] }
@@ -40,6 +39,11 @@ heap-stats = []
 # (`node npm/quicktype-core/script/build.mjs --trace`); see
 # docs/BENCHMARKS.md.
 trace = ["quickertype-core/trace"]
+# Exports for npm/quicktype-core's tests that the shipped engine must not
+# have (`__hashForTests`). Only the tests' own build turns it on
+# (`test/hooks-engine.mjs`); `script/build.mjs` never does, and the package
+# test checks that the shipped module lacks them.
+test-hooks = []
 
 [lints]
 workspace = true

@@ -392,7 +392,6 @@ dependencies = [
 name = "quickertype"
 version = "0.2.0"
 dependencies = [
- "indexmap",
  "mimalloc",
  "quickertype-core",
  "quickertype-graphql-input",
@@ -407,7 +406,6 @@ version = "0.2.0"
 dependencies = [
  "brotli-decompressor",
  "flate2",
- "foldhash",
  "hashbrown",
  "indexmap",
  "quickertype-core",
@@ -417,14 +415,12 @@ dependencies = [
  "stacker",
  "ureq",
  "url",
- "wasm-bindgen",
 ]
 
 [[package]]
 name = "quickertype-graphql-input"
 version = "0.2.0"
 dependencies = [
- "indexmap",
  "quickertype-core",
  "quickertype-js-compat",
  "serde_json",
@@ -434,6 +430,7 @@ dependencies = [
 name = "quickertype-js-compat"
 version = "0.2.0"
 dependencies = [
+ "foldhash",
  "indexmap",
  "regex",
  "regex-automata",
@@ -458,7 +455,6 @@ dependencies = [
 name = "quicktype-wasm"
 version = "0.2.0"
 dependencies = [
- "indexmap",
  "js-sys",
  "mimalloc",
  "quickertype-core",

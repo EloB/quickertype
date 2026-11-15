@@ -265,6 +265,7 @@ pub fn cancel(id: f64) {
 }
 
 /// How many runs are pending (for the facade's tests).
+#[cfg(feature = "test-hooks")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __pendingRuns)]
 pub fn pending_runs() -> u32 {
@@ -288,8 +289,8 @@ pub fn settle(id: f64, call_id: u32, ok: bool, value: JsValue) {
 #[wasm_bindgen(js_name = supportsLanguage)]
 pub fn supports_language(name: &str) -> bool {
     thread_local! {
-        static SUPPORTED: RefCell<std::collections::HashMap<String, bool>> =
-            RefCell::new(std::collections::HashMap::new());
+        static SUPPORTED: RefCell<quicktype_js_compat::hash::HashMap<String, bool>> =
+            RefCell::new(quicktype_js_compat::hash::HashMap::default());
     }
     if let Some(known) = SUPPORTED.with(|s| s.borrow().get(name).copied()) {
         return known;
@@ -313,6 +314,7 @@ pub fn engine_version() -> String {
 
 /// JavaScript `x ** y` as the engine computes it, for the facade's tests
 /// (`quicktype_js_compat::number::pow`).
+#[cfg(feature = "test-hooks")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __pow)]
 pub fn pow_for_tests(x: f64, y: f64) -> f64 {
@@ -321,6 +323,7 @@ pub fn pow_for_tests(x: f64, y: f64) -> f64 {
 
 /// How often the WebAssembly memory grew, for the facade's test that it
 /// grows geometrically ([`allocator`]); 0 outside WebAssembly.
+#[cfg(feature = "test-hooks")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __memoryGrowths)]
 pub fn memory_growths() -> u32 {
@@ -331,35 +334,38 @@ pub fn memory_growths() -> u32 {
 }
 
 /// Bytes the engine has allocated and not freed (the allocator's count),
-/// for measurements; `NaN` without the `heap-stats` feature, and outside
+/// for measurements: only with the `heap-stats` feature; `NaN` outside
 /// WebAssembly.
+#[cfg(feature = "heap-stats")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __heapBytes)]
 pub fn heap_bytes() -> f64 {
-    #[cfg(all(target_arch = "wasm32", feature = "heap-stats"))]
+    #[cfg(target_arch = "wasm32")]
     return allocator::in_use() as f64;
-    #[cfg(not(all(target_arch = "wasm32", feature = "heap-stats")))]
+    #[cfg(not(target_arch = "wasm32"))]
     f64::NAN
 }
 
 /// The most bytes allocated at once since the last call (which starts
-/// the next measurement from the bytes in use), for measurements; `NaN`
-/// without the `heap-stats` feature, and outside WebAssembly.
+/// the next measurement from the bytes in use), for measurements: only
+/// with the `heap-stats` feature; `NaN` outside WebAssembly.
+#[cfg(feature = "heap-stats")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __heapPeak)]
 pub fn heap_peak() -> f64 {
-    #[cfg(all(target_arch = "wasm32", feature = "heap-stats"))]
+    #[cfg(target_arch = "wasm32")]
     {
         let peak = allocator::peak();
         allocator::reset_peak();
         peak as f64
     }
-    #[cfg(not(all(target_arch = "wasm32", feature = "heap-stats")))]
+    #[cfg(not(target_arch = "wasm32"))]
     f64::NAN
 }
 
 /// The size of the WebAssembly memory in 64 KiB pages, for the facade's
 /// test of [`memory_growths`]; 0 outside WebAssembly.
+#[cfg(feature = "test-hooks")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __memoryPages)]
 pub fn memory_pages() -> u32 {
@@ -421,9 +427,28 @@ pub fn take_trace() -> String {
     out
 }
 
+/// The hash of `key` in a new map of a class's properties (the
+/// `IndexMap<String, ClassProperty>` that inference fills with names from
+/// the input), in hex, for the facade's test that each instance seeds its
+/// maps from `crypto.getRandomValues` (`test/seed.test.mjs`): two fresh
+/// instances that do the same give different hashes. Only with the
+/// `test-hooks` feature, which the shipped engine is built without.
+#[cfg(feature = "test-hooks")]
+#[doc(hidden)]
+#[wasm_bindgen(js_name = __hashForTests)]
+pub fn hash_for_tests(key: &str) -> String {
+    use std::hash::BuildHasher as _;
+    let properties: quicktype_core::support::fast_hash::IndexMap<
+        String,
+        quicktype_core::ty::ty::ClassProperty,
+    > = Default::default();
+    format!("{:016x}", properties.hasher().hash_one(key))
+}
+
 /// Panics, for the facade's test of what happens when the engine traps
 /// (release builds abort on panic): the facade must discard the instance
 /// and use a fresh one.
+#[cfg(feature = "test-hooks")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __panicForTests)]
 pub fn panic_for_tests() {

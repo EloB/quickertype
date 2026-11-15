@@ -8,7 +8,7 @@
 
 use std::rc::Rc;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_js_compat::number;
 
 use crate::attributes::constraints::{
@@ -308,11 +308,11 @@ impl<'a> JsonPythonRenderer<'a> {
         JsonPythonRenderer {
             core: ConvenienceRendererCore::new(target_language, render_context),
             py: PythonState::new(options),
-            deserializer_functions: IndexSet::new(),
+            deserializer_functions: IndexSet::default(),
             converter_namer: fun_prefix_namer("converter", move |s| {
                 snake_name_style(s, false, nice)
             }),
-            top_level_converter_names: IndexMap::new(),
+            top_level_converter_names: IndexMap::default(),
             have_type_var: false,
             have_enum_type_var: false,
             have_dateutil: false,

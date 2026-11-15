@@ -17,9 +17,9 @@ use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::renderer_options::{EnumValue, RendererOptions};
+use crate::support::fast_hash::IndexMap;
 use crate::support::recursion::guard;
 use crate::target_language::TargetLanguage;
-use indexmap::IndexMap;
 
 use crate::ty::type_utils::{NullRemovalSort, nullable_from_union, remove_null_from_union};
 
@@ -466,7 +466,7 @@ pub mod scala3_methods {
 
         // `sortBy(t)`: classes first, then the other kinds by name.
         let graph = r.type_graph();
-        let mut sort_keys: IndexMap<TypeRef, String> = IndexMap::new();
+        let mut sort_keys: IndexMap<TypeRef, String> = IndexMap::default();
         for &member in graph.type_at(u)?.members()? {
             let kind = graph.kind(member)?;
             let key = if kind == TypeKind::Class {

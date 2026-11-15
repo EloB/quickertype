@@ -195,9 +195,9 @@ its hash maps with it when it starts, because their keys come from the
 input and WebAssembly has no randomness of its own. Every host the package
 supports has it: Node 20 and later, browsers and workers. Where it is
 missing, the engine does not load. `engineLoadError()` in
-`dist/native/engine.js` is then an `Error` that says "quickertype-core
-needs crypto.getRandomValues (the Web Crypto API) to seed its hash maps,
-and this JavaScript host does not have it", and every run uses the
+`dist/native/engine.js` is then an `Error` that says "quickertype needs
+crypto.getRandomValues (the Web Crypto API) to seed its hash maps, and
+this JavaScript host does not have it", and every run uses the
 TypeScript engine. With `QUICKTYPE_ENGINE=wasm`, runs throw that error
 instead. If `crypto.getRandomValues` exists but throws, the error says
 what it threw.
@@ -493,7 +493,7 @@ the version of the `wasm-bindgen` crate (`cargo install wasm-bindgen-cli
 ```sh
 npm install
 npm run build                  # cargo build (release, wasm32) + wasm-bindgen + wasm-opt -O3 + tsc (CJS and ESM)
-npm test                       # package checks, engine tests (pow vectors, concurrency, traps, samples)
+npm test                       # builds the tests' engine (script/test-hooks.mjs), then package checks, engine tests (pow vectors, concurrency, traps, samples)
 node --expose-gc test/bench/compare.mjs [--browser] [--cold N]   # WebAssembly against TypeScript
 npm run test:differential      # same API calls against the reference quicktype-core and this package
 npm run test:browser           # headless Chrome: bundled with esbuild, run in a page
@@ -501,7 +501,10 @@ npm run check:upstream         # src/ is still upstream's (needs a quicktype che
 ```
 
 `wasm-opt` is binaryen's, pinned in devDependencies (`--no-wasm-opt` skips
-it). The engine's global allocator is Rust's own (dlmalloc) growing the
+it). The tests that trap an instance or read the engine's counters use
+their own engine, built with quicktype-wasm's `test-hooks` feature into
+`build/test-hooks/` (`node script/test-hooks.mjs`, which `npm test` runs
+after `npm run build`); the shipped engine has none of those exports. The engine's global allocator is Rust's own (dlmalloc) growing the
 WebAssembly memory geometrically (`crates/quicktype-wasm/src/allocator.rs`):
 growing it a page at a time made runs with outputs of millions of lines
 superlinear. Neither changes what a run computes.

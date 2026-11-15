@@ -841,7 +841,7 @@ impl<'a> Run<'a> {
 
     /// `makeSimpleTextResult(lines)`.
     fn make_simple_text_result(&self, lines: Vec<String>) -> MultiFileRenderResult {
-        let mut result = MultiFileRenderResult::new();
+        let mut result = MultiFileRenderResult::default();
         result.insert(
             self.output_filename.clone(),
             SerializedRenderResult {

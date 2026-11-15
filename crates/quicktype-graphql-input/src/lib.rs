@@ -56,9 +56,7 @@ pub mod graphql_schema;
 mod js;
 
 use std::cell::RefCell;
-use std::collections::HashMap;
 
-use indexmap::{IndexMap, IndexSet};
 use quicktype_core::attributes::string_types::StringTypes;
 use quicktype_core::attributes::type_attributes::{
     AttributeKind, TypeAttributes, empty_type_attributes,
@@ -74,6 +72,7 @@ use quicktype_core::ty::ty::ClassProperty;
 use quicktype_core::ty::type_builder::TypeBuilder;
 use quicktype_core::ty::type_ref::TypeRef;
 use quicktype_core::{Input, Result, RunContext};
+use quicktype_js_compat::hash::{HashMap, IndexMap, IndexSet};
 use quicktype_js_compat::json::JsonValue;
 
 use crate::graphql::ast::{
@@ -491,7 +490,7 @@ fn get_field(schema: &GqlSchema<'_>, t: Option<GqlTypeRef>, name: &str) -> Resul
 /// name and combinations with the containing type's name as alternatives.
 /// Empty strings stand for `null` (both are falsy).
 fn make_names(name: &str, field_name: &str, containing_type_name: &str) -> TypeAttributes {
-    let mut alternatives = IndexSet::new();
+    let mut alternatives = IndexSet::default();
     if !field_name.is_empty() {
         alternatives.insert(field_name.to_owned());
     }
@@ -525,7 +524,7 @@ fn remove_null_from_union(
     let Some(null_type) = null_type else {
         return Ok((None, members));
     };
-    let mut non_nulls = IndexSet::new();
+    let mut non_nulls = IndexSet::default();
     for m in members {
         if builder.type_at_index(m.index())?.kind() != IrTypeKind::Null {
             non_nulls.insert(m);
@@ -691,7 +690,7 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
         let query_document = graphql::parse(query_string)?;
         let mut query = GqlQuery {
             schema,
-            fragments: HashMap::new(),
+            fragments: HashMap::default(),
             fragments_prototype: None,
             queries: Vec::new(),
             active: RefCell::default(),
@@ -884,7 +883,7 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
             Some(name) => name.to_owned(),
             None => gql_name.to_js_string()?,
         };
-        let mut properties: IndexMap<String, ClassProperty> = IndexMap::new();
+        let mut properties: IndexMap<String, ClassProperty> = IndexMap::default();
         let mut selections: Vec<PendingSelection<'_>> =
             expand_selection_set(selection_set, Some(gql_type), false).collect();
         // The fragment expansions in progress here, each with the stack
@@ -1034,7 +1033,7 @@ fn make_graphql_query_types(
 ) -> Result<IndexMap<String, TypeRef>> {
     let schema = GqlSchema::new(json)?;
     let query = GqlQuery::new(&schema, query_string)?;
-    let mut types: IndexMap<String, TypeRef> = IndexMap::new();
+    let mut types: IndexMap<String, TypeRef> = IndexMap::default();
     for odn in &query.queries {
         let query_name = odn.name.as_deref().unwrap_or(top_level_name);
         if types.contains_key(query_name) {

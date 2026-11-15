@@ -4,7 +4,7 @@
 //! string-like members (enums, transformed strings) are redundant: they are
 //! merged into the `string`.
 
-use indexmap::IndexSet;
+use crate::support::fast_hash::IndexSet;
 
 use crate::attributes::type_attributes::{
     CombinationKind, TypeAttributes, combine_type_attributes2,
@@ -52,7 +52,7 @@ fn replace_union(
         CombinationKind::Union,
         string_members.iter().copied(),
     )?;
-    let mut types: IndexSet<TypeRef> = IndexSet::new();
+    let mut types: IndexSet<TypeRef> = IndexSet::default();
     for &t in graph.type_at(u)?.members()? {
         if string_members.contains(&t) {
             continue;

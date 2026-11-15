@@ -5,7 +5,7 @@
 //! according to the Markov chain of English-like names, provided all
 //! property types are compatible.
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_js_compat::number;
 
 use crate::graph_rewriting::make_replacer;
@@ -88,7 +88,7 @@ fn should_be_map(
 
     // All property types must be the same, modulo nullability.
     let mut first_non_null_cases: Option<IndexSet<TypeRef>> = None;
-    let mut all_cases: IndexSet<TypeRef> = IndexSet::new();
+    let mut all_cases: IndexSet<TypeRef> = IndexSet::default();
     for p in properties.values() {
         let nn = remove_null_from_type(graph, p.type_ref)?.1;
         if !nn.is_empty() {
@@ -122,7 +122,7 @@ pub fn infer_maps(
 ) -> Result<Option<TypeGraph>> {
     // The classes to replace, with the types of their map values (what
     // `shouldBeMap` returns; TypeScript computes it again in the replacer).
-    let mut map_values: IndexMap<TypeRef, IndexSet<TypeRef>> = IndexMap::new();
+    let mut map_values: IndexMap<TypeRef, IndexSet<TypeRef>> = IndexMap::default();
     for o in graph.all_named_types_separated()?.objects {
         let t = graph.type_at(o)?;
         if !t.is_class() || t.is_fixed() {

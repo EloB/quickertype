@@ -22,7 +22,7 @@
 use std::fmt;
 
 /// The map type of [`JsonValue::Object`], re-exported for building values.
-pub use indexmap::IndexMap;
+pub use crate::hash::IndexMap;
 
 pub use self::parse::{JsonParseError, parse};
 
@@ -101,7 +101,7 @@ impl Clone for JsonValue {
                     Err(Frame::Array(Vec::with_capacity(items.len()), items.iter()))
                 }
                 JsonValue::Object(map) => Err(Frame::Object(
-                    IndexMap::with_capacity(map.len()),
+                    IndexMap::with_capacity_and_hasher(map.len(), map.hasher().clone()),
                     None,
                     map.iter(),
                 )),
@@ -991,12 +991,12 @@ mod tests {
 
     #[test]
     fn layout() {
-        let mut object = IndexMap::new();
+        let mut object = IndexMap::default();
         object.insert(
             "a".to_owned(),
             JsonValue::Array(vec![JsonValue::Number(1.0), JsonValue::Null]),
         );
-        object.insert("b".to_owned(), JsonValue::Object(IndexMap::new()));
+        object.insert("b".to_owned(), JsonValue::Object(IndexMap::default()));
         object.insert("c".to_owned(), JsonValue::Array(vec![]));
         let value = JsonValue::Object(object);
         assert_eq!(stringify(&value, None), r#"{"a":[1,null],"b":{},"c":[]}"#);
@@ -1010,7 +1010,7 @@ mod tests {
 
     #[test]
     fn js_property_order() {
-        let mut map = IndexMap::new();
+        let mut map = IndexMap::default();
         for key in [
             "zeta",
             "10",

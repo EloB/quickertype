@@ -269,6 +269,7 @@ fn read_with(
 /// returns, as an instance that runs out of memory while it reads does
 /// (it traps): for the facade's test that the other inputs' tables can
 /// still be had from the instance.
+#[cfg(any(feature = "test-hooks", test))]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __jsonReadTrapForTests)]
 pub fn json_read_trap_for_tests(id: f64, text: &str) -> i32 {
@@ -396,6 +397,7 @@ pub fn take_lease(lease: f64) -> Option<(f64, Rc<CompressedJson>)> {
 }
 
 /// How many compressed forms are kept (for the facade's tests).
+#[cfg(feature = "test-hooks")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __jsonCount)]
 pub fn json_count() -> u32 {
@@ -403,6 +405,7 @@ pub fn json_count() -> u32 {
 }
 
 /// How many leases are held (for the facade's tests).
+#[cfg(feature = "test-hooks")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __jsonLeases)]
 pub fn json_leases() -> u32 {

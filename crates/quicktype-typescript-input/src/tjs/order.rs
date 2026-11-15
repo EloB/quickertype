@@ -18,8 +18,9 @@
 //! (`resolveObjectTypeMembers`/`addInheritedMembers`); TypeScript 7 differs
 //! for chains of two or more `extends`.
 
-use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
+
+use quicktype_js_compat::hash::{HashMap, HashSet};
 
 use super::Generator;
 use crate::error::Result;
@@ -413,7 +414,7 @@ impl CreationOrder {
         for f in user_files {
             collect(f, &mut decls, &mut type_nodes, &mut refs);
         }
-        let mut types = HashMap::new();
+        let mut types = HashMap::default();
         let all: Vec<Node> = decls.iter().chain(type_nodes.iter()).cloned().collect();
         for (n, t) in all.iter().zip(s.types_at(&all)?) {
             if let Some(t) = t {
@@ -427,9 +428,9 @@ impl CreationOrder {
             .iter()
             .map(|r| r.named("typeName").unwrap_or_else(|| r.clone()))
             .collect();
-        let mut alias_decls = HashMap::new();
-        let mut may_alias = HashMap::new();
-        let mut lib_refs = HashSet::new();
+        let mut alias_decls = HashMap::default();
+        let mut may_alias = HashMap::default();
+        let mut lib_refs = HashSet::default();
         for (r, sym) in refs.iter().zip(s.symbols_at(&names)?) {
             let mut sym = sym;
             if let Some(a) = sym.as_ref().filter(|a| a.flags & sf::Alias != 0) {
@@ -457,8 +458,8 @@ impl CreationOrder {
             alias_decls,
             may_alias,
             lib_refs,
-            resolved: HashSet::new(),
-            resolved_aliases: HashSet::new(),
+            resolved: HashSet::default(),
+            resolved_aliases: HashSet::default(),
             order: &mut order,
             next: 0,
         };

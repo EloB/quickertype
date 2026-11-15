@@ -14,6 +14,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import * as esbuild from "esbuild";
 
+import { testHookExports } from "../script/bindgen.mjs";
+import { hooksPackageRoot } from "./hooks.mjs";
+
 const require = createRequire(import.meta.url);
 const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repositoryRoot = path.join(packageRoot, "..", "..");
@@ -29,6 +32,35 @@ function walk(directory, keep) {
 
     return files.sort();
 }
+
+test("the shipped engine has no test hooks, and the tests' engine has them all", () => {
+    // The exports for tests (quicktype-wasm's `test-hooks` feature:
+    // `__panicForTests` traps the instance, `__hashForTests` reads a seed,
+    // the rest read counters) are not in the shipped module, nor in its
+    // glue; the facade uses none of them. The measurement exports
+    // (`build.mjs --trace`, `--heap-stats`) are left to the build that asks
+    // for them. The tests' engine (script/test-hooks.mjs) has the test
+    // hooks.
+    const notShipped = testHookExports;
+    const moduleExports = (dir) =>
+        WebAssembly.Module.exports(new WebAssembly.Module(fs.readFileSync(path.join(dir, "native", "wasm", "quicktype_wasm_bg.wasm")))).map(
+            (e) => e.name,
+        );
+    const shipped = moduleExports(dist);
+    for (const name of notShipped) {
+        assert.ok(!shipped.includes(name), `the shipped module exports ${name}`);
+        for (const glue of [path.join(dist, "native", "wasm", "glue.js"), path.join(dist, "esm", "native", "wasm", "glue.js")]) {
+            assert.ok(!fs.readFileSync(glue, "utf8").includes(name), `${path.relative(packageRoot, glue)} has ${name}`);
+        }
+    }
+    const hooksDist = path.join(hooksPackageRoot, "dist");
+    const hooks = moduleExports(hooksDist);
+    const hooksGlue = fs.readFileSync(path.join(hooksDist, "native", "wasm", "glue.js"), "utf8");
+    for (const name of testHookExports) {
+        assert.ok(hooks.includes(name), `the tests' module lacks ${name}`);
+        assert.ok(hooksGlue.includes(`function ${name}(`), `the tests' glue lacks ${name}`);
+    }
+});
 
 test("does not write to stdout when imported", () => {
     for (const args of [

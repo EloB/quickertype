@@ -90,11 +90,14 @@ use std::arch::wasm32::memory_size;
 #[cfg(target_arch = "wasm32")]
 use std::cell::UnsafeCell;
 use std::ptr::null_mut;
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "test-hooks"))]
 use std::sync::atomic::AtomicU32;
 #[cfg(all(target_arch = "wasm32", feature = "heap-stats"))]
 use std::sync::atomic::AtomicUsize;
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(
+    target_arch = "wasm32",
+    any(feature = "test-hooks", feature = "heap-stats")
+))]
 use std::sync::atomic::Ordering;
 
 /// The WebAssembly page size.
@@ -125,9 +128,18 @@ const POOL: usize = 32;
 /// How many slabs of a list are compared for the next current one.
 const PICK: usize = 8;
 
-/// How often the memory grew (for the facade's tests).
-#[cfg(target_arch = "wasm32")]
+/// How often the memory grew: for the facade's tests (`__memoryGrowths`),
+/// so only with `test-hooks`.
+#[cfg(all(target_arch = "wasm32", feature = "test-hooks"))]
 static GROWTHS: AtomicU32 = AtomicU32::new(0);
+
+/// Counts a growth of the memory in [`GROWTHS`] (with `test-hooks`).
+#[cfg(target_arch = "wasm32")]
+#[inline(always)]
+fn grew() {
+    #[cfg(feature = "test-hooks")]
+    GROWTHS.fetch_add(1, Ordering::Relaxed);
+}
 
 /// Bytes allocated and not freed (as the callers asked for them), and the
 /// most there were since [`reset_peak`] (`heap-stats` only).
@@ -170,8 +182,9 @@ fn count(_: usize) {}
 
 /// How often the memory grew since the instance started: allocations
 /// during which it grew (dlmalloc grows it at most once per allocation),
-/// and growing ahead when that grew it.
-#[cfg(target_arch = "wasm32")]
+/// and growing ahead when that grew it. Read only by the facade's tests
+/// (`__memoryGrowths`, with `test-hooks`).
+#[cfg(all(target_arch = "wasm32", feature = "test-hooks"))]
 pub fn growths() -> u32 {
     GROWTHS.load(Ordering::Relaxed)
 }
@@ -184,7 +197,7 @@ fn grow_ahead(pages_before: usize) {
     if pages == pages_before {
         return;
     }
-    GROWTHS.fetch_add(1, Ordering::Relaxed);
+    grew();
     // A quarter of the memory, in pages first: 65,536 pages (4 GiB) times
     // the page size would overflow `usize`.
     let bytes = (pages / 4).saturating_mul(PAGE);
@@ -201,7 +214,7 @@ fn grow_ahead(pages_before: usize) {
         if !block.is_null() {
             // dlmalloc may have had room for it already.
             if memory_size::<0>() != pages {
-                GROWTHS.fetch_add(1, Ordering::Relaxed);
+                grew();
             }
             System.dealloc(block, reserve);
         }

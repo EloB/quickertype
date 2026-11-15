@@ -8,7 +8,6 @@
 //! run's [`JsHost`] and rethrown unchanged when the run returns.
 
 use std::cell::{Cell, RefCell};
-use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
 use std::rc::Rc;
@@ -21,6 +20,7 @@ use quicktype_core::{
     Clock, CommentOptions, DebugOptions, INFERENCE_FLAGS, JsErrorName, JsonSchema, LocalBoxFuture,
     MessageValue, MultiFileRenderResult, OptionValue, QuickTypeError, Result,
 };
+use quicktype_js_compat::hash::HashMap;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
 
@@ -472,12 +472,12 @@ impl JsHost {
     pub fn new(object: JsValue) -> Rc<Self> {
         Rc::new(JsHost {
             object: object.unchecked_into(),
-            calls: RefCell::new(HashMap::new()),
+            calls: RefCell::new(HashMap::default()),
             next_call: Cell::new(0),
             thrown: RefCell::new(Vec::new()),
             deferred: RefCell::new(None),
             lines: RefCell::new(Vec::new()),
-            documents: RefCell::new(HashMap::new()),
+            documents: RefCell::new(HashMap::default()),
         })
     }
 

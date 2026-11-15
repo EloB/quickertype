@@ -30,7 +30,6 @@ use std::cell::{OnceCell, RefCell};
 use std::hash::Hash;
 use std::rc::Rc;
 
-use indexmap::{IndexMap, IndexSet};
 use quicktype_js_compat::{whitespace, wordwrap::WordWrap};
 
 use crate::annotation::AnnotationData;
@@ -56,7 +55,7 @@ use crate::support::collection_utils::{
     SameValueZeroKey, first_by_same_value_zero, sort_by_cached_string_key,
 };
 use crate::support::comments::{Comment, CommentOptions};
-use crate::support::fast_hash::HashMap;
+use crate::support::fast_hash::{HashMap, IndexMap, IndexSet};
 use crate::support::strings::trim_end;
 use crate::support::support::{assert, defined, non_null, panic};
 use crate::target_language::TargetLanguage;
@@ -247,14 +246,14 @@ impl<'a> ConvenienceRendererCore<'a> {
             base: RendererCore::new(target_language, render_context),
             naming: Naming::new(),
             global_forbidden_namespace: None,
-            other_forbidden_namespaces: IndexMap::new(),
+            other_forbidden_namespaces: IndexMap::default(),
             global_namespace: None,
             name_store: HashMap::default(),
-            top_level_names: IndexMap::new(),
+            top_level_names: IndexMap::default(),
             property_names: HashMap::default(),
             member_names: HashMap::default(),
             case_names: HashMap::default(),
-            names_for_transformations: IndexMap::new(),
+            names_for_transformations: IndexMap::default(),
             named_type_namer: None,
             union_member_namer: None,
             enum_case_namer: None,
@@ -551,8 +550,8 @@ macro_rules! __convenience_renderer_hooks {
             /// `sortClassProperties(properties, propertyNames)`: the order of
             /// `for_each_class_property`.
             [ref] sort_class_properties(
-                properties: &::indexmap::IndexMap<String, $crate::ty::ty::ClassProperty>,
-                property_names: &::indexmap::IndexMap<String, $crate::naming::Name>
+                properties: &$crate::support::fast_hash::IndexMap<String, $crate::ty::ty::ClassProperty>,
+                property_names: &$crate::support::fast_hash::IndexMap<String, $crate::naming::Name>
             ) -> $crate::messages::Result<Vec<(String, $crate::ty::ty::ClassProperty)>>;
 
             /// `commentLineStart`.
@@ -1440,7 +1439,7 @@ pub trait ConvenienceRendererExt<'a>: ConvenienceRenderer<'a> {
             let core = self.core_mut();
             core.global_forbidden_namespace = Some(global_forbidden);
             core.global_namespace = Some(global);
-            core.other_forbidden_namespaces = IndexMap::new();
+            core.other_forbidden_namespaces = IndexMap::default();
         }
 
         let graph = self.type_graph();
@@ -1575,7 +1574,7 @@ pub trait ConvenienceRendererExt<'a>: ConvenienceRenderer<'a> {
             namespace = Some(ns);
         }
 
-        let mut forbidden_namespaces = IndexSet::new();
+        let mut forbidden_namespaces = IndexSet::default();
         if info.include_global_forbidden {
             forbidden_namespaces.insert(self.core().global_forbidden_namespace()?);
         }
@@ -1594,7 +1593,7 @@ pub trait ConvenienceRendererExt<'a>: ConvenienceRenderer<'a> {
         let mut ns: Option<NamespaceId> = None;
         let graph = self.type_graph();
         let accessor_names = object_property_names(graph, o, self.target_language().name())?;
-        let mut names: IndexMap<String, Name> = IndexMap::new();
+        let mut names: IndexMap<String, Name> = IndexMap::default();
         for (json_name, p) in graph.type_at(o)?.sorted_property_refs()? {
             let (assigned_name, is_fixed) = get_accessor_name(&accessor_names, json_name);
             let name = if is_fixed {
@@ -1656,7 +1655,7 @@ pub trait ConvenienceRendererExt<'a>: ConvenienceRenderer<'a> {
             )
         };
 
-        let mut names: IndexMap<TypeRef, Name> = IndexMap::new();
+        let mut names: IndexMap<TypeRef, Name> = IndexMap::default();
         for &t in graph.type_at(u)?.members()? {
             let target = follow_target_type(graph, t)?;
             let name = self.make_name_for_union_member(u, union_name, target)?;
@@ -1689,7 +1688,7 @@ pub trait ConvenienceRendererExt<'a>: ConvenienceRenderer<'a> {
             )
         };
 
-        let mut names: IndexMap<String, Name> = IndexMap::new();
+        let mut names: IndexMap<String, Name> = IndexMap::default();
         let accessor_names = enum_case_names(graph, e, self.target_language().name())?;
         for case_name in graph.type_at(e)?.cases()? {
             let (assigned_name, is_fixed) = get_accessor_name(&accessor_names, case_name);
@@ -2202,7 +2201,7 @@ pub trait ConvenienceRendererExt<'a>: ConvenienceRenderer<'a> {
     ) -> Result<IndexSet<T>> {
         let mut visited: crate::support::fast_hash::HashSet<TypeRef> =
             crate::support::fast_hash::HashSet::default();
-        let mut processed: IndexSet<T> = IndexSet::new();
+        let mut processed: IndexSet<T> = IndexSet::default();
         let mut queue: Vec<TypeRef> = self.top_levels().values().copied().collect();
         while let Some(t) = queue.pop() {
             if visited.contains(&t) {
@@ -2663,7 +2662,7 @@ mod name_style_error_tests {
                 .get_unique_class_type(
                     TypeAttributes::new(),
                     true,
-                    Some(indexmap::IndexMap::new()),
+                    Some(crate::support::fast_hash::IndexMap::default()),
                     None,
                 )
                 .unwrap();

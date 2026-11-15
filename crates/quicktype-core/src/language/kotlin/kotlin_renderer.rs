@@ -12,14 +12,11 @@
 //! - [`kotlin_hooks`]: the `ConvenienceRenderer` hooks `KotlinRenderer`
 //!   overrides.
 
-use indexmap::IndexSet;
-
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::acronyms::AcronymStyleOptions;
-use crate::support::fast_hash::HashMap;
 use crate::support::recursion::guard;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_graph::TypeGraph;
@@ -27,6 +24,7 @@ use crate::ty::type_utils::{NullRemovalSort, nullable_from_union, remove_null_fr
 
 use super::language::{ACRONYM_STYLE, FRAMEWORK, Framework, JUST_TYPES, PACKAGE_NAME};
 use super::utils::string_escape;
+use crate::support::fast_hash::{HashMap, IndexSet};
 
 /// The option values of the Kotlin renderers (TS
 /// `OptionValues<typeof kotlinOptions>`).

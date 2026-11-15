@@ -1,6 +1,6 @@
 //! Port of `packages/quicktype-core/src/Type/TypeBuilderUtils.ts`.
 
-use indexmap::IndexMap;
+use crate::support::fast_hash::IndexMap;
 
 use super::transformed_string_type::{TRANSFORMED_STRING_TYPE_KINDS, TypeKind};
 

@@ -7,7 +7,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use indexmap::{IndexMap, IndexSet};
 use quicktype_js_compat::number;
 
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
@@ -21,7 +20,6 @@ use crate::declaration_ir::{Declaration, DeclarationKind};
 use crate::renderer_options::RendererOptions;
 use crate::support::collection_utils::{SameValueZero, array_intercalate};
 use crate::support::comments::CommentOptions;
-use crate::support::fast_hash::HashMap;
 use crate::support::recursion::guard;
 use crate::support::strings::{NamingStyle, make_name_style, string_escape};
 use crate::support::support::{assert, defined, panic};
@@ -42,6 +40,7 @@ use super::utils::{
     MemberNames, OPTIONAL_AS_SHARED_TYPE, OPTIONAL_FACTORY_AS_SHARED_TYPE, StringKind, TypeContext,
     TypeRecord, WrappingCode, add_qualifier, constraints_for_type, legalize_name,
 };
+use crate::support::fast_hash::{HashMap, IndexMap, IndexSet};
 
 /// A name style (TS `NameStyle`), shared by the namers made from it.
 type NameStyle = Rc<dyn Fn(&str) -> String>;
@@ -263,9 +262,9 @@ impl<'a> CPlusPlusRenderer<'a> {
             core: ConvenienceRendererCore::new(target_language, render_context),
             enum_type: options.enum_type.clone(),
             namespace_names: options.namespace.split("::").map(str::to_owned).collect(),
-            generated_files: IndexSet::new(),
+            generated_files: IndexSet::default(),
             current_filename: None,
-            all_type_names: IndexSet::new(),
+            all_type_names: IndexSet::default(),
             getters_and_setters_for_property_name: HashMap::default(),
             member_name_style,
             named_type_name_style,
@@ -364,7 +363,7 @@ impl<'a> CPlusPlusRenderer<'a> {
         }
         let mut is_recursive = false;
         for child in self.type_graph().children(u)? {
-            if self.type_reaches(child, u, &mut IndexSet::new())? {
+            if self.type_reaches(child, u, &mut IndexSet::default())? {
                 is_recursive = true;
                 break;
             }
@@ -1360,7 +1359,7 @@ impl<'a> CPlusPlusRenderer<'a> {
         &mut self,
         c: TypeRef,
     ) -> Result<Option<IndexMap<String, Source>>> {
-        let mut res: IndexMap<String, Source> = IndexMap::new();
+        let mut res: IndexMap<String, Source> = IndexMap::default();
         self.for_each_class_property(
             c,
             BlankLinePosition::None,
@@ -3473,7 +3472,7 @@ impl<'a> CPlusPlusRenderer<'a> {
     /// `emitIncludes(c, defName)`: the includes and forward declarations
     /// of the types a definition uses.
     fn emit_includes(&mut self, c: TypeRef, def_name: &str) -> Result<()> {
-        let mut includes: IndexMap<String, IncludeRecord> = IndexMap::new();
+        let mut includes: IndexMap<String, IncludeRecord> = IndexMap::default();
 
         match self.type_graph().kind(c)? {
             TypeKind::Union => self.update_includes(false, &mut includes, c)?,
@@ -3749,7 +3748,7 @@ impl<'a> ConvenienceRenderer<'a> for CPlusPlusRenderer<'a> {
         }
 
         for child in self.type_graph().children(t)? {
-            if self.type_contains_union(child, &mut IndexSet::new())? {
+            if self.type_contains_union(child, &mut IndexSet::default())? {
                 return Ok(false);
             }
         }

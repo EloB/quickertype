@@ -8,7 +8,7 @@
 //! method check, as undici does) and the trait's default
 //! `fetch_with_init`, so the error texts do not depend on the host.
 
-use indexmap::IndexMap;
+use crate::support::fast_hash::IndexMap;
 
 use crate::input::io::node_io::{IoError, IoErrorKind, RequestInit};
 use crate::messages::JsErrorName;
@@ -92,7 +92,7 @@ pub(crate) type HeaderList = IndexMap<String, (String, String)>;
 /// whitespace and must not contain NUL, CR or LF), names that differ only
 /// in case combined (`3, 2`; cookies with `; `).
 pub(crate) fn header_list(headers: &[(String, String)]) -> Result<HeaderList, IoError> {
-    let mut list = HeaderList::new();
+    let mut list = HeaderList::default();
     for (name, value) in headers {
         let value = value.trim_matches(is_http_whitespace);
         if name.is_empty() || !name.chars().all(is_token_char) {

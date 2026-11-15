@@ -6,12 +6,10 @@
 //! break cycles in languages that need indirection for recursive types
 //! ([`cycle_breaker_types_for_graph`]).
 
-use indexmap::IndexSet;
-
 use crate::graph::Graph;
 use crate::messages::{ErrorKind, MessageValue, Result, message_error};
 use crate::support::collection_utils::{set_intersect, set_subtract};
-use crate::support::fast_hash::HashSet;
+use crate::support::fast_hash::{HashSet, IndexSet};
 use crate::support::support::{assert, panic};
 use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;
@@ -82,7 +80,7 @@ pub fn cycle_breaker_types_for_graph(
     can_break_cycles: TypePredicate<'_>,
 ) -> Result<IndexSet<TypeRef>> {
     let mut visited: HashSet<TypeRef> = HashSet::default();
-    let mut cycle_breaker_types: IndexSet<TypeRef> = IndexSet::new();
+    let mut cycle_breaker_types: IndexSet<TypeRef> = IndexSet::default();
     let mut queue: Vec<TypeRef> = graph.top_levels().values().copied().collect();
 
     struct Frame {
@@ -225,7 +223,7 @@ impl DeclarationBuilder<'_> {
         // are none, we're stuck. If there are, we take them out of the
         // component and try the whole thing again recursively. Then we
         // declare the types we previously forward-declared.
-        let mut forward_declarable: IndexSet<TypeRef> = IndexSet::new();
+        let mut forward_declarable: IndexSet<TypeRef> = IndexSet::default();
         for &t in component {
             if can_be_forward_declared(t)? {
                 forward_declarable.insert(t);
@@ -283,7 +281,7 @@ pub fn declarations_for_graph(
         needs_declaration,
         top_down: can_be_forward_declared.is_none(),
         declarations: Vec::new(),
-        forwarded_types: IndexSet::new(),
+        forwarded_types: IndexSet::default(),
         visited_components: HashSet::default(),
     };
     let full_graph = type_graph.make_graph(false, children_of_type)?;

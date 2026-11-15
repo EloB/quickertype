@@ -5,7 +5,7 @@
 //! one per top-level that is not a named class or enum. Unions get no
 //! module of their own.
 
-use indexmap::IndexSet;
+use crate::support::fast_hash::IndexSet;
 use quicktype_js_compat::number;
 
 use crate::attributes::constraints::{
@@ -122,7 +122,7 @@ impl<'a> ElixirRenderer<'a> {
         ElixirRenderer {
             core: ConvenienceRendererCore::new(target_language, render_context),
             options,
-            defined_classes: IndexSet::new(),
+            defined_classes: IndexSet::default(),
         }
     }
 

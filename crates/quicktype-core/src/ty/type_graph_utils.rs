@@ -3,7 +3,7 @@
 //! Small whole-graph rewrites. Each returns `None` where TypeScript returns
 //! the unchanged graph.
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::attributes::type_attributes::{AttributeKind, CombinationKind};
 use crate::attributes::type_names::{NamesTypeAttributeKind, TypeNames};
@@ -65,14 +65,14 @@ fn rewrite_class(
 ) -> Result<TypeRef> {
     let original = builder.original_graph()?;
     let class = original.type_at(c)?;
-    let mut properties: IndexMap<String, ClassProperty> = IndexMap::new();
+    let mut properties: IndexMap<String, ClassProperty> = IndexMap::default();
     for (name, p) in class.properties()? {
         let t = p.type_ref;
         let r = if !p.is_optional || is_nullable(original, t)? {
             builder.reconstitute_type(t, Default::default(), None)?
         } else {
             let null_type = builder.get_primitive_type(TypeKind::Null, Default::default(), None)?;
-            let mut members: IndexSet<TypeRef> = IndexSet::new();
+            let mut members: IndexSet<TypeRef> = IndexSet::default();
             if original.kind(t)? == TypeKind::Union {
                 for &m in original.type_at(t)?.members()? {
                     members.insert(builder.reconstitute_type(m, Default::default(), None)?);
@@ -86,7 +86,7 @@ fn rewrite_class(
                 NamesTypeAttributeKind.set_default_in_attributes(original.attributes(t)?, || {
                     TypeNames::make(
                         [name.clone()].into_iter().collect(),
-                        Some(IndexSet::new()),
+                        Some(IndexSet::default()),
                         true,
                     )
                 });
@@ -145,7 +145,7 @@ pub fn remove_indirection_intersections(
     string_type_mapping: &StringTypeMapping,
     debug_print_remapping: bool,
 ) -> Result<Option<TypeGraph>> {
-    let mut map: IndexMap<TypeRef, TypeRef> = IndexMap::new();
+    let mut map: IndexMap<TypeRef, TypeRef> = IndexMap::default();
 
     for t in graph.all_types_unordered() {
         if graph.kind(t)? != TypeKind::Intersection {

@@ -19,7 +19,6 @@ mod render_support;
 use std::fs;
 use std::path::Path;
 
-use indexmap::IndexSet;
 use quicktype_core::annotation::AnnotationData;
 use quicktype_core::convenience_renderer::prelude::*;
 use quicktype_core::convenience_renderer::{ConvenienceRendererCore, INFERRED_NAME_ORDER};
@@ -27,6 +26,7 @@ use quicktype_core::language::all::{ALL, language_named};
 use quicktype_core::naming::NameStyle;
 use quicktype_core::renderer_options::{RendererOption, RendererOptions};
 use quicktype_core::support::comments::{Comment, CommentOptions};
+use quicktype_core::support::fast_hash::IndexSet;
 use quicktype_core::support::strings::{
     NamingStyle, is_letter_or_underscore_or_digit, legalize_characters, make_name_style,
 };

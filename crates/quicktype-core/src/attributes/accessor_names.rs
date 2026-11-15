@@ -10,11 +10,11 @@
 
 use std::cell::Cell;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::attributes::type_attributes::{AttributeKind, TypeAttributes};
 use crate::messages::{ErrorKind, MessageValue, Result, message_assert};
-use crate::support::collection_utils::{JsEquals, JsHash};
+use crate::support::collection_utils::{DeepHash, JsEquals, JsHash, deep_combine};
 use crate::support::support::defined;
 use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;
@@ -44,6 +44,15 @@ impl JsEquals for AccessorEntry {
             (AccessorEntry::Name(a), AccessorEntry::Name(b)) => a == b,
             (AccessorEntry::ByLanguage(a), AccessorEntry::ByLanguage(b)) => a.js_equals(b),
             _ => false,
+        }
+    }
+}
+
+impl DeepHash for AccessorEntry {
+    fn deep_hash(&self) -> u64 {
+        match self {
+            AccessorEntry::Name(s) => deep_combine(&[1, s.deep_hash()]),
+            AccessorEntry::ByLanguage(m) => deep_combine(&[2, m.deep_hash()]),
         }
     }
 }
@@ -141,7 +150,7 @@ pub(crate) fn combine_union_identifiers(arr: &[&IndexSet<u32>]) -> IndexSet<u32>
 pub(crate) fn combine_union_member_names(
     arr: &[&IndexMap<u32, AccessorEntry>],
 ) -> IndexMap<u32, AccessorEntry> {
-    let mut result = IndexMap::new();
+    let mut result = IndexMap::default();
     for m in arr {
         for (k, v) in m.iter() {
             result.insert(*k, v.clone());
@@ -196,8 +205,8 @@ pub fn union_member_name(
         return Ok((None, false));
     };
 
-    let mut names: IndexSet<String> = IndexSet::new();
-    let mut fixed_names: IndexSet<String> = IndexSet::new();
+    let mut names: IndexSet<String> = IndexSet::default();
+    let mut fixed_names: IndexSet<String> = IndexSet::default();
     for i in identifiers {
         let Some(entry) = member_names.get(i) else {
             continue;
@@ -268,7 +277,9 @@ fn make_accessor_entry(ae: &crate::input::json_schema_store::JsonSchema) -> Resu
             AccessorEntry::ByLanguage(names)
         }
         JsonSchema::Null => return Err(type_error("Cannot convert undefined or null to object")),
-        JsonSchema::Bool(_) | JsonSchema::Number(_) => AccessorEntry::ByLanguage(IndexMap::new()),
+        JsonSchema::Bool(_) | JsonSchema::Number(_) => {
+            AccessorEntry::ByLanguage(IndexMap::default())
+        }
     })
 }
 
@@ -344,7 +355,7 @@ mod tests {
 
     #[test]
     fn entries_resolve_per_language() {
-        let mut accessors = AccessorNames::new();
+        let mut accessors = AccessorNames::default();
         accessors.insert("a".into(), AccessorEntry::Name("A".into()));
         accessors.insert(
             "b".into(),

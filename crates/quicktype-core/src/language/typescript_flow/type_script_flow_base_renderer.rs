@@ -304,7 +304,8 @@ pub mod typescript_flow_base_methods {
             } else {
                 // Inlined unions render as their members, so collect
                 // those members to avoid repeating them.
-                let mut types: indexmap::IndexSet<TypeRef> = indexmap::IndexSet::new();
+                let mut types: crate::support::fast_hash::IndexSet<TypeRef> =
+                    crate::support::fast_hash::IndexSet::default();
                 add_index_type(r, &mut types, additional_properties)?;
                 for p in &properties {
                     add_index_type(r, &mut types, p.type_ref)?;
@@ -338,7 +339,7 @@ pub mod typescript_flow_base_methods {
     /// The `addType` of `emitClassBlockBody`.
     fn add_index_type<'a, R: TypeScriptFlowBaseRenderer<'a>>(
         r: &R,
-        types: &mut indexmap::IndexSet<TypeRef>,
+        types: &mut crate::support::fast_hash::IndexSet<TypeRef>,
         t: TypeRef,
     ) -> Result<()> {
         if r.type_graph().type_at(t)?.is_union() && inlines_union(r, t)? {

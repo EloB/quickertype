@@ -13,6 +13,7 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { generateCards, generateRulings } from "./bench/generate.mjs";
+import { hooksPackage } from "./hooks.mjs";
 
 const require = createRequire(import.meta.url);
 const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -66,16 +67,16 @@ async function outcome(f) {
 
 const utf8 = (text) => new TextEncoder().encode(text);
 
-/** The output of a run on `input`, every file. */
-async function run(input, lang, options = {}) {
-    const inputData = new qt.InputData();
+/** The output of a run on `input`, every file (with `pkg`'s API, this package's by default). */
+async function run(input, lang, options = {}, pkg = qt) {
+    const inputData = new pkg.InputData();
     inputData.addInput(input);
-    return [...(await qt.quicktypeMultiFile({ lang, inputData, ...options }))];
+    return [...(await pkg.quicktypeMultiFile({ lang, inputData, ...options }))];
 }
 
 /** A JSON input for `lang` with `sources` ({ name, samples, jsonLines? }) added. */
-async function inputOf(lang, sources, { sync = false, rendererOptions = {}, handleRefs = false } = {}) {
-    const input = qt.jsonInputForTargetLanguage(lang, undefined, handleRefs, rendererOptions);
+async function inputOf(lang, sources, { sync = false, rendererOptions = {}, handleRefs = false, pkg = qt } = {}) {
+    const input = pkg.jsonInputForTargetLanguage(lang, undefined, handleRefs, rendererOptions);
     for (const source of sources) {
         if (sync) input.addSourceSync(source);
         else await input.addSource(source);
@@ -493,24 +494,31 @@ test("JSON Lines that TypeScript reads itself, and the samples after them", asyn
 });
 
 test("JSON Lines read by an instance that failed are read again by TypeScript", async () => {
-    const add = async () => inputOf("rust", [{ name: "Cards", samples: [lines, utf8(`\u{feff}${records.join("\r\n")}`)], jsonLines: true }, { name: "Json", samples: [array] }]);
+    // The package with the test-hooks engine (test/hooks.mjs), whose
+    // `__panicForTests` traps the instance; the shipped engine has none.
+    const hooks = hooksPackage();
+    hooks.engine.engineSync();
+    const add = async () =>
+        inputOf("rust", [{ name: "Cards", samples: [lines, utf8(`\u{feff}${records.join("\r\n")}`)], jsonLines: true }, { name: "Json", samples: [array] }], {
+            pkg: hooks.qt,
+        });
     const expected = await inMode("ts", async () => {
         const input = await add();
-        return { result: await run(input, "rust"), inside: inside(input) };
+        return { result: await run(input, "rust", {}, hooks.qt), inside: inside(input) };
     });
     for (const kept of [true, false]) {
         // Kept (small inputs), or taken from the failed instance's memory.
-        const old = kept ? undefined : nativeSamples.setKeptTexts(0);
+        const old = kept ? undefined : hooks.nativeSamples.setKeptTexts(0);
         try {
             const input = await add();
-            const glue = engine.engineSync();
+            const glue = hooks.engine.engineSync();
             assert.throws(() => glue.__panicForTests(), WebAssembly.RuntimeError);
-            engine.discardEngine(glue);
-            const before = { ...engineStats };
-            assert.deepEqual({ result: await run(input, "rust"), inside: inside(input) }, expected, kept ? "kept" : "not kept");
-            assert.equal(engineStats.tablesFilled, before.tablesFilled + 1);
+            hooks.engine.discardEngine(glue);
+            const before = { ...hooks.engineStats };
+            assert.deepEqual({ result: await run(input, "rust", {}, hooks.qt), inside: inside(input) }, expected, kept ? "kept" : "not kept");
+            assert.equal(hooks.engineStats.tablesFilled, before.tablesFilled + 1);
         } finally {
-            if (old !== undefined) nativeSamples.setKeptTexts(old);
+            if (old !== undefined) hooks.nativeSamples.setKeptTexts(old);
         }
     }
 });

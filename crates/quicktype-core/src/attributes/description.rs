@@ -4,7 +4,7 @@
 //! producer (`descriptionAttributeProducer`) and `addToSchema` are ported
 //! with the JSON Schema input and output.
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use quicktype_js_compat::json::JsonValue;
 use quicktype_js_compat::utf16;
@@ -30,7 +30,7 @@ pub(crate) fn combine_descriptions(attrs: &[&IndexSet<String>]) -> IndexSet<Stri
 pub(crate) fn combine_property_descriptions(
     attrs: &[&IndexMap<String, IndexSet<String>>],
 ) -> IndexMap<String, IndexSet<String>> {
-    let mut result: IndexMap<String, IndexSet<String>> = IndexMap::new();
+    let mut result: IndexMap<String, IndexSet<String>> = IndexMap::default();
     for attr in attrs {
         for (name, descriptions) in attr.iter() {
             result
@@ -137,7 +137,7 @@ pub fn description_attribute_producer(
                 .collect(),
             _ => return Err(type_error("Cannot convert undefined or null to object")),
         };
-        let mut property_descriptions: IndexMap<String, IndexSet<String>> = IndexMap::new();
+        let mut property_descriptions: IndexMap<String, IndexSet<String>> = IndexMap::default();
         for (name, prop_schema) in entries {
             if let JsonSchema::Object(prop) = prop_schema
                 && let Some(JsonSchema::String(d)) = prop.get("description")
@@ -194,7 +194,7 @@ mod tests {
             "12345..."
         );
         assert_eq!(stringify_description(&set(&["a", "b"])).unwrap(), "a, ...");
-        assert_eq!(stringify_description(&IndexSet::new()), None);
+        assert_eq!(stringify_description(&IndexSet::default()), None);
     }
 
     #[test]

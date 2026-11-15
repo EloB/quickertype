@@ -22,7 +22,6 @@ dist = false
 name = "quicktype_graphql_input"
 
 [dependencies]
-indexmap.workspace = true
 quickertype-core.workspace = true
 quickertype-js-compat.workspace = true
 

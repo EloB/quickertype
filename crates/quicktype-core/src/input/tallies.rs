@@ -41,7 +41,7 @@ use std::fmt;
 use std::mem::size_of;
 use std::rc::Rc;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_js_compat::utf16;
 
 use super::compressed_json::{
@@ -58,7 +58,6 @@ use crate::attributes::uri_attributes::{
     UriParts, UriTypeAttributeKind, parsed_uri_parts, plain_uri_parts, uri_inference_parts,
 };
 use crate::messages::Result;
-use crate::support::fast_hash::BuildHasher;
 use crate::support::support::{defined, panic};
 use crate::ty::transformed_string_type::{TypeKind, transformed_string_type_attributes_producer};
 
@@ -143,7 +142,7 @@ pub(crate) struct StringTally {
     /// `addStringCase(s, 1)` with enum inference), by their index in
     /// [`Tallies`]' strings, with their counts, in first-seen order; none
     /// once the strings absorb every string ([`Tallies::add_case`]).
-    pub(crate) cases: IndexMap<u32, u64, BuildHasher>,
+    pub(crate) cases: IndexMap<u32, u64>,
     /// What the other strings add to the accumulator's `string` attributes
     /// (`addStringType("string", ...)`), combined in order as
     /// `combineTypeAttributes("union", ...)` combines them; `None` if they
@@ -250,7 +249,7 @@ fn add_transformation(combined: &mut Option<TypeAttributes>, kind: TypeKind) -> 
     combine_into(
         combined,
         StringTypesTypeAttributeKind.make_attributes(StringTypes {
-            cases: Some(IndexMap::new()),
+            cases: Some(IndexMap::default()),
             transformations: [kind].into_iter().collect(),
         }),
     )
@@ -520,7 +519,7 @@ pub(crate) struct ObjectTally {
     pub(crate) count: u64,
     /// The keys other than `__proto__`, by their index in [`Tallies`]'
     /// strings, in first-seen order (TS `propertyNames`).
-    pub(crate) keys: IndexMap<u32, KeyTally, BuildHasher>,
+    pub(crate) keys: IndexMap<u32, KeyTally>,
     /// The occurrences of `__proto__`: TypeScript collects the values in a
     /// plain object, where `"__proto__"` is never an own property, so each
     /// occurrence is listed in `propertyNames` again. Each entry is the
@@ -745,7 +744,7 @@ impl fmt::Debug for Tallies {
 
 /// About how many bytes `map`'s buffers take: its entries (each with its
 /// hash) and its index table (an index and a control byte per bucket).
-fn map_size<K, V, S>(map: &IndexMap<K, V, S>) -> usize {
+fn map_size<K, V>(map: &IndexMap<K, V>) -> usize {
     map.capacity() * (size_of::<(u64, K, V)>() + size_of::<usize>() + 1)
 }
 

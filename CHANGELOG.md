@@ -58,9 +58,83 @@ section are absolute.
   at the same sizes as JSON files. Where the input pane is too narrow for
   its controls on one row, the input kind fills the first, and the
   output's head is as tall, so the rows under them still line up.
+- quickertype-core and quickertype-js-compat: the `siphash` feature. It
+  hashes every map and set, and the JSON reader's tables, with `std`'s
+  SipHash-1-3 natively, keyed from the operating system's random source,
+  instead of foldhash: a keyed pseudorandom function, for an embedder that
+  hashes untrusted input on a server. It is slower and changes no output;
+  it has no effect on wasm32.
+
+### Changed
+
+- **Breaking for the Rust API:** every `IndexMap`, `IndexSet`, `HashMap`
+  and `HashSet` in the crates uses one seeded hasher, `SeededState`
+  (quickertype-js-compat's new `hash` module, which quickertype-core
+  re-exports as `support::fast_hash`, with aliases of those four and
+  `index_map_with_capacity`). The maps in the public API
+  (`JsonValue::Object`, `MultiFileRenderResult`, the type graph's maps)
+  have it as their third type parameter, so code that made them with
+  `IndexMap::new()` makes them with `IndexMap::default()` (or `collect()`,
+  or `index_map_with_capacity(n)`). `support::fast_hash::BuildHasher` is
+  `SeededState` on every target. quickertype-js-compat has the
+  `js-host-random` feature now, which quickertype-core's turns on.
+- **Breaking for wasm32 embedders without `js-host-random`:**
+  `support::fast_hash::seed` (`quicktype_js_compat::hash::seed`) must come
+  before any other use of quickertype-core or quickertype-js-compat, since
+  every map takes its seed when it is made and parsing JSON or building
+  `Options` makes maps; called later, it panics, saying so. Before, only
+  some maps took the seed, so parsing JSON first worked. The npm package
+  seeds with `js-host-random`, as before.
+- The JavaScript API's engine no longer exports its test hooks
+  (`__panicForTests`, `__pow`, `__pendingRuns`, `__jsonCount`,
+  `__jsonLeases`, `__jsonReadTrapForTests`, `__memoryGrowths`,
+  `__memoryPages`) or, outside `--heap-stats` builds, `__heapBytes` and
+  `__heapPeak`; the facade never used them. The package's tests build an
+  engine of their own with them (quicktype-wasm's `test-hooks` feature).
+- The JavaScript API's engine, on a host without `crypto.getRandomValues`,
+  fails to load with "quickertype needs crypto.getRandomValues (the Web
+  Crypto API) to seed its hash maps, and this JavaScript host does not
+  have it" (it said "quickertype-core needs").
 
 ### Fixed
 
+- **The WebAssembly engine's remaining hash maps are seeded per
+  instance,** which closes the gap 0.2.0 left. The `IndexMap`s and
+  `IndexSet`s of class properties, enum and string cases and `JsonValue`
+  objects, and the bindings' own maps, used `std`'s `RandomState`, whose
+  keys are the same in every WebAssembly instance, so crafted property
+  names could make inference quadratic. Now they take their seed from
+  `crypto.getRandomValues`, as the JSON reader's tables do since 0.2.0.
+  Natively, every map is now foldhash too, seeded once per process from
+  the operating system's random source. Before, the `IndexMap`s there
+  had SipHash keyed from that source, and the reader's tables and lookup
+  maps foldhash with its own seed, made from addresses and the clock.
+  foldhash with a secret seed is a fast hash, not a keyed pseudorandom
+  function like SipHash; the `siphash` feature (above) is for those who
+  need one. Output does not change. indexmap without `std`
+  and clippy's `disallowed-types` and `disallowed-methods` keep every new
+  map on the seeded hasher. foldhash is also faster than SipHash: the CLI
+  turns the 40 MB benchmark input into TypeScript 2.9% faster, and the
+  engine in Chrome generates the 20 MB one about 3% faster.
+- **Keys whose collection-utils hashes collide no longer make type
+  deduplication quadratic,** in the CLI and in the engine. Types are
+  deduplicated, and JSON Schema `$ref`s resolved, through collection-utils'
+  `EqualityMap`, which this port reproduces bit for bit: Java's string
+  hash with linear probing, where anyone can craft colliding keys ("Aa"
+  and "BB" hash alike, and so does every string made of them). A JSON
+  Schema with 4,000 definitions named so took 70 s to turn into
+  TypeScript; now 0.23 s (16,000: 1.2 s), with the same output. The map
+  keeps the original's slots and order: a key's own slot settles most
+  lookups, and otherwise the end of its probe run and the keys that may
+  match come from a seeded hash, consistent with the map's equality,
+  instead of a walk over the run. Inputs without collisions (20,000 `$id`
+  schemas, thousands of transformed types, the parity corpus) take as
+  long as before.
+- Not covered: the maps inside regex-automata (the capture names of the
+  engine's own patterns, and its lazy DFA's states, which the input only
+  selects among). pluralize's word tables, which hold the library's own
+  words, are ordered instead of hashed. See
+  [Hash seeds in WebAssembly](https://github.com/EloB/quickertype/blob/main/docs/BENCHMARKS.md#hash-seeds-in-webassembly).
 - **TypeScript input: descriptions inherited from base members as
   quicktype gives them.** A member whose own JSDoc has no text (none,
   only tags such as `@deprecated`, or an empty `/** */`) takes the

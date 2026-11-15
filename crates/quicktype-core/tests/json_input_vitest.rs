@@ -19,7 +19,6 @@ use std::future::Future;
 use std::pin::pin;
 use std::task::{Context, Poll, Waker};
 
-use indexmap::IndexMap;
 use quicktype_core::date_time::DefaultDateTimeRecognizer;
 use quicktype_core::inference::InferenceFlags;
 use quicktype_core::input::compressed_json::{CompressedJson, JsonSample};
@@ -30,6 +29,7 @@ use quicktype_core::language::all::{default_target_languages, language_named};
 use quicktype_core::messages::Result;
 use quicktype_core::renderer_options::RendererOptions;
 use quicktype_core::run::RunContext;
+use quicktype_core::support::fast_hash::IndexMap;
 use quicktype_core::support::integer_range::{
     INT16_RANGE, INT64_RANGE, IntegerRange, JS_SAFE_INTEGER_RANGE,
 };

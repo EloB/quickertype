@@ -12,14 +12,15 @@
 //! [`collection_utils`](crate::support::collection_utils)), so the same
 //! duplicates are found as in TypeScript.
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_js_compat::sort as js_sort;
 
 use crate::attributes::type_attributes::TypeAttributes;
 use crate::graph_rewriting::TypeReconstituter;
 use crate::messages::{ErrorKind, MessageValue, Result, message_assert};
 use crate::support::collection_utils::{
-    HASH_CODE_INIT, JsEquals, JsHash, add_hash_code, compare_string_keys, map_sort_by_key,
+    DeepHash, HASH_CODE_INIT, JsEquals, JsHash, add_hash_code, compare_string_keys, deep_combine,
+    map_sort_by_key,
 };
 use crate::support::support::{assert, assert_default, defined, panic};
 use crate::ty::transformed_string_type::TypeKind;
@@ -55,6 +56,12 @@ impl JsHash for ClassProperty {
 impl JsEquals for ClassProperty {
     fn js_equals(&self, other: &Self) -> bool {
         self == other
+    }
+}
+
+impl DeepHash for ClassProperty {
+    fn deep_hash(&self) -> u64 {
+        deep_combine(&[self.type_ref.deep_hash(), self.is_optional.deep_hash()])
     }
 }
 
@@ -164,7 +171,7 @@ impl Type {
             type_ref,
             TypeKind::Map,
             false,
-            values.map(|_| IndexMap::new()),
+            values.map(|_| IndexMap::default()),
             values,
         )
     }
@@ -464,6 +471,9 @@ pub struct TypeIdentity {
     kind: TypeKind,
     components: IdentityComponents,
     hash_code: i64,
+    /// Its [`DeepHash`], made when first asked for: `EqualityMap` needs it
+    /// only to insert, or when a lookup's slot holds another key.
+    deep_hash: std::cell::OnceCell<u64>,
 }
 
 impl TypeIdentity {
@@ -493,7 +503,36 @@ impl TypeIdentity {
             kind,
             components,
             hash_code: h,
+            deep_hash: std::cell::OnceCell::new(),
         }
+    }
+}
+
+impl DeepHash for TypeIdentity {
+    /// The kind and the components, as `js_equals` compares them.
+    fn deep_hash(&self) -> u64 {
+        *self.deep_hash.get_or_init(|| {
+            let k = self.kind.deep_hash();
+            match &self.components {
+                IdentityComponents::Primitive(a) => deep_combine(&[1, k, a.deep_hash()]),
+                IdentityComponents::Array(a, items) => {
+                    deep_combine(&[2, k, a.deep_hash(), items.deep_hash()])
+                }
+                IdentityComponents::Object(a, properties, additional) => deep_combine(&[
+                    3,
+                    k,
+                    a.deep_hash(),
+                    properties.deep_hash(),
+                    additional.deep_hash(),
+                ]),
+                IdentityComponents::Enum(a, cases) => {
+                    deep_combine(&[4, k, a.deep_hash(), cases.deep_hash()])
+                }
+                IdentityComponents::SetOperation(a, members) => {
+                    deep_combine(&[5, k, a.deep_hash(), members.deep_hash()])
+                }
+            }
+        })
     }
 }
 
@@ -583,7 +622,7 @@ pub fn map_type_identify(
     object_type_identify(
         TypeKind::Map,
         attributes,
-        IndexMap::new(),
+        IndexMap::default(),
         additional_properties,
     )
 }
@@ -925,14 +964,14 @@ pub(crate) fn reconstitute(
                         r.get_unique_intersection_type()?;
                     }
                     let reconstituted = r.reconstitute_map(&sorted_member_refs)?;
-                    let mut new_members = IndexSet::new();
+                    let mut new_members = IndexSet::default();
                     for m in &members_in_order {
                         new_members.insert(*defined(reconstituted.get(m))?);
                     }
                     r.set_set_operation_members(new_members)
                 }
                 Some(maybe_members) => {
-                    let mut new_members = IndexSet::new();
+                    let mut new_members = IndexSet::default();
                     for m in &members_in_order {
                         new_members.insert(*defined(maybe_members.get(m))?);
                     }
@@ -1008,7 +1047,7 @@ mod tests {
     fn constructors_check_invariants() {
         assert!(Type::object(r(0), TypeKind::Object, false, None, None).is_err());
         assert!(Type::object(r(0), TypeKind::Class, false, None, Some(r(1))).is_err());
-        let e = Type::union(r(0), Some(IndexSet::new())).unwrap_err();
+        let e = Type::union(r(0), Some(IndexSet::default())).unwrap_err();
         assert_eq!(e.kind(), Some(ErrorKind::IRNoEmptyUnions));
         let mut a = Type::array(r(0), None);
         assert!(a.items().is_err());
@@ -1017,12 +1056,12 @@ mod tests {
         assert!(a.set_items(r(2)).is_err());
         let mut u = Type::union(r(0), None).unwrap();
         assert_eq!(
-            u.set_members(IndexSet::new()).unwrap_err().kind(),
+            u.set_members(IndexSet::default()).unwrap_err().kind(),
             Some(ErrorKind::IRNoEmptyUnions)
         );
         let mut c = Type::class(r(0), false, None).unwrap();
         assert!(c.properties().is_err());
-        c.set_properties(IndexMap::new(), None).unwrap();
-        assert!(c.set_properties(IndexMap::new(), None).is_err());
+        c.set_properties(IndexMap::default(), None).unwrap();
+        assert!(c.set_properties(IndexMap::default(), None).is_err());
     }
 }

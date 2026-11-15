@@ -39,9 +39,9 @@
 //! `\b`, and matching on UTF-16 code units, so that a negated class like
 //! `[^aeiou]` consumes half of a surrogate pair exactly as JavaScript does.
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{LazyLock, OnceLock};
 
-use indexmap::{IndexMap, IndexSet};
 use regex::{Captures, Regex};
 use regex_automata::dfa::{Automaton as _, dense};
 use regex_automata::{Input, PatternSet};
@@ -214,20 +214,22 @@ impl Rules {
     }
 }
 
-/// The word tables: irregular words and uncountable words.
+/// The word tables: irregular words and uncountable words. Only looked up,
+/// so ordered by the words rather than hashed: they do not take a seed
+/// (`crate::hash`), and the words are the library's, not the input's.
 struct Tables {
-    uncountables: IndexSet<String>,
+    uncountables: BTreeSet<String>,
     /// Singular → plural.
-    irregular_singles: IndexMap<String, String>,
+    irregular_singles: BTreeMap<String, String>,
     /// Plural → singular.
-    irregular_plurals: IndexMap<String, String>,
+    irregular_plurals: BTreeMap<String, String>,
 }
 
 static TABLES: LazyLock<Tables> = LazyLock::new(|| {
     let mut tables = Tables {
-        uncountables: IndexSet::new(),
-        irregular_singles: IndexMap::new(),
-        irregular_plurals: IndexMap::new(),
+        uncountables: BTreeSet::new(),
+        irregular_singles: BTreeMap::new(),
+        irregular_plurals: BTreeMap::new(),
     };
     for &(single, plural) in IRREGULAR_RULES {
         let (single, plural) = (single.to_lowercase(), plural.to_lowercase());
@@ -407,8 +409,8 @@ fn sanitize_word(tables: &Tables, token: &str, word: &[u16], rules: &Rules) -> V
 /// `replaceWord(replaceMap, keepMap, rules)(word)`.
 fn replace_word(
     word: &str,
-    replace_map: &IndexMap<String, String>,
-    keep_map: &IndexMap<String, String>,
+    replace_map: &BTreeMap<String, String>,
+    keep_map: &BTreeMap<String, String>,
     rules: &Rules,
 ) -> String {
     let tables = &*TABLES;
@@ -427,8 +429,8 @@ fn replace_word(
 /// `checkWord(replaceMap, keepMap, rules)(word)`.
 fn check_word(
     word: &str,
-    replace_map: &IndexMap<String, String>,
-    keep_map: &IndexMap<String, String>,
+    replace_map: &BTreeMap<String, String>,
+    keep_map: &BTreeMap<String, String>,
     rules: &Rules,
 ) -> bool {
     let tables = &*TABLES;

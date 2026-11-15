@@ -4,7 +4,7 @@
 //! configured `mapper`, and custom converters for enums, unions and
 //! `java.time` types. It is the default Kotlin renderer.
 
-use indexmap::IndexSet;
+use crate::support::fast_hash::IndexSet;
 use quicktype_js_compat::number;
 
 use crate::attributes::constraints::{

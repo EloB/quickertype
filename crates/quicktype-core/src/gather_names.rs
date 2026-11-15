@@ -42,7 +42,6 @@ use std::collections::hash_map::Entry;
 
 use std::rc::Rc;
 
-use indexmap::IndexSet;
 use quicktype_js_compat::pluralize;
 
 use crate::attributes::type_attributes::{AttributeKind, transformation_for_type};
@@ -51,7 +50,7 @@ use crate::attributes::type_names::{
 };
 use crate::messages::Result;
 use crate::support::collection_utils::sort_by_string_key;
-use crate::support::fast_hash::{HashMap, HashSet};
+use crate::support::fast_hash::{HashMap, HashSet, IndexSet};
 use crate::support::support::{console_log, defined, panic};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_graph::TypeGraph;
@@ -500,7 +499,7 @@ pub fn gather_names(graph: &mut TypeGraph, destructive: bool, debug_print: bool)
 
 #[cfg(test)]
 mod tests {
-    use indexmap::IndexMap;
+    use crate::support::fast_hash::IndexMap;
 
     use super::*;
     use crate::attributes::string_types::StringTypes;

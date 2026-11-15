@@ -7,7 +7,6 @@
 //! Vitest tests were checked against quicktype-core's JavaScript API.
 
 use std::cell::RefCell;
-use std::collections::HashSet;
 use std::future::Future;
 use std::pin::Pin;
 use std::rc::Rc;
@@ -17,6 +16,7 @@ use quicktype_core::attributes::type_names::TypeNames;
 use quicktype_core::internal::{block_on, capture_console};
 use quicktype_core::ty::type_builder::TypeBuilder;
 
+use quicktype_core::support::fast_hash::HashSet;
 use quicktype_core::{
     Annotation, AnnotationData, Comment, DebugOptions, Input, InputData, JsErrorName,
     JsonSchemaInput, JsonSchemaSourceData, JsonSourceData, Location, MultiFileRenderResult,
@@ -277,7 +277,7 @@ fn span(start: usize, end: usize) -> Span {
 
 #[test]
 fn combine_render_results_prefixes_each_file() {
-    let mut files = MultiFileRenderResult::new();
+    let mut files = MultiFileRenderResult::default();
     assert_eq!(
         combine_render_results(files.clone()),
         SerializedRenderResult::default()

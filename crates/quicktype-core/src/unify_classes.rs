@@ -11,7 +11,7 @@
 
 use std::rc::Rc;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet, index_map_with_capacity};
 
 use crate::attributes::type_attributes::{
     CombinationKind, TypeAttributes, combine_type_attributes2,
@@ -45,14 +45,14 @@ fn get_clique_properties<'g>(
     builder: &mut TypeBuilder<'g>,
     mut make_property_type: impl FnMut(&mut TypeBuilder<'g>, &IndexSet<TypeRef>) -> Result<TypeRef>,
 ) -> Result<(IndexMap<String, ClassProperty>, Option<TypeRef>)> {
-    let mut property_names: IndexSet<String> = IndexSet::new();
+    let mut property_names: IndexSet<String> = IndexSet::default();
     for &o in clique {
         property_names.extend(graph.type_at(o)?.properties()?.keys().cloned());
     }
 
     let mut properties: Vec<(String, IndexSet<TypeRef>, bool)> = property_names
         .into_iter()
-        .map(|name| (name, IndexSet::new(), false))
+        .map(|name| (name, IndexSet::default(), false))
         .collect();
     let mut additional_properties: Option<IndexSet<TypeRef>> = None;
     for &o in clique {
@@ -60,7 +60,7 @@ fn get_clique_properties<'g>(
         let additional = object.additional_properties()?;
         if let Some(additional) = additional {
             additional_properties
-                .get_or_insert_with(IndexSet::new)
+                .get_or_insert_with(IndexSet::default)
                 .insert(additional);
         }
 
@@ -89,7 +89,7 @@ fn get_clique_properties<'g>(
         Some(types) => Some(make_property_type(builder, types)?),
     };
 
-    let mut unified_properties = IndexMap::with_capacity(properties.len());
+    let mut unified_properties = index_map_with_capacity(properties.len());
     for (name, types, is_optional) in properties {
         let t = make_property_type(builder, &types)?;
         unified_properties.insert(name, builder.make_class_property(t, is_optional));
@@ -192,7 +192,7 @@ impl<'g> UnionBuilder<'g> for UnifyUnionBuilder<'g> {
             && (counts.has_non_any_additional_properties
                 || (!counts.has_properties && counts.has_additional_properties))
         {
-            let mut property_types: IndexSet<TypeRef> = IndexSet::new();
+            let mut property_types: IndexSet<TypeRef> = IndexSet::default();
             for &o in object_refs {
                 property_types.extend(
                     graph

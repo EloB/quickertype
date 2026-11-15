@@ -17,7 +17,7 @@
 //! which rebuild an existing graph; the rewrite-specific state lives in
 //! `RewriteState`.
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::attributes::string_types::{StringTypes, StringTypesTypeAttributeKind};
 use crate::attributes::type_attributes::{
@@ -108,7 +108,7 @@ impl<'g> TypeBuilder<'g> {
             canonical_order,
             all_properties_optional,
             add_provenance_attributes,
-            top_levels: IndexMap::new(),
+            top_levels: IndexMap::default(),
             types: Vec::new(),
             type_attributes: Vec::new(),
             added_forwarding_intersection: false,
@@ -904,7 +904,7 @@ mod tests {
         );
         let mut b = builder(false);
         let e = b
-            .get_union_type(TypeAttributes::new(), IndexSet::new(), None)
+            .get_union_type(TypeAttributes::new(), IndexSet::default(), None)
             .unwrap_err();
         assert_eq!(
             e.user_message(),
@@ -945,8 +945,12 @@ mod tests {
         let out_of_range = TypeRef::new(0, 5).unwrap();
         assert!(g.type_at(out_of_range).is_err());
         assert!(
-            g.set_attribute_value(ProvenanceTypeAttributeKind, out_of_range, IndexSet::new())
-                .is_err()
+            g.set_attribute_value(
+                ProvenanceTypeAttributeKind,
+                out_of_range,
+                IndexSet::default()
+            )
+            .is_err()
         );
         let mut b = builder(false);
         assert_eq!(

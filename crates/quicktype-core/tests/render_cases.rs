@@ -211,7 +211,7 @@ fn join_stdout_models_write_output() {
         lines: lines.iter().map(|&l| l.to_owned()).collect(),
         annotations: Vec::new(),
     };
-    let mut result = MultiFileRenderResult::new();
+    let mut result = MultiFileRenderResult::default();
     result.insert("A.java".to_owned(), file(&["a", ""]));
     result.insert("B.java".to_owned(), file(&["b", ""]));
     assert_eq!(

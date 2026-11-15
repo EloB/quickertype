@@ -15,7 +15,7 @@ use std::collections::VecDeque;
 use std::mem::size_of;
 use std::rc::Rc;
 
-use indexmap::IndexMap;
+use crate::support::fast_hash::{IndexMap, index_map_with_capacity};
 
 use super::{KeyTally, KindOrder, Node, NodeId, ObjectTally, Tallies, alloc, map_size};
 use crate::attributes::string_types::StringTypes;
@@ -23,7 +23,6 @@ use crate::attributes::type_attributes::{TypeAttributeValue, TypeAttributes};
 use crate::attributes::uri_attributes::UriAttributes;
 use crate::input::compressed_json::{Strings, vec_size};
 use crate::messages::Result;
-use crate::support::fast_hash::BuildHasher;
 use crate::support::support::{defined, panic};
 
 /// A tree of tallies that can move to another thread: see the module.
@@ -50,7 +49,7 @@ struct PortableNode {
 /// A [`StringTally`](super::StringTally): its cases, moved, and its
 /// attributes as plain values.
 struct PortableStrings {
-    cases: IndexMap<u32, u64, BuildHasher>,
+    cases: IndexMap<u32, u64>,
     with_enums: Option<PortableAttributes>,
     without_enums: Option<PortableAttributes>,
     not_interned: bool,
@@ -232,7 +231,7 @@ impl Tallies {
             let object = match portable.object {
                 Some(mut o) => {
                     let keys = std::mem::take(&mut o.keys);
-                    o.keys = IndexMap::with_capacity_and_hasher(keys.len(), BuildHasher::default());
+                    o.keys = index_map_with_capacity(keys.len());
                     for (local, key) in keys {
                         let key = KeyTally {
                             count: key.count,

@@ -45,7 +45,6 @@ default = ["mimalloc"]
 mimalloc = ["dep:mimalloc"]
 
 [dependencies]
-indexmap.workspace = true
 mimalloc = { workspace = true, optional = true }
 quickertype-core = { workspace = true, features = ["http"] }
 quickertype-graphql-input.workspace = true

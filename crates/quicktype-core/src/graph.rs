@@ -9,10 +9,8 @@
 
 use std::hash::Hash;
 
-use indexmap::IndexSet;
-
 use crate::messages::Result;
-use crate::support::fast_hash::HashMap;
+use crate::support::fast_hash::{HashMap, IndexSet};
 use crate::support::support::{assert, assert_default, defined};
 
 fn count_component_graph_nodes(components: &[Vec<usize>]) -> Result<usize> {
@@ -378,7 +376,7 @@ impl<T: Clone + Eq + Hash> Graph<T> {
         let nodes: Vec<Vec<T>> = components
             .iter()
             .map(|ns| {
-                let mut seen = IndexSet::new();
+                let mut seen = IndexSet::default();
                 for &n in ns {
                     seen.insert(self.nodes[n].clone());
                 }
