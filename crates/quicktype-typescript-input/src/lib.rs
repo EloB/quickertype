@@ -695,13 +695,6 @@ mod tests {
         (out.source.schema, session.stats())
     }
 
-    fn scratch(name: &str) -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("qt-ts-{name}-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(&dir).unwrap();
-        dir
-    }
-
     /// A batched question the compiler answers with an error is left
     /// unanswered: the generator asks it itself, as without the prefetch,
     /// and the prefetch walk sends nothing one at a time on its own.
@@ -715,7 +708,7 @@ mod tests {
             return;
         };
         testing::verify_local_answers(true);
-        let dir = scratch("batch-errors");
+        let dir = testing::ScratchDir::new("batch-errors");
         std::fs::write(dir.join("typings.ts"), typings(30)).unwrap();
         let names = vec!["typings.ts".to_owned()];
         let (expected, _) = convert(&exe, &dir, &names, true, &[]);
@@ -728,7 +721,6 @@ mod tests {
         let (schema, stats) = convert(&exe, &dir, &names, true, BATCHED);
         assert_eq!(schema, expected);
         assert_eq!(stats.round_trips, serial_stats.round_trips);
-        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     /// A callback during a batch (which none of the queries makes) ends the
@@ -742,7 +734,7 @@ mod tests {
             );
             return;
         };
-        let dir = scratch("batch-callback");
+        let dir = testing::ScratchDir::new("batch-callback");
         std::fs::write(dir.join("typings.ts"), typings(10)).unwrap();
         let names = vec!["typings.ts".to_owned()];
         let (expected, _) = convert(&exe, &dir, &names, true, &[]);
@@ -750,7 +742,6 @@ mod tests {
         let out = schema_for_typescript_sources_in(&names, &dir, &exe).unwrap();
         assert!(!tsc::channel::FAKE_CALLBACK_IN_NEXT_BATCH.with(|c| c.get()));
         assert_eq!(out.source.schema, expected);
-        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     /// Types from imported files, a package in `node_modules`, re-exports
@@ -766,7 +757,7 @@ mod tests {
             return;
         };
         testing::verify_local_answers(true);
-        let dir = scratch("imports");
+        let dir = testing::ScratchDir::new("imports");
         let write = |path: &str, text: &str| {
             let path = dir.join(path);
             std::fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -823,7 +814,6 @@ mod tests {
             "{schema}"
         );
         assert!(stats.batches > 0);
-        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     /// Inherited documentation of every kind the generator follows (tags-only
@@ -841,7 +831,7 @@ mod tests {
             return;
         };
         testing::verify_local_answers(true);
-        let dir = scratch("inherited-docs");
+        let dir = testing::ScratchDir::new("inherited-docs");
         let write = |path: &str, text: &str| {
             let path = dir.join(path);
             std::fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -937,7 +927,6 @@ export interface Holder {
             assert!(schema.contains(text), "{text}: {schema}");
         }
         assert_eq!(session.misses(), Default::default());
-        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     /// The generator's questions to the compiler go out in a few pipelined
@@ -952,8 +941,7 @@ export interface Holder {
             );
             return;
         };
-        let dir = std::env::temp_dir().join(format!("qt-ts-round-trips-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
+        let dir = testing::ScratchDir::new("round-trips");
         let mut seen = Vec::new();
         for n in [10, 200] {
             let name = format!("typings{n}.ts");
@@ -968,7 +956,6 @@ export interface Holder {
             let requests: u64 = stats.methods.values().map(|m| m.count).sum();
             seen.push((n, requests, stats.round_trips, stats.batches));
         }
-        std::fs::remove_dir_all(&dir).unwrap();
         let [
             (_, small, trips, batches),
             (_, large, more_trips, more_batches),
