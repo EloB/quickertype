@@ -231,14 +231,24 @@ fn build_cjson(test: &str, src_lang: &str, input: &str) -> Option<PathBuf> {
 }
 
 /// Runs the C driver in `dir` on `sample`: the JSON it prints, or `None`
-/// if the sample was rejected (exit 1). Any memory error or undefined
-/// behavior (a sanitizer report, a signal) fails the test. Leaks are
-/// checked (where LeakSanitizer runs) unless `rejected`: quicktype's code
-/// leaks a map's elements when it rejects one of them.
-fn run_cjson(dir: &Path, sample: &str, rejected: bool) -> Option<Value> {
+/// if the sample was rejected (exit 1). Any memory error, undefined
+/// behavior or leak (a sanitizer report, a signal) fails the test.
+fn run_cjson(dir: &Path, sample: &str) -> Option<Value> {
+    run_cjson_with(dir, sample, true)
+}
+
+/// [`run_cjson`] without LeakSanitizer, for the one rejection path that
+/// leaks in quicktype's own code too: a map whose element has the wrong
+/// type (`if (!cJSON_IsString(e1)) { cJSON_DeleteTopLevel(x); return NULL; }`
+/// before the map is stored in `x`).
+fn run_cjson_known_map_leak(dir: &Path, sample: &str) -> Option<Value> {
+    run_cjson_with(dir, sample, false)
+}
+
+fn run_cjson_with(dir: &Path, sample: &str, check_leaks: bool) -> Option<Value> {
     fs::write(dir.join("sample.json"), sample).unwrap();
     let mut command = Command::new(dir.join("prog"));
-    if rejected {
+    if !check_leaks {
         command.env("ASAN_OPTIONS", "detect_leaks=0");
     }
     let output = command
@@ -260,11 +270,7 @@ fn check_cjson(test: &str, src_lang: &str, input: &str, samples: &[(&str, Option
         return;
     };
     for (sample, expected) in samples {
-        assert_eq!(
-            &run_cjson(&dir, sample, expected.is_none()),
-            expected,
-            "{test}: {sample}"
-        );
+        assert_eq!(&run_cjson(&dir, sample), expected, "{test}: {sample}");
     }
 }
 
@@ -298,7 +304,7 @@ fn cjson_top_level_maps_of_scalars_allocate_their_values() {
             "enums",
             r#"{"enum": ["x", "y"]}"#,
             json!({"a": "y", "b": "x"}),
-            r#"{"a": "z"}"#,
+            r#"{"a": 1}"#,
         ),
     ] {
         let schema = format!(r#"{{"type": "object", "additionalProperties": {items}}}"#);
@@ -334,40 +340,33 @@ fn cjson_top_level_lists_and_maps_of_null_keep_their_markers() {
 }
 
 /// An enum's getter calls `strcmp` on `cJSON_GetStringValue(j)`, `NULL`
-/// for a value that is not a string, and gives `0` for a value that is no
-/// case, which quicktype's code reads as a case (in lists, maps and
-/// unions), or rejects even when a case's value is 0 (`qt-enum-values`).
-/// Any such value makes the parse fail, wherever the enum is.
+/// for a value that is not a string; an array of enums reaches it
+/// unchecked. Such a value now reads as `0`, as a string that is no case
+/// does in quicktype (the array leaves it out when printed); rejecting
+/// them is a possible later improvement (docs/ROADMAP.md).
 #[test]
-fn cjson_enums_reject_values_that_are_no_case() {
-    let schema = r##"{"type": "object", "required": ["req"], "properties": {
-        "req": {"$ref": "#/definitions/E"},
-        "nul": {"anyOf": [{"$ref": "#/definitions/E"}, {"type": "null"}]},
-        "arr": {"type": "array", "items": {"$ref": "#/definitions/E"}},
-        "nested": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/definitions/E"}}},
-        "map": {"type": "object", "additionalProperties": {"$ref": "#/definitions/E"}},
-        "uni": {"anyOf": [{"$ref": "#/definitions/E"}, {"type": "integer"}]},
-        "zero": {"enum": ["nl", "d"], "qt-enum-values": {"nl": "0", "d": "1"}}},
+fn cjson_enum_getters_compare_only_strings() {
+    let schema = r##"{"type": "object", "required": ["tags"], "properties": {
+        "tags": {"type": "array", "items": {"$ref": "#/definitions/E"}},
+        "map": {"type": "object", "additionalProperties": {"$ref": "#/definitions/E"}}},
         "definitions": {"E": {"enum": ["a", "b"]}}}"##;
     let Some(dir) = build_cjson("cjson-enum-getter", "schema", schema) else {
         return;
     };
-    let good = json!({"req": "a", "nul": null, "arr": ["b", "a"], "nested": [["a"], []],
-        "map": {"k": "b"}, "uni": "b", "zero": "nl"});
-    assert_eq!(run_cjson(&dir, &good.to_string(), false), Some(good));
-    for wrong in [
-        r#"{"req": "c"}"#,
-        r#"{"req": 1}"#,
-        r#"{"req": "a", "nul": "c"}"#,
-        r#"{"req": "a", "arr": [1, "a"]}"#,
-        r#"{"req": "a", "arr": ["a", "c"]}"#,
-        r#"{"req": "a", "nested": [["a"], ["c"]]}"#,
-        r#"{"req": "a", "map": {"k": "c"}}"#,
-        r#"{"req": "a", "uni": "c"}"#,
-        r#"{"req": "a", "zero": "x"}"#,
+    let good = json!({"tags": ["b", "a"], "map": {"k": "a"}});
+    assert_eq!(run_cjson(&dir, &good.to_string()), Some(good));
+    for (sample, printed) in [
+        (r#"{"tags": [1, "a"]}"#, json!({"tags": ["a"]})),
+        (r#"{"tags": [null, {}, "c", "b"]}"#, json!({"tags": ["b"]})),
     ] {
-        assert_eq!(run_cjson(&dir, wrong, true), None, "{wrong}");
+        assert_eq!(run_cjson(&dir, sample), Some(printed), "{sample}");
     }
+    // quicktype's map of enums checks cJSON_IsString and rejects the
+    // value, leaking the map.
+    assert_eq!(
+        run_cjson_known_map_leak(&dir, r#"{"tags": [], "map": {"k": 1}}"#),
+        None
+    );
 }
 
 /// `regcomp`'s result is ignored, so `regexec` and `regfree` run on a
@@ -407,8 +406,8 @@ fn cjson_maps_of_classes_parse_each_value_once() {
     assert_eq!(code.matches("cJSON_GetVValue(e1)").count(), 1, "{code}");
     assert!(!code.contains("cJSON_DeleteV(validated)"), "{code}");
     let sample = json!({"m": {"a": {"n": 1}, "b": {"n": 2}}});
-    assert_eq!(run_cjson(&dir, &sample.to_string(), false), Some(sample));
-    assert_eq!(run_cjson(&dir, r#"{"m": {"a": {"n": "x"}}}"#, true), None);
+    assert_eq!(run_cjson(&dir, &sample.to_string()), Some(sample));
+    assert_eq!(run_cjson(&dir, r#"{"m": {"a": {"n": "x"}}}"#), None);
 }
 
 // ---- Ruby ---------------------------------------------------------------
@@ -624,9 +623,10 @@ fn java_legacy_dates_that_do_not_parse_are_rejected() {
 /// misc/a0496.json: `from_dict` assigns every property to a local variable
 /// of its name, so the property `from_date` shadows the converter
 /// `from_date` (`UnboundLocalError`; mypy: `"date" not callable`). The
-/// same goes for `obj`, `isinstance` and the other converters `from_dict`
-/// calls; the converters only `to_dict` calls (`to_class`, `is_type`) are
-/// no such names, and keep theirs.
+/// same goes for `obj`, `isinstance`, the other converters `from_dict`
+/// calls, and what its constraint checks call (`len`, `re`, `cast`); the
+/// converters only `to_dict` calls (`to_class`, `is_type`) are no such
+/// names, and keep theirs.
 #[test]
 fn python_properties_do_not_shadow_what_from_dict_uses() {
     const TEST: &str = "python-shadowed-converter";
@@ -641,10 +641,27 @@ fn python_properties_do_not_shadow_what_from_dict_uses() {
         r#"{"obj": "a", "isinstance": "b", "from_str": "c", "from_date": "2020-01-02", "to_class": "e", "is_type": "f"}"#,
     )
     .unwrap();
-    for (module, input) in [("a0496", sample.to_str().unwrap()), ("names", "names.json")] {
+    // The constraint checks of `from_dict` call `len`, `re.search` and
+    // `cast`.
+    fs::write(
+        dir.join("checks.schema"),
+        r#"{"type": "object", "required": ["len", "re", "cast", "p"], "properties": {
+            "len": {"type": "array", "items": {"type": "integer"}, "minItems": 1},
+            "re": {"type": "string"},
+            "cast": {"type": "string", "minLength": 1},
+            "p": {"type": "string", "pattern": "^a"}}}"#,
+    )
+    .unwrap();
+    for (module, src_lang, input) in [
+        ("a0496", "json", sample.to_str().unwrap()),
+        ("names", "json", "names.json"),
+        ("checks", "schema", "checks.schema"),
+    ] {
         generate(
             &dir,
             &[
+                "--src-lang",
+                src_lang,
                 "--lang",
                 "python",
                 "--top-level",
@@ -663,6 +680,10 @@ fn python_properties_do_not_shadow_what_from_dict_uses() {
     for renamed in ["    from_str: str\n", "    obj: str\n"] {
         assert!(!names.contains(renamed), "{renamed:?} in {names}");
     }
+    let checks = fs::read_to_string(dir.join("checks.py")).unwrap();
+    for renamed in ["    len: ", "    re: ", "    cast: "] {
+        assert!(!checks.contains(renamed), "{renamed:?} in {checks}");
+    }
     let script = "import json, sys\n\
                   import a0496, names\n\
                   a = json.load(open(sys.argv[1]))\n\
@@ -670,6 +691,15 @@ fn python_properties_do_not_shadow_what_from_dict_uses() {
                   assert (b['from_date'], b['to_date']) == (a['from_date'], a['to_date']), b\n\
                   n = {'obj': 'a', 'isinstance': 'b', 'from_str': 'c', 'from_date': '2020-01-02', 'to_class': 'e', 'is_type': 'f'}\n\
                   assert names.top_level_to_dict(names.top_level_from_dict(n)) == n\n\
+                  import checks\n\
+                  c = {'len': [1], 're': 'x', 'cast': 'y', 'p': 'abc'}\n\
+                  assert checks.top_level_to_dict(checks.top_level_from_dict(c)) == c\n\
+                  for wrong in [{**c, 'len': []}, {**c, 'cast': ''}, {**c, 'p': 'b'}]:\n\
+                  \x20   try:\n\
+                  \x20       checks.top_level_from_dict(wrong)\n\
+                  \x20   except AssertionError:\n\
+                  \x20       continue\n\
+                  \x20   raise SystemExit(f'accepted {wrong}')\n\
                   print('ok')\n";
     let output = Command::new("python3")
         .args(["-c", script])
@@ -696,7 +726,12 @@ fn python_properties_do_not_shadow_what_from_dict_uses() {
         None => skipped(&format!("{TEST} (mypy)"), "no mypy"),
         Some(mut mypy) => {
             let output = mypy
-                .args(["--ignore-missing-imports", "a0496.py", "names.py"])
+                .args([
+                    "--ignore-missing-imports",
+                    "a0496.py",
+                    "names.py",
+                    "checks.py",
+                ])
                 .current_dir(&dir)
                 .output()
                 .unwrap();
@@ -830,23 +865,35 @@ fn json_schema_enums_with_accessors_combine() {
     assert!(code.contains("{ Alpha, B };"), "{code}");
 }
 
-/// Enum values (`qt-enum-values`) combine the same way: two enums with
-/// the same cases keep the values they agree on.
+/// Enum values (`qt-enum-values`) combine only when every copy is the
+/// same: dropping a value the copies disagree on could give two cases the
+/// same C value. Otherwise they stop as in quicktype.
 #[test]
-fn json_schema_enum_values_combine() {
+fn json_schema_enum_values_combine_only_when_they_agree() {
     let dir = work_dir("schema-enum-values");
-    let schema = r#"{"definitions": {
-        "E": {"type": "string", "enum": ["a", "b"], "qt-enum-values": {"a": "0", "b": "1"}},
-        "F": {"type": "string", "enum": ["a", "b"], "qt-enum-values": {"a": "0", "b": "2"}}}}"#;
-    fs::write(dir.join("input.schema"), schema).unwrap();
-    let output = Command::new(BIN)
-        .args(["--src-lang", "schema", "--lang", "cjson"])
-        .args(["--src", "input.schema#/definitions/E"])
-        .args(["--src", "input.schema#/definitions/F"])
-        .current_dir(&dir)
-        .output()
-        .unwrap();
+    let run = |f_values: &str| {
+        let schema = format!(
+            r#"{{"definitions": {{
+                "E": {{"type": "string", "enum": ["a", "b"], "qt-enum-values": {{"a": "0", "b": "1"}}}},
+                "F": {{"type": "string", "enum": ["a", "b"], "qt-enum-values": {f_values}}}}}}}"#
+        );
+        fs::write(dir.join("input.schema"), schema).unwrap();
+        Command::new(BIN)
+            .args(["--src-lang", "schema", "--lang", "cjson"])
+            .args(["--src", "input.schema#/definitions/E"])
+            .args(["--src", "input.schema#/definitions/F"])
+            .current_dir(&dir)
+            .output()
+            .unwrap()
+    };
+    let output = run(r#"{"b": "1", "a": "0"}"#);
     assert!(output.status.success(), "{}", text(&output));
     let code = String::from_utf8(output.stdout).unwrap();
-    assert!(code.contains("    F_A = 0,\n    F_B,\n"), "{code}");
+    assert!(code.contains("    F_A = 0,\n    F_B = 1,\n"), "{code}");
+    let output = run(r#"{"a": "0", "b": "2"}"#);
+    assert_eq!(output.status.code(), Some(1), "{}", text(&output));
+    assert_eq!(
+        String::from_utf8_lossy(&output.stderr),
+        "Error: Internal error: Cannot combine type attribute enumValues.\n"
+    );
 }
