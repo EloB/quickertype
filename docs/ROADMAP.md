@@ -237,3 +237,24 @@ fields and strings instead of the file size.
       ([BENCHMARKS.md](BENCHMARKS.md#reading-on-several-threads)). The
       WebAssembly engine still reads on one thread (workers in browsers
       are not done).
+
+## Parked
+
+Possible improvements that are not planned yet.
+
+- **C (cJSON): reject enum values that are no case.** An enum's getter
+  gives `0` for a value that is not one of its cases (quicktype's
+  behavior, which the port keeps; it only stopped the getter from passing
+  `NULL` to `strcmp`), so lists, maps and unions store that `0`, and a
+  class property's `0 == cJSON_Get<E>Value(v)` check rejects a case whose
+  value is 0 (`qt-enum-values`). A first attempt (on
+  `fix/quicktype-bugs`, reverted in review) added a `cJSON_Is<E>Value`
+  check at every call site. Lessons for the next one: do it in the
+  getter (an out-parameter or a sentinel), not per call site; mind
+  nullable items (a `null` in a list of nullable enums is not an error),
+  union containers (lists and maps that are union members) and
+  top-level lists of nullable enums; don't add rejection paths to maps,
+  which leak the map when they reject an element; `cJSON_Is<Name>` is
+  also how union check macros are named, so pick a name that cannot
+  clash; and match each value against the cases once, not once to check
+  and again to get it.

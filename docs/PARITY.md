@@ -759,7 +759,11 @@ identical again, and they leave the list.
 `crates/quicktype-cli/tests/fixed_quicktype_bugs.rs` generates code for
 each bug and compiles and runs it where the toolchain is installed (C with
 AddressSanitizer and UndefinedBehaviorSanitizer, Ruby, Java, Python with
-mypy, the TypeScript input).
+mypy, the TypeScript input). LeakSanitizer checks every C sample, accepted
+or rejected, but one: a map whose element has the wrong type
+(`{"map": {"k": 1}}` for a map of enums), which quicktype's code rejects
+before it stores the map in the class, so the map leaks (quicktype's own
+code, not one of these fixes).
 
 - **C (`--lang cjson`)**, reported upstream: (link pending).
   - `cjson-top-level-collections`: a top-level map of integers, booleans,
@@ -781,15 +785,11 @@ mypy, the TypeScript input).
   - `cjson-enum-getter`: enum getters called
     `strcmp(cJSON_GetStringValue(j), …)` after checking only `NULL != j`,
     so a value that is not a string (`{"tags": [1]}` for an array of enums)
-    passed `NULL` to `strcmp`. A string that is no case gave `0`, which
-    lists, maps and unions stored as if it were a case, while a class
-    property rejected `0`, which is a case when `qt-enum-values` gives it
-    the value 0. Each enum gets `bool cJSON_Is<Name>Value(const cJSON * j)`
-    (a string that is one of its cases), which the getters of classes,
-    lists (nested ones too), maps, unions and top-levels check before
-    calling `cJSON_Get<Name>Value`: any other value makes the parse fail.
-    The getter itself checks `cJSON_IsString(j)` and still gives `0` for
-    any other value.
+    passed `NULL` to `strcmp`. The getters check `cJSON_IsString(j)`. This
+    only fixes the crash: such a value reads as `0`, as a string that is no
+    case does in quicktype; unknown enum values read as 0, as before, and
+    rejecting them is a possible later improvement
+    ([ROADMAP.md](ROADMAP.md#parked)).
   - `cjson-pattern-regcomp`: pattern constraints ignored what `regcomp`
     returns, so `regexec` and `regfree` ran on a regex that never compiled
     (undefined behavior; on macOS every value was rejected). The generated
@@ -828,13 +828,15 @@ mypy, the TypeScript input).
   `from_dict` uses shadowed it: `from_date` (`python` with
   `misc/a0496.json`: `from_date(obj["to_date"])` fails, mypy reports
   `"date" not callable`, Python an `UnboundLocalError`), and likewise
-  `obj`, `isinstance` and the other converters `from_dict` calls. Those
-  names are forbidden for properties (`obj`, `isinstance`, `from_none`,
-  `from_bool`, `from_int`, `from_float`, `from_str`, `from_list`,
-  `from_dict`, `from_union`, `from_date`, `from_time`, `from_datetime`,
+  `obj`, `isinstance`, the other converters `from_dict` calls, and what
+  its constraint checks call (`len`, `re`, `cast`). Those names are
+  forbidden for properties (`obj`, `isinstance`, `from_none`, `from_bool`,
+  `from_int`, `from_float`, `from_str`, `from_list`, `from_dict`,
+  `from_union`, `from_date`, `from_time`, `from_datetime`,
   `from_stringified_bool`, derived from the converter functions
-  `deserializer` and the decoding transformers use), and a property named
-  like one is renamed as other forbidden names are (`top_level_from_date`
+  `deserializer` and the decoding transformers use; `len`, `re` and
+  `cast`, the constants the constraint checks are written with), and a
+  property named like one is renamed as other forbidden names are (`top_level_from_date`
   in `TopLevel`). The converters only `to_dict` calls (`to_float`,
   `to_enum`, `to_class`, `is_type`) are no such names: properties named
   like them keep their names. Upstream CI sets `QUICKTEST`,
@@ -855,9 +857,13 @@ mypy, the TypeScript input).
   class's `combine` panics. A JSON Schema with two definitions of the same
   enum, each with `qt-accessors`, fails the same way, and so does one
   with `qt-enum-values` (`Cannot combine type attribute enumValues.`):
-  `EnumValuesTypeAttributeKind` has no `combine` either. Both now combine
-  to the entries the combined types agree on; a name they give different
-  entries is dropped, so it gets its default name (or value). The one
+  `EnumValuesTypeAttributeKind` has no `combine` either. Accessor names
+  now combine to the entries the combined types agree on; a name they give
+  different entries is dropped, so it gets its default name. Enum values
+  combine only when every copy is the same (the same enum meeting itself);
+  any other combination stops with quicktype's error, since dropping a
+  value the copies disagree on could give two cases the same value, which
+  C does not compile. The one
   other attribute without a `combine`, a type's transformation, never
   meets itself: it is part of the type's identity, so a type found by its
   identity does not get it again, and only the last rewrite
