@@ -166,6 +166,16 @@ int main(int argc, const char * argv[]) {
 /// and builds it with the sanitizers; `None` (after a note) without a C
 /// compiler that has them, or without the libraries.
 fn build_cjson(test: &str, src_lang: &str, input: &str) -> Option<PathBuf> {
+    // The C that quicktype generates is POSIX C: it includes <regex.h>
+    // (patterns) and its drivers use pthreads, which a Windows C compiler
+    // does not provide. quicktype's own cjson fixtures run on Linux only.
+    if cfg!(windows) {
+        skipped(
+            test,
+            "the generated C needs POSIX (<regex.h>), which Windows lacks",
+        );
+        return None;
+    }
     if !runs("cc", &["--version"]) {
         skipped(test, "no C compiler (cc)");
         return None;
