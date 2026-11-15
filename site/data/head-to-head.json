@@ -6,7 +6,6 @@
   "commit": "84c638d9de0f2d0fbedb862af3c27a5f55974362",
   "how": "the playground with its defaults, TypeScript, top-level Cards: each engine in a fresh headless Chrome per file, the file given to the page as a File, then run as the playground runs a file (its worker reads it and generates the code). Time: from the request to the generated code, as the page sees it. First: the first file run in the tab (after the page's default sample); warm: 3 more runs, each reading the file again (a one-line text in between makes the worker let go of it), the engines interleaved; the median and the best. Tab: the peak physical footprint of the tab's renderer process (the page, its workers, their heaps and WebAssembly memories), sampled every 20 ms, on the first run. The inputs are the first cards of Scryfall's card data, as the file has them; both engines wrote the same output for each.",
   "load_average": "2.7 to 4.3",
-  "part_workers": 8,
   "inputs": [
     {
       "input": "Scryfall cards (real data), the first 18,243",
@@ -81,7 +80,8 @@
       "bytes": 656501037,
       "cards": 120095,
       "quicktype": {
-        "refused": "the playground says the file is too large for the browser, after 0.51 s: 655,897,953 UTF-16 units of text, against at most 536,870,888 in one string"
+        "refused": "string-limit",
+        "message": "the playground says the file is too large for the browser, after 0.51 s: 655,897,953 UTF-16 units of text, against at most 536,870,888 in one string"
       },
       "quickertype": {
         "first_s": 0.533,

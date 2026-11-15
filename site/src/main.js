@@ -483,7 +483,7 @@ function renderInputStatus() {
     // Not after another input failed to load (no request): the output is about that one.
     else if (shown.gen === generation && shown.result !== undefined && view.request !== undefined) {
         const result = shown.result;
-        if (!result.ok) text = result.ms === undefined ? "Not run: see the output." : `${errorTitle(result)}: see the output.`;
+        if (!result.ok) text = result.ms === undefined ? "Not run: see the output." : `${errorTitle(shown.engine, result)}: see the output.`;
         else if (result.parts?.workers !== undefined && !result.reused) text = `${engineNames[shown.engine]} ran it in ${formatMs(result.ms)}, reading it on ${result.parts.workers} workers.`;
         else text = `${engineNames[shown.engine]} ran it in ${formatMs(result.ms)}.`;
     }
@@ -808,7 +808,7 @@ function renderCode() {
         const { title, message, link } = result.error;
         const name = result.error.messageName ?? result.error.name;
         const help = link === undefined ? "" : `<p class="error-help">Get <a href="${escapeHtml(link.href)}">${escapeHtml(link.text)}</a>.</p>`;
-        els.error.innerHTML = `<p class="error-title">${escapeHtml(title ?? errorTitle(result))}</p><pre class="error-message">${escapeHtml(message)}</pre>${help}${name ? `<p class="error-kind">${escapeHtml(name)}</p>` : ""}`;
+        els.error.innerHTML = `<p class="error-title">${escapeHtml(title ?? errorTitle(view.shown.engine, result))}</p><pre class="error-message">${escapeHtml(message)}</pre>${help}${name ? `<p class="error-kind">${escapeHtml(name)}</p>` : ""}`;
     }
 
     // Drawn again only for another result (a new files array) or another tab.
@@ -833,15 +833,30 @@ function renderCode() {
 }
 
 /**
- * The title of an error that has none of its own: the engine that stopped,
- * by the name the bars give it (the run's `ran`: a run of quickertype's
- * worker that went to the TypeScript engine stopped in quicktype's code).
- * Neutral where no one engine did: the worker failed (its message says
- * which), or the run stopped before an engine started, reading the input.
+ * How a result of `worker`'s ("wasm" or "ts") came about, which its error's
+ * title, its bar's tag and the note on fixed bugs each word their own way:
+ * "worker" (the worker failed: no engine's result), "input" (it stopped
+ * before an engine started, reading the input), "fallback" (it ran on the
+ * other engine than its worker's: quickertype's worker on the TypeScript
+ * engine), "engine" (on its worker's own engine), or "none" (it needed no
+ * engine).
  */
-function errorTitle(result) {
-    if (result.workerFailure) return "The run stopped with an error";
-    if (result.ran !== undefined) return `${engineNames[result.ran]} stopped with an error`;
+function runKind(worker, result) {
+    if (result.workerFailure) return "worker";
+    if (result.ran === undefined) return result.ok ? "none" : "input";
+    return result.ran === worker ? "engine" : "fallback";
+}
+
+/**
+ * The title of an error of `worker`'s that has none of its own: the engine
+ * that stopped, by the name the bars give it (a run of quickertype's worker
+ * that went to the TypeScript engine stopped in quicktype's code); neutral
+ * where no one engine did (see runKind).
+ */
+function errorTitle(worker, result) {
+    const kind = runKind(worker, result);
+    if (kind === "worker") return "The run stopped with an error";
+    if (kind === "engine" || kind === "fallback") return `${engineNames[result.ran]} stopped with an error`;
     return "Stopped while reading the input";
 }
 
@@ -865,13 +880,16 @@ function fixedNote(fixed) {
 /**
  * Whether quickertype's result `a` and quicktype's `b` are the same: the
  * same files, byte for byte, or the same error; where they are not and
- * quickertype ran, `fixed` (see fixedNote).
+ * quickertype's own engine (WebAssembly) made `a`, `fixed` (see fixedNote):
+ * a run of quickertype's that went to the TypeScript engine is quicktype's
+ * code, and fixes nothing.
  */
 function verdict(a, b) {
+    const ours = runKind("wasm", a) === "engine";
     if (a.ok && b.ok) {
         const count = a.files.length;
         if (count !== b.files.length || a.files.some((f, i) => f.name !== b.files[i].name)) {
-            return { same: false, text: "different files", fixed: "differ" };
+            return { same: false, text: "different files", fixed: ours ? "differ" : undefined };
         }
 
         for (let i = 0; i < count; i++) {
@@ -881,7 +899,7 @@ function verdict(a, b) {
             let line = 0;
             while (line < left.length && left[line] === right[line]) line++;
             const where = count > 1 ? ` in ${a.files[i].name}` : "";
-            return { same: false, text: `outputs differ${where} from line ${line + 1}`, fixed: "differ" };
+            return { same: false, text: `outputs differ${where} from line ${line + 1}`, fixed: ours ? "differ" : undefined };
         }
 
         const bytes = a.files.reduce((n, f) => n + utf8Length(f.text), 0);
@@ -896,7 +914,7 @@ function verdict(a, b) {
     }
 
     // Only quicktype stopped, in its engine (not reading the input, nor its worker).
-    const fixed = a.ok && b.ran !== undefined && !b.workerFailure ? "failed" : undefined;
+    const fixed = a.ok && ours && runKind("ts", b) === "engine" ? "failed" : undefined;
     return { same: false, text: `only ${engineNames[a.ok ? "ts" : "wasm"]} stopped with an error`, fixed };
 }
 
@@ -947,13 +965,11 @@ function phasesOf(result, measured) {
     return { total: result.ms, input: result.inputTimes?.[last], generate: generate[last], reused: result.reused === true };
 }
 
-/** A tag for a result that did not run the way its worker's name says. */
+/** A tag for a result that did not run the way its worker's name says (see runKind). */
 function engineTag(worker, result) {
-    if (result.ran === undefined && !result.ok) return "stopped while reading the input";
-    if (result.ran !== undefined && result.ran !== worker) {
-        return `ran on the ${engineKinds[result.ran]} engine${result.reason ? `: ${result.reason}` : ""}`;
-    }
-
+    const kind = runKind(worker, result);
+    if (kind === "input") return "stopped while reading the input";
+    if (kind === "fallback") return `ran on the ${engineKinds[result.ran]} engine${result.reason ? `: ${result.reason}` : ""}`;
     return undefined;
 }
 

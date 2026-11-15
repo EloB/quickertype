@@ -33,7 +33,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { formatMiB, formatMs, headToHeadFacts, headToHeadName, inputSize, named, seconds, sizeIn, speedFacts, times } from "./benchmarks.mjs";
+import { formatMiB, formatMs, headToHeadFacts, headToHeadName, inputSize, named, refusals, seconds, sizeIn, speedFacts, times } from "./benchmarks.mjs";
 import { columnChart, legend, pairChart, pairRows, startIds, tableView, valueRows } from "./charts.mjs";
 import { quicktypeReference } from "./reference.mjs";
 import { highlight } from "./src/highlight.js";
@@ -383,6 +383,7 @@ export async function landingFacts({ qt, engineStats, languages, bench }) {
         rust: rustTestFacts(),
         browser: browserFacts(bench.browser),
         h2h: bench.h2h,
+        workers: bench.workers,
         bench: bench.bench,
         big: bench.big,
         speed: speedFacts(bench.bench),
@@ -474,7 +475,7 @@ export function specimenCss(specimen) {
 /** The landing page's body (header, main and footer), from landingFacts(). `images`: the build's hashed image files. */
 export function landingPageHtml(facts, images) {
     startIds("l");
-    const { quicktype, golden, inputs, differential, workflows, fuzz, rust, browser, h2h, bench, big, speed, reference } = facts;
+    const { quicktype, golden, inputs, differential, workflows, fuzz, rust, browser, h2h, workers, bench, big, speed, reference } = facts;
     const history = quicktype.history;
     const people = quicktype.contributors.people;
     const repo = quicktype.repository;
@@ -670,10 +671,10 @@ ${tableView("Recorded cases in tests/golden, by what they cover", ["Kind", "Case
 <figcaption id="browser-large-title">Large files in the playground: Scryfall cards (real data), how many times faster than quicktype, warm</figcaption>
 ${largeChart}
 ${tableView("A warm run in the playground, headless Chrome, s (site/data/head-to-head.json)", ["Input", "quicktype", "quickertype", "Faster"], large.both.map((i) => [headToHeadName(i), seconds(i.quicktype.warm_s), seconds(i.quickertype.warm_s), times(i.speedup)]))}
-<p class="fineprint">quickertype reads a large file on up to ${stat("browser-large-workers", h2h.part_workers)} workers at once.${
+<p class="fineprint">quickertype reads a large file on up to ${stat("browser-large-workers", workers.part_workers)} workers at once.${
         largeRefused === undefined
             ? ""
-            : ` The whole file, ${stat("browser-large-full-size", largeRefused.bytes, inputSize(largeRefused.bytes))}, is too large for quicktype in a browser; quickertype runs it in ${stat("browser-large-full-seconds", largeRefused.quickertype.warm_s, seconds(largeRefused.quickertype.warm_s))}.`
+            : ` The whole file, ${stat("browser-large-full-size", largeRefused.bytes, inputSize(largeRefused.bytes))}, is ${refusals[largeRefused.quicktype.refused]}, so quicktype cannot read it there; quickertype runs it in ${stat("browser-large-full-seconds", largeRefused.quickertype.warm_s, seconds(largeRefused.quickertype.warm_s))}.`
     }</p>
 </figure>`;
     const machine = bench.machine;

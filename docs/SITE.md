@@ -158,12 +158,17 @@ made and measured: [BENCHMARKS.md](BENCHMARKS.md)):
   the warm median (ms), and the WebAssembly memory (MiB). The build refuses
   an input that reads no faster in parts.
 - `site/data/head-to-head.json`: quicktype against quickertype in the
-  playground on large files (slices of Scryfall's card data, and the whole
-  file, which quicktype refuses: `quicktype.refused` says why), each in a
-  fresh headless Chrome: the first run, the median and the best of three
-  warm runs (s), and the tab's peak memory (MiB); how it was measured is in
+  playground on large files (the first `cards` of Scryfall's card data,
+  and the whole file, which quicktype refuses: `quicktype.refused` is the
+  reason, `string-limit` (past the longest string a browser holds) being
+  the only one the pages know, and `quicktype.message` the playground's
+  words), each in a fresh headless Chrome: the first run, the median and
+  the best of three warm runs (s), and the tab's peak memory (MiB); how it
+  was measured is in
   [BENCHMARKS.md](BENCHMARKS.md#large-files-in-the-browser-quicktype-against-quickertype).
-  The build refuses an input both ran where quickertype is not faster.
+  The build refuses an input both ran where quickertype is not faster, an
+  unknown reason, and a count of part workers of its own (the pages take
+  that from `browser-workers.json`).
 
 The README's tables are not read from these files: after a refresh, copy
 the numbers into them and redraw their charts (`node

@@ -520,8 +520,13 @@ const speedNow = speedFacts(benchmarkData.bench);
         h2hData((d) => (d.inputs[ranBoth].quickertype.warm_s = d.inputs[ranBoth].quicktype.warm_s * 1.1)),
         /the pages say it is faster/,
     );
-    refused("quicktype refusing without saying why", checkHeadToHead, "head-to-head.json", h2hData((d) => (d.inputs[ranBoth].quicktype = { refused: "" })), /say why/);
-    refused("no input both ran", checkHeadToHead, "head-to-head.json", h2hData((d) => d.inputs.forEach((i) => (i.quicktype = { refused: "too large" }))), /both ran/);
+    refused("quicktype refusing for a reason the pages do not know", checkHeadToHead, "head-to-head.json", h2hData((d) => (d.inputs[ranBoth].quicktype = { refused: "too-slow", message: "it ran out of time" })), /refused must be a known reason \(string-limit\), not "too-slow"/);
+    refused("a refusal without the playground's message", checkHeadToHead, "head-to-head.json", h2hData((d) => (d.inputs[ranBoth].quicktype = { refused: "string-limit" })), /needs the playground's message/);
+    refused("no input both ran", checkHeadToHead, "head-to-head.json", h2hData((d) => d.inputs.forEach((i) => (i.quicktype = { refused: "string-limit", message: "too large" }))), /both ran/);
+    for (const cards of [undefined, 1.5, 0]) {
+        refused(`a head-to-head input with ${cards} cards`, checkHeadToHead, "head-to-head.json", h2hData((d) => (d.inputs[0].cards = cards)), /inputs\[0\]\.cards .*must be the number of cards/);
+    }
+    refused("a second count of part workers", checkHeadToHead, "head-to-head.json", h2hData((d) => (d.part_workers = 8)), /part_workers is browser-workers\.json's/);
     assert.equal(inputSize(43_688_373), "43.7 MB");
     assert.equal(inputSize(3_010_396_357), "3.01 GB");
     console.log(`ok: benchmark data checked (${benchmarkData.bench.cli.length} CLI benchmarks, ${benchmarkData.bench.date}); broken data, and data that makes a summary claim false, is refused (big-inputs.json, browser.json, browser-workers.json and head-to-head.json too)`);
@@ -532,7 +537,7 @@ const speedNow = speedFacts(benchmarkData.bench);
     const pageFor = (change) => {
         const data = structuredClone(benchmarkData.bench);
         change(data);
-        const html = benchmarksPageHtml({ bench: checkBenchmarks(data), big: benchmarkData.big });
+        const html = benchmarksPageHtml({ bench: checkBenchmarks(data), big: benchmarkData.big, workers: benchmarkData.workers, h2h: benchmarkData.h2h });
         const plain = (s) => s.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
         const all = (re) => [...html.matchAll(re)].map((m) => plain(m[1]));
         const facts = Object.fromEntries([...html.matchAll(/<div><dt>(.*?)<\/dt><dd>(.*?)<\/dd><\/div>/g)].map((m) => [m[1], plain(m[2])]));
@@ -601,7 +606,7 @@ const speedNow = speedFacts(benchmarkData.bench);
     assert.equal(big40.tile, `faster per CLI run at most (generated (40 MB) → TypeScript, a JSON input); about ${speedNow.typical}× on typical files`);
     // The 40 MB input measured again for big-inputs.json after the run: said as measured, more or less.
     const memoryText = (bigData) => {
-        const html = benchmarksPageHtml({ bench: benchmarkData.bench, big: bigData });
+        const html = benchmarksPageHtml({ bench: benchmarkData.bench, big: bigData, workers: benchmarkData.workers, h2h: benchmarkData.h2h });
         return /<section id="memory"[^>]*>\s*<h2[^>]*>.*?<\/h2>\s*<p>(.*?)<\/p>/s.exec(html)[1].replace(/<[^>]+>/g, "");
     };
     const later = (peak) =>
@@ -2289,12 +2294,24 @@ try {
         "the live region says why the outputs can differ",
     );
     await page.screenshot("fixed-bug.png");
+    // The same outputs from a run of quickertype's worker that went to the
+    // TypeScript engine (its result marked so): quicktype's code, which
+    // fixes nothing, so no note; its bar says where it ran.
+    await page.evaluate(`Object.assign(playground.view.results.wasm.result, { ran: "ts", reason: "a test" })`);
+    assert.deepEqual(await switchEngine("wasm", "quickertype's fallback run that differs"), { wasm: 0, ts: 0 });
+    const fallback = await fixedNow();
+    assert.deepEqual(
+        { ...fallback, said: undefined, tag: await page.evaluate(`document.querySelector("#meter .lane.wasm .lane-note.warn")?.textContent ?? null`) },
+        { compare: "different", verdict: `outputs differ from line ${fromLine} ≠`, note: null, link: null, linkText: null, visible: false, said: undefined, tag: "ran on the TypeScript engine: a test" },
+        "a fallback run that differs: no note on fixed bugs",
+    );
+    await switchEngine("ts", "back to quicktype");
     // Identical outputs say nothing of it.
     await andRun(typeInput('{"name": "Ann", "age": 7}'), "identical outputs, to Python");
     await switchEngine("wasm", "quickertype on identical outputs");
     await page.waitFor("document.body.dataset.compare === 'identical'", "identical outputs compared");
     assert.equal(await page.evaluate(`document.querySelector("#meter .fixed-note")`), null, "identical outputs: no note on fixed bugs");
-    console.log(`ok: outputs that differ on a fixed bug ("${differ.verdict}") and quicktype stopping on one say quickertype fixes some quicktype bugs, linking the list`);
+    console.log(`ok: outputs that differ on a fixed bug ("${differ.verdict}") and quicktype stopping on one say quickertype fixes some quicktype bugs, linking the list; a run of quickertype's on the TypeScript engine does not`);
     // As before: invalid JSON to Rust, on quickertype.
     await select("lang", "rust");
     await andRun(typeInput(invalid), "invalid JSON again", `${settled} && document.body.dataset.status === "error"`);
@@ -3384,7 +3401,7 @@ try {
         assert.equal(pageNow.method.Command, data.command);
         assert.ok(pageNow.method.quicktype.startsWith(data.commits.quicktype.slice(0, 7)), pageNow.method.quicktype);
         assert.ok(pageNow.method.quickertype.startsWith(data.commits.quickertype.slice(0, 7)), pageNow.method.quickertype);
-        assert.deepEqual(pageNow.h2, ["Every CLI run, 96× to 8.1× faster".replace("96×", `${speedNow.upTo}×`).replace("8.1×", speedup(speedNow.lowest)), "Memory", `The whole test corpus, ${speedup(speedNow.corpus)} faster`, "Big files", "In the browser", `Large files in the browser, ${large.low === large.high ? speedup(large.low) : `${speedup(large.low).slice(0, -1)}× to ${speedup(large.high)}`} faster`, "Method", "Get the CLI"]);
+        assert.deepEqual(pageNow.h2, ["Every CLI run, 96× to 8.1× faster".replace("96×", `${speedNow.upTo}×`).replace("8.1×", speedup(speedNow.lowest)), "Memory", `The whole test corpus, ${speedup(speedNow.corpus)} faster`, "Big files", "In the browser", `Large files in the browser, ${speedup(large.low) === speedup(large.high) ? speedup(large.low) : `${speedup(large.low).slice(0, -1)}× to ${speedup(large.high)}`} faster`, "Method", "Get the CLI"]);
         assert.deepEqual(
             pageNow.large,
             large.both.map((i) => [headToHeadName(i), `${speedup(i.speedup)} faster`, bigSeconds(i.quicktype.warm_s), bigSeconds(i.quickertype.warm_s)]),
@@ -3583,7 +3600,7 @@ try {
         const bigInputs = benchmarkData.big.measured.inputs;
         const largest = bigInputs.reduce((a, b) => (b.bytes > a.bytes ? b : a));
         const timedBoth = bigInputs.filter((i) => i.quicktype !== undefined).sort((a, b) => b.bytes - a.bytes)[0];
-        const h2hRefused = benchmarkData.h2h.inputs.filter((i) => i.quicktype.refused !== undefined).sort((a, b) => b.bytes - a.bytes)[0];
+        const h2hRefused = benchmarkData.h2h.inputs.filter((i) => i.quicktype.refused === "string-limit").sort((a, b) => b.bytes - a.bytes)[0];
         const n = (v) => [String(v), v.toLocaleString("en-US")];
         const spaced = (v, text) => [String(v), text.replaceAll(" ", " ")];
         const expected = {
@@ -3617,7 +3634,7 @@ try {
             "big-size": spaced(largest.bytes, inputSize(largest.bytes)),
             "big-seconds": spaced(largest.seconds, bigSeconds(largest.seconds)),
             "big-memory": spaced(largest.peak_rss_mib, formatMiB(largest.peak_rss_mib)),
-            "browser-large-workers": n(benchmarkData.h2h.part_workers),
+            "browser-large-workers": n(benchmarkData.workers.part_workers),
             ...(h2hRefused === undefined
                 ? {}
                 : {

@@ -33,6 +33,7 @@ import { fileURLToPath } from "node:url";
 
 import { bar, legend, pairChart, pairRows, roomFor, rowSvg, startIds, tableView, tip } from "./charts.mjs";
 import { escapeHtml } from "./src/html.js";
+import { partsFrom } from "./src/input-file.js";
 
 const siteRoot = path.dirname(fileURLToPath(import.meta.url));
 export const benchmarksFile = path.join(siteRoot, "data", "benchmarks.json");
@@ -291,8 +292,14 @@ function checkBrowserRun(data, ok) {
     ok(typeof data.browser === "string" && /^Chrome \d+/.test(data.browser), "browser", 'must be "Chrome N…"');
     ok(data.command === undefined || text(data.command), "command", "must be a string if given");
     ok(data.load_average === undefined || text(data.load_average), "load_average", "must be a string if given");
-    ok(Number.isInteger(data.part_workers) && data.part_workers >= 2, "part_workers", "must be the number of part workers (2 or more)");
 }
+
+/**
+ * Why quicktype could not run an input in the playground (`refused` in
+ * head-to-head.json), and what the pages say of it: the only reason so far,
+ * a text longer than the longest string the browser holds.
+ */
+export const refusals = { "string-limit": "past the longest string a browser holds" };
 
 /**
  * site/data/browser-workers.json, checked: the playground reading large
@@ -304,6 +311,8 @@ function checkBrowserRun(data, ok) {
 export function checkBrowserWorkers(data, file = browserWorkersFile) {
     const ok = (condition, where, what) => check(condition, file, where, what);
     checkBrowserRun(data, ok);
+    // The pages' one source for how many part workers read a large file.
+    ok(Number.isInteger(data.part_workers) && data.part_workers >= 2, "part_workers", "must be the number of part workers (2 or more)");
     ok(Array.isArray(data.inputs) && data.inputs.length > 0, "inputs", "must be a non-empty array");
     data.inputs.forEach((input, i) => {
         const at = `inputs[${i}]`;
@@ -325,13 +334,16 @@ export function checkBrowserWorkers(data, file = browserWorkersFile) {
  * site/data/head-to-head.json, checked: quicktype against quickertype in
  * the playground in headless Chrome, on large files, as a user runs them
  * (the file opened, read and run to TypeScript): the first run, the warm
- * median and best, s, and the tab's peak memory, MiB. quicktype may refuse
- * a file (`refused`: why), as the playground does past the longest string;
- * quickertype must run every one, faster: the pages say so.
+ * median and best, s, and the tab's peak memory, MiB, of the first `cards`
+ * of a file. quicktype may refuse a file (`refused`: a reason of
+ * `refusals`, with the playground's `message`); quickertype must run every
+ * one, faster: the pages say so. The number of part workers is
+ * browser-workers.json's alone.
  */
 export function checkHeadToHead(data, file = headToHeadFile) {
     const ok = (condition, where, what) => check(condition, file, where, what);
     checkBrowserRun(data, ok);
+    ok(data.part_workers === undefined, "part_workers", "is browser-workers.json's: leave it out here");
     ok(Array.isArray(data.inputs) && data.inputs.length > 0, "inputs", "must be a non-empty array");
     const timed = (r, at) => {
         ok(isObject(r) && positive(r.first_s) && positive(r.warm_s) && positive(r.warm_min_s) && positive(r.tab_mib), at, "needs first_s, warm_s, warm_min_s and tab_mib");
@@ -340,9 +352,12 @@ export function checkHeadToHead(data, file = headToHeadFile) {
     data.inputs.forEach((input, i) => {
         const at = `inputs[${i}]`;
         ok(isObject(input) && text(input.input) && Number.isInteger(input.bytes) && input.bytes > 0, at, "needs input and bytes");
+        ok(Number.isInteger(input.cards) && input.cards > 0, `${at}.cards (${input.input})`, "must be the number of cards (a positive integer)");
         timed(input.quickertype, `${at}.quickertype (${input.input})`);
         if (isObject(input.quicktype) && input.quicktype.refused !== undefined) {
-            ok(text(input.quicktype.refused), `${at}.quicktype (${input.input})`, "refused must say why");
+            const at2 = `${at}.quicktype (${input.input})`;
+            ok(Object.hasOwn(refusals, input.quicktype.refused), at2, `refused must be a known reason (${Object.keys(refusals).join(", ")}), not "${input.quicktype.refused}"`);
+            ok(text(input.quicktype.message), at2, "needs the playground's message");
         } else {
             timed(input.quicktype, `${at}.quicktype (${input.input})`);
             ok(input.quickertype.warm_s < input.quicktype.warm_s, `${at} (${input.input})`, "has quickertype as slow or slower: the pages say it is faster");
@@ -362,10 +377,18 @@ export function checkHeadToHead(data, file = headToHeadFile) {
  * largest input quicktype refused (`refused`), if any.
  */
 export function headToHeadFacts(h2h) {
-    const both = h2h.inputs.filter((i) => i.quicktype.refused === undefined).map((i) => ({ ...i, speedup: i.quicktype.warm_s / i.quickertype.warm_s }));
-    const refused = h2h.inputs.filter((i) => i.quicktype.refused !== undefined).reduce((a, b) => (a === undefined || b.bytes > a.bytes ? b : a), undefined);
+    // Every input, with quickertype's warm speed-up where both ran.
+    const rows = h2h.inputs.map((i) => ({ ...i, speedup: i.quicktype.refused === undefined ? i.quicktype.warm_s / i.quickertype.warm_s : undefined }));
+    const both = rows.filter((i) => i.speedup !== undefined);
+    // The largest input past the longest string, which the pages say quicktype cannot read in a browser.
+    const refused = rows.filter((i) => i.quicktype.refused === "string-limit").reduce((a, b) => (a === undefined || b.bytes > a.bytes ? b : a), undefined);
     const speedups = both.map((i) => i.speedup);
-    return { both, refused, low: Math.min(...speedups), high: Math.max(...speedups) };
+    return { rows, both, refused, low: Math.min(...speedups), high: Math.max(...speedups) };
+}
+
+/** A range of speed-ups as the pages write it: "17× to 25×", or "17×" where both ends write the same. */
+export function speedupRange(low, high) {
+    return times(low) === times(high) ? times(low) : `${figure(low)}× to ${times(high)}`;
 }
 
 /** The files the pages are made from, published beside them (data/). */
@@ -740,7 +763,7 @@ function measuredText(m) {
 }
 
 /** A head-to-head input's name: its size, and its cards if counted ("100 MB, 18,243 cards"). */
-export const headToHeadName = (i) => `${inputSize(i.bytes)}${i.cards === undefined ? "" : `, ${i.cards.toLocaleString("en-US")} cards`}`;
+export const headToHeadName = (i) => `${inputSize(i.bytes)}, ${i.cards.toLocaleString("en-US")} cards`;
 
 /**
  * Large files in the browser: quicktype against quickertype in the
@@ -749,28 +772,28 @@ export const headToHeadName = (i) => `${inputSize(i.bytes)}${i.cards === undefin
  */
 function browserFilesSection(workers, h2h) {
     const facts = headToHeadFacts(h2h);
-    const span = facts.low === facts.high ? times(facts.low) : `${figure(facts.low)}× to ${times(facts.high)}`;
+    const span = speedupRange(facts.low, facts.high);
     const refused = facts.refused;
     const chart = pairRows({
         rows: facts.both.map((i) => ({ name: headToHeadName(i), theirs: i.quicktype.warm_s, ours: i.quickertype.warm_s, value: `${times(i.speedup)} faster` })),
         format: seconds,
         what: "a warm run",
     });
-    const run = (r) => (r.refused === undefined ? [seconds(r.first_s), seconds(r.warm_s), formatMiB(r.tab_mib)] : ["refused", "–", "–"]);
+    const run = (r) => [seconds(r.first_s), seconds(r.warm_s), formatMiB(r.tab_mib)];
     const table = tableView(
         "quicktype and quickertype in the playground: the first run, the warm median, the tab's peak memory",
         ["Input", "quicktype: first", "warm", "tab", "quickertype: first", "warm", "tab", "Faster (warm)"],
-        h2h.inputs.map((i) => [
+        facts.rows.map((i) => [
             headToHeadName(i),
-            ...run(i.quicktype),
+            ...(i.speedup === undefined ? ["refused", "–", "–"] : run(i.quicktype)),
             ...run(i.quickertype),
-            i.quicktype.refused === undefined ? times(i.quicktype.warm_s / i.quickertype.warm_s) : "quicktype cannot",
+            i.speedup === undefined ? "quicktype cannot" : times(i.speedup),
         ]),
     );
     const refusedText =
         refused === undefined
             ? ""
-            : ` The whole file, ${inputSize(refused.bytes)}, is past the longest string a browser holds, so quicktype cannot read it there (${e(refused.quicktype.refused)}); quickertype runs it in ${seconds(refused.quickertype.warm_s)} warm, at a peak of ${formatMiB(refused.quickertype.tab_mib)} in the tab.`;
+            : ` The whole file, ${inputSize(refused.bytes)}, is ${refusals[refused.quicktype.refused]}, so quicktype cannot read it there (${e(refused.quicktype.message)}); quickertype runs it in ${seconds(refused.quickertype.warm_s)} warm, at a peak of ${formatMiB(refused.quickertype.tab_mib)} in the tab.`;
     const rows = workers.inputs
         .map(
             (i) =>
@@ -781,7 +804,7 @@ function browserFilesSection(workers, h2h) {
         .join("");
     return `<section id="browser-files" aria-labelledby="browser-files-title">
 <h2 id="browser-files-title">Large files in the browser, ${span} faster</h2>
-<p>The playground reads a JSON array or JSON Lines file of 16 MiB or more on up to ${workers.part_workers} Web Workers at once, each with an engine instance of its own, and gives what reading it in one go gives, byte for byte. Here it runs Scryfall's card data (real data), cut to its first cards, against quicktype in the same page, as a user would: the file opened, read and turned into TypeScript.${refusedText}</p>
+<p>The playground reads a JSON array or JSON Lines file of ${partsFrom / 2 ** 20} MiB or more on up to ${workers.part_workers} Web Workers at once, each with an engine instance of its own, and gives what reading it in one go gives, byte for byte. Here it runs Scryfall's card data (real data), cut to its first cards, against quicktype in the same page, as a user would: the file opened, read and turned into TypeScript.${refusedText}</p>
 <figure class="chart" aria-labelledby="browser-files-chart-title">
 <figcaption id="browser-files-chart-title">Scryfall cards (real data) in the playground: a warm run, quicktype against quickertype</figcaption>
 ${legend()}
@@ -930,7 +953,7 @@ ${startup.html}
 <p><a href="./app/#v=2&amp;l=typescript&amp;s=pokedex">Compare both engines in your browser</a>: switch engines in the playground, then <i>Measure warm runs</i>.</p>
 </section>`);
 
-    if (workers !== undefined && h2h !== undefined) sections.push(browserFilesSection(workers, h2h));
+    sections.push(browserFilesSection(workers, h2h));
 
     const facts2 = [
         ["Machine", machineText(machine)],
@@ -947,7 +970,7 @@ ${startup.html}
 <dl class="facts">${facts2.map(([k, v]) => `<div><dt>${e(k)}</dt><dd>${k === "Machine" || k === "Toolchain" || k === "Date" ? e(v) : v}</dd></div>`).join("")}</dl>
 ${bench.note ? `<p class="fineprint">${e(bench.note)}</p>` : ""}
 <p>The details, the profile behind each optimization and how to reproduce every number: <a href="${links.benchmarksDoc}">docs/BENCHMARKS.md</a>. The numbers on this page: ${new Intl.ListFormat("en-US").format(
-        ["benchmarks.json", "big-inputs.json", ...(workers !== undefined && h2h !== undefined ? ["head-to-head.json", "browser-workers.json"] : [])].map((f) => `<a href="./data/${f}">${f}</a>`),
+        ["benchmarks.json", "big-inputs.json", "head-to-head.json", "browser-workers.json"].map((f) => `<a href="./data/${f}">${f}</a>`),
     )}.</p>
 </section>`);
 
