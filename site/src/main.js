@@ -483,7 +483,7 @@ function renderInputStatus() {
     // Not after another input failed to load (no request): the output is about that one.
     else if (shown.gen === generation && shown.result !== undefined && view.request !== undefined) {
         const result = shown.result;
-        if (!result.ok) text = result.ms === undefined ? "Not run: see the output." : `${engineNames[shown.engine]} stopped with an error: see the output.`;
+        if (!result.ok) text = result.ms === undefined ? "Not run: see the output." : `${errorTitle(shown.engine, result)}: see the output.`;
         else if (result.parts?.workers !== undefined && !result.reused) text = `${engineNames[shown.engine]} ran it in ${formatMs(result.ms)}, reading it on ${result.parts.workers} workers.`;
         else text = `${engineNames[shown.engine]} ran it in ${formatMs(result.ms)}.`;
     }
@@ -808,7 +808,7 @@ function renderCode() {
         const { title, message, link } = result.error;
         const name = result.error.messageName ?? result.error.name;
         const help = link === undefined ? "" : `<p class="error-help">Get <a href="${escapeHtml(link.href)}">${escapeHtml(link.text)}</a>.</p>`;
-        els.error.innerHTML = `<p class="error-title">${escapeHtml(title ?? "quicktype stopped with an error")}</p><pre class="error-message">${escapeHtml(message)}</pre>${help}${name ? `<p class="error-kind">${escapeHtml(name)}</p>` : ""}`;
+        els.error.innerHTML = `<p class="error-title">${escapeHtml(title ?? errorTitle(view.shown.engine, result))}</p><pre class="error-message">${escapeHtml(message)}</pre>${help}${name ? `<p class="error-kind">${escapeHtml(name)}</p>` : ""}`;
     }
 
     // Drawn again only for another result (a new files array) or another tab.
@@ -832,12 +832,64 @@ function renderCode() {
         .join("");
 }
 
-/** Whether quickertype's result `a` and quicktype's `b` are the same: the same files, byte for byte, or the same error. */
+/**
+ * How a result of `worker`'s ("wasm" or "ts") came about, which its error's
+ * title, its bar's tag and the note on fixed bugs each word their own way:
+ * "worker" (the worker failed: no engine's result), "input" (it stopped
+ * before an engine started, reading the input), "fallback" (it ran on the
+ * other engine than its worker's: quickertype's worker on the TypeScript
+ * engine), "engine" (on its worker's own engine), or "none" (it needed no
+ * engine).
+ */
+function runKind(worker, result) {
+    if (result.workerFailure) return "worker";
+    if (result.ran === undefined) return result.ok ? "none" : "input";
+    return result.ran === worker ? "engine" : "fallback";
+}
+
+/**
+ * The title of an error of `worker`'s that has none of its own: the engine
+ * that stopped, by the name the bars give it (a run of quickertype's worker
+ * that went to the TypeScript engine stopped in quicktype's code); neutral
+ * where no one engine did (see runKind).
+ */
+function errorTitle(worker, result) {
+    const kind = runKind(worker, result);
+    if (kind === "worker") return "The run stopped with an error";
+    if (kind === "engine" || kind === "fallback") return `${engineNames[result.ran]} stopped with an error`;
+    return "Stopped while reading the input";
+}
+
+/** Where the bugs quickertype fixes are listed: the reason its output can differ from quicktype's. */
+const fixedBugsUrl = "https://github.com/EloB/quickertype/blob/main/docs/PARITY.md#bugs-fixed-in-quickertype";
+
+/**
+ * Said when quickertype's output differs from quicktype's (`fixed:
+ * "differ"`) or only quicktype stopped (`"failed"`): quickertype fixes some
+ * of quicktype's bugs. Which one an input hits is not told; the list is
+ * linked. As `text`, and as `html`, with the link.
+ */
+function fixedNote(fixed) {
+    const text =
+        fixed === "failed"
+            ? "quickertype fixes some quicktype bugs, so it can generate code for an input that quicktype stops on."
+            : "quickertype fixes some quicktype bugs, so its output can differ from quicktype's on an input that hits one.";
+    return { text, html: `${escapeHtml(text)} <a href="${fixedBugsUrl}">Bugs fixed in quickertype</a>` };
+}
+
+/**
+ * Whether quickertype's result `a` and quicktype's `b` are the same: the
+ * same files, byte for byte, or the same error; where they are not and
+ * quickertype's own engine (WebAssembly) made `a`, `fixed` (see fixedNote):
+ * a run of quickertype's that went to the TypeScript engine is quicktype's
+ * code, and fixes nothing.
+ */
 function verdict(a, b) {
+    const ours = runKind("wasm", a) === "engine";
     if (a.ok && b.ok) {
         const count = a.files.length;
         if (count !== b.files.length || a.files.some((f, i) => f.name !== b.files[i].name)) {
-            return { same: false, text: "different files" };
+            return { same: false, text: "different files", fixed: ours ? "differ" : undefined };
         }
 
         for (let i = 0; i < count; i++) {
@@ -847,7 +899,7 @@ function verdict(a, b) {
             let line = 0;
             while (line < left.length && left[line] === right[line]) line++;
             const where = count > 1 ? ` in ${a.files[i].name}` : "";
-            return { same: false, text: `outputs differ${where} from line ${line + 1}` };
+            return { same: false, text: `outputs differ${where} from line ${line + 1}`, fixed: ours ? "differ" : undefined };
         }
 
         const bytes = a.files.reduce((n, f) => n + utf8Length(f.text), 0);
@@ -861,7 +913,9 @@ function verdict(a, b) {
             : { same: false, text: "different errors" };
     }
 
-    return { same: false, text: `only ${engineNames[a.ok ? "ts" : "wasm"]} stopped with an error` };
+    // Only quicktype stopped, in its engine (not reading the input, nor its worker).
+    const fixed = a.ok && ours && runKind("ts", b) === "engine" ? "failed" : undefined;
+    return { same: false, text: `only ${engineNames[a.ok ? "ts" : "wasm"]} stopped with an error`, fixed };
 }
 
 /**
@@ -911,13 +965,11 @@ function phasesOf(result, measured) {
     return { total: result.ms, input: result.inputTimes?.[last], generate: generate[last], reused: result.reused === true };
 }
 
-/** A tag for a result that did not run the way its worker's name says. */
+/** A tag for a result that did not run the way its worker's name says (see runKind). */
 function engineTag(worker, result) {
-    if (result.ran === undefined && !result.ok) return "stopped while reading the input";
-    if (result.ran !== undefined && result.ran !== worker) {
-        return `ran on the ${engineKinds[result.ran]} engine${result.reason ? `: ${result.reason}` : ""}`;
-    }
-
+    const kind = runKind(worker, result);
+    if (kind === "input") return "stopped while reading the input";
+    if (kind === "fallback") return `ran on the ${engineKinds[result.ran]} engine${result.reason ? `: ${result.reason}` : ""}`;
     return undefined;
 }
 
@@ -983,13 +1035,15 @@ function summary({ wasm, ts }, timeOf, phases, measured) {
     );
     const prefix = measured ? `<span class="muted">Warm medians:</span> ` : "";
     const times = `${engineNames.wasm} ${formatMs(timeOf(wasm))}, ${engineNames.ts} ${formatMs(timeOf(ts))}`;
+    const fixed = v.fixed === undefined ? undefined : fixedNote(v.fixed);
     return {
         same: v.same,
         detail: v.detail,
+        fixed,
         faster,
         startUp,
         verdict: parts.at(-1),
-        said: `${faster?.plain ?? times}; ${v.text}`,
+        said: `${faster?.plain ?? times}; ${v.text}${fixed === undefined ? "" : `. ${fixed.text.replace(/\.$/, "")}`}`,
         html: `<p class="summary">${prefix}${parts.join('<span class="sep"> · </span>')}</p>`,
     };
 }
@@ -1129,9 +1183,12 @@ function drawMeter() {
     let compare = "off";
     /** Both engines' results compared, in a few words. */
     let compared;
+    /** Why the outputs can differ, said under the line at a glance (see fixedNote). */
+    let fixed;
     if (isResult(sides.wasm) && isResult(sides.ts)) {
         const line = summary(sides, timeOf, phases, measured);
         compared = line.said;
+        fixed = line.fixed;
         compare = line.same ? "identical" : "different";
         if (line.faster !== undefined) say(line.faster.short, "pace");
         if (measured) say("warm runs");
@@ -1201,6 +1258,8 @@ function drawMeter() {
     // The line at a glance is the button that opens the details.
     let html = `<div class="meter-line"><div class="glance-wrap"><button type="button" id="meter-toggle" class="glance" aria-expanded="${meterOpen}" aria-controls="meter-details"><span class="sr-only">Details: </span>${glance.join("")}<span class="glance-more" aria-hidden="true">Details</span></button></div>`;
     html += `<button type="button" id="measure" class="measure" aria-describedby="measure-how"${off ? ' aria-disabled="true"' : ""}>${label}</button></div>`;
+    // Not in the details: whoever sees the outputs differ sees why they can.
+    if (fixed !== undefined) html += `<p class="fixed-note">${fixed.html}</p>`;
     if (bench?.failure !== undefined) {
         html += `<p class="bench-failure">Measuring warm runs stopped: ${escapeHtml(bench.failure)}</p>`;
     }

@@ -14,8 +14,9 @@
 //   tests/fuzz-regressions, fuzz/fuzz_targets and the streaming fuzzer's
 //   default (xtask/src/streaming.rs); the Rust tests (#[test] in crates/);
 // * what runs where and when: .github/workflows (ci, fuzz, roundtrip, pages);
-// * speed and memory: site/data/benchmarks.json, big-inputs.json and
-//   browser.json (the WebAssembly engine in Chrome), read and checked as the
+// * speed and memory: site/data/benchmarks.json, big-inputs.json,
+//   browser.json (the WebAssembly engine in Chrome) and head-to-head.json
+//   (large files in the playground), read and checked as the
 //   benchmarks page reads them (site/benchmarks.mjs); the sizes the page
 //   gives are those in the benchmarks' names;
 // * the example at the top: an excerpt of quicktype's pokedex.json sample,
@@ -32,7 +33,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { formatMiB, formatMs, inputSize, named, seconds, sizeIn, speedFacts, times } from "./benchmarks.mjs";
+import { formatMiB, formatMs, headToHeadFacts, headToHeadName, inputSize, named, refusals, seconds, sizeIn, speedFacts, times } from "./benchmarks.mjs";
 import { columnChart, legend, pairChart, pairRows, startIds, tableView, valueRows } from "./charts.mjs";
 import { quicktypeReference } from "./reference.mjs";
 import { highlight } from "./src/highlight.js";
@@ -381,6 +382,8 @@ export async function landingFacts({ qt, engineStats, languages, bench }) {
         fuzz: fuzzFacts(),
         rust: rustTestFacts(),
         browser: browserFacts(bench.browser),
+        h2h: bench.h2h,
+        workers: bench.workers,
         bench: bench.bench,
         big: bench.big,
         speed: speedFacts(bench.bench),
@@ -472,7 +475,7 @@ export function specimenCss(specimen) {
 /** The landing page's body (header, main and footer), from landingFacts(). `images`: the build's hashed image files. */
 export function landingPageHtml(facts, images) {
     startIds("l");
-    const { quicktype, golden, inputs, differential, workflows, fuzz, rust, browser, bench, big, speed, reference } = facts;
+    const { quicktype, golden, inputs, differential, workflows, fuzz, rust, browser, h2h, workers, bench, big, speed, reference } = facts;
     const history = quicktype.history;
     const people = quicktype.contributors.people;
     const repo = quicktype.repository;
@@ -651,6 +654,29 @@ ${tableView("Recorded cases in tests/golden, by what they cover", ["Kind", "Case
             label: `${r.input}: quickertype ${times(r.theirs / r.ours)} faster, ${formatMs(r.ours)} against quicktype's ${formatMs(r.theirs)}`,
         })),
     });
+    // Large files in the playground: quickertype's warm speed-up over
+    // quicktype on each input both ran, and the one quicktype refused.
+    const large = headToHeadFacts(h2h);
+    const largeChart = valueRows({
+        rows: large.both.map((i) => ({
+            name: headToHeadName(i),
+            value: i.speedup,
+            text: `${seconds(i.quicktype.warm_s)} → ${seconds(i.quickertype.warm_s)}`,
+            tip: times(i.speedup),
+            label: `${headToHeadName(i)}: quickertype ${times(i.speedup)} faster, ${seconds(i.quickertype.warm_s)} against quicktype's ${seconds(i.quicktype.warm_s)}`,
+        })),
+    });
+    const largeRefused = large.refused;
+    const largeFiles = `<figure class="chart" aria-labelledby="browser-large-title">
+<figcaption id="browser-large-title">Large files in the playground: Scryfall cards (real data), how many times faster than quicktype, warm</figcaption>
+${largeChart}
+${tableView("A warm run in the playground, headless Chrome, s (site/data/head-to-head.json)", ["Input", "quicktype", "quickertype", "Faster"], large.both.map((i) => [headToHeadName(i), seconds(i.quicktype.warm_s), seconds(i.quickertype.warm_s), times(i.speedup)]))}
+<p class="fineprint">quickertype reads a large file on up to ${stat("browser-large-workers", workers.part_workers)} workers at once.${
+        largeRefused === undefined
+            ? ""
+            : ` The whole file, ${stat("browser-large-full-size", largeRefused.bytes, inputSize(largeRefused.bytes))}, is ${refusals[largeRefused.quicktype.refused]}, so quicktype cannot read it there; quickertype runs it in ${stat("browser-large-full-seconds", largeRefused.quickertype.warm_s, seconds(largeRefused.quickertype.warm_s))}.`
+    }</p>
+</figure>`;
     const machine = bench.machine;
     // Big files: a user's report (quicktype's bar drawn as long as it was
     // known to run, and going on), and the largest input measured here.
@@ -701,6 +727,7 @@ ${legend()}
 ${corpusPair}
 <p class="fineprint">Every step of every recorded case: ${stat("corpus-quicktype", corpus.typescript.wall_s, `${corpus.typescript.wall_s} s`)} against ${stat("corpus-quickertype", corpus.rust.wall_s, `${corpus.rust.wall_s} s`)}.</p>
 </figure>
+${bigFiles}
 </div>
 <div class="column">
 <figure class="chart" aria-labelledby="browser-title">
@@ -709,7 +736,7 @@ ${browserChart}
 ${tableView("Warm runs in headless Chrome, reading plus generating, ms (site/data/browser.json)", ["Input", "quicktype", "quickertype", "Faster"], browser.rows.map((r) => [r.input, formatMs(r.theirs), formatMs(r.ours), times(r.theirs / r.ours)]))}
 <p class="fineprint">Both engines run inside the page, so neither starts a process: the gap is the engines'. From <a href="${landingLinks.benchmarksDoc}">docs/BENCHMARKS.md</a>.</p>
 </figure>
-${bigFiles}
+${largeFiles}
 </div>
 </div>
 <p class="more">Measured with <code>cargo xtask bench</code> on ${e(machine.cpu)}, ${e(longDate(bench.date))}, against quicktype at the commit quickertype matches. <a href="./benchmarks.html">Every benchmark, and how they were run</a></p>

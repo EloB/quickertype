@@ -1072,6 +1072,18 @@ button.measure {
     color: var(--bad);
 }
 
+/* Under the line at a glance when the outputs differ: quickertype fixes some quicktype bugs. */
+.fixed-note {
+    padding: 0 10px 7px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.fixed-note a {
+    color: var(--wasm);
+    font-weight: 600;
+}
+
 /* Where the CLI's numbers are, under the comparison. */
 .cli-note {
     margin-top: 4px;

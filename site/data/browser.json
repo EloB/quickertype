@@ -1,13 +1,13 @@
 {
   "format": 1,
-  "date": "2026-11-14",
+  "date": "2026-11-15",
   "machine": "Apple M2 Max, 12 cores, 64 GiB, macOS 26.6.2",
   "browser": "Chrome 157.0.8103.78, headless",
   "node": "v24.16.0",
-  "commit": "4cf135e28392f5185aed4faff225f7c4956a9b9d",
+  "commit": "84c638d9de0f2d0fbedb862af3c27a5f55974362",
   "command": "node --expose-gc npm/quicktype-core/test/bench/compare.mjs --browser --again --json",
   "how": "addSource, then quicktypeMultiFile to TypeScript, warm, both engines in one page and interleaved; the medians of 41 runs (21 for the 2 MB input, 9 for the larger ones), and the median of three runs of the benchmark. again_ms is a second run on the same input. Chrome's timer has 0.1 ms steps here.",
-  "load_average": "3.6 to 5.9",
+  "load_average": "2.5 to 2.8",
   "warm": [
     {
       "input": "pokedex (82 KB)",
@@ -29,16 +29,16 @@
       "input": "generated (2 MB)",
       "runs": 21,
       "quicktype": {
-        "read_ms": 22.4,
+        "read_ms": 21.8,
         "generate_ms": 21.7,
-        "total_ms": 44,
-        "again_ms": 14.6
+        "total_ms": 43.5,
+        "again_ms": 14.7
       },
       "quickertype": {
-        "read_ms": 9.1,
-        "generate_ms": 5.1,
-        "total_ms": 14.1,
-        "again_ms": 2.7
+        "read_ms": 9,
+        "generate_ms": 4.8,
+        "total_ms": 13.8,
+        "again_ms": 2.4
       }
     },
     {
@@ -46,29 +46,29 @@
       "runs": 9,
       "quicktype": {
         "read_ms": 247,
-        "generate_ms": 159,
-        "total_ms": 406,
+        "generate_ms": 160,
+        "total_ms": 407,
         "again_ms": 150
       },
       "quickertype": {
-        "read_ms": 89.1,
-        "generate_ms": 33,
+        "read_ms": 90.4,
+        "generate_ms": 31.5,
         "total_ms": 122,
-        "again_ms": 11.9
+        "again_ms": 10.6
       }
     },
     {
       "input": "rulings (27 MB, 100k records)",
       "runs": 9,
       "quicktype": {
-        "read_ms": 79.9,
-        "generate_ms": 76,
+        "read_ms": 80.3,
+        "generate_ms": 75.8,
         "total_ms": 156,
-        "again_ms": 71.8
+        "again_ms": 71.4
       },
       "quickertype": {
-        "read_ms": 46.5,
-        "generate_ms": 6.6,
+        "read_ms": 46.8,
+        "generate_ms": 6.2,
         "total_ms": 53.1,
         "again_ms": 0.3
       }
@@ -79,14 +79,14 @@
       "quicktype": {
         "read_ms": 137,
         "generate_ms": 235,
-        "total_ms": 371,
-        "again_ms": 229
+        "total_ms": 373,
+        "again_ms": 230
       },
       "quickertype": {
-        "read_ms": 89.7,
-        "generate_ms": 23.5,
+        "read_ms": 89.5,
+        "generate_ms": 23.4,
         "total_ms": 113,
-        "again_ms": 6.1
+        "again_ms": 5.5
       }
     }
   ],
@@ -98,80 +98,80 @@
         "input": "pokedex (82 KB)",
         "runs": 7,
         "quicktype": {
-          "read_ms": 3.79,
-          "generate_ms": 26,
-          "total_ms": 29.5,
-          "cpu_ms": 46.6
+          "read_ms": 3.48,
+          "generate_ms": 24,
+          "total_ms": 27.8,
+          "cpu_ms": 43.1
         },
         "quickertype": {
-          "read_ms": 3.9,
-          "generate_ms": 47.3,
-          "total_ms": 51.1,
-          "cpu_ms": 130
+          "read_ms": 3.58,
+          "generate_ms": 45.8,
+          "total_ms": 49.5,
+          "cpu_ms": 118
         }
       },
       {
         "input": "generated (2 MB)",
         "runs": 7,
         "quicktype": {
-          "read_ms": 38.1,
-          "generate_ms": 54.8,
-          "total_ms": 93.6,
-          "cpu_ms": 171
+          "read_ms": 36,
+          "generate_ms": 52.1,
+          "total_ms": 88.5,
+          "cpu_ms": 163
         },
         "quickertype": {
-          "read_ms": 26.5,
-          "generate_ms": 45.4,
-          "total_ms": 71.9,
-          "cpu_ms": 165
+          "read_ms": 25.5,
+          "generate_ms": 39.7,
+          "total_ms": 65.2,
+          "cpu_ms": 149
         }
       },
       {
         "input": "generated (20 MB)",
         "runs": 7,
         "quicktype": {
-          "read_ms": 393,
-          "generate_ms": 246,
-          "total_ms": 640,
-          "cpu_ms": 890
+          "read_ms": 367,
+          "generate_ms": 233,
+          "total_ms": 603,
+          "cpu_ms": 836
         },
         "quickertype": {
-          "read_ms": 148,
-          "generate_ms": 90.7,
-          "total_ms": 239,
-          "cpu_ms": 370
+          "read_ms": 138,
+          "generate_ms": 75.2,
+          "total_ms": 213,
+          "cpu_ms": 354
         }
       },
       {
         "input": "rulings (27 MB, 100k records)",
         "runs": 7,
         "quicktype": {
-          "read_ms": 125,
-          "generate_ms": 120,
-          "total_ms": 245,
-          "cpu_ms": 431
+          "read_ms": 119,
+          "generate_ms": 114,
+          "total_ms": 233,
+          "cpu_ms": 413
         },
         "quickertype": {
-          "read_ms": 82.1,
-          "generate_ms": 32.4,
-          "total_ms": 114,
-          "cpu_ms": 191
+          "read_ms": 79,
+          "generate_ms": 29,
+          "total_ms": 109,
+          "cpu_ms": 174
         }
       },
       {
         "input": "cards (22 MB, 5k records)",
         "runs": 7,
         "quicktype": {
-          "read_ms": 275,
-          "generate_ms": 347,
-          "total_ms": 625,
-          "cpu_ms": 821
+          "read_ms": 258,
+          "generate_ms": 335,
+          "total_ms": 598,
+          "cpu_ms": 832
         },
         "quickertype": {
-          "read_ms": 131,
-          "generate_ms": 72.2,
-          "total_ms": 202,
-          "cpu_ms": 343
+          "read_ms": 123,
+          "generate_ms": 65.2,
+          "total_ms": 188,
+          "cpu_ms": 318
         }
       }
     ]

@@ -1,32 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="520" height="480" viewBox="0 0 520 480" role="img" aria-labelledby="title desc" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
 <title id="title">How many times faster quickertype's CLI is</title>
-<desc id="desc">Against quicktype's CLI on the same inputs; wall time. Startup (--version): 77× faster (quicktype 226 ms, quickertype 2.9 ms); Tiny JSON (77 B) → TypeScript: 86× faster (quicktype 244 ms, quickertype 2.8 ms); pokedex.json (82 KB) → TypeScript: 67× faster (quicktype 266 ms, quickertype 4.0 ms); github-events.json (82 KB) → 8 languages: 37–49× faster (quicktype 284–312 ms, quickertype 5.9–8.5 ms); GraphQL schema (1.2 MB) and query → TypeScript: 29× faster (quicktype 269 ms, quickertype 9.2 ms); JSON Schema (vega-lite, 306 KB) → TypeScript: 11× faster (quicktype 439 ms, quickertype 39 ms); Generated JSON (40 MB) → TypeScript: 17× faster (quicktype 2,676 ms, quickertype 155 ms); quicktype's test corpus: 11,178 CLI runs, 12 in parallel: 52× faster (quicktype 474 s, quickertype 9.0 s).</desc>
+<desc id="desc">Against quicktype's CLI on the same inputs; wall time. Startup (--version): 89× faster (quicktype 226 ms, quickertype 2.6 ms); Tiny JSON (77 B) → TypeScript: 85× faster (quicktype 246 ms, quickertype 2.9 ms); pokedex.json (82 KB) → TypeScript: 65× faster (quicktype 265 ms, quickertype 4.1 ms); github-events.json (82 KB) → 8 languages: 38–54× faster (quicktype 285–303 ms, quickertype 5.3–8.0 ms); GraphQL schema (1.2 MB) and query → TypeScript: 30× faster (quicktype 253 ms, quickertype 8.3 ms); JSON Schema (vega-lite, 306 KB) → TypeScript: 11× faster (quicktype 429 ms, quickertype 38 ms); Generated JSON (40 MB) → TypeScript: 17× faster (quicktype 2,786 ms, quickertype 166 ms); quicktype's test corpus: 11,178 CLI runs, 12 in parallel: 48× faster (quicktype 495 s, quickertype 10.2 s).</desc>
 <rect x="0.5" y="0.5" width="519" height="479" rx="10" fill="#1a1c23" stroke="#2d303a"/>
 <text x="20" y="35" font-size="15" font-weight="600" fill="#e5e6ec">How many times faster quickertype's CLI is</text>
 <text x="20" y="53.5" font-size="12.5" fill="#9a9dab">Against quicktype's CLI on the same inputs; wall time</text>
 <text x="20" y="85.5" font-size="13.5" fill="#e5e6ec">Startup (<tspan font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5">--version</tspan>)</text>
-<path d="M20 92.5H390.3A4 4 0 0 1 394.3 96.5V100.5A4 4 0 0 1 390.3 104.5H20Z" fill="#9085e9"/>
-<text x="401.3" y="103.23" font-size="13.5" font-weight="600" fill="#e5e6ec">77×</text>
+<path d="M20 92.5H434.05A4 4 0 0 1 438.05 96.5V100.5A4 4 0 0 1 434.05 104.5H20Z" fill="#9085e9"/>
+<text x="445.05" y="103.23" font-size="13.5" font-weight="600" fill="#e5e6ec">89×</text>
 <text x="20" y="136" font-size="13.5" fill="#e5e6ec">Tiny JSON (77 B) → TypeScript</text>
-<path d="M20 143H434.05A4 4 0 0 1 438.05 147V151A4 4 0 0 1 434.05 155H20Z" fill="#9085e9"/>
-<text x="445.05" y="153.73" font-size="13.5" font-weight="600" fill="#e5e6ec">86×</text>
+<path d="M20 143H415.26A4 4 0 0 1 419.26 147V151A4 4 0 0 1 415.26 155H20Z" fill="#9085e9"/>
+<text x="426.26" y="153.73" font-size="13.5" font-weight="600" fill="#e5e6ec">85×</text>
 <text x="20" y="186.5" font-size="13.5" fill="#e5e6ec"><tspan font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5">pokedex.json</tspan> (82 KB) → TypeScript</text>
-<path d="M20 193.5H341.69A4 4 0 0 1 345.69 197.5V201.5A4 4 0 0 1 341.69 205.5H20Z" fill="#9085e9"/>
-<text x="352.69" y="204.23" font-size="13.5" font-weight="600" fill="#e5e6ec">67×</text>
+<path d="M20 193.5H321.32A4 4 0 0 1 325.32 197.5V201.5A4 4 0 0 1 321.32 205.5H20Z" fill="#9085e9"/>
+<text x="332.32" y="204.23" font-size="13.5" font-weight="600" fill="#e5e6ec">65×</text>
 <text x="20" y="237" font-size="13.5" fill="#e5e6ec"><tspan font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5">github-events.json</tspan> (82 KB) → 8 languages</text>
-<rect x="20" y="244" width="178.86" height="12" fill="#9085e9"/>
-<path d="M200.86 244H254.19A4 4 0 0 1 258.19 248V252A4 4 0 0 1 254.19 256H200.86Z" fill="#555186"/>
-<text x="265.19" y="254.73" font-size="13.5" font-weight="600" fill="#e5e6ec">37–49×</text>
+<rect x="20" y="244" width="177.49" height="12" fill="#9085e9"/>
+<path d="M199.49 244H269.65A4 4 0 0 1 273.65 248V252A4 4 0 0 1 269.65 256H199.49Z" fill="#555186"/>
+<text x="280.65" y="254.73" font-size="13.5" font-weight="600" fill="#e5e6ec">38–54×</text>
 <text x="20" y="287.5" font-size="13.5" fill="#e5e6ec">GraphQL schema (1.2 MB) and query → TypeScript</text>
-<path d="M20 294.5H156.97A4 4 0 0 1 160.97 298.5V302.5A4 4 0 0 1 156.97 306.5H20Z" fill="#9085e9"/>
-<text x="167.97" y="305.23" font-size="13.5" font-weight="600" fill="#e5e6ec">29×</text>
+<path d="M20 294.5H156.92A4 4 0 0 1 160.92 298.5V302.5A4 4 0 0 1 156.92 306.5H20Z" fill="#9085e9"/>
+<text x="167.92" y="305.23" font-size="13.5" font-weight="600" fill="#e5e6ec">30×</text>
 <text x="20" y="338" font-size="13.5" fill="#e5e6ec">JSON Schema (vega-lite, 306 KB) → TypeScript</text>
-<path d="M20 345H69.47A4 4 0 0 1 73.47 349V353A4 4 0 0 1 69.47 357H20Z" fill="#9085e9"/>
-<text x="80.47" y="355.73" font-size="13.5" font-weight="600" fill="#e5e6ec">11×</text>
+<path d="M20 345H67.67A4 4 0 0 1 71.67 349V353A4 4 0 0 1 67.67 357H20Z" fill="#9085e9"/>
+<text x="78.67" y="355.73" font-size="13.5" font-weight="600" fill="#e5e6ec">11×</text>
 <text x="20" y="388.5" font-size="13.5" fill="#e5e6ec">Generated JSON (40 MB) → TypeScript</text>
-<path d="M20 395.5H98.64A4 4 0 0 1 102.64 399.5V403.5A4 4 0 0 1 98.64 407.5H20Z" fill="#9085e9"/>
-<text x="109.64" y="406.23" font-size="13.5" font-weight="600" fill="#e5e6ec">17×</text>
+<path d="M20 395.5H95.85A4 4 0 0 1 99.85 399.5V403.5A4 4 0 0 1 95.85 407.5H20Z" fill="#9085e9"/>
+<text x="106.85" y="406.23" font-size="13.5" font-weight="600" fill="#e5e6ec">17×</text>
 <text x="20" y="439" font-size="13.5" fill="#e5e6ec">quicktype's test corpus: 11,178 CLI runs, 12 in parallel</text>
-<path d="M20 446H268.77A4 4 0 0 1 272.77 450V454A4 4 0 0 1 268.77 458H20Z" fill="#9085e9"/>
-<text x="279.77" y="456.73" font-size="13.5" font-weight="600" fill="#e5e6ec">52×</text>
+<path d="M20 446H241.46A4 4 0 0 1 245.46 450V454A4 4 0 0 1 241.46 458H20Z" fill="#9085e9"/>
+<text x="252.46" y="456.73" font-size="13.5" font-weight="600" fill="#e5e6ec">48×</text>
 </svg>
