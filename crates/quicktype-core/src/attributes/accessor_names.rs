@@ -142,15 +142,13 @@ pub fn get_accessor_name(
     }
 }
 
-/// `AccessorNamesTypeAttributeKind.combine` and
-/// `EnumValuesTypeAttributeKind.combine`: the entries the combined types
+/// `AccessorNamesTypeAttributeKind.combine`: the entries the combined types
 /// agree on; a name with different entries is dropped, so it falls back to
-/// the default name (or value).
+/// the default name.
 ///
-/// quicktype has no `combine` for accessor names or enum values, so
-/// combining two types that have them stops with "Cannot combine type
-/// attribute accessorNames" (or `enumValues`; a fix of ours, docs/PARITY.md,
-/// "Bugs fixed in quickertype"). That
+/// quicktype has no `combine` for accessor names, so combining two types
+/// that have them stops with "Cannot combine type attribute accessorNames"
+/// (a fix of ours, docs/PARITY.md, "Bugs fixed in quickertype"). That
 /// happens when the TypeScript input's string enums meet themselves in a
 /// union (`E | null`, an optional `E` in Python, `E[] | F`) or two enums
 /// have the same values: the enum's `qt-accessors` (its member names) are

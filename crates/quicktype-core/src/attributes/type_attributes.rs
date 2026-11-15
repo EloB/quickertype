@@ -716,11 +716,19 @@ fn combine_values(
                 values,
             )),
         ))),
-        // quicktype cannot combine enum values either (a fix of ours, as
-        // for accessor names).
-        K::EnumValues => Some(V::EnumValues(Rc::new(
-            accessor_names::combine_accessor_names(&refs_of::<EnumValuesTypeAttributeKind>(values)),
-        ))),
+        // quicktype cannot combine enum values at all; copies that are all
+        // the same are kept (a fix of ours, docs/PARITY.md, "Bugs fixed in
+        // quickertype"). Any other combination stops as in quicktype:
+        // dropping a value the copies disagree on could give two cases the
+        // same value, which C does not compile.
+        K::EnumValues => {
+            let maps = refs_of::<EnumValuesTypeAttributeKind>(values);
+            if maps.iter().all(|m| m.js_equals(maps[0])) {
+                Some(V::EnumValues(Rc::new(maps[0].clone())))
+            } else {
+                return panic(format!("Cannot combine type attribute {}", kind.name()));
+            }
+        }
         // Never combined: a transformation is in its type's identity, so a
         // type found by its identity does not get it again, and it is only
         // made by the last rewrite, `makeTransformations`, after unions are
@@ -1113,7 +1121,12 @@ mod tests {
                 AccessorNamesTypeAttributeKind.try_get_in_attributes(&e)
             );
         }
-        // Enum values (`qt-enum-values`) combine the same way.
+    }
+
+    /// Enum values (`qt-enum-values`) combine only when every copy is the
+    /// same; otherwise they stop as quicktype does.
+    #[test]
+    fn enum_values_combine_only_when_they_agree() {
         let values = |entries: &[(&str, &str)]| {
             EnumValuesTypeAttributeKind.make_attributes(
                 entries
@@ -1122,18 +1135,26 @@ mod tests {
                     .collect(),
             )
         };
-        let combined = combine_type_attributes(
-            CombinationKind::Union,
-            &[
-                &values(&[("a", "0"), ("b", "1")]),
-                &values(&[("a", "0"), ("b", "2")]),
-            ],
-        )
-        .unwrap();
-        let combined = EnumValuesTypeAttributeKind
-            .try_get_in_attributes(&combined)
-            .unwrap();
-        assert_eq!(combined.keys().collect::<Vec<_>>(), ["a"]);
+        let e = values(&[("a", "0"), ("b", "1")]);
+        // The same entries in another order are the same values.
+        let same = values(&[("b", "1"), ("a", "0")]);
+        let combined = combine_type_attributes(CombinationKind::Union, &[&e, &same]).unwrap();
+        assert_eq!(
+            EnumValuesTypeAttributeKind.try_get_in_attributes(&combined),
+            EnumValuesTypeAttributeKind.try_get_in_attributes(&e)
+        );
+        for other in [
+            values(&[("a", "0"), ("b", "2")]),
+            values(&[("a", "0")]),
+            values(&[("a", "0"), ("b", "1"), ("c", "2")]),
+        ] {
+            assert_eq!(
+                combine_type_attributes(CombinationKind::Union, &[&e, &other])
+                    .unwrap_err()
+                    .user_message(),
+                "Internal error: Cannot combine type attribute enumValues"
+            );
+        }
     }
 
     #[test]
