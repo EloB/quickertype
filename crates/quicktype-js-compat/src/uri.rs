@@ -1189,6 +1189,43 @@ impl Uri {
         }
         Ok(two_map.keys().all(|k| one_map.contains_key(k)))
     }
+
+    /// A hash consistent with [`Uri::equals`]: URIs it finds equal hash
+    /// alike. It hashes what `equals` compares: the normalized URI without
+    /// its query, the query's length in UTF-16 units, and its parameters in
+    /// any order, each with its value, or its values in any order (`equals`
+    /// compares several values sorted, so equal lists are permutations).
+    /// A URI that does not normalize, which `equals` reports as an error,
+    /// hashes as a constant.
+    pub fn equals_hash(&self, state: &impl std::hash::BuildHasher) -> u64 {
+        let mut uri = self.js_clone();
+        if uri.normalize().is_err() {
+            return state.hash_one(0u8);
+        }
+        let query = uri.query.take().unwrap_or_default();
+        let rest = uri.to_string();
+        let parameters = parse_query(&query);
+        let mut sum = 0u64;
+        for (name, values) in &parameters {
+            let values = match values.as_slice() {
+                [value] => state.hash_one((1u8, value)),
+                many => {
+                    let unordered = many
+                        .iter()
+                        .fold(0u64, |acc, v| acc.wrapping_add(state.hash_one(v)));
+                    state.hash_one((2u8, many.len(), unordered))
+                }
+            };
+            sum = sum.wrapping_add(state.hash_one((name, values)));
+        }
+        state.hash_one((
+            1u8,
+            rest,
+            query.encode_utf16().count(),
+            parameters.len(),
+            sum,
+        ))
+    }
 }
 
 /// `/\/\.\.(\/|$)/` search: the index of the first `/..` segment.
@@ -1442,5 +1479,94 @@ mod tests {
         let b = Uri::parse("HTTP://h:80/x?b=2&a=1").unwrap();
         assert!(a.equals(&b).unwrap());
         assert!(!a.equals(&Uri::parse("http://h/y").unwrap()).unwrap());
+    }
+
+    /// `equals_hash` agrees with `equals` on URIs that are equal but read
+    /// differently: the scheme's and host's case, a default port, dot
+    /// segments, percent-encoding, and query parameters in any order, with
+    /// repeated names, names without values and `null`-like values. Every
+    /// pair `equals` finds equal hashes alike.
+    #[test]
+    fn equals_hash_is_consistent_with_equals() {
+        let state = crate::hash::SeededState::default();
+        let mut next = {
+            let mut z = 0x5eed_u64;
+            move |below: usize| {
+                z = z.wrapping_add(0x9e37_79b9_7f4a_7c15);
+                let mut x = z;
+                x = (x ^ (x >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+                x = (x ^ (x >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+                ((x ^ (x >> 31)) % below as u64) as usize
+            }
+        };
+        let schemes = [("http", "HTTP"), ("https", "Https"), ("", "")];
+        let hosts = [("example.com", "Example.COM"), ("h", "H"), ("x.y", "X.y")];
+        let ports = [("", ""), (":80", ""), (":8080", ":8080")];
+        let paths = [
+            ("/a/c", "/a/./b/../c"),
+            ("/~x", "/%7Ex"),
+            ("/s.json", "/s.json"),
+            ("", ""),
+            ("/a%20b", "/a%20b"),
+        ];
+        let params = [
+            "a=1", "b=2", "a=3", "c", "d=", "n=null", "n", "e=%41", "e=A",
+        ];
+        let mut equal_but_textually_different = 0;
+        let mut checked = 0;
+        for _ in 0..4000 {
+            let (s0, s1) = schemes[next(schemes.len())];
+            let (h0, h1) = hosts[next(hosts.len())];
+            let (p0, p1) = ports[next(ports.len())];
+            let (a0, a1) = paths[next(paths.len())];
+            let mut query: Vec<&str> = (0..next(5)).map(|_| params[next(params.len())]).collect();
+            let one_query = query.join("&");
+            // The same parameters in another order.
+            for i in (1..query.len()).rev() {
+                query.swap(i, next(i + 1));
+            }
+            let two_query = query.join("&");
+            let fragment = if next(3) == 0 { "#/definitions/x" } else { "" };
+            let make = |scheme: &str, host: &str, port: &str, path: &str, query: &str| {
+                let authority = if scheme.is_empty() {
+                    String::new()
+                } else {
+                    format!("{scheme}://{host}{port}")
+                };
+                let query = if query.is_empty() {
+                    String::new()
+                } else {
+                    format!("?{query}")
+                };
+                format!("{authority}{path}{query}{fragment}")
+            };
+            let one = make(s0, h0, p0, a0, &one_query);
+            let two = make(s1, h1, p1, a1, &two_query);
+            let (Ok(a), Ok(b)) = (Uri::parse(&one), Uri::parse(&two)) else {
+                continue;
+            };
+            checked += 1;
+            if a.equals(&b) == Ok(true) {
+                assert_eq!(
+                    a.equals_hash(&state),
+                    b.equals_hash(&state),
+                    "{one} and {two} are equal but hash apart"
+                );
+                if one != two {
+                    equal_but_textually_different += 1;
+                }
+            }
+        }
+        assert!(checked > 3000, "{checked}");
+        assert!(
+            equal_but_textually_different > 1000,
+            "{equal_but_textually_different}"
+        );
+        // And URIs that differ hash apart.
+        let a = Uri::parse("http://h/x?a=1&b=2").unwrap();
+        let b = Uri::parse("http://h/x?a=1&b=3").unwrap();
+        assert_ne!(a.equals_hash(&state), b.equals_hash(&state));
+        let c = Uri::parse("http://h/y?a=1&b=2").unwrap();
+        assert_ne!(a.equals_hash(&state), c.equals_hash(&state));
     }
 }

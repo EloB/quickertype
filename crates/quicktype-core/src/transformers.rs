@@ -34,7 +34,9 @@ use crate::attributes::type_attributes::{
 };
 pub use crate::attributes::type_attributes::{follow_target_type, transformation_for_type};
 use crate::messages::Result;
-use crate::support::collection_utils::{JsHash, add_hash_code, hash_string};
+use crate::support::collection_utils::{
+    DeepHash, JsHash, add_hash_code, deep_combine, deep_hash_of, hash_string,
+};
 use crate::support::support::{assert, console_log, indentation_string, panic};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder::TypeBuilder;
@@ -181,6 +183,12 @@ fn number_of_nodes(xfer: Option<&Rc<Transformer>>) -> usize {
 }
 
 /// `hashCodeOf(xfer)` for an optional transformer.
+/// The deep hash of an optional transformer: consistent with
+/// [`optional_are_equal`] (identical objects, or `equals`).
+fn optional_deep_hash(xfer: Option<&Rc<Transformer>>) -> u64 {
+    xfer.map_or(deep_combine(&[0]), |x| deep_combine(&[1, x.deep_hash()]))
+}
+
 fn optional_hash(xfer: Option<&Rc<Transformer>>) -> i64 {
     xfer.map_or(crate::support::collection_utils::HASH_CODE_INIT, |x| {
         x.hash_code()
@@ -987,6 +995,91 @@ impl Transformer {
         Ok(Transformer::new(source, data))
     }
 
+    /// A seeded hash consistent with [`Transformer::equals`] (for
+    /// `EqualityMap`'s index; see [`DeepHash`]): what `equals` compares,
+    /// with the kind. A string matcher's case is left out, since `equals`
+    /// holds for two matchers exactly when their cases differ (as in
+    /// quicktype), so equal matchers have different cases.
+    pub fn deep_hash(&self) -> u64 {
+        use TransformerData as D;
+        let source = self.source_type_ref.deep_hash();
+        let opt = |c: &Option<Rc<Transformer>>| optional_deep_hash(c.as_ref());
+        match &self.data {
+            D::Decoding { consumer } => deep_combine(&[1, source, opt(consumer)]),
+            D::ParseString { consumer } => deep_combine(&[2, source, opt(consumer)]),
+            D::Stringify { consumer } => deep_combine(&[3, source, opt(consumer)]),
+            D::Encoding => deep_combine(&[4, source]),
+            D::UnionInstantiation => deep_combine(&[5, source]),
+            D::ArrayDecoding {
+                consumer,
+                item_target_type_ref,
+                item_transformer,
+            } => deep_combine(&[
+                6,
+                source,
+                opt(consumer),
+                item_target_type_ref.deep_hash(),
+                item_transformer.deep_hash(),
+            ]),
+            D::ArrayEncoding {
+                item_target_type_ref,
+                item_transformer,
+            } => deep_combine(&[
+                7,
+                source,
+                item_target_type_ref.deep_hash(),
+                item_transformer.deep_hash(),
+            ]),
+            D::Choice { transformers } => {
+                let mut parts = vec![8, source, transformers.len() as u64];
+                parts.extend(transformers.iter().map(|x| x.deep_hash()));
+                deep_combine(&parts)
+            }
+            D::DecodingChoice(cases) => {
+                let mut parts = vec![9, source];
+                parts.extend(cases.slots().into_iter().map(&opt));
+                deep_combine(&parts)
+            }
+            D::UnionMemberMatch {
+                transformer,
+                member_type_ref,
+            } => deep_combine(&[
+                10,
+                source,
+                transformer.deep_hash(),
+                member_type_ref.deep_hash(),
+            ]),
+            D::StringMatch { transformer, .. } => {
+                deep_combine(&[11, source, transformer.deep_hash()])
+            }
+            D::StringProducer { consumer, result } => {
+                deep_combine(&[12, source, opt(consumer), deep_hash_of(result.as_str())])
+            }
+            D::MinMaxLengthCheck {
+                consumer,
+                min_length,
+                max_length,
+            } => deep_combine(&[
+                13,
+                source,
+                opt(consumer),
+                min_length.deep_hash(),
+                max_length.deep_hash(),
+            ]),
+            D::MinMaxValue {
+                consumer,
+                minimum,
+                maximum,
+            } => deep_combine(&[
+                14,
+                source,
+                opt(consumer),
+                minimum.deep_hash(),
+                maximum.deep_hash(),
+            ]),
+        }
+    }
+
     /// `hashCode()`, including the quirk that a string producer adds its
     /// consumer's hash twice.
     pub fn hash_code(&self) -> i64 {
@@ -1302,6 +1395,15 @@ impl Transformation {
         )
     }
 
+    /// A seeded hash consistent with [`Transformation::equals`]: the target
+    /// and the transformer's.
+    pub fn deep_hash(&self) -> u64 {
+        deep_combine(&[
+            self.target_type_ref.deep_hash(),
+            self.transformer.deep_hash(),
+        ])
+    }
+
     /// `debugPrint()`: the transformer tree, then `-> <target>`.
     pub fn debug_print(&self, lookup: &dyn TypeLookup) -> Result<()> {
         self.transformer.debug_print(lookup, 0)?;
@@ -1316,6 +1418,10 @@ impl Transformation {
 impl TransformationAttribute for Transformation {
     fn hash_code(&self) -> i64 {
         Transformation::hash_code(self)
+    }
+
+    fn deep_hash(&self) -> u64 {
+        Transformation::deep_hash(self)
     }
 
     fn js_equals(&self, other: &dyn TransformationAttribute) -> bool {

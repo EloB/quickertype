@@ -156,6 +156,9 @@ impl JsHash for TypeAttributeKind {
 pub trait TransformationAttribute: fmt::Debug {
     /// `Transformation.hashCode()`.
     fn hash_code(&self) -> i64;
+    /// A seeded hash consistent with `js_equals` (see
+    /// [`DeepHash`](crate::support::collection_utils::DeepHash)).
+    fn deep_hash(&self) -> u64;
     /// `Transformation.equals(other)`.
     fn js_equals(&self, other: &dyn TransformationAttribute) -> bool;
     /// `Transformation.getChildren()`, as refs in the same graph.
@@ -348,12 +351,13 @@ impl JsEquals for TypeAttributeValue {
 impl DeepHash for TypeAttributeValue {
     /// The content's, as `js_equals` compares it, for two values of the
     /// same kind ([`TypeAttributes`] adds the kind). `names` compare by
-    /// identity and transformations by their own `equals`, so they hash as
-    /// a constant (consistent, if coarse).
+    /// identity, so they hash by their address, and transformations by
+    /// their own `equals`, which their deep hash follows.
     fn deep_hash(&self) -> u64 {
         use TypeAttributeValue as V;
         match self {
-            V::Names(_) | V::Transformation(_) => deep_combine(&[0]),
+            V::Names(n) => deep_combine(&[0, Rc::as_ptr(n) as usize as u64]),
+            V::Transformation(xf) => xf.deep_hash(),
             V::Description(d) => d.deep_hash(),
             V::PropertyDescriptions(p) => p.deep_hash(),
             V::AccessorNames(a) | V::EnumValues(a) => a.deep_hash(),
@@ -496,12 +500,12 @@ impl JsEquals for TypeAttributes {
 }
 
 impl DeepHash for TypeAttributes {
-    /// Each kind with its value, in any order.
+    /// Each kind (its discriminant) with its value, in any order.
     fn deep_hash(&self) -> u64 {
         deep_unordered(
             self.0
                 .iter()
-                .map(|v| deep_combine(&[v.kind().name().deep_hash(), v.deep_hash()])),
+                .map(|v| deep_combine(&[v.kind() as u64, v.deep_hash()])),
         )
     }
 }

@@ -471,8 +471,9 @@ pub struct TypeIdentity {
     kind: TypeKind,
     components: IdentityComponents,
     hash_code: i64,
-    /// Its [`DeepHash`], made with it.
-    deep_hash: u64,
+    /// Its [`DeepHash`], made when first asked for: `EqualityMap` needs it
+    /// only to insert, or when a lookup's slot holds another key.
+    deep_hash: std::cell::OnceCell<u64>,
 }
 
 impl TypeIdentity {
@@ -498,31 +499,11 @@ impl TypeIdentity {
                 h = add_hash_code(h, members.hash_code());
             }
         }
-        let k = kind.deep_hash();
-        let deep_hash = match &components {
-            IdentityComponents::Primitive(a) => deep_combine(&[1, k, a.deep_hash()]),
-            IdentityComponents::Array(a, items) => {
-                deep_combine(&[2, k, a.deep_hash(), items.deep_hash()])
-            }
-            IdentityComponents::Object(a, properties, additional) => deep_combine(&[
-                3,
-                k,
-                a.deep_hash(),
-                properties.deep_hash(),
-                additional.deep_hash(),
-            ]),
-            IdentityComponents::Enum(a, cases) => {
-                deep_combine(&[4, k, a.deep_hash(), cases.deep_hash()])
-            }
-            IdentityComponents::SetOperation(a, members) => {
-                deep_combine(&[5, k, a.deep_hash(), members.deep_hash()])
-            }
-        };
         TypeIdentity {
             kind,
             components,
             hash_code: h,
-            deep_hash,
+            deep_hash: std::cell::OnceCell::new(),
         }
     }
 }
@@ -530,7 +511,28 @@ impl TypeIdentity {
 impl DeepHash for TypeIdentity {
     /// The kind and the components, as `js_equals` compares them.
     fn deep_hash(&self) -> u64 {
-        self.deep_hash
+        *self.deep_hash.get_or_init(|| {
+            let k = self.kind.deep_hash();
+            match &self.components {
+                IdentityComponents::Primitive(a) => deep_combine(&[1, k, a.deep_hash()]),
+                IdentityComponents::Array(a, items) => {
+                    deep_combine(&[2, k, a.deep_hash(), items.deep_hash()])
+                }
+                IdentityComponents::Object(a, properties, additional) => deep_combine(&[
+                    3,
+                    k,
+                    a.deep_hash(),
+                    properties.deep_hash(),
+                    additional.deep_hash(),
+                ]),
+                IdentityComponents::Enum(a, cases) => {
+                    deep_combine(&[4, k, a.deep_hash(), cases.deep_hash()])
+                }
+                IdentityComponents::SetOperation(a, members) => {
+                    deep_combine(&[5, k, a.deep_hash(), members.deep_hash()])
+                }
+            }
+        })
     }
 }
 

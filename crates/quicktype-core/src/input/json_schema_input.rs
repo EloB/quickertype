@@ -65,7 +65,8 @@ use crate::messages::{
 };
 use crate::run::RunContext;
 use crate::support::collection_utils::{
-    DeepHash, EqualityMap, JsEquals, JsHash, add_hash_code, deep_hash_of, hash_string,
+    DeepHash, EqualityMap, JsEquals, JsHash, add_hash_code, deep_combine, deep_hash_of, deep_state,
+    hash_string,
 };
 use crate::support::fast_hash::{HashMap, HashSet, IndexMap, IndexSet};
 use crate::support::parse_json::parse_json;
@@ -505,12 +506,15 @@ impl JsEquals for Ref {
 }
 
 impl DeepHash for Ref {
-    /// The path only: equal refs have equal paths, while urijs's `equals`
-    /// on the addresses (normalized, query parameters in any order) has no
-    /// hash of its own. Refs into different documents at one path share a
-    /// deep hash, which costs only an equality check each.
+    /// The address, as urijs `equals` compares it (`Uri::equals_hash`:
+    /// normalized, query parameters in any order), and the path, which
+    /// compares exactly.
     fn deep_hash(&self) -> u64 {
-        deep_hash_of(&self.path)
+        let address = match &self.address_uri {
+            None => 0,
+            Some(uri) => uri.equals_hash(deep_state()),
+        };
+        deep_combine(&[address, deep_hash_of(&self.path)])
     }
 }
 
@@ -2376,6 +2380,41 @@ impl Input for JsonSchemaInput {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Refs that are equal (urijs `equals` on the addresses, equal paths)
+    /// but written differently share a deep hash, as `EqualityMap` needs;
+    /// refs that differ in the path or the address do not.
+    #[test]
+    fn equal_refs_share_a_deep_hash() {
+        use crate::support::collection_utils::{DeepHash as _, JsEquals as _};
+        let equal = [
+            (
+                "http://h/s.json?a=1&b=2#/definitions/x",
+                "HTTP://H:80/s.json?b=2&a=1#/definitions/x",
+            ),
+            ("http://h/a/./b/../s.json#/x", "http://h/a/s.json#/x"),
+            ("s.json?x&y=1", "s.json?y=1&x"),
+            ("#/definitions/x", "#/definitions/x"),
+        ];
+        for (a, b) in equal {
+            let (a, b) = (Ref::parse(a).unwrap(), Ref::parse(b).unwrap());
+            assert!(a.js_equals(&b), "{a} {b}");
+            assert_eq!(a.deep_hash(), b.deep_hash(), "{a} {b}");
+        }
+        let unequal = [
+            (
+                "http://h/s.json#/definitions/x",
+                "http://h/s.json#/definitions/y",
+            ),
+            ("http://h/s.json?a=1#/x", "http://h/s.json?a=2#/x"),
+            ("http://h/s.json#/x", "http://g/s.json#/x"),
+        ];
+        for (a, b) in unequal {
+            let (a, b) = (Ref::parse(a).unwrap(), Ref::parse(b).unwrap());
+            assert!(!a.js_equals(&b), "{a} {b}");
+            assert_ne!(a.deep_hash(), b.deep_hash(), "{a} {b}");
+        }
+    }
 
     #[test]
     fn refs_parse_and_print() {

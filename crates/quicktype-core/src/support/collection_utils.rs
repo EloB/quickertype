@@ -257,7 +257,7 @@ pub trait DeepHash {
 /// The seeded state of every deep hash: one per process, or per instance
 /// in WebAssembly, so that a key's deep hash can be computed once, when the
 /// key is made.
-fn deep_state() -> &'static SeededState {
+pub(crate) fn deep_state() -> &'static SeededState {
     static STATE: OnceLock<SeededState> = OnceLock::new();
     STATE.get_or_init(SeededState::default)
 }
@@ -369,26 +369,28 @@ impl<A: DeepHash, B: DeepHash> DeepHash for (A, B) {
 /// on an equal key overwrites the value in place; iteration is in
 /// first-insertion order.
 ///
-/// This keeps exactly those slots, but walks a run of taken slots without
-/// visiting it: the first free slot after `h` comes from "next free slot"
-/// links with path compression (near-constant time), and the keys that
-/// may be equal to `k` from an index by their [`DeepHash`], which equal
-/// keys share. Of those, the one in the run from `h` to the free slot with
-/// the smallest step from `h` is the one the walk would stop at. So
-/// colliding hashes cost no more than distinct ones, and the results, the
-/// slots and the order are the original's.
+/// This keeps exactly those slots, and answers what the walk would, in
+/// near-constant time whatever the hashes:
+/// - A key's own slot is checked first: free, or holding an equal key,
+///   settles it at once, as it does the walk.
+/// - Otherwise the first free slot after it comes from "next free slot"
+///   links with path compression, and the keys that may be equal from an
+///   index by their [`DeepHash`], which equal keys share. Each deep hash
+///   keeps its entries sorted by slot, so a lookup visits only those in its
+///   own probe run, in the walk's order, and stops at the first equal one.
+///
+/// So colliding hashes cost no more than distinct ones, a coarse deep hash
+/// costs only within a probe run, and the results, the slots and the order
+/// are the original's.
 #[derive(Clone, Debug)]
 pub struct EqualityMap<K, V> {
     /// The entries, in first-insertion order.
     entries: Vec<(K, V)>,
-    /// Per entry: its slot, and the next entry with the same deep hash
-    /// (`u32::MAX`: none).
-    links: Vec<(i32, u32)>,
     /// The taken slots: the entry there, and a slot after it from which the
     /// search for a free slot goes on (every slot in between is taken).
     taken: HashMap<i32, (u32, Cell<i32>)>,
-    /// The first entry with each deep hash.
-    by_deep: HashMap<u64, u32>,
+    /// The entries by deep hash, by slot.
+    by_deep: HashMap<u64, Bucket>,
     /// In builds with debug assertions: the original's slots, walked as it
     /// walks them, to check every answer against (none for the tests of
     /// many colliding keys, which would make it quadratic).
@@ -396,11 +398,51 @@ pub struct EqualityMap<K, V> {
     shadow: Option<Box<IndexMap<i32, u32>>>,
 }
 
+/// The entries with one deep hash, by slot (as `u32`, so that the order
+/// is the walk's, which wraps from `i32::MAX` to `i32::MIN`).
+#[derive(Clone, Debug)]
+enum Bucket {
+    One(u32, u32),
+    Many(std::collections::BTreeMap<u32, u32>),
+}
+
+impl Bucket {
+    fn insert(&mut self, slot: u32, entry: u32) {
+        match self {
+            Bucket::One(s, e) => {
+                let mut many = std::collections::BTreeMap::new();
+                many.insert(*s, *e);
+                many.insert(slot, entry);
+                *self = Bucket::Many(many);
+            }
+            Bucket::Many(many) => {
+                many.insert(slot, entry);
+            }
+        }
+    }
+
+    /// The first entry, in slot order from `from` (cyclically) and before
+    /// `to`, that `is_equal` accepts.
+    fn first(&self, from: u32, to: u32, mut is_equal: impl FnMut(u32) -> bool) -> Option<u32> {
+        let within = |slot: u32| slot.wrapping_sub(from) < to.wrapping_sub(from);
+        match self {
+            Bucket::One(slot, e) => (within(*slot) && is_equal(*e)).then_some(*e),
+            Bucket::Many(many) => {
+                let mut run: Box<dyn Iterator<Item = (&u32, &u32)>> = if from <= to {
+                    Box::new(many.range(from..to))
+                } else {
+                    Box::new(many.range(from..).chain(many.range(..to)))
+                };
+                run.find(|&(_, &e)| is_equal(e)).map(|(_, &e)| e)
+            }
+        }
+    }
+}
+
 impl<K, V> Default for EqualityMap<K, V> {
     fn default() -> Self {
         EqualityMap {
             entries: Vec::new(),
-            links: Vec::new(),
             taken: HashMap::default(),
             by_deep: HashMap::default(),
             #[cfg(debug_assertions)]
@@ -415,6 +457,21 @@ impl<K, V> Default for EqualityMap<K, V> {
 enum Found {
     Entry(u32),
     Free(i32),
+}
+
+/// The first free slot at or after `slot`, compressing the links on the
+/// way.
+fn free_slot(taken: &HashMap<i32, (u32, Cell<i32>)>, slot: i32) -> i32 {
+    let mut free = slot;
+    while let Some((_, next)) = taken.get(&free) {
+        free = next.get();
+    }
+    let mut s = slot;
+    while s != free {
+        let (_, next) = &taken[&s];
+        s = next.replace(free);
+    }
+    free
 }
 
 impl<K: JsHash + JsEquals + DeepHash, V> EqualityMap<K, V> {
@@ -434,43 +491,23 @@ impl<K: JsHash + JsEquals + DeepHash, V> EqualityMap<K, V> {
         }
     }
 
-    /// The first free slot at or after `slot`, compressing the links on
-    /// the way.
-    fn free_slot(&self, slot: i32) -> i32 {
-        let mut free = slot;
-        while let Some((_, next)) = self.taken.get(&free) {
-            free = next.get();
-        }
-        let mut s = slot;
-        while s != free {
-            let (_, next) = &self.taken[&s];
-            s = next.replace(free);
-        }
-        free
-    }
-
-    /// The original's walk from `hashCodeOf(k) | 0`.
-    fn find(&self, k: &K, deep: u64) -> Found {
-        let h = int32(k.hash_code());
-        let free = self.free_slot(h);
-        // The run of taken slots from `h` (exclusive of `free`), as steps.
-        let run = (free as u32).wrapping_sub(h as u32);
-        let mut best: Option<(u32, u32)> = None;
-        let mut e = self.by_deep.get(&deep).copied().unwrap_or(u32::MAX);
-        while e != u32::MAX {
-            let (slot, next) = self.links[e as usize];
-            let step = (slot as u32).wrapping_sub(h as u32);
-            if step < run
-                && best.is_none_or(|(s, _)| step < s)
-                && k.js_equals(&self.entries[e as usize].0)
-            {
-                best = Some((step, e));
+    /// The original's walk from `h` (`hashCodeOf(k) | 0`), and `k`'s deep
+    /// hash if it took it: only where `h`'s own slot holds another key.
+    fn find(&self, k: &K, h: i32) -> (Found, Option<u64>) {
+        let (found, deep) = match self.taken.get(&h) {
+            None => (Found::Free(h), None),
+            Some(&(e, _)) if k.js_equals(&self.entries[e as usize].0) => (Found::Entry(e), None),
+            Some(_) => {
+                let free = free_slot(&self.taken, h);
+                let deep = k.deep_hash();
+                let from = (h as u32).wrapping_add(1);
+                let entry = self.by_deep.get(&deep).and_then(|bucket| {
+                    bucket.first(from, free as u32, |e| {
+                        k.js_equals(&self.entries[e as usize].0)
+                    })
+                });
+                (entry.map_or(Found::Free(free), Found::Entry), Some(deep))
             }
-            e = next;
-        }
-        let found = match best {
-            Some((_, e)) => Found::Entry(e),
-            None => Found::Free(free),
         };
         #[cfg(debug_assertions)]
         if let Some(shadow) = &self.shadow {
@@ -487,32 +524,39 @@ impl<K: JsHash + JsEquals + DeepHash, V> EqualityMap<K, V> {
                 "EqualityMap differs from collection-utils' walk"
             );
         }
-        found
+        (found, deep)
     }
 
     /// `set(k, v)`.
     pub fn set(&mut self, k: K, v: V) {
-        let deep = k.deep_hash();
-        match self.find(&k, deep) {
-            Found::Entry(e) => self.entries[e as usize].1 = v,
-            Found::Free(slot) => {
-                let e = u32::try_from(self.entries.len()).expect("fewer than 2^32 entries");
-                self.entries.push((k, v));
-                self.taken
-                    .insert(slot, (e, Cell::new(slot.wrapping_add(1))));
-                let next = self.by_deep.insert(deep, e).unwrap_or(u32::MAX);
-                self.links.push((slot, next));
-                #[cfg(debug_assertions)]
-                if let Some(shadow) = &mut self.shadow {
-                    shadow.insert(slot, e);
-                }
+        let (slot, deep) = match self.find(&k, int32(k.hash_code())) {
+            (Found::Entry(e), _) => {
+                self.entries[e as usize].1 = v;
+                return;
             }
+            (Found::Free(slot), deep) => (slot, deep.unwrap_or_else(|| k.deep_hash())),
+        };
+        let e = u32::try_from(self.entries.len()).expect("fewer than 2^32 entries");
+        match self.by_deep.entry(deep) {
+            std::collections::hash_map::Entry::Occupied(mut bucket) => {
+                bucket.get_mut().insert(slot as u32, e)
+            }
+            std::collections::hash_map::Entry::Vacant(bucket) => {
+                bucket.insert(Bucket::One(slot as u32, e));
+            }
+        }
+        self.entries.push((k, v));
+        self.taken
+            .insert(slot, (e, Cell::new(slot.wrapping_add(1))));
+        #[cfg(debug_assertions)]
+        if let Some(shadow) = &mut self.shadow {
+            shadow.insert(slot, e);
         }
     }
 
     /// `get(k)`.
     pub fn get(&self, k: &K) -> Option<&V> {
-        match self.find(k, k.deep_hash()) {
+        match self.find(k, int32(k.hash_code())).0 {
             Found::Entry(e) => Some(&self.entries[e as usize].1),
             Found::Free(_) => None,
         }
@@ -521,7 +565,7 @@ impl<K: JsHash + JsEquals + DeepHash, V> EqualityMap<K, V> {
     /// The value for a key equal to `k`, mutably (the JavaScript code
     /// mutates the stored value object in place).
     pub fn get_mut(&mut self, k: &K) -> Option<&mut V> {
-        match self.find(k, k.deep_hash()) {
+        match self.find(k, int32(k.hash_code())).0 {
             Found::Entry(e) => Some(&mut self.entries[e as usize].1),
             Found::Free(_) => None,
         }
@@ -712,6 +756,13 @@ mod tests {
     struct Key {
         class: u32,
         hash: i64,
+        /// A deep hash as coarse as can be: the same for every key.
+        coarse: bool,
+    }
+
+    std::thread_local! {
+        /// How many times `Key::js_equals` ran.
+        static COMPARISONS: Cell<u64> = const { Cell::new(0) };
     }
 
     impl JsHash for Key {
@@ -722,13 +773,18 @@ mod tests {
 
     impl JsEquals for Key {
         fn js_equals(&self, other: &Self) -> bool {
+            COMPARISONS.set(COMPARISONS.get() + 1);
             self.class == other.class
         }
     }
 
     impl DeepHash for Key {
         fn deep_hash(&self) -> u64 {
-            deep_hash_of(&self.class)
+            if self.coarse {
+                0
+            } else {
+                deep_hash_of(&self.class)
+            }
         }
     }
 
@@ -746,10 +802,12 @@ mod tests {
     /// Random sets, gets and in-place updates on both maps give the same
     /// answers, lengths and order. The hashes come from a few clustered
     /// values, around `i32::MAX` too (the slots wrap), so probe runs are
-    /// long and overlap, and a class's keys hash to one of two values.
+    /// long and overlap, and a class's keys hash to one of two values. Half
+    /// the sequences give every key the same deep hash.
     #[test]
     fn equality_map_answers_as_the_walk_does() {
-        for seed in 0..300 {
+        for seed in 0..600 {
+            let coarse = seed % 2 == 1;
             let mut next = rng(seed);
             let bases = [0i64, 5, 9, i64::from(i32::MAX) - 3, i64::from(i32::MIN), -7];
             let classes = 1 + next(60) as u32;
@@ -770,6 +828,7 @@ mod tests {
                 let k = Key {
                     class,
                     hash: hash_of(class, alt) + skew,
+                    coarse,
                 };
                 match next(3) {
                     0 => {
@@ -793,6 +852,33 @@ mod tests {
                 "seed {seed}"
             );
         }
+    }
+
+    /// With one deep hash for all of them, keys in short probe runs (two
+    /// per slot) cost a few comparisons each: a lookup visits only the
+    /// candidates in its own run.
+    #[test]
+    fn a_coarse_deep_hash_costs_only_within_a_run() {
+        let n = 20_000u32;
+        let key = |class: u32| Key {
+            class,
+            hash: i64::from(class / 2 * 5),
+            coarse: true,
+        };
+        let mut map: EqualityMap<Key, u32> = EqualityMap::without_check();
+        COMPARISONS.set(0);
+        for class in 0..n {
+            map.set(key(class), class);
+        }
+        for class in 0..n {
+            assert_eq!(map.get(&key(class)), Some(&class));
+        }
+        assert_eq!(map.get(&key(n + 1)), None);
+        let per_operation = COMPARISONS.get() as f64 / f64::from(2 * n);
+        assert!(
+            per_operation < 2.0,
+            "{per_operation} comparisons per operation"
+        );
     }
 
     /// Strings whose `hashString`s all collide ("Aa" and "BB" hash alike,
