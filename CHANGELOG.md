@@ -15,6 +15,15 @@ section are absolute.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-15
+
+TypeScript input works right after installing, because the releases bundle
+the TypeScript 7 compiler; the playground reads large files on several
+workers, 17 to 25 times as fast as quicktype in the browser; five bugs in
+the code quicktype generates are fixed, with every other output unchanged;
+JSON Lines in the npm package and the playground; and every hash map is
+seeded, which changes the Rust API's map types.
+
 ### Added
 
 - **JSON Lines in quickertype-core (npm):** a source given `jsonLines:
@@ -490,6 +499,7 @@ and installers.
 - Divergences from quicktype that no recorded case exercises are listed in
   [docs/PARITY.md](https://github.com/EloB/quickertype/blob/main/docs/PARITY.md#known-gaps).
 
-[Unreleased]: https://github.com/EloB/quickertype/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/EloB/quickertype/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/EloB/quickertype/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/EloB/quickertype/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/EloB/quickertype/releases/tag/v0.1.0
