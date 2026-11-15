@@ -79,8 +79,10 @@
 //! `support::fast_hash::init()` when it starts and handle its error (a
 //! host without `crypto.getRandomValues`), or the first map panics there.
 //! Without the feature, an embedder can give its own entropy to
-//! `support::fast_hash::seed` before the first map; otherwise the seed is
-//! `std`'s, which is fixed on `wasm32-unknown-unknown`.
+//! `support::fast_hash::seed`, before any other use of this crate (parsing
+//! JSON or building `Options` makes maps); otherwise the seed is `std`'s,
+//! which is fixed on `wasm32-unknown-unknown`. Natively the seed comes
+//! from the operating system, once per process.
 //!
 //! # Stability
 //!

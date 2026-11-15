@@ -225,24 +225,37 @@ others default to the function of the same name in
 - **Deduplication** depends on collection-utils' hashes and linear probing,
   so `JsHash`, `JsEquals` and `EqualityMap`
   ([`support/collection_utils.rs`](../crates/quicktype-core/src/support/collection_utils.rs))
-  reproduce them bit for bit, keyed by `TypeIdentity`.
+  reproduce them bit for bit, keyed by `TypeIdentity`. `EqualityMap`
+  keeps the original's slots, but finds a probe run's end through "next
+  free slot" links and the keys that may match through a seeded
+  `DeepHash` (consistent with `JsEquals`), so keys whose Java string
+  hashes collide do not make it quadratic; builds with debug assertions
+  also walk the slots as the original does and assert the same answer.
 - **`Map`/`Set`** become `IndexMap`/`IndexSet`. Where an object is a JS `Map`
   key, `SameValueZeroKey` and `JsObject` model SameValueZero.
 - **Hashing**: every hash map and set, in every crate, is one of
   `quicktype_js_compat::hash`'s `IndexMap`, `IndexSet`, `HashMap` and
   `HashSet` (quickertype-core re-exports them as `support::fast_hash`),
   with its one hasher, `SeededState`: foldhash with a secret seed, because
-  the keys come from the input. Natively the seed is foldhash's, per
-  process; in WebAssembly it is 16 bytes of `crypto.getRandomValues`, per
-  instance (the `js-host-random` feature). `IndexMap`/`IndexSet` iterate
-  in insertion order whatever the seed; `HashMap`/`HashSet` are for
-  lookups only, since their order changes with it (docs/PARITY.md, rule
-  1). Maps are made with `default()`, `with_capacity_and_hasher` or
-  `collect()`. indexmap is built without `std`, so it has no `RandomState`
-  default, and clippy's `disallowed-types` ([`clippy.toml`](../clippy.toml))
-  rejects `std`'s maps, `RandomState` and indexmap's own types outside
-  that module. `EqualityMap` is the exception: it reproduces
-  collection-utils' own hash and probing, which parity needs.
+  the keys come from the input. The seed is 16 bytes: natively two hashes
+  of a fresh `std` `RandomState`, which is keyed from the operating
+  system's random source, once per process; in WebAssembly
+  `crypto.getRandomValues`, per instance (the `js-host-random` feature).
+  foldhash with a secret seed is a fast hash, not a keyed pseudorandom
+  function: the `siphash` feature makes `SeededState` `std`'s SipHash-1-3
+  natively, for an embedder that hashes untrusted input on a server.
+  `IndexMap`/`IndexSet` iterate in insertion order whatever the seed;
+  `HashMap`/`HashSet` are for lookups only, since their order changes with
+  it (docs/PARITY.md, rule 1). Maps are made with `default()`,
+  `index_map_with_capacity`, `collect()`, or a copy's source map's hasher.
+  indexmap is built without `std`, so it has no `RandomState` default, and
+  clippy's `disallowed-types` and `disallowed-methods`
+  ([`clippy.toml`](../clippy.toml)) reject every other map, `RandomState`,
+  `DefaultHasher` and foldhash's own states outside that module.
+  `EqualityMap` keeps collection-utils' Java string hash for its slots,
+  which parity needs, and indexes its keys by the seeded hash (above).
+  Not hashed with it: regex-automata's own maps, and pluralize's word
+  tables, which are ordered instead.
 - **`===` on emitted items** (`emitLineOnce`, `emitItemOnce`): a
   `Source::Text` equals an earlier one with the same text, a `Source::Name`
   the same name, and a sequence (`sl![...]`, a TS array literal) nothing
