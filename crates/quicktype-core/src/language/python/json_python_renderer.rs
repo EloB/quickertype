@@ -149,6 +149,14 @@ impl ConverterFunction {
     }
 }
 
+/// What the constraint checks of `from_dict` call
+/// (`emit_constraint_checks`): the built-in `len`, the module `re` and
+/// `typing.cast`.
+const LEN: &str = "len";
+const RE: &str = "re";
+const CAST: &str = "cast";
+const CONSTRAINT_CHECK_NAMES: [&str; 3] = [LEN, RE, CAST];
+
 /// TS `TopLevelConverterNames`.
 #[derive(Clone, Copy, Debug)]
 struct TopLevelConverterNames {
@@ -422,7 +430,7 @@ impl<'a> JsonPythonRenderer<'a> {
             return v;
         }
 
-        sl![self.with_typing("cast"), "(", ty, ", ", v, ")"]
+        sl![self.with_typing(CAST), "(", ty, ", ", v, ")"]
     }
 
     /// `def <name>(x: Any) -> <result>:` for the simple converters.
@@ -1067,7 +1075,9 @@ impl<'a> JsonPythonRenderer<'a> {
         })
     }
 
-    /// The `assert`s of `from_dict` for the constraints of a property.
+    /// The `assert`s of `from_dict` for the constraints of a property. They
+    /// use [`CONSTRAINT_CHECK_NAMES`], which no property may be named
+    /// like.
     fn emit_constraint_checks(
         &mut self,
         name: Name,
@@ -1086,10 +1096,13 @@ impl<'a> JsonPythonRenderer<'a> {
         };
         let (min, max) = min_max_items_for_type(graph, t)?.map_or((None, None), |c| (c.0, c.1));
         if let Some(min) = min {
-            check(self, sl![number::to_string(min), " <= len(", name, ")"]);
+            check(
+                self,
+                sl![number::to_string(min), " <= ", LEN, "(", name, ")"],
+            );
         }
         if let Some(max) = max {
-            check(self, sl!["len(", name, ") <= ", number::to_string(max)]);
+            check(self, sl![LEN, "(", name, ") <= ", number::to_string(max)]);
         }
         let (min_value, max_value) =
             min_max_value_for_type(graph, t)?.map_or((None, None), |c| (c.0, c.1));
@@ -1105,15 +1118,15 @@ impl<'a> JsonPythonRenderer<'a> {
             if let Some(lo) = lo {
                 check(
                     self,
-                    sl![number::to_string(lo), " <= len(", raw.clone(), ")"],
+                    sl![number::to_string(lo), " <= ", LEN, "(", raw.clone(), ")"],
                 );
             }
             if let Some(hi) = hi {
-                check(self, sl!["len(", raw, ") <= ", number::to_string(hi)]);
+                check(self, sl![LEN, "(", raw, ") <= ", number::to_string(hi)]);
             }
         }
         if let Some(pattern) = pattern_for_type(graph, t)? {
-            let re = self.with_module_import("re");
+            let re = self.with_module_import(RE);
             let pattern = self.string(&pattern);
             let cast = self.cast("str".into(), property_value.clone());
             check(self, sl![re, ".search(", pattern, ", ", cast, ")"]);
@@ -1274,7 +1287,8 @@ pub mod json_python_hooks {
     /// quickertype") what `from_dict` uses besides its locals, which are
     /// named like the properties: its parameter `obj`, `isinstance` and
     /// the converter functions it calls
-    /// ([`ConverterFunction::used_by_from_dict`]). quicktype forbids only
+    /// ([`ConverterFunction::used_by_from_dict`]), and what its constraint
+    /// checks call ([`CONSTRAINT_CHECK_NAMES`]). quicktype forbids only
     /// `from_dict` and `to_dict`, so a property `from_date` shadows the
     /// converter `from_date`.
     pub fn forbidden_for_object_properties(
@@ -1295,6 +1309,7 @@ pub mod json_python_hooks {
                         // The `dict` converter is the method's name.
                         .filter(|name| name != "from_dict"),
                 )
+                .chain(CONSTRAINT_CHECK_NAMES.into_iter().map(String::from))
                 .map(ForbiddenWord::from),
         );
         Ok(result)
@@ -1348,4 +1363,44 @@ impl<'a> PythonRenderer<'a> for JsonPythonRenderer<'a> {
     }
 
     python_renderer_methods!([forward json_python_methods]);
+}
+
+#[cfg(test)]
+mod converter_function_tests {
+    use super::ConverterFunction;
+
+    /// [`ConverterFunction::ALL`] has every variant: the match below has no
+    /// wildcard, so a new variant does not compile until it gets an index,
+    /// and then `ALL` must have it too.
+    #[test]
+    fn all_lists_every_converter_function() {
+        fn index(cf: ConverterFunction) -> usize {
+            match cf {
+                ConverterFunction::None => 0,
+                ConverterFunction::Bool => 1,
+                ConverterFunction::Int => 2,
+                ConverterFunction::FromFloat => 3,
+                ConverterFunction::ToFloat => 4,
+                ConverterFunction::Str => 5,
+                ConverterFunction::ToEnum => 6,
+                ConverterFunction::List => 7,
+                ConverterFunction::ToClass => 8,
+                ConverterFunction::Dict => 9,
+                ConverterFunction::Union => 10,
+                ConverterFunction::FromDate => 11,
+                ConverterFunction::FromTime => 12,
+                ConverterFunction::FromDatetime => 13,
+                ConverterFunction::FromStringifiedBool => 14,
+                ConverterFunction::IsType => 15,
+            }
+        }
+        const VARIANTS: usize = 16;
+        let mut seen = [false; VARIANTS];
+        for cf in ConverterFunction::ALL {
+            assert!(!seen[index(cf)], "{cf:?} is in ALL twice");
+            seen[index(cf)] = true;
+        }
+        assert!(seen.iter().all(|&s| s), "ALL misses a converter function");
+        assert_eq!(ConverterFunction::ALL.len(), VARIANTS);
+    }
 }

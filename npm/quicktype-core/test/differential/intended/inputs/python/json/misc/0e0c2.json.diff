@@ -1,0 +1,32 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -96,7 +96,7 @@
+     title: str
+     director: str
+     tagline: str
+-    cast: str
++    detail_cast: str
+     storyline: str
+ 
+     @staticmethod
+@@ -107,9 +107,9 @@
+         title = from_str(obj["title"])
+         director = from_str(obj["director"])
+         tagline = from_str(obj["tagline"])
+-        cast = from_str(obj["cast"])
++        detail_cast = from_str(obj["cast"])
+         storyline = from_str(obj["storyline"])
+-        return Detail(id, language, title, director, tagline, cast, storyline)
++        return Detail(id, language, title, director, tagline, detail_cast, storyline)
+ 
+     def to_dict(self) -> dict:
+         result: dict = {}
+@@ -118,7 +118,7 @@
+         result["title"] = from_str(self.title)
+         result["director"] = from_str(self.director)
+         result["tagline"] = from_str(self.tagline)
+-        result["cast"] = from_str(self.cast)
++        result["cast"] = from_str(self.detail_cast)
+         result["storyline"] = from_str(self.storyline)
+         return result
+ 

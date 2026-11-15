@@ -208,6 +208,7 @@ java-datetime-legacy/json/samples/simple-object.json/959073bfca java-legacy-date
 java-datetime-legacy/json/samples/spotify-album.json/ff2f940e14 java-legacy-date-null
 java-datetime-legacy/json/samples/us-avg-temperatures.json/7677571aaa java-legacy-date-null
 java-datetime-legacy/json/samples/us-senators.json/e082381854 java-legacy-date-null
+python/json/misc/0e0c2.json/daaf56eef2 python-property-shadows-converter
 python/json/misc/a0496.json/af3236316e python-property-shadows-converter
 schema-cjson/schema/accessors.schema/82f90d67df cjson-enum-getter
 schema-cjson/schema/all-of-additional-properties-false.schema/692993e832 cjson-enum-getter
@@ -347,6 +348,7 @@ npm/corpus/cjson/json/misc/76ae1.json/229486e67d cjson-enum-getter cjson-map-par
 npm/corpus/cjson/json/misc/7d397.json/28adede6d2 cjson-enum-getter cjson-map-parsed-twice
 npm/corpus/cjson/json/misc/e324e.json/3c285a614d cjson-enum-getter cjson-map-parsed-twice
 npm/corpus/cjson/json/misc/f82d9.json/95e62dc78f cjson-enum-getter
+npm/inputs-bytes/python/json/misc/0e0c2.json python-property-shadows-converter
 npm/inputs-bytes/python/json/misc/a0496.json python-property-shadows-converter
 npm/inputs/cjson/json/misc/00c36.json cjson-enum-getter
 npm/inputs/cjson/json/misc/00ec5.json cjson-enum-getter cjson-map-parsed-twice
@@ -472,6 +474,7 @@ npm/inputs/cjson/schema/renaming-bug.schema cjson-enum-getter cjson-pattern-regc
 npm/inputs/cjson/schema/top-level-enum.schema cjson-enum-getter
 npm/inputs/cjson/schema/unicode-codepoint-length.schema cjson-pattern-regcomp
 npm/inputs/cjson/schema/vega-lite.schema cjson-enum-getter cjson-map-parsed-twice
+npm/inputs/python/json/misc/0e0c2.json python-property-shadows-converter
 npm/inputs/python/json/misc/a0496.json python-property-shadows-converter
 npm/inputs/ruby/schema/mutually-recursive.schema ruby-union-forward-declaration
 npm/inputs/ruby/schema/recursive-union-flattening.schema ruby-union-forward-declaration
