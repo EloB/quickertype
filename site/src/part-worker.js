@@ -9,7 +9,8 @@
 // "summarize" (with the File), "split", "tally" (or not), "done"; and
 // "memory", for measurements. Replies:
 // { id, ok: true, value } (a summary's, split's or tallies' bytes
-// transferred, not copied) or { id, ok: false, error }.
+// transferred, not copied) or { id, ok: false, error, fatal } (`fatal`:
+// the engine instance trapped, and this worker takes no more jobs).
 
 import { createGlue } from "../../npm/quicktype-core/dist/esm/native/wasm/glue.js";
 import { PartReader } from "../../npm/quicktype-core/dist/esm/native/parts.js";
@@ -30,6 +31,7 @@ async function handle(job, args) {
             glue.engineVersion();
             return [true, []];
         case "summarize": {
+            if (glue === undefined) throw new Error("the part worker's engine stopped");
             file = args.file;
             reader = new PartReader(glue, read);
             const summaries = await reader.summarize(args);
@@ -65,7 +67,11 @@ self.onmessage = (event) => {
             const [value, transfer] = await handle(job, args);
             self.postMessage({ id, ok: true, value }, transfer);
         } catch (e) {
-            self.postMessage({ id, ok: false, error: String(e?.message ?? e) });
+            // An instance that trapped cannot be trusted: this worker is
+            // done, and the pool replaces it.
+            const fatal = e instanceof WebAssembly.RuntimeError;
+            if (fatal) glue = undefined;
+            self.postMessage({ id, ok: false, error: String(e?.message ?? e), fatal });
         }
     });
 };

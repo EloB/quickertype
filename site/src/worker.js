@@ -130,9 +130,17 @@ async function addPartsFile(input, sample, name, lines, phases) {
     const { file } = sample;
     if (sample.inOneGo === undefined) {
         const count = partWorkers();
+        let readers;
+        try {
+            if (count >= 2) readers = await pool.readers(file, globalThis[Symbol.for("quicktype-core.wasmModule")], count);
+        } catch (e) {
+            // A part worker that does not start: in one go.
+            readers = String(e?.message ?? e);
+        }
+
         const read =
-            count < 2
-                ? { inOneGo: "no part workers" }
+            readers === undefined || typeof readers === "string"
+                ? { inOneGo: readers ?? "no part workers" }
                 : await readJSONInputInParts(
                       input,
                       {
@@ -143,7 +151,7 @@ async function addPartsFile(input, sample, name, lines, phases) {
                           // The tables, should a run go to the TypeScript engine.
                           reread: () => new Uint8Array(new FileReaderSync().readAsArrayBuffer(file)),
                       },
-                      await pool.readers(file, globalThis[Symbol.for("quicktype-core.wasmModule")], count),
+                      readers,
                       { minLength: hooks.partsFrom },
                   );
         pool.idle();

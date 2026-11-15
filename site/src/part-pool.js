@@ -38,12 +38,14 @@ class PartWorkerClient {
         };
         this.worker.onmessageerror = () => fail("a message from a part worker could not be read");
         this.worker.onmessage = (event) => {
-            const { id, ok, value, error } = event.data;
+            const { id, ok, value, error, fatal } = event.data;
             const call = this.pending.get(id);
             if (call === undefined) return;
             this.pending.delete(id);
             if (ok) call.resolve(value);
             else call.reject(new Error(error));
+            // Its engine trapped: replaced on the next reading.
+            if (fatal) fail(`a part worker's engine stopped: ${error}`);
         };
         this.started = this.call("start", { module });
         // Reported by the reading that needs it.
