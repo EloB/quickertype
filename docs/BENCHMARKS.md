@@ -2235,46 +2235,77 @@ the seeding above, moved, with aliases of `IndexMap`, `IndexSet`,
   words and are only looked up, so they are ordered (`BTreeMap`), not
   hashed. The bindings' start calls `init()` before anything makes a map.
 - `npm/quicktype-core/test/seed.test.mjs` checks the property that
-  matters: two fresh Node processes, and two fresh instances in one, hash
-  a key differently in a new map of class properties, and so do two maps
-  of one instance. With the entropy fixed, the test fails. The export it
-  uses, `__hashForTests`, is only in an engine built with quicktype-wasm's
-  `test-hooks` feature, which `test/hooks-engine.mjs` builds for the tests
-  (a debug build: 15.7 s from cold on 12 cores at load 5.7, 1.1 s when
-  nothing changed); `package.test.mjs` checks that the shipped module and
-  its glue do not have it.
+  matters: a key hashes differently in a new map of class properties in
+  another process, in the fresh instance the facade makes after a trap
+  (its own recovery path: `discardEngine`, then `createGlue`), and in
+  another map of the same instance. With the entropy fixed, the test
+  fails. The export it uses, `__hashForTests`, is a test hook: every
+  export only the tests use (`__panicForTests`, `__pow`, the engine's
+  counters) is behind quicktype-wasm's `test-hooks` feature, and
+  `__heapBytes`/`__heapPeak` behind `heap-stats`. `script/test-hooks.mjs`,
+  which `npm test` runs first, builds the tests' package: the shipped
+  facade with an engine built with the feature, in its own target
+  directory, with a `test-hooks` profile (release without fat LTO): 29.7 s
+  from cold at load 11 to 15, 0.67 s when nothing changed. The facade
+  loads it as it loads the shipped one. `package.test.mjs` checks that
+  the shipped module and its glue have none of these exports.
 
 **`EqualityMap`** (`support::collection_utils`), which deduplicates types
 by identity and resolves JSON Schema `$ref`s, reproduces collection-utils:
 Java's `h * 31 + c` string hash with linear probing. Which entry a lookup
 finds depends on the exact slots, and keys that are equal but hash apart
-(`Ref`s whose addresses differ only in their query's order, since urijs
-`equals` normalizes them) are found only where their probe runs meet. So
-its hash cannot be seeded. But colliding Java hashes are easy to craft
-("Aa" and "BB" hash alike, and so does every string made of them), and
-each lookup walked the run of taken slots: a JSON Schema with 4,000
-definitions named so took 67.3 s to turn into TypeScript (load 14). Now
-the map keeps exactly the original's slots, and answers what the walk
-would without walking:
-- the first free slot after a key's hash comes from "next free slot"
-  links with path compression;
-- the keys that may be equal come from an index by a seeded `DeepHash`,
-  which equal keys share: sets and maps in any order, as their equality
-  is; type names and transformations, which compare by identity or their
-  own `equals`, as a constant; a `Ref` by its path, which compares
-  exactly. `TypeIdentity` computes it with its Java hash;
-- of those in the run, the one with the smallest step from the hash is
-  the one the walk stops at, and a missing key goes to the free slot.
+are found only where their probe runs meet: `Ref`s whose addresses differ
+only in their query's order, since urijs `equals` normalizes them, and
+string-match transformers, which quicktype finds equal exactly when their
+cases differ while hashing the case. So its hash cannot be seeded. But
+colliding Java hashes are easy to craft ("Aa" and "BB" hash alike, and so
+does every string made of them), and each lookup walked the run of taken
+slots: a JSON Schema with 4,000 definitions named so took 70.1 s to turn
+into TypeScript (load 12). Now the map keeps exactly the original's
+slots, and answers what the walk would without walking:
+- a key's own slot is checked first: free, or holding an equal key,
+  settles it, as it does the walk, without anything more;
+- otherwise the first free slot after it comes from "next free slot"
+  links with path compression, and the keys that may be equal from an
+  index by a seeded `DeepHash`, which equal keys share. Each deep hash
+  keeps its entries sorted by slot, so a lookup visits only those in its
+  own probe run, in the walk's order, and stops at the first equal one;
+- the deep hashes follow equality, as fine as it allows: sets and maps in
+  any order; a `Ref` by its path and its address as urijs compares it
+  (`Uri::equals_hash`: the normalized URI without its query, the query's
+  length, its parameters in any order); a transformation field by field,
+  without a string matcher's case; type names by their address, since
+  they compare by identity; attribute kinds by discriminant. A
+  `TypeIdentity` takes its deep hash only when asked for.
 
-The same 4,000 definitions take 0.16 s, 16,000 take 0.69 s, with the
-same output. Builds with debug assertions also walk the slots as the
-original does and assert the same answer on every lookup (core's 495
-tests pass so), and unit tests compare it with the original
-implementation on 300 random sequences of sets, gets and updates, with
-clustered and wrapping hashes and equal keys that hash apart, and on 2^10
-colliding strings; with the run bound removed, they fail. A JSON input
-of 4,000 sibling objects with one colliding key each was fast either
-way: it is inferred as a map of maps, which deduplicates no classes.
+The same 4,000 definitions take 0.23 s, 16,000 take 1.24 s, with the same
+output. Builds with debug assertions also walk the slots as the original
+does and assert the same answer on every lookup (core's 497 tests pass
+so). Unit tests compare the map with the original implementation on 600
+random sequences of sets, gets and updates (clustered and wrapping
+hashes, equal keys that hash apart, and in half of them one deep hash for
+every key), and on 2^10 colliding strings; they fail with the run bound
+removed. Another counts under two comparisons per operation with one deep
+hash for 20,000 keys in runs of two. A property test of 4,000 generated
+URI pairs that `equals` finds equal but are written differently (case,
+default ports, dot segments, percent-encoding, reordered and repeated
+parameters) checks that each pair hashes alike, and fails if the query
+is hashed as written.
+
+Against main (`73361a510`), interleaved, `-l cs` (minimum and median of
+9 runs, outputs identical; another agent's builds and tests ran beside,
+load average 5.3 to 18):
+
+| Input | Main: min / median | Branch: min / median | Change |
+|---|---:|---:|---:|
+| 5,000 `$id` schemas, each referred to twice | 459.2 / 466.0 ms | 460.2 / 463.9 ms | +0.2% / −0.5% |
+| 20,000 `$id` schemas | 1,952 / 2,002 ms | 1,950 / 2,058 ms | −0.1% / +2.8% |
+| 2,000 classes with date-time and enum unions (transformations) | 562.4 / 583.9 ms | 553.9 / 565.6 ms | −1.5% / −3.1% |
+| 8,000 such classes | 2,310 / 3,278 ms | 2,331 / 2,561 ms | +0.9% / −21.9% (load 7 to 18) |
+
+`cargo xtask parity -j 6` with each CLI, in turn, three times: 13.3,
+19.0 and 17.8 s of wall time for main against 14.0, 17.1 and 16.7 s (load
+average 7 rising to 33), all 11,177 cases passing for both.
 
 Not covered: in dependencies, regex-automata's maps. Their keys are
 capture names of the engine's own patterns, and the lazy DFA's states,
@@ -2292,19 +2323,21 @@ bucket sets, but returns the first equal set among a bucket's candidates,
 whatever the seed. `EqualityMap`'s results are the original's whatever
 its index's seed. Every run takes new seeds, and all of these passed:
 `cargo xtask parity -j 6` three times (11,177 of 11,177 cases each), the
-workspace's tests (779) and core's and js-compat's with `siphash` (581),
+workspace's tests (782) and core's and js-compat's with `siphash` (584),
 `npm test` in npm/quicktype-core twice (80 tests, one skipped because
 every renderer is ported), the differential suite (`npm run
 test:differential`: 20,604 scenarios, 20,471 of them on WebAssembly,
 none different; one known gap, as before), `npm run test:browser` and
-the playground's smoke test. Before the review's fixes, the
-differential suite passed three more times, and parity three times.
+the playground's smoke test, all after the second review's fixes. Before
+them, these passed in each earlier round too, the differential suite
+four times and parity nine.
 
 **Speed.** Interleaved against main, on an Apple M2 Max with another
 agent's builds and tests running beside:
 - The CLI (`-l ts -o <file>`, 15 rounds, wall time; load average 3.9 to
-  4.0), main (`73361a510`) against this branch, with the seed from the
-  operating system and the new `EqualityMap`:
+  4.0), main (`73361a510`) against this branch after the first review's
+  fixes (the seed from the operating system and the first rewrite of
+  `EqualityMap`; the second's is timed above):
 
   | Input | Main: min / median | Branch: min / median | Change |
   |---|---:|---:|---:|
@@ -2324,7 +2357,8 @@ agent's builds and tests running beside:
   in 8 of 9 rounds), the read within noise.
 - WebAssembly in headless Chrome (`compare.mjs --browser --variant`, the
   two packages interleaved in one page), main (`73361a510`) against this
-  branch after the review's fixes; load average 14.4 falling to 5.3. The
+  branch after the first review's fixes (before the second's `EqualityMap`
+  changes); load average 14.4 falling to 5.3. The
   median of three runs of the benchmark, each a median, in ms; Chrome's
   timer steps by 0.1 ms here:
 
@@ -2343,9 +2377,8 @@ agent's builds and tests running beside:
   the timer's step and the noise. Before the review's fixes, against
   `b65fa2212` (load 5.7 falling to 3.3), generating the 20 MB input was
   2–3% faster in each of three runs (32.6 to 31.9 ms, the medians).
-- The engine is 5,451,255 bytes, 25,870 (0.5%) smaller than main's
-  (5,477,125); before the review's fixes it was 38,365 smaller than
-  `b65fa2212`'s.
+- The engine is 5,472,777 bytes, 4,348 smaller than main's (5,477,125),
+  without its test hooks.
 
 ### Hashing strings in WebAssembly
 

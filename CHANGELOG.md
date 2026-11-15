@@ -85,6 +85,12 @@ section are absolute.
   `Options` makes maps; called later, it panics, saying so. Before, only
   some maps took the seed, so parsing JSON first worked. The npm package
   seeds with `js-host-random`, as before.
+- The JavaScript API's engine no longer exports its test hooks
+  (`__panicForTests`, `__pow`, `__pendingRuns`, `__jsonCount`,
+  `__jsonLeases`, `__jsonReadTrapForTests`, `__memoryGrowths`,
+  `__memoryPages`) or, outside `--heap-stats` builds, `__heapBytes` and
+  `__heapPeak`; the facade never used them. The package's tests build an
+  engine of their own with them (quicktype-wasm's `test-hooks` feature).
 - The JavaScript API's engine, on a host without `crypto.getRandomValues`,
   fails to load with "quickertype needs crypto.getRandomValues (the Web
   Crypto API) to seed its hash maps, and this JavaScript host does not
@@ -116,11 +122,14 @@ section are absolute.
   `EqualityMap`, which this port reproduces bit for bit: Java's string
   hash with linear probing, where anyone can craft colliding keys ("Aa"
   and "BB" hash alike, and so does every string made of them). A JSON
-  Schema with 4,000 definitions named so took 67 s to turn into
-  TypeScript; now 0.16 s (16,000: 0.69 s), with the same output. The map
-  keeps the original's slots and order, and finds the end of a probe run
-  and the keys that may match through a seeded hash instead of walking
-  the run.
+  Schema with 4,000 definitions named so took 70 s to turn into
+  TypeScript; now 0.23 s (16,000: 1.2 s), with the same output. The map
+  keeps the original's slots and order: a key's own slot settles most
+  lookups, and otherwise the end of its probe run and the keys that may
+  match come from a seeded hash, consistent with the map's equality,
+  instead of a walk over the run. Inputs without collisions (20,000 `$id`
+  schemas, thousands of transformed types, the parity corpus) take as
+  long as before.
 - Not covered: the maps inside regex-automata (the capture names of the
   engine's own patterns, and its lazy DFA's states, which the input only
   selects among). pluralize's word tables, which hold the library's own
