@@ -14,21 +14,24 @@ import * as path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { hooksEngine } from "./hooks-engine.mjs";
+import { hooksPackageRoot } from "./hooks.mjs";
 
 const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
  * Runs `body` in a fresh Node process after `prelude` (which may replace
- * `crypto`), with `qt`, `engine` and `engineStats` in scope and a `run()`
- * that turns a small sample into Rust; returns what `body` returns.
+ * `crypto`), with the package at `root`'s `qt`, `engine` and `engineStats`
+ * in scope and a `run()` that turns a small sample into Rust; returns what
+ * `body` returns. `root` is this package, or the one with the test-hooks
+ * engine (test/hooks.mjs) for a body that traps the instance or reads its
+ * hashes.
  */
-function inFreshNode(prelude, body, env = {}) {
+function inFreshNode(prelude, body, { env = {}, root = packageRoot } = {}) {
     const script = `
         ${prelude}
-        const qt = require(${JSON.stringify(packageRoot)});
-        const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
-        const { engineStats } = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "bridge.js"))});
+        const qt = require(${JSON.stringify(root)});
+        const engine = require(${JSON.stringify(path.join(root, "dist", "native", "engine.js"))});
+        const { engineStats } = require(${JSON.stringify(path.join(root, "dist", "native", "bridge.js"))});
         const run = () => {
             const input = qt.jsonInputForTargetLanguage("rust");
             input.addSourceSync({ name: "A", samples: ['{"b": [true]}'] });
@@ -62,7 +65,7 @@ test("without crypto.getRandomValues, QUICKTYPE_ENGINE=wasm makes runs throw", (
     const thrown = inFreshNode(
         noCrypto,
         `try { run(); return "no error"; } catch (e) { return String(e?.message); }`,
-        { QUICKTYPE_ENGINE: "wasm" },
+        { env: { QUICKTYPE_ENGINE: "wasm" } },
     );
     assert.equal(thrown, missing);
 });
@@ -98,6 +101,7 @@ test("each instance takes 16 bytes of crypto.getRandomValues as it starts, and o
          try { glue.__panicForTests(); } catch { engine.discardEngine(glue); }
          run();
          return [afterLoad, afterRuns, [...calls], [engineStats.wasm, engineStats.ts]];`,
+        { root: hooksPackageRoot },
     );
     assert.deepEqual(afterLoad, [16]);
     assert.deepEqual(afterRuns, [16]);
@@ -108,37 +112,30 @@ test("each instance takes 16 bytes of crypto.getRandomValues as it starts, and o
 test("each instance hashes the keys of the maps inference fills differently", () => {
     // `__hashForTests` hashes a key in a new map of class properties (an
     // IndexMap whose keys are property names from the input). It is only
-    // in the test-hooks engine (test/hooks-engine.mjs), not the shipped one
-    // (package.test.mjs checks). Two fresh instances that do the same make
-    // that map at the same point of their maps' sequence, so with a fixed
-    // seed (as wasm32's `std` RandomState was) they would give the same
-    // hash. A fresh `require` of the Node.js glue is a fresh instance.
-    const glue = hooksEngine();
-    const hashes = JSON.parse(
-        execFileSync(
-            process.execPath,
-            [
-                "-e",
-                `const load = () => { delete require.cache[${JSON.stringify(glue)}]; return require(${JSON.stringify(glue)}); };
-                 const first = load();
-                 const a = first.__hashForTests("name");
-                 const b = first.__hashForTests("name");
-                 const c = load().__hashForTests("name");
-                 console.log(JSON.stringify([a, b, c]));`,
-            ],
-            { encoding: "utf8" },
-        ),
-    );
-    const [first, second, sameProcess] = hashes;
-    const [otherProcess] = JSON.parse(
-        execFileSync(process.execPath, ["-e", `console.log(JSON.stringify([require(${JSON.stringify(glue)}).__hashForTests("name")]))`], {
-            encoding: "utf8",
-        }),
-    );
+    // in the test-hooks engine (test/hooks.mjs), which the facade loads as
+    // it loads the shipped one; package.test.mjs checks that the shipped
+    // engine lacks it. Two instances that do the same make that map at the
+    // same point of their maps' sequence, so with a fixed seed (as wasm32's
+    // `std` RandomState was) they would give the same hash.
+    const body = `const glue = engine.engineSync();
+         run();
+         const first = glue.__hashForTests("name");
+         const second = glue.__hashForTests("name");
+         // The facade's own recovery: the instance traps, the facade drops
+         // it, and the next engineSync() makes a fresh one with createGlue.
+         try { glue.__panicForTests(); } catch { engine.discardEngine(glue); }
+         const fresh = engine.engineSync();
+         run();
+         return [first, second, fresh !== glue, fresh.__hashForTests("name"), [engineStats.wasm, engineStats.ts]];`;
+    const [first, second, replaced, afterTrap, stats] = inFreshNode("", body, { root: hooksPackageRoot });
+    const [other] = inFreshNode("", body, { root: hooksPackageRoot });
     assert.match(first, /^[0-9a-f]{16}$/);
-    // Another process, and another instance in the same process.
-    assert.notEqual(first, otherProcess);
-    assert.notEqual(first, sameProcess);
+    // A fresh instance through the facade's recovery path, and another
+    // process, take seeds of their own.
+    assert.equal(replaced, true);
+    assert.deepEqual(stats, [2, 0]);
+    assert.notEqual(first, afterTrap);
+    assert.notEqual(first, other);
     // Each map has its own seed too.
     assert.notEqual(first, second);
 });

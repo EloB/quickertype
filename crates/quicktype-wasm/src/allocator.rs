@@ -170,8 +170,9 @@ fn count(_: usize) {}
 
 /// How often the memory grew since the instance started: allocations
 /// during which it grew (dlmalloc grows it at most once per allocation),
-/// and growing ahead when that grew it.
-#[cfg(target_arch = "wasm32")]
+/// and growing ahead when that grew it. Read only by the facade's tests
+/// (`__memoryGrowths`, with `test-hooks`).
+#[cfg(all(target_arch = "wasm32", feature = "test-hooks"))]
 pub fn growths() -> u32 {
     GROWTHS.load(Ordering::Relaxed)
 }

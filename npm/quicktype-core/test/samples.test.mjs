@@ -10,12 +10,16 @@ import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import * as path from "node:path";
 import { test } from "node:test";
-import { fileURLToPath } from "node:url";
 
 import { generateJson } from "./bench/generate.mjs";
+import { hooksPackageRoot } from "./hooks.mjs";
 
 const require = createRequire(import.meta.url);
-const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+// The package with the test-hooks engine (test/hooks.mjs): these tests trap
+// instances and count the engine's compressed forms and leases
+// (`__panicForTests`, `__jsonCount`, ...), which the shipped engine does not
+// export.
+const packageRoot = hooksPackageRoot;
 const qt = require(packageRoot);
 const { engineStats } = require(path.join(packageRoot, "dist", "native", "bridge.js"));
 const engine = require(path.join(packageRoot, "dist", "native", "engine.js"));

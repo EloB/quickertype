@@ -51,21 +51,24 @@ export interface WasmGlue {
     jsonExport(id: number): ExportedTables | undefined;
     jsonAcquire(id: number): number | undefined;
     jsonRelease(lease: number): void;
-    __jsonCount(): number;
-    __jsonLeases(): number;
-    __jsonReadTrapForTests(id: number, text: string): number;
-    __memoryGrowths(): number;
-    __memoryPages(): number;
-    /** `NaN` unless the engine is built with `--heap-stats`. */
-    __heapBytes(): number;
-    /** `NaN` unless the engine is built with `--heap-stats`. */
-    __heapPeak(): number;
+    engineVersion(): string;
+    /** Only in engines built with `--heap-stats`, for measurements. */
+    __heapBytes?(): number;
+    /** Only in engines built with `--heap-stats`, for measurements. */
+    __heapPeak?(): number;
     /** The spans recorded since the last call; only in engines built with `--trace`. */
     __trace?(): string;
-    engineVersion(): string;
-    __pow(x: number, y: number): number;
-    __panicForTests(): void;
-    __pendingRuns(): number;
+    // Only in the tests' engine (quicktype-wasm's `test-hooks` feature,
+    // script/test-hooks.mjs); the shipped engine has none of these.
+    __jsonCount?(): number;
+    __jsonLeases?(): number;
+    __jsonReadTrapForTests?(id: number, text: string): number;
+    __memoryGrowths?(): number;
+    __memoryPages?(): number;
+    __pow?(x: number, y: number): number;
+    __panicForTests?(): void;
+    __pendingRuns?(): number;
+    __hashForTests?(key: string): string;
 }
 
 /** A fresh, uninitialized copy of the glue. */

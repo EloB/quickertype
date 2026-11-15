@@ -265,6 +265,7 @@ pub fn cancel(id: f64) {
 }
 
 /// How many runs are pending (for the facade's tests).
+#[cfg(feature = "test-hooks")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __pendingRuns)]
 pub fn pending_runs() -> u32 {
@@ -313,6 +314,7 @@ pub fn engine_version() -> String {
 
 /// JavaScript `x ** y` as the engine computes it, for the facade's tests
 /// (`quicktype_js_compat::number::pow`).
+#[cfg(feature = "test-hooks")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __pow)]
 pub fn pow_for_tests(x: f64, y: f64) -> f64 {
@@ -321,6 +323,7 @@ pub fn pow_for_tests(x: f64, y: f64) -> f64 {
 
 /// How often the WebAssembly memory grew, for the facade's test that it
 /// grows geometrically ([`allocator`]); 0 outside WebAssembly.
+#[cfg(feature = "test-hooks")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __memoryGrowths)]
 pub fn memory_growths() -> u32 {
@@ -333,6 +336,7 @@ pub fn memory_growths() -> u32 {
 /// Bytes the engine has allocated and not freed (the allocator's count),
 /// for measurements; `NaN` without the `heap-stats` feature, and outside
 /// WebAssembly.
+#[cfg(feature = "heap-stats")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __heapBytes)]
 pub fn heap_bytes() -> f64 {
@@ -345,6 +349,7 @@ pub fn heap_bytes() -> f64 {
 /// The most bytes allocated at once since the last call (which starts
 /// the next measurement from the bytes in use), for measurements; `NaN`
 /// without the `heap-stats` feature, and outside WebAssembly.
+#[cfg(feature = "heap-stats")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __heapPeak)]
 pub fn heap_peak() -> f64 {
@@ -360,6 +365,7 @@ pub fn heap_peak() -> f64 {
 
 /// The size of the WebAssembly memory in 64 KiB pages, for the facade's
 /// test of [`memory_growths`]; 0 outside WebAssembly.
+#[cfg(feature = "test-hooks")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __memoryPages)]
 pub fn memory_pages() -> u32 {
@@ -442,6 +448,7 @@ pub fn hash_for_tests(key: &str) -> String {
 /// Panics, for the facade's test of what happens when the engine traps
 /// (release builds abort on panic): the facade must discard the instance
 /// and use a fresh one.
+#[cfg(feature = "test-hooks")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __panicForTests)]
 pub fn panic_for_tests() {

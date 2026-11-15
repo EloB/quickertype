@@ -14,6 +14,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import * as esbuild from "esbuild";
 
+import { featureExports, testHookExports } from "../script/bindgen.mjs";
+import { hooksPackageRoot } from "./hooks.mjs";
+
 const require = createRequire(import.meta.url);
 const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repositoryRoot = path.join(packageRoot, "..", "..");
@@ -30,18 +33,31 @@ function walk(directory, keep) {
     return files.sort();
 }
 
-test("the shipped engine has no test hooks", () => {
-    // `__hashForTests` is only in the test-hooks engine (quicktype-wasm's
-    // `test-hooks` feature, test/hooks-engine.mjs): neither the module nor
-    // the glue that ships may export it.
-    const hooks = ["__hashForTests"];
-    const wasm = path.join(dist, "native", "wasm", "quicktype_wasm_bg.wasm");
-    const exported = WebAssembly.Module.exports(new WebAssembly.Module(fs.readFileSync(wasm))).map((e) => e.name);
-    for (const hook of hooks) {
-        assert.ok(!exported.includes(hook), `the module exports ${hook}`);
+test("the shipped engine has no test hooks, and the tests' engine has them all", () => {
+    // The exports for tests (quicktype-wasm's `test-hooks` feature:
+    // `__panicForTests` traps the instance, `__hashForTests` reads a seed,
+    // the rest read counters) and for measurements (`heap-stats`, `trace`)
+    // are not in the shipped module, nor in its glue. The facade itself uses
+    // none of them. The tests' engine (script/test-hooks.mjs) has the test
+    // hooks.
+    const notShipped = [...testHookExports, ...featureExports["heap-stats"], ...featureExports.trace];
+    const moduleExports = (dir) =>
+        WebAssembly.Module.exports(new WebAssembly.Module(fs.readFileSync(path.join(dir, "native", "wasm", "quicktype_wasm_bg.wasm")))).map(
+            (e) => e.name,
+        );
+    const shipped = moduleExports(dist);
+    for (const name of notShipped) {
+        assert.ok(!shipped.includes(name), `the shipped module exports ${name}`);
         for (const glue of [path.join(dist, "native", "wasm", "glue.js"), path.join(dist, "esm", "native", "wasm", "glue.js")]) {
-            assert.ok(!fs.readFileSync(glue, "utf8").includes(hook), `${path.relative(packageRoot, glue)} has ${hook}`);
+            assert.ok(!fs.readFileSync(glue, "utf8").includes(name), `${path.relative(packageRoot, glue)} has ${name}`);
         }
+    }
+    const hooksDist = path.join(hooksPackageRoot, "dist");
+    const hooks = moduleExports(hooksDist);
+    const hooksGlue = fs.readFileSync(path.join(hooksDist, "native", "wasm", "glue.js"), "utf8");
+    for (const name of testHookExports) {
+        assert.ok(hooks.includes(name), `the tests' module lacks ${name}`);
+        assert.ok(hooksGlue.includes(`function ${name}(`), `the tests' glue lacks ${name}`);
     }
 });
 

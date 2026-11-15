@@ -11,9 +11,14 @@ import * as path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { hooksPackageRoot } from "./hooks.mjs";
+
 const require = createRequire(import.meta.url);
-const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const repositoryRoot = path.join(packageRoot, "..", "..");
+// The package with the test-hooks engine (test/hooks.mjs): these tests trap
+// instances and read the engine's counters (`__panicForTests`, `__pow`,
+// `__memoryGrowths`, ...), which the shipped engine does not export.
+const packageRoot = hooksPackageRoot;
+const repositoryRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const qt = require(packageRoot);
 const { engineStats } = require(path.join(packageRoot, "dist", "native", "bridge.js"));
 const engine = require(path.join(packageRoot, "dist", "native", "engine.js"));

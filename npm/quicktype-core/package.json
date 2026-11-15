@@ -45,7 +45,7 @@
         "build": "node script/build.mjs",
         "build:ts": "node script/build.mjs --skip-wasm",
         "check:upstream": "node script/sync-upstream.mjs --check",
-        "test": "node --test test/*.test.mjs",
+        "test": "node script/test-hooks.mjs && node --test test/*.test.mjs",
         "test:differential": "node test/differential/run.mjs",
         "test:browser": "node test/browser/smoke.mjs"
     },
