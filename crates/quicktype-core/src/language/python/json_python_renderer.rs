@@ -1219,17 +1219,46 @@ pub mod json_python_hooks {
     use super::*;
 
     /// `forbiddenForObjectProperties(c, className)`: also `from_dict` and
-    /// `to_dict`.
+    /// `to_dict`, and (a fix of ours, docs/PARITY.md, "Bugs fixed in
+    /// quickertype") what `from_dict` uses besides its locals, which are
+    /// named like the properties: its parameter `obj`, `isinstance` and
+    /// the converter functions ([`CONVERTER_FUNCTION_NAMES`]). quicktype
+    /// forbids only `from_dict` and `to_dict`, so a property `from_date`
+    /// shadows the converter `from_date`.
     pub fn forbidden_for_object_properties(
         r: &mut JsonPythonRenderer<'_>,
         c: TypeRef,
         class_name: Name,
     ) -> Result<ForbiddenWordsInfo> {
         let mut result = python_hooks::forbidden_for_object_properties(r, c, class_name)?;
-        result.names.push("from_dict".into());
-        result.names.push("to_dict".into());
+        result.names.extend(
+            ["from_dict", "to_dict", "obj", "isinstance"]
+                .into_iter()
+                .chain(CONVERTER_FUNCTION_NAMES)
+                .map(ForbiddenWord::from),
+        );
         Ok(result)
     }
+
+    /// The names of the converter functions, as `conv` makes them, except
+    /// `from_dict` (the `dict` converter), which is also a method's name.
+    const CONVERTER_FUNCTION_NAMES: [&str; 15] = [
+        "from_none",
+        "from_bool",
+        "from_int",
+        "from_float",
+        "to_float",
+        "from_str",
+        "to_enum",
+        "from_list",
+        "to_class",
+        "from_union",
+        "from_date",
+        "from_time",
+        "from_datetime",
+        "from_stringified_bool",
+        "is_type",
+    ];
 
     /// `makeTopLevelDependencyNames(t, topLevelName)`: the names of the
     /// top-level's `from_dict` and `to_dict` functions.

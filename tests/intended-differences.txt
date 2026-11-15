@@ -29,6 +29,7 @@ bug cjson-pattern-regcomp (link pending)
 bug cjson-top-level-map-values (link pending)
 bug cjson-top-level-null-marker (link pending)
 bug java-legacy-date-null (link pending)
+bug python-property-shadows-converter (link pending)
 bug ruby-union-forward-declaration (link pending)
 
 # Golden cases (tests/golden).
@@ -203,6 +204,7 @@ java-datetime-legacy/json/samples/simple-object.json/959073bfca java-legacy-date
 java-datetime-legacy/json/samples/spotify-album.json/ff2f940e14 java-legacy-date-null
 java-datetime-legacy/json/samples/us-avg-temperatures.json/7677571aaa java-legacy-date-null
 java-datetime-legacy/json/samples/us-senators.json/e082381854 java-legacy-date-null
+python/json/misc/a0496.json/af3236316e python-property-shadows-converter
 schema-cjson/schema/accessors.schema/82f90d67df cjson-enum-getter-strcmp
 schema-cjson/schema/all-of-additional-properties-false.schema/692993e832 cjson-enum-getter-strcmp
 schema-cjson/schema/any.schema/e62cc488d7 cjson-map-parsed-twice
@@ -335,6 +337,7 @@ render-scenarios/vitest-cjson-enum-default cjson-enum-getter-strcmp
 # cases' .intended files).
 npm/corpus/cjson/json/misc/76ae1.json/229486e67d cjson-enum-getter-strcmp cjson-map-parsed-twice
 npm/api/cjson-enum-default/invalid-value-does-not-collide cjson-enum-getter-strcmp
+npm/inputs-bytes/python/json/misc/a0496.json python-property-shadows-converter
 npm/inputs/cjson/json/misc/00c36.json cjson-enum-getter-strcmp
 npm/inputs/cjson/json/misc/00ec5.json cjson-enum-getter-strcmp cjson-map-parsed-twice
 npm/inputs/cjson/json/misc/010b1.json cjson-enum-getter-strcmp
@@ -455,6 +458,7 @@ npm/inputs/cjson/schema/renaming-bug.schema cjson-enum-getter-strcmp cjson-patte
 npm/inputs/cjson/schema/top-level-enum.schema cjson-enum-getter-strcmp
 npm/inputs/cjson/schema/unicode-codepoint-length.schema cjson-pattern-regcomp
 npm/inputs/cjson/schema/vega-lite.schema cjson-enum-getter-strcmp cjson-map-parsed-twice
+npm/inputs/python/json/misc/a0496.json python-property-shadows-converter
 npm/inputs/ruby/schema/mutually-recursive.schema ruby-union-forward-declaration
 npm/inputs/ruby/schema/recursive-union-flattening.schema ruby-union-forward-declaration
 npm/inputs/ruby/schema/rust-cycle-breaker-union.schema ruby-union-forward-declaration

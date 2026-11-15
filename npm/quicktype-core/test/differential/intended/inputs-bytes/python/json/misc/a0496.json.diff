@@ -1,0 +1,36 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -93,7 +93,7 @@
+     description: str
+     updated_at: datetime.datetime
+     frequency: str
+-    from_date: datetime.date
++    top_level_from_date: datetime.date
+     to_date: datetime.date
+     column_names: list[str]
+     premium: bool
+@@ -114,13 +114,13 @@
+         description = from_str(obj["description"])
+         updated_at = from_datetime(obj["updated_at"])
+         frequency = from_str(obj["frequency"])
+-        from_date = from_date(obj["from_date"])
++        top_level_from_date = from_date(obj["from_date"])
+         to_date = from_date(obj["to_date"])
+         column_names = from_list(from_str, obj["column_names"])
+         premium = from_bool(obj["premium"])
+         data = from_list(lambda x: from_list(lambda x: from_union([from_float, from_none, from_date], x), x), obj["data"])
+         type = from_str(obj["type"])
+-        return TopLevel(errors, id, source_name, source_code, code, name, urlize_name, display_url, description, updated_at, frequency, from_date, to_date, column_names, premium, data, type)
++        return TopLevel(errors, id, source_name, source_code, code, name, urlize_name, display_url, description, updated_at, frequency, top_level_from_date, to_date, column_names, premium, data, type)
+ 
+     def to_dict(self) -> dict:
+         result: dict = {}
+@@ -135,7 +135,7 @@
+         result["description"] = from_str(self.description)
+         result["updated_at"] = self.updated_at.isoformat()
+         result["frequency"] = from_str(self.frequency)
+-        result["from_date"] = self.from_date.isoformat()
++        result["from_date"] = self.top_level_from_date.isoformat()
+         result["to_date"] = self.to_date.isoformat()
+         result["column_names"] = from_list(from_str, self.column_names)
+         result["premium"] = from_bool(self.premium)

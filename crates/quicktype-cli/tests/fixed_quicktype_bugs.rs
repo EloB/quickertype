@@ -559,3 +559,80 @@ fn java_legacy_dates_that_do_not_parse_are_rejected() {
         text(&bad)
     );
 }
+
+// ---- Python -------------------------------------------------------------
+
+/// misc/a0496.json: `from_dict` assigns every property to a local variable
+/// of its name, so the property `from_date` shadows the converter
+/// `from_date` (`UnboundLocalError`; mypy: `"date" not callable`). The
+/// same goes for `obj`, `isinstance` and the other converters.
+#[test]
+fn python_properties_do_not_shadow_what_from_dict_uses() {
+    const TEST: &str = "python-shadowed-converter";
+    if !runs("python3", &["--version"]) {
+        skipped(TEST, "no python3");
+        return;
+    }
+    let dir = work_dir(TEST);
+    let sample = inputs().join("json/misc/a0496.json");
+    fs::write(
+        dir.join("names.json"),
+        r#"{"obj": "a", "isinstance": "b", "from_str": "c", "from_date": "2020-01-02", "x": "d"}"#,
+    )
+    .unwrap();
+    for (module, input) in [("a0496", sample.to_str().unwrap()), ("names", "names.json")] {
+        generate(
+            &dir,
+            &[
+                "--lang",
+                "python",
+                "--top-level",
+                "TopLevel",
+                "--src",
+                input,
+                "--out",
+                &format!("{module}.py"),
+            ],
+        );
+    }
+    let script = "import json, sys\n\
+                  import a0496, names\n\
+                  a = json.load(open(sys.argv[1]))\n\
+                  b = a0496.top_level_to_dict(a0496.top_level_from_dict(a))\n\
+                  assert (b['from_date'], b['to_date']) == (a['from_date'], a['to_date']), b\n\
+                  n = {'obj': 'a', 'isinstance': 'b', 'from_str': 'c', 'from_date': '2020-01-02', 'x': 'd'}\n\
+                  assert names.top_level_to_dict(names.top_level_from_dict(n)) == n\n\
+                  print('ok')\n";
+    let output = Command::new("python3")
+        .args(["-c", script])
+        .arg(&sample)
+        .current_dir(&dir)
+        .output()
+        .unwrap();
+    let error = String::from_utf8_lossy(&output.stderr);
+    if error.contains("No module named 'dateutil'") {
+        skipped(TEST, "python3 has no python-dateutil");
+    } else {
+        assert!(output.status.success(), "{}", text(&output));
+    }
+    let mypy = if runs("mypy", &["--version"]) {
+        Some(Command::new("mypy"))
+    } else if runs("python3", &["-m", "mypy", "--version"]) {
+        let mut c = Command::new("python3");
+        c.args(["-m", "mypy"]);
+        Some(c)
+    } else {
+        None
+    };
+    match mypy {
+        None => skipped(&format!("{TEST} (mypy)"), "no mypy"),
+        Some(mut mypy) => {
+            let output = mypy
+                .args(["--ignore-missing-imports", "a0496.py", "names.py"])
+                .current_dir(&dir)
+                .output()
+                .unwrap();
+            assert!(output.status.success(), "mypy: {}", text(&output));
+        }
+    }
+}
