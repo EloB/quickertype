@@ -4,7 +4,9 @@
 [`quicktype-core`](https://www.npmjs.com/package/quicktype-core) API with its
 engine compiled to WebAssembly from the Rust port
 [quickertype](https://github.com/EloB/quickertype). The API, the `.d.ts`
-files and the generated code are quicktype's own.
+files and the generated code are quicktype's own, apart from the fixes of
+[a few bugs in the code quicktype
+generates](https://github.com/EloB/quickertype/blob/main/docs/PARITY.md#bugs-fixed-in-quickertype).
 
 ## Install
 
@@ -153,7 +155,8 @@ class with the same message; whatever a store or `onTiming` throws is
 rethrown as is.
 
 Runs the engine does not model use the original TypeScript engine, with the
-same results by construction:
+same results by construction (quicktype's, so without the bug fixes of the
+engine):
 
 - a custom `TargetLanguage` (any subclass or modified instance), or a
   `CompressedJSON`, `Input` or date/time recognizer that is not quicktype's;

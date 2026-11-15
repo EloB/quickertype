@@ -111,7 +111,7 @@ smoke test checks against the same sources, counted again.
 | quicktype's years, commits, commits per year | `site/data/quicktype.json` (`history`), from quicktype's git history up to the commit in `tests/golden/REFERENCE` |
 | quicktype's contributors and their avatars, stars | `site/data/quicktype.json` (`contributors`, `repository`), from GitHub's REST API |
 | Output languages | quicktype-core's API (the build's list of languages) |
-| Recorded cases, steps, and how many pass | `tests/golden/**/case.json` and `tests/parity-baseline.txt` |
+| Recorded cases, steps, and how many are identical or intended differences | `tests/golden/**/case.json`, `tests/parity-baseline.txt` and `tests/intended-differences.txt` |
 | quicktype's test inputs | the files in `tests/inputs` |
 | JavaScript API scenarios | `npm/quicktype-core/test/differential/scenarios.mjs` (counted, not run) |
 | Round-trip fixtures, crash-fuzz targets, how often they run, CI's operating systems | `.github/workflows/roundtrip.yml`, `fuzz.yml` (checked against `fuzz/fuzz_targets`), `ci.yml` |

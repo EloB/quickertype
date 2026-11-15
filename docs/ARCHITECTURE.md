@@ -8,7 +8,7 @@ specification. This page links to, rather than repeats:
 
 | Topic | Where |
 |---|---|
-| Parity rules, dependency choices, known gaps, bugs kept for parity | [PARITY.md](PARITY.md) |
+| Parity rules, dependency choices, known gaps, bugs fixed in quickertype (intended differences) | [PARITY.md](PARITY.md) |
 | JSON inference from running tallies, and why it equals quicktype's | [STREAMING-INFERENCE.md](STREAMING-INFERENCE.md) |
 | Porting a renderer, the TS → Rust cheat sheet | [RENDERERS.md](RENDERERS.md) |
 | The TS architecture as researched before porting | [research/](research/): 01 type graph and pipeline, 02 inputs, 03 rendering and naming, 04 languages, 05 CLI and API, 06 dependencies, 07 TypeScript input |
@@ -444,7 +444,7 @@ suite (see below); the xtask tools reject it.
 
 | Layer | Lives in | Run with | Recorded by |
 |---|---|---|---|
-| Golden corpus: recorded TS CLI runs compared byte for byte (files; for `cli-*` cases also stdout, stderr, exit code) | `tests/golden/<fixture>/<input>/<hash>/case.json` plus expected files; runner `xtask/src/parity.rs` | `cargo xtask parity` (`--filter`, `--strict`, `--bin`, `--report`, `--keep`) | `cargo xtask golden [ref-dir]` (`xtask/golden/record.sh`: `record-hook.cjs`, `finalize.mjs`, `record-cli.mjs`) |
+| Golden corpus: recorded TS CLI runs compared byte for byte (files; for `cli-*` cases also stdout, stderr, exit code), apart from the intended differences | `tests/golden/<fixture>/<input>/<hash>/case.json` plus expected files, and `<file>.intended` for the cases in `tests/intended-differences.txt`; runner `xtask/src/parity.rs` (`xtask/src/intended.rs`) | `cargo xtask parity` (`--filter`, `--strict`, `--bin`, `--report`, `--keep`, `--as-recorded`, `--record-intended`) | `cargo xtask golden [ref-dir]` (`xtask/golden/record.sh`: `record-hook.cjs`, `finalize.mjs`, `record-cli.mjs`) |
 | Parity ratchet | [`tests/parity-baseline.txt`](../tests/parity-baseline.txt): ids that must keep passing | `cargo xtask parity` fails on a regression; `--update-baseline` records new passes | |
 | Live side by side | `xtask/src/diff.rs` | `cargo xtask diff -- <args>`, `--each <dir>` | none: runs the TS CLI live |
 | Differential fuzzing: seeded random inputs and options against the live reference, in-process and through both CLIs; minimized divergences kept as regression cases | `xtask/fuzz/` ([README](../xtask/fuzz/README.md)); cases in `tests/fuzz-regressions/`, replayed by `crates/quicktype-cli/tests/fuzz_regressions.rs` and the npm differential suite (`fuzz`) | `node xtask/fuzz/fuzz.mjs --seed N --minutes M` | `xtask/fuzz/record.mjs` |
@@ -469,8 +469,8 @@ against the package's own vendored TypeScript engine (`QUICKTYPE_REFERENCE=self`
    `crates/quicktype-cli/src/main.rs` to it: `--version` prints quicktype's
    version (the `cli-version` cases), not this port's own (the workspace
    version, see [RELEASING.md](RELEASING.md)).
-3. `cargo xtask parity --strict --bin "node ../quicktype/dist/index.js"`: the
-   new corpus must pass completely against the reference itself.
+3. `cargo xtask parity --strict --as-recorded --bin "node ../quicktype/dist/index.js"`:
+   the new corpus must pass completely against the reference itself.
 4. `cargo xtask parity`: the regressions are what changed upstream. Port it
    (section 7), then `cargo xtask parity --update-baseline`.
 5. Re-run the recorders in `xtask/*/` for the areas the change touches.
@@ -511,8 +511,12 @@ have no such header.
 3. A newly used JavaScript library or runtime behavior gets a port (in
    `quicktype-js-compat` if shared) and a row in PARITY.md's dependency table
    saying how it was verified.
-4. If upstream fixed one of the [bugs kept for parity](PARITY.md#bugs-kept-for-parity),
-   drop its entry.
+4. If upstream fixed one of the [bugs fixed in quickertype](PARITY.md#bugs-fixed-in-quickertype),
+   re-recording made its cases identical: drop them and the bug from
+   `tests/intended-differences.txt` (and their `.intended` files, the
+   render scenarios' and the npm suite's diffs), and its entry. If a
+   re-recorded case of an unfixed bug changed, `cargo xtask parity
+   --record-intended` writes its new `.intended` files; review them.
 5. Re-record the stage-level fixtures, run `cargo test`, lock in passes with
    `--update-baseline`, and sync the npm package.
 

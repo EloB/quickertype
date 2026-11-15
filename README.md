@@ -1,7 +1,8 @@
 # quickertype
 
 **quicktype, rewritten in Rust: the same CLI, the same API and the same
-output, byte for byte, up to 86× faster.**
+output, byte for byte apart from [a few fixed
+bugs](docs/PARITY.md#bugs-fixed-in-quickertype), up to 86× faster.**
 
 [![CI](https://github.com/EloB/quickertype/actions/workflows/ci.yml/badge.svg)](https://github.com/EloB/quickertype/actions/workflows/ci.yml)
 [![Playground](https://img.shields.io/badge/playground-try%20it%20in%20the%20browser-6e56cf)](https://elob.github.io/quickertype/app/)
@@ -15,8 +16,11 @@ Postman collections and TypeScript. It is a drop-in replacement:
 
 - **The `quicktype` CLI,** as the `quickertype` command: the same flags,
   help text, messages, exit codes and output files, byte for byte, except
-  the command's name in `--help`'s synopsis and examples, and one
-  addition: [JSON Lines](#json-lines) input.
+  the command's name in `--help`'s synopsis and examples, one addition,
+  [JSON Lines](#json-lines) input, and the fixes of [bugs in the code
+  quicktype generates](docs/PARITY.md#bugs-fixed-in-quickertype) (C, Ruby,
+  Java with legacy dates, Python, and string enums in TypeScript input),
+  each reported to quicktype with the same fix.
 - **The `quicktype-core` JavaScript API** as
   [`quickertype-core`](npm/quicktype-core/README.md) on npm: quicktype's own
   TypeScript API and `.d.ts` files, with the engine compiled to WebAssembly,
@@ -337,8 +341,8 @@ TypeScript input are the `quickertype-graphql-input` and
 
 | Check | What it compares |
 |---|---|
-| **Golden corpus** (`cargo xtask parity`, in CI) | 11,177 recorded runs of quicktype's CLI, replayed and compared byte for byte: every fixture of quicktype's test suite in every language and renderer-option variant, plus cases that pin `--help`, errors, stdout, stderr and exit codes. All 11,177 match, except the command's name in `--help`'s synopsis and examples and `jsonl` among its source languages, which must be the only differences ([docs/PARITY.md](docs/PARITY.md#how-parity-is-tested)). |
-| **JS API differential suite** (`npm run test:differential`, in CI) | About 19,000 API calls, made on quicktype's `quicktype-core` and on `quickertype-core`: every file, line, annotation, error and console message. |
+| **Golden corpus** (`cargo xtask parity`, in CI) | 11,177 recorded runs of quicktype's CLI, replayed and compared byte for byte: every fixture of quicktype's test suite in every language and renderer-option variant, plus cases that pin `--help`, errors, stdout, stderr and exit codes. All 11,177 pass: 10,890 are identical, and 287 are intended differences, the cases a [bug fix](docs/PARITY.md#bugs-fixed-in-quickertype) changes, listed in [`tests/intended-differences.txt`](tests/intended-differences.txt) and compared byte for byte with their stored corrected output. Apart from those, the command's name in `--help`'s synopsis and examples and `jsonl` among its source languages must be the only differences ([docs/PARITY.md](docs/PARITY.md#how-parity-is-tested)). |
+| **JS API differential suite** (`npm run test:differential`, in CI) | About 19,000 API calls, made on quicktype's `quicktype-core` and on `quickertype-core`: every file, line, annotation, error and console message, identical apart from the same intended differences. |
 | **Round trip** ([`xtask/roundtrip`](xtask/roundtrip/README.md), weekly) | quicktype's own end-to-end fixtures, run with this binary: the generated code is compiled and must round-trip the samples, in the 26 languages quicktype has fixtures for. |
 | **Differential fuzzing** ([`xtask/fuzz`](xtask/fuzz/README.md)) | Seeded random JSON, JSON Schema, Postman and GraphQL inputs with random options, in every language, against quicktype in process and through both CLIs; and JSON Lines against quicktype on the arrays of their values. Divergences are minimized into regression tests. |
 | **Crash fuzzing** ([`fuzz/`](CONTRIBUTING.md#fuzzing), weekly) | cargo-fuzz targets for the parsers, the CLI's options and the whole pipeline. |
@@ -346,8 +350,9 @@ TypeScript input are the `quickertype-graphql-input` and
 [docs/PARITY.md](docs/PARITY.md) has the rules that keep the output
 identical, the [known gaps](docs/PARITY.md#known-gaps) (divergences no
 recorded case exercises, mostly JavaScript runtime limits such as stack
-depth), and the [quicktype bugs kept for parity](docs/PARITY.md#bugs-kept-for-parity):
-generated code that is wrong in quicktype too, worth fixing upstream first.
+depth), and the [quicktype bugs quickertype fixes](docs/PARITY.md#bugs-fixed-in-quickertype):
+generated code that is wrong in quicktype, fixed here, and reported to
+quicktype with the same fix so that the two converge again.
 
 ## Relation to quicktype
 
@@ -401,7 +406,7 @@ obvious TypeScript counterpart.
 ```sh
 cargo build                     # build everything
 cargo test                      # unit tests
-cargo xtask parity              # byte-for-byte parity against the golden corpus
+cargo xtask parity              # parity against the golden corpus, byte for byte
 cargo xtask parity --filter rust/json/samples
 cargo xtask golden ../quicktype # re-record the corpus from a built quicktype checkout
 
@@ -418,10 +423,11 @@ The tools that need the reference (`diff`, `bench`, `golden`, the recorders
 in `xtask/*/` and the npm differential tests) find a built quicktype
 checkout through `$QUICKTYPE_REFERENCE`, else as `../quicktype` or
 `../../quicktype` (from a worktree) next to this repository. The corpus
-itself must pass 100% against quicktype:
+itself must pass 100% against quicktype, compared with the recording
+(`--as-recorded` leaves out the intended differences):
 
 ```sh
-cargo xtask parity --strict --bin "node ../quicktype/dist/index.js"
+cargo xtask parity --strict --as-recorded --bin "node ../quicktype/dist/index.js"
 ```
 
 The npm package needs Node.js 20+ and `wasm-bindgen-cli` 0.2.114, and the

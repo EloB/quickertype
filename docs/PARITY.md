@@ -1,9 +1,12 @@
 # Parity rules
 
-The port must produce byte-identical output to the TypeScript quicktype. Most
-ways to get that wrong come from JavaScript semantics that Rust does not share
-by default. This page lists the rules; `docs/research/` has the detailed
-findings per area, with file and line references.
+The port must produce byte-identical output to the TypeScript quicktype,
+except where it fixes a bug in the code quicktype generates ([Bugs fixed in
+quickertype](#bugs-fixed-in-quickertype)); those cases are listed, with the
+corrected output, as intended differences. Most ways to get parity wrong
+come from JavaScript semantics that Rust does not share by default. This
+page lists the rules; `docs/research/` has the detailed findings per area,
+with file and line references.
 
 ## How parity is tested
 
@@ -18,8 +21,9 @@ findings per area, with file and line references.
   to stdout for every language, every renderer option value, directories,
   stdin, multiple sources, `--out` inference and error paths. A step may
   pipe a `stdin` file and a case may set `env` (e.g. `FORCE_COLOR`); paths
-  in the captured streams are normalized to `{INPUTS}` and `{CWD}`. The
-  intended differences are two lines of `--help`: the command's name in
+  in the captured streams are normalized to `{INPUTS}` and `{CWD}`. Apart
+  from the intended differences (below), the only differences are two
+  lines of `--help`, by design: the command's name in
   its synopsis and examples (`$ quickertype ...`, where quicktype's says
   `$ quicktype ...`), and `jsonl` among the source languages of its
   synopsis (`SRC_LANG ... json|jsonl|schema|...`, see [JSON
@@ -35,8 +39,36 @@ findings per area, with file and line references.
   equivalent argv, runs the *real* CLI code path with that argv, and stores
   the args plus every written file. `finalize.mjs` cross-checks the result
   against quicktype's own output snapshot (`OUTPUT_SNAPSHOT_DIR`).
-- **Self-check:** the corpus must pass 100% against the reference itself:
-  `cargo xtask parity --strict --bin "node ../quicktype/dist/index.js"`.
+- **Intended differences:** [`tests/intended-differences.txt`](../tests/intended-differences.txt)
+  names every case whose output differs from quicktype's on purpose, with
+  the bugs (below) that change it, and declares each bug with its upstream
+  report. The corrected output sits next to the recorded one, in a file of
+  the same name plus `.intended` (`step0/TopLevel.c.intended` beside
+  `step0/TopLevel.c`); the recording itself is never changed. `parity`
+  compares such an output with its `.intended` file and reports the case
+  as an intended difference, apart from the identical ones; it fails when
+  the output is quicktype's recorded one again or differs from the
+  `.intended` file, and when the list and the `.intended` files disagree.
+  `--record-intended` writes the `.intended` files of the listed cases
+  (review them with `diff <file> <file>.intended`). The same list covers
+  the other parity tests: `render_cases.rs` expects a golden file's
+  `.intended` copy where there is one; render scenarios are listed as
+  `render-scenarios/<id>`, with `<id>.<render>.<file>.intended` beside the
+  scenario (`RENDER_SCENARIOS_RECORD_INTENDED=1` writes them); in the npm
+  differential suite, a `corpus/<case>` scenario of a listed golden case
+  must differ from the reference as the case's `.intended` files differ
+  from the recording, and other scenarios are listed as `npm/<id>`, with
+  the corrected result stored as a diff of the reference's
+  (`test/differential/intended/<id>.diff`, written by `run.mjs
+  --record-intended`). Each suite counts intended differences apart. The
+  TypeScript-input corpus records the JSON Schema the TypeScript input
+  makes, which no fix changes.
+- **Self-check:** the corpus must pass 100% against the reference itself,
+  compared with the recording (`--as-recorded` ignores the intended
+  differences):
+  `cargo xtask parity --strict --as-recorded --bin "node ../quicktype/dist/index.js"`.
+  quicktype with the fixes applied (the patches offered upstream) passes
+  `cargo xtask parity` with the intended differences, like the port.
 - **Live side by side:** `cargo xtask diff -- <quicktype args>` runs the
   TypeScript CLI and ours on the same arguments in separate temp dirs and
   compares exit code, stdout, stderr and files; `--each <dir>` repeats it
@@ -713,63 +745,105 @@ the others name the fix they need.
   characters assigned in a Unicode version only one of them has. Naming
   (`unicode-properties`, Unicode 12.0) is unaffected.
 
-## Bugs kept for parity
+## Bugs fixed in quickertype
 
-The port reproduces quicktype's output, including code that is wrong. These
-are bugs in the generated code, found while porting or reviewing, that the
-port keeps because the golden output contains them. Each is worth fixing
-upstream first; the port follows when the reference moves.
+quickertype's output is quicktype's, byte for byte, except for these bugs
+in the code quicktype generates, found while porting or by running
+quicktype's own fixtures with the port (`xtask/roundtrip`). Each is fixed
+in quickertype and reported to quicktype with the same fix, as a patch to
+its TypeScript. The cases each changes are listed in
+[`tests/intended-differences.txt`](../tests/intended-differences.txt) under
+the bug's id (see [How parity is tested](#how-parity-is-tested)); when
+quicktype releases a fix, re-recording the corpus makes those cases
+identical again, and they leave the list.
+`crates/quicktype-cli/tests/fixed_quicktype_bugs.rs` generates code for
+each bug and compiles and runs it where the toolchain is installed (C with
+AddressSanitizer and UndefinedBehaviorSanitizer, Ruby, Java, Python with
+mypy, the TypeScript input).
 
-- **C# (`--lang cs`, both frameworks).** In a converter's `switch` over
-  the JSON token, the `JsonToken.Null` (`JsonTokenType.Null`) case ends
-  with `break` without a `;` when its transformer does not return on every
-  path, which does not compile.
-- **C (`--lang cjson`).**
-  - A top-level map of integers, booleans, doubles or enums stores the
-    value itself as the pointer (`hashtable_add(x->value, e->string,
-    cJSON_GetNumberValue(e), sizeof(int64_t *))`); creating JSON from it
-    then dereferences address 1, 2, … and deleting it frees them. The
-    top-level list path allocates each value; the map path does not.
-  - Top-level lists of a non-nullable type mark `null` elements with
-    `(void *)0xDEADBEAF`, which the delete function then frees; every other
-    check in the generated code compares against `0xDEADBEEF`.
-  - Enum getters call `strcmp(cJSON_GetStringValue(j), …)` without checking
-    that `j` is a string; an array of enums inside a class reaches them
-    unchecked, so `{"tags": [1]}` passes `NULL` to `strcmp`.
-  - Pattern constraints ignore what `regcomp` returns, so `regexec` and
-    `regfree` can run on a regex that never compiled. JSON Schema patterns
-    are ECMAScript syntax and often not POSIX extended (`\d`, lookahead).
-  - Maps of classes or unions parse every value twice: once to validate
-    (then deleted) and once more for the value stored.
+- **C (`--lang cjson`)**, reported upstream: (link pending).
+  - `cjson-top-level-map-values`: a top-level map of integers, booleans,
+    doubles or enums stored the value itself as the pointer
+    (`hashtable_add(x->value, e->string, cJSON_GetNumberValue(e),
+    sizeof(int64_t *))`), which does not compile for numbers, and for the
+    others makes creating JSON dereference address 1, 2, … and deleting
+    free them. Each value is allocated, as the top-level list's are.
+  - `cjson-top-level-null-marker`: top-level lists of `null` marked each
+    element with `(void *)0xDEADBEAF` (every other check compares with
+    `0xDEADBEEF`), and the delete functions of top-level lists and maps of
+    `null` freed the markers. The marker is `0xDEADBEEF`, and it is not
+    freed.
+  - `cjson-enum-getter-strcmp`: enum getters called
+    `strcmp(cJSON_GetStringValue(j), …)` after checking only `NULL != j`,
+    so a value that is not a string (`{"tags": [1]}` for an array of enums)
+    passed `NULL` to `strcmp`. The getters check `cJSON_IsString(j)`; any
+    other value reads as `0`, no case.
+  - `cjson-pattern-regcomp`: pattern constraints ignored what `regcomp`
+    returns, so `regexec` and `regfree` ran on a regex that never compiled
+    (JSON Schema patterns are ECMAScript syntax, often not POSIX extended:
+    `\d`, lookahead), and on macOS every value was rejected. A pattern is
+    checked only if it compiles.
+  - `cjson-map-parsed-twice`: maps of classes or unions parsed every value
+    twice, once to validate it (then deleted) and once for the value
+    stored, which doubles the work at every level of nested maps. The
+    validated value is stored.
+- **Ruby (`--lang ruby`)**, `ruby-union-forward-declaration`, reported
+  upstream: (link pending). A class's attribute could name a union class
+  (`Types.Instance(XElement)` in `class X`, `schema-ruby` with
+  `recursive-union-flattening.schema`) before that class was defined:
+  quicktype forward-declares only classes, so loading the file failed with
+  `uninitialized constant X::XElement (NameError)`. Union classes are
+  forward-declared too (they are `Dry::Struct`s like the classes), which
+  also adds forward declarations to four other recursive schemas, and
+  moves definitions after them, without changing what they do. Upstream CI
+  runs `schema-ruby-syntax`, not `schema-ruby`.
+- **Java with `--datetime-provider legacy`**, `java-legacy-date-null`,
+  reported upstream: (link pending). `parseAllDateTimeString` returned
+  `null` when no format matched, so an invalid date-time was read as
+  `null` instead of rejected (`schema-java-datetime-legacy` with
+  `optional-date-time.schema` accepts its expected-failure sample), and in
+  a union of a date-time and a string, a string that is not a date-time
+  became a `null` date-time. It throws
+  `IllegalArgumentException("Unparseable date: " + str)`, as the other
+  provider's parsers throw. Every legacy output has the function. Upstream
+  CI never runs this fixture (its Java job is `java,schema-java`).
+- **Python (`--lang python`)**, `python-property-shadows-converter`,
+  reported upstream: (link pending). `from_dict` assigns each property to a
+  local variable of its name, so a property named like something
+  `from_dict` uses shadowed it: `from_date` (`python` with
+  `misc/a0496.json`: `from_date(obj["to_date"])` fails, mypy reports
+  `"date" not callable`, Python an `UnboundLocalError`), and likewise
+  `obj`, `isinstance` and the other converters. Those names are forbidden
+  for properties, which are then renamed as other forbidden names are
+  (`top_level_from_date` in `TopLevel`). Upstream CI sets `QUICKTEST`,
+  which leaves out the `misc` inputs.
+- **TypeScript input with string enums (`--src-lang typescript`), and JSON
+  Schema `qt-accessors`**, `typescript-enum-accessor-names`, reported
+  upstream: (link pending). `export enum E { A = "a", B = "b" } export
+  interface X { f: E | null }` stopped with `Internal error: Cannot
+  combine type attribute accessorNames.`, as did two optional properties
+  of the same enum with Python (which makes them `E | None`), `E[] | F`,
+  and two string enums with the same values. The TypeScript input gives
+  each enum's definition its member names as `qt-accessors`, and
+  quicktype's `AccessorNamesTypeAttributeKind` has no `combine`, so when
+  two types with accessor names turn out to be the same type (the enum
+  inline in the union and its definition, which the type builder merges
+  on rewriting the union, or two enums with the same cases) the base
+  class's `combine` panics. A JSON Schema with two definitions of the same
+  enum, each with `qt-accessors`, fails the same way. Accessor names now
+  combine to the entries the combined types agree on; a name they give
+  different entries is dropped, so it gets its default name. So `f: E |
+  null` names the cases as `f: E` does (and as the string-literal alias
+  `type E = "a" | "b"` does whenever the member names are the values'
+  default names, as in every example above), and two enums that disagree
+  on a name are named as without accessor names, whatever order the types
+  are combined in. No golden case changes: quicktype could not run any of
+  these inputs.
 
-Found by quicktype's own fixtures run with our binary (`xtask/roundtrip`),
-failing with the TypeScript CLI as well; each is worth reporting upstream:
-
-- **Ruby (`--lang ruby`), `schema-ruby` with
-  `recursive-union-flattening.schema`.** A class's attribute names a union
-  class (`Types.Instance(XElement)` in `class X`) before that class is
-  defined, and the forward declarations do not include it, so loading the
-  file fails with `uninitialized constant X::XElement
-  (NameError)`. Upstream CI runs `schema-ruby-syntax`, not `schema-ruby`.
-- **Java with `--datetime-provider legacy`, `schema-java-datetime-legacy`
-  with `optional-date-time.schema`.** `parseAllDateTimeString` returns
-  `null` when no format matches, so an invalid date-time is read as `null`
-  instead of rejected, and the expected-failure sample is accepted.
-  Upstream CI never runs this fixture (its Java job is `java,schema-java`).
-- **Python (`--lang python`), `python` with `misc/a0496.json`.**
-  `from_dict` assigns each property to a local variable of its name; a
-  property `from_date` shadows the `from_date` converter function there, so
-  `from_date(obj["to_date"])` fails: mypy reports `"date" not callable`
-  (the local's type), and Python a `NameError`. Upstream CI sets
-  `QUICKTEST`, which leaves out the `misc` inputs.
-
-quicktype itself fails on some input, and the port fails the same way:
-
-- **TypeScript input with string enums (`--src-lang typescript`).**
-  `export enum E { A = "a", B = "b" } export interface X { f: E | null }`
-  stops with `Internal error: Cannot combine type attribute
-  accessorNames.` So do two optional properties of the same string enum
-  in one interface (`f?: E; g?: E`), `E[] | F`, and two string enums with
-  the same values. A string-literal type alias in the same places works.
-  The enum's accessor names (its member names) are a type attribute that
-  quicktype cannot combine when two such types meet in a union.
+Not a bug after all: C# (`--lang cs`, both frameworks) emits `break`
+without a `;` after the `JsonToken.Null` (`JsonTokenType.Null`) case of a
+decoder switch when the case's transformer does not return on every path.
+That never happens: the case's transformer is always a decoding of `null`
+whose consumer, a union instantiation or none, returns. No golden output
+has such a line, and neither do nullable unions with every kind of member
+quicktype transforms.

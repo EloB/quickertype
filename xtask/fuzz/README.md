@@ -5,6 +5,12 @@ checkout in `tests/golden/REFERENCE`) and through the port, compared byte for
 byte. It finds parity bugs the recorded corpus does not cover; each one found
 is minimized and kept as a regression case in `tests/fuzz-regressions/`.
 
+The port fixes a few bugs in the code quicktype generates (docs/PARITY.md,
+"Bugs fixed in quickertype"), so a case that reaches one of them differs
+on purpose: compare its divergence with the bug's intended differences
+(`tests/intended-differences.txt`) before minimizing it, or fuzz against a
+quicktype checkout with the same fixes applied.
+
 Needs a built quicktype checkout (`npm ci && npm run build`; found as
 `--reference`, `$QUICKTYPE_REFERENCE`, `../quicktype` or `../../quicktype`), the
 built npm package (`cd npm/quicktype-core && npm ci && npm run build`) and the

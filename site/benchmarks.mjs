@@ -355,7 +355,7 @@ export function speedFacts(bench) {
 /** The playground's headline, as HTML (one sentence, the numbers from the JSON, and two links; the playground is in app/). */
 export function headlineHtml(facts) {
     return (
-        `quicktype rewritten in Rust: the same output, byte for byte. ` +
+        `quicktype rewritten in Rust: the same output, byte for byte, apart from a few fixed bugs. ` +
         `The CLI is up to <b>${facts.upTo}×</b> faster (about ${facts.typical}× on typical files) and uses a fraction of the memory. ` +
         `<a href="../benchmarks.html">Benchmarks</a><span class="sep" aria-hidden="true"> · </span><a href="${links.install}">Install the CLI</a>`
     );
@@ -666,7 +666,7 @@ export function benchmarksPageHtml({ bench, big }) {
 
     sections.push(`<section class="intro" aria-labelledby="title">
 <h1 id="title">Benchmarks</h1>
-<p class="lead">quicktype rewritten in Rust: the same output, byte for byte. The CLI is up to ${facts.upTo}× faster (about ${facts.typical}× on typical files) and uses a fraction of the memory.</p>
+<p class="lead">quicktype rewritten in Rust: the same output, byte for byte, apart from a few fixed bugs. The CLI is up to ${facts.upTo}× faster (about ${facts.typical}× on typical files) and uses a fraction of the memory.</p>
 <dl class="tiles">${tiles.map(([value, what]) => `<div class="tile"><dt>${what}</dt><dd>${value}</dd></div>`).join("")}</dl>
 <p class="measured-on">Measured on ${e(machine.cpu)} on ${e(date)}, against quicktype at <a href="${links.quicktypeCommit(bench.commits.quicktype)}"><code>${bench.commits.quicktype.slice(0, 7)}</code></a>. <a href="#method">How</a> · <a href="#get-the-cli">Get the CLI</a></p>
 </section>`);
