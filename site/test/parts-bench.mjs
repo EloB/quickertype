@@ -159,13 +159,15 @@ for (const file of files) {
             const noStats = { memory: Number.NaN, partMemory: [] };
             const stats = () => (baseline ? noStats : page.evaluate(`playground.engines.wasm.run({ kind: "stats" }).then((r) => r.stats)`));
             const coldStats = await stats();
-            const warm = await page.evaluate(`playground.engines.wasm.run({ ...playground.view.request, warmup: 1, repeat: ${rounds} }).then((r) => ({ ok: r.ok, times: r.times, inputTimes: r.inputTimes, parts: r.parts }))`);
+            const warm = await page.evaluate(`playground.engines.wasm.run({ ...playground.view.request, warmup: 1, repeat: ${rounds} }).then((r) => ({ ok: r.ok, error: r.error?.message, times: r.times, inputTimes: r.inputTimes, parts: r.parts }))`);
             const warmStats = await stats();
             const partMemory = (stats) => stats.partMemory.reduce((a, b) => a + b, 0);
             const how = cold.parts?.workers !== undefined ? `${cold.parts.workers} workers, ${cold.parts.parts} parts` : `in one go${cold.parts?.inOneGo ? ` (${cold.parts.inOneGo})` : ""}`;
             console.log(
                 `  ${mode.padEnd(5)} ${how}: first ${cold.ok ? "" : `FAILED ${cold.error} `}${cold.wall.toFixed(0)} ms (worker ${cold.ms?.toFixed(0)}, reading ${cold.input?.toFixed(0)}); ` +
-                    `warm median ${median(warm.times).toFixed(0)} ms (reading ${median(warm.inputTimes).toFixed(0)}) of ${warm.times.map((t) => t.toFixed(0)).join(", ")}; ` +
+                    (warm.ok
+                        ? `warm median ${median(warm.times).toFixed(0)} ms (reading ${median(warm.inputTimes).toFixed(0)}) of ${warm.times.map((t) => t.toFixed(0)).join(", ")}; `
+                        : `warm runs FAILED ${warm.error}; `) +
                     `memory: engine ${mib(coldStats.memory)}${coldStats.partMemory.length > 0 ? `, part workers ${mib(partMemory(coldStats))} (${coldStats.partMemory.length})` : ""}, ` +
                     `after the warm runs ${mib(warmStats.memory + partMemory(warmStats))}; output ${cold.bytes} characters, sha-256 ${cold.sha}…`,
             );

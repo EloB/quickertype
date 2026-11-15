@@ -48,8 +48,10 @@ class PartWorkerClient {
             if (fatal) fail(`a part worker's engine stopped: ${error}`);
         };
         this.started = this.call("start", { module });
-        // Reported by the reading that needs it.
-        this.started.catch(() => {});
+        // Whatever keeps it from starting (a module that does not compile,
+        // link, instantiate, or is not the engine): it is replaced on the
+        // next reading, and this one fails (and reads in one go).
+        this.started.catch((e) => fail(`a part worker did not start: ${e.message}`));
     }
 
     call(job, args) {
@@ -99,13 +101,18 @@ export class PartPool {
         });
         while (this.clients.length < count) this.clients.push(new PartWorkerClient(module));
         const clients = this.clients.slice(0, count);
-        await Promise.all(clients.map((client) => client.started));
+        // Every start settled (and each that failed marked so) before this
+        // reading goes on, or fails with the first failure.
+        const started = await Promise.allSettled(clients.map((client) => client.started));
+        const failed = started.find((s) => s.status === "rejected");
+        if (failed !== undefined) throw failed.reason;
         return clients.map((client) => client.reading(file));
     }
 
-    /** Each part worker's WebAssembly memory, in bytes (for measurements). */
-    memory() {
-        return Promise.all(this.clients.map((client) => client.call("memory")));
+    /** Each part worker's WebAssembly memory, in bytes (for measurements); those that failed are left out. */
+    async memory() {
+        const settled = await Promise.allSettled(this.clients.filter((client) => client.failed === undefined).map((client) => client.call("memory")));
+        return settled.filter((s) => s.status === "fulfilled").map((s) => s.value);
     }
 
     /** The reading is over: the workers stay a while for the next one. */

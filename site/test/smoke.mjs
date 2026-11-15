@@ -167,7 +167,7 @@ import { fuzzFacts, landingLinks, readQuicktype, workflowFacts } from "../landin
 import { chartProblems, chartUrl, readmeFile, readmeRows } from "../readme-charts.mjs";
 import { quicktypeReference } from "../reference.mjs";
 import { eachJSONLinesValue } from "../../npm/quicktype-core/dist/esm/native/lines.js";
-import { formatBytes, isJsonLinesName, maxFileBytes, maxTextBytes, partsFrom, tooLarge } from "../src/input-file.js";
+import { decodedTooLong, formatBytes, isJsonLinesName, linesInOneGo, maxFileBytes, maxTextBytes, partsFrom, textFits, tooLarge, utf16Length } from "../src/input-file.js";
 import { generateCards } from "../../npm/quicktype-core/test/bench/generate.mjs";
 import { jsonLinesToArray, jsonLinesToArrayInPlace } from "../src/json-lines.js";
 import { serve } from "./serve.mjs";
@@ -628,6 +628,87 @@ const speedNow = speedFacts(benchmarkData.bench);
     assert.throws(() => chartProblems(edited("| Run | quicktype | quickertype | Faster |", "| Run | quicktype | quickertype | Speed-up |")), /^Error: README\.md, the CLI's table: the header is /);
     assert.throws(() => chartProblems(edited(cells(memoryRow), `| ${memoryRow.ours} | a tenth |`)), /"a tenth" is not a ratio/);
     console.log("ok: the README's charts show its tables' numbers; a number changed without them, a chart it does not show and a table in another shape are caught");
+}
+
+// The part workers, in Node (no browser needed): a part worker
+// (part-worker.js) starts its engine only from a module that compiles,
+// links, instantiates and is the engine, and is left without one
+// otherwise, which its jobs then say; the pool (part-pool.js) marks a part
+// worker that did not start, whatever the error, as failed, so that the
+// reading that needed it fails (and reads in one go), the next one gets a
+// new part worker, and the memory statistics leave it out.
+{
+    const wasm = fs.readFileSync(path.join(repositoryRoot, "npm", "quicktype-core", "dist", "native", "wasm", "quicktype_wasm_bg.wasm"));
+    const replies = [];
+    globalThis.self = { postMessage: (message) => replies.push(message) };
+    await import("../src/part-worker.js");
+    let id = 0;
+    const post = async (job, args) => {
+        const asked = ++id;
+        self.onmessage({ data: { id: asked, job, args } });
+        while (!replies.some((r) => r.id === asked)) await new Promise((resolve) => setTimeout(resolve, 1));
+        return replies.find((r) => r.id === asked);
+    };
+    const header = [0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00];
+    const from = [..."./quicktype_wasm_bg.js"].map((c) => c.charCodeAt(0));
+    const imports = [0x01, from.length, ...from, 0x01, 0x78, 0x00, 0x00];
+    const broken = {
+        // Does not compile; imports x of the glue's imports, which have none; not a module; not the engine.
+        compile: [new Uint8Array([...header, 0x63]), /^CompileError: /],
+        link: [new WebAssembly.Module(new Uint8Array([...header, 0x01, 0x04, 0x01, 0x60, 0x00, 0x00, 0x02, imports.length, ...imports])), /^LinkError: /],
+        type: [42, /^TypeError: /],
+        version: [new WebAssembly.Module(new Uint8Array(header)), /^TypeError: .*not a function/],
+    };
+    for (const [kind, [module, error]] of Object.entries(broken)) {
+        const started = await post("start", { module });
+        assert.equal(started.ok, false, `a part worker started with a module that ${kind === "type" ? "is not one" : `fails at ${kind}`}`);
+        assert.match(started.error, error, `${kind}: ${started.error}`);
+        const job = await post("summarize", { starts: new Float64Array([0, 3]), file: new Blob(["[1]"]) });
+        assert.deepEqual([job.ok, job.error], [false, "the part worker's engine did not start, or stopped"], `${kind}: a job after it`);
+    }
+    assert.equal((await post("start", { module: new WebAssembly.Module(wasm) })).ok, true);
+    assert.ok((await post("memory")).value >= 17 << 20);
+    delete globalThis.self;
+
+    // The pool, with part workers that answer as told.
+    class TellingWorker {
+        static next = "fail";
+        static made = [];
+        constructor() {
+            this.answer = TellingWorker.next;
+            TellingWorker.made.push(this);
+        }
+        postMessage({ id: asked, job }) {
+            setTimeout(() =>
+                this.onmessage({
+                    data:
+                        job === "start" && this.answer === "fail"
+                            ? { id: asked, ok: false, error: "CompileError: WebAssembly.Module(): expected magic word" }
+                            : { id: asked, ok: true, value: job === "memory" ? 1 : true },
+                }),
+            );
+        }
+        terminate() {
+            this.terminated = true;
+        }
+    }
+    globalThis.Worker = TellingWorker;
+    globalThis.__PART_WORKER_FILE__ = "./part-worker.js";
+    const { PartPool } = await import("../src/part-pool.js");
+    const pool = new PartPool();
+    const file = new Blob(["[1]"]);
+    await assert.rejects(pool.readers(file, wasm, 2), /CompileError/);
+    assert.deepEqual(pool.clients.map((c) => c.failed?.startsWith("a part worker did not start: CompileError")), [true, true]);
+    assert.deepEqual(await pool.memory(), [], "the memory of part workers that failed");
+    TellingWorker.next = "start";
+    assert.equal((await pool.readers(file, wasm, 2)).length, 2);
+    assert.deepEqual(TellingWorker.made.map((w) => w.terminated === true), [true, true, false, false], "the failed part workers replaced");
+    pool.clients[0].failed = "it stopped";
+    assert.deepEqual(await pool.memory(), [1], "the memory of the part workers that did not fail");
+    pool.stop();
+    delete globalThis.Worker;
+    delete globalThis.__PART_WORKER_FILE__;
+    console.log("ok: a part worker starts only with the engine (not with a module that does not compile, link, instantiate, or is not the engine); the pool replaces one that did not start, and leaves it out of the memory");
 }
 
 const browser = findBrowser();
@@ -2561,6 +2642,14 @@ try {
     assert.deepEqual(["a.jsonl", "B.JSONL", "c.NdJson", "d.json", "jsonl", "e.jsonl.json"].map(isJsonLinesName), [true, true, true, false, false, false]);
     // A file at the limit whose array is past it: its own size, and the array's.
     assert.equal(tooLarge("big.jsonl", maxTextBytes), undefined);
+    // The UTF-16 units UTF-8 decodes to, as TextDecoder counts them (a byte
+    // order mark first is not text); and the bounds bytes give.
+    for (const text of ["", "plain", "é€😀", "\ufeff[\"€\"]", "€".repeat(1000), "😀".repeat(500) + "x"]) {
+        const bytes = new TextEncoder().encode(text);
+        assert.equal(utf16Length(bytes), new TextDecoder().decode(bytes).length, JSON.stringify(text.slice(0, 20)));
+    }
+    assert.deepEqual([textFits(10, 10), textFits(11, 10), textFits(33, 10), textFits(34, 10)], [true, undefined, undefined, false]);
+    assert.ok(decodedTooLong("", 4) && !decodedTooLong("", 3) && !decodedTooLong("x", 4));
     assert.deepEqual(tooLarge("big.jsonl", maxTextBytes - 1, maxTextBytes + 1), {
         title: "big.jsonl is too large for the browser",
         message: `This file is ${formatBytes(maxTextBytes - 1)}. Made into the JSON array that quicktype reads, it is ${(maxTextBytes + 1).toLocaleString("en-US")} bytes. Browsers can't hold text this large in one piece; use the quickertype CLI, which handles multi-GB files.`,
@@ -2747,8 +2836,13 @@ try {
     const brokenArray = chosen("parts-broken.json", cut(cardsArray, 0.9, (a, b) => `${a}}${b}`));
     await openFile(brokenArray, { failing: true, timeout: 300_000 });
     const brokenRead = await wasmResult();
-    assert.equal(brokenRead.parts?.inOneGo, "a part did not read", "parts-broken.json: read in one go");
+    assert.deepEqual(brokenRead.parts, { inOneGo: "a part did not read", cached: false }, "parts-broken.json: read in one go");
     assert.match(brokenRead.error, /^Syntax error in input JSON PartsBroken: /);
+    // Why is the file's own: a run that reads it again (another reading
+    // option) reads it in one go at once.
+    await click("general-no-ignore-json-refs");
+    assert.deepEqual(await wasmResult(), { ...brokenRead, parts: { inOneGo: "a part did not read", cached: true } }, "parts-broken.json read again");
+    await click("general-no-ignore-json-refs");
     assert.deepEqual((await inOneGo()).error, brokenRead.error, "parts-broken.json: the error of reading in one go");
     const brokenLines = chosen("parts-broken.jsonl", cut(cardsAsLines, 0.9, (a, b) => `${a}{"id": }\n${b}`));
     const badLine = cardsAsLines.slice(0, cut(cardsAsLines, 0.9, (a) => a).length).split("\n").length;
@@ -2759,25 +2853,98 @@ try {
     assert.deepEqual((await inOneGo()).error, brokenLinesRead.error, "parts-broken.jsonl: the error of reading in one go");
     const brokenCli = spawnSync(cli, ["--lang", "typescript", "--top-level", "PartsBroken", brokenLines], { encoding: "utf8" });
     assert.match(brokenCli.stderr, new RegExp(`^Error: Syntax error in input JSON PartsBroken: line ${badLine}: `), "the CLI names the same line");
-    console.log(`ok: a broken element late in parts-broken.json and a bad line in parts-broken.jsonl: read in one go, with its errors ("${brokenLinesRead.error}")`);
+    console.log(`ok: a broken element late in parts-broken.json and a bad line in parts-broken.jsonl: read in one go, with its errors ("${brokenLinesRead.error}"); why is remembered for the file`);
+
+    // Part workers that do not start (more than there are, with a module
+    // that does not link): the file is read in one go, why is not
+    // remembered, and the next reading, with new part workers in their
+    // place, reads it in parts.
+    const cardsRead = await (async () => {
+        await openFile(sampleFiles["parts-cards.json"], { timeout: 300_000 });
+        return wasmResult();
+    })();
+    await hooks({ partWorkers: 10, partModule: "link" });
+    await click("general-no-ignore-json-refs");
+    const notStarted = await wasmResult();
+    assert.equal(notStarted.ok, true, "part workers that do not start: the run");
+    assert.match(notStarted.parts?.inOneGo ?? "", /^LinkError: /, "part workers that do not start: in one go");
+    assert.equal(notStarted.parts.cached, false);
+    assert.deepEqual(notStarted.files, cardsRead.files, "part workers that do not start: the output");
+    await hooks({ partModule: null });
+    await click("general-no-ignore-json-refs");
+    const restarted = await wasmResult();
+    assert.deepEqual([restarted.parts?.workers, restarted.files], [10, cardsRead.files], "new part workers in their place: read in parts");
+    await hooks({ partWorkers: null });
+    console.log(`ok: part workers that do not start ("${notStarted.parts.inOneGo.slice(0, 60)}…"): read in one go, not remembered; the next reading has new part workers and reads in parts`);
 
     await hooks({ textLimit: 10e6 }, ["wasm", "ts"]);
     await openFile(sampleFiles["parts-cards.json"], { timeout: 300_000 });
     assert.ok((await wasmResult()).parts?.workers >= 2, "past the longest text: read in parts");
     await sameAsCli("parts-cards.json past the longest text (10 MB here), read in parts", "quickertype --lang typescript --top-level PartsCards parts-cards.json");
+    // A run on the TypeScript engine needs its tables, which reading the
+    // file again would give, but it is past the longest text: the run fails
+    // saying so, the worker lets the input go, and the next run reads the
+    // file in parts again.
+    const pastText = await wasmResult();
+    const tablesRun = await page.evaluate(`playground.engines.wasm.run({ ...playground.view.request, typescript: true }).then((r) => ({ ok: r.ok, error: r.error?.message }))`);
+    assert.equal(tablesRun.ok, false, "a run on the TypeScript engine past the longest text");
+    assert.match(tablesRun.error, /^quicktype-core: the tables cannot be had for this input: parts-cards\.json is too large to read again with TypeScript \(20\.\d MB\)$/);
+    const afterTables = await page.evaluate(`playground.engines.wasm.run(playground.view.request).then((r) => ({ ok: r.ok, reused: r.reused, workers: r.parts?.workers, files: r.files?.map((f) => f.text) }))`);
+    assert.deepEqual({ ...afterTables, workers: afterTables.workers >= 2 }, { ok: true, reused: false, workers: true, files: pastText.files }, "the run after the tables failed");
     ran = await switchEngine("ts", "quicktype on parts-cards.json past the longest text");
     const tooLong = await page.evaluate(`({ title: document.querySelector("#error .error-title")?.textContent, message: document.querySelector("#error .error-message")?.textContent })`);
     assert.deepEqual(tooLong.title, "parts-cards.json is too large for the browser", "quicktype, past the longest text");
     await switchEngine("wasm", "back to quickertype past the longest text");
     await openFile(brokenArray, { failing: true, timeout: 300_000 });
     const brokenLong = await wasmResult();
-    assert.equal(brokenLong.title, "parts-broken.json is too large for the browser", "broken JSON past the longest text");
+    assert.equal(brokenLong.title, "parts-broken.json is too large to read in one go", "broken JSON past the longest text");
+    assert.match(brokenLong.error, /^This file is 20\.\d MB\. quickertype reads a file this large in the browser only in parts, on several workers, and this one could not be read so \(a part did not read\); use the quickertype CLI/);
     await openFile(brokenLines, { failing: true, timeout: 300_000 });
     assert.equal((await wasmResult()).error, brokenLinesRead.error, "broken JSON Lines past the longest text: the line");
-    await hooks({ textLimit: maxTextBytes }, ["wasm", "ts"]);
+    // Past what the engine holds in one go (made 10 MB here): too large to
+    // read in one go too.
+    await hooks({ linesInOneGo: 10e6 });
+    await click("general-no-ignore-json-refs");
+    assert.equal((await wasmResult()).title, "parts-broken.jsonl is too large to read in one go", "broken JSON Lines past what the engine holds in one go");
+    await click("general-no-ignore-json-refs");
+    await hooks({ linesInOneGo });
+    // Past the longest text in bytes, but not in UTF-16 units ("€" takes
+    // three bytes and one unit): both engines read it, as JSON and as JSON
+    // Lines (quicktype's array of them). Past it in units too: too large
+    // for the browser, on both, never a syntax error (Chrome decodes a text
+    // too long for one string to "", which quicktype would call the end of
+    // the input).
+    const euros = JSON.stringify(Array.from({ length: 40_000 }, (_, i) => ({ id: i, note: "€".repeat(100), tag: `t${i % 5}` })));
+    const euroLines = `${JSON.parse(euros).map((r) => JSON.stringify(r)).join("\n")}\n`;
+    for (const [name, text] of [["euros.json", euros], ["euros.jsonl", euroLines]]) {
+        const bytes = Buffer.byteLength(text);
+        assert.ok(bytes > 10e6 && text.length < 10e6 && bytes < partsFrom, `${name}: ${bytes} bytes, ${text.length} units`);
+        const label = `${name} (${(bytes / 1e6).toFixed(1)} MB, ${(text.length / 1e6).toFixed(1)} million UTF-16 units) past the longest text (10 MB here) in bytes only`;
+        await openFile(chosen(name, text), { timeout: 300_000 });
+        await sameAsCli(label, `quickertype --lang typescript --top-level Euros ${name}`);
+        ran = await switchEngine("ts", `quicktype on ${name}`);
+        assert.deepEqual(ran, { wasm: 0, ts: 1 });
+        await sameAsCli(`${label}, on quicktype`, `quickertype --lang typescript --top-level Euros ${name}`, "ts");
+        await comparedIdentical(name);
+        await switchEngine("wasm", `back to quickertype on ${name}`);
+    }
+
+    const shownError = () => page.evaluate(`({ status: document.body.dataset.status, title: document.querySelector("#error .error-title")?.textContent, message: document.querySelector("#error .error-message")?.textContent })`);
+    const ascii = JSON.stringify(Array.from({ length: 40_000 }, (_, i) => ({ id: i, note: "e".repeat(300), tag: `t${i % 5}` })));
+    assert.ok(ascii.length > 10e6 && ascii.length < partsFrom);
+    await openFile(chosen("ascii.json", ascii), { failing: true, timeout: 300_000 });
+    for (const engine of ["wasm", "ts"]) {
+        if (engine === "ts") await switchEngine("ts", "quicktype on ascii.json");
+        const error = await shownError();
+        assert.equal(error.title, "ascii.json is too large for the browser", `${engine}: ascii.json past the longest text`);
+        assert.doesNotMatch(error.message, /Syntax error|end of JSON input/);
+    }
+    await switchEngine("wasm", "back to quickertype on ascii.json");
+    console.log("ok: past the longest text (made 10 MB) in bytes but not in UTF-16 units, JSON and JSON Lines run on both engines, identical; past it in units, both say too large for the browser");
+    await hooks({ textLimit: maxTextBytes, linesInOneGo }, ["wasm", "ts"]);
     assert.deepEqual(tooLarge("big.json", maxFileBytes + 1, maxFileBytes + 1, maxFileBytes)?.title, "big.json is too large for the browser");
     assert.equal(tooLarge("big.json", maxFileBytes, maxFileBytes, maxFileBytes), undefined);
-    console.log(`ok: past the longest text (made 10 MB): JSON read in parts reads, quicktype says "${tooLong.title}", broken JSON is too large to show where, broken JSON Lines name their line`);
+    console.log(`ok: past the longest text (made 10 MB): JSON read in parts reads, a run that needs its tables fails saying why ("${tablesRun.error}") and the next reads it again; quicktype says "${tooLong.title}"; broken JSON is too large to read in one go, broken JSON Lines name their line, and past what the engine holds (made 10 MB), are too large to read in one go too`);
     await select("sample", "pokedex");
 
     // Typed input survives a file that cannot be opened: it stays the input,

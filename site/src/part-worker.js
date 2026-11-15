@@ -24,14 +24,18 @@ const read = async (from, to) => new Uint8Array(await file.slice(from, to).array
 
 async function handle(job, args) {
     switch (job) {
-        case "start":
-            glue = createGlue();
-            glue.initSync({ module: args.module });
-            // A module that is not this engine fails here, not in a job.
-            glue.engineVersion();
+        case "start": {
+            // The engine only once it has started: a module that does not
+            // compile, link or instantiate, or is not this engine (no
+            // engineVersion), leaves none, and the pool replaces this worker.
+            const started = createGlue();
+            started.initSync({ module: args.module });
+            started.engineVersion();
+            glue = started;
             return [true, []];
+        }
         case "summarize": {
-            if (glue === undefined) throw new Error("the part worker's engine stopped");
+            if (glue === undefined) throw new Error("the part worker's engine did not start, or stopped");
             file = args.file;
             reader = new PartReader(glue, read);
             const summaries = await reader.summarize(args);
@@ -71,7 +75,9 @@ self.onmessage = (event) => {
             // done, and the pool replaces it.
             const fatal = e instanceof WebAssembly.RuntimeError;
             if (fatal) glue = undefined;
-            self.postMessage({ id, ok: false, error: String(e?.message ?? e), fatal });
+            // Its class, unless a plain Error: a CompileError, a LinkError, a TypeError.
+            const error = e instanceof Error ? `${e.name === "Error" ? "" : `${e.name}: `}${e.message}` : String(e);
+            self.postMessage({ id, ok: false, error, fatal });
         }
     });
 };
