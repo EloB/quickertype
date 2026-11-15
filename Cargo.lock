@@ -390,7 +390,7 @@ dependencies = [
 
 [[package]]
 name = "quickertype"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "mimalloc",
  "quickertype-core",
@@ -402,7 +402,7 @@ dependencies = [
 
 [[package]]
 name = "quickertype-core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "brotli-decompressor",
  "flate2",
@@ -419,7 +419,7 @@ dependencies = [
 
 [[package]]
 name = "quickertype-graphql-input"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "quickertype-core",
  "quickertype-js-compat",
@@ -428,7 +428,7 @@ dependencies = [
 
 [[package]]
 name = "quickertype-js-compat"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "foldhash",
  "indexmap",
@@ -443,7 +443,7 @@ dependencies = [
 
 [[package]]
 name = "quickertype-typescript-input"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "quickertype-js-compat",
  "serde",
@@ -453,7 +453,7 @@ dependencies = [
 
 [[package]]
 name = "quicktype-wasm"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "js-sys",
  "mimalloc",

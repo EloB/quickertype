@@ -81,7 +81,7 @@ with quicktype's own packages:
 | [EloB/homebrew-tap](https://github.com/EloB/homebrew-tap) | `Formula/quickertype.rb` (macOS and Linux), committed by the release: installs an archive, the compiler into `share/quickertype` | `brew install EloB/tap/quickertype` |
 | npm: [`quickertype`](https://www.npmjs.com/package/quickertype) | the CLI's installer package, which downloads the matching archive from the GitHub Release when it is installed and unpacks all of it, the compiler too | `npm install -g quickertype` or `npx quickertype` |
 | npm: [`quickertype-core`](https://www.npmjs.com/package/quickertype-core) | quicktype's `quicktype-core` API on the WebAssembly engine, with provenance | `npm install quickertype-core` |
-| crates.io: [`quickertype`](https://crates.io/crates/quickertype) and the four library crates | the sources, built by Cargo on install | `cargo install quickertype`, or `quickertype-core = "0.2"` as a dependency |
+| crates.io: [`quickertype`](https://crates.io/crates/quickertype) and the four library crates | the sources, built by Cargo on install | `cargo install quickertype`, or `quickertype-core = "0.3"` as a dependency |
 
 Every CLI install gives one binary, `quickertype`. The shell and PowerShell
 installers and `cargo install` put it in `$CARGO_HOME/bin` (`~/.cargo/bin`
