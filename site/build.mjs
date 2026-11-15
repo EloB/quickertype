@@ -25,12 +25,13 @@
 //   quicktype-core (see src/worker-boot.js);
 // * samples/: inputs from quicktype's test suite (tests/inputs);
 // * benchmarks.html and benchmarks.css: the benchmarks page, rendered here
-//   from site/data/benchmarks.json (`cargo xtask bench --json`) and
-//   site/data/big-inputs.json; with site/data/browser.json (the
-//   WebAssembly engine in Chrome, which the landing page shows), they are
-//   checked first (see benchmarks.mjs) and published beside the pages
-//   (data/); the playground's speed headline and the note at its
-//   comparison come from the same numbers.
+//   from site/data/benchmarks.json (`cargo xtask bench --json`),
+//   site/data/big-inputs.json, site/data/head-to-head.json and
+//   site/data/browser-workers.json (large files in the playground); with
+//   site/data/browser.json (the WebAssembly engine in Chrome, which the
+//   landing page shows), they are checked first (see benchmarks.mjs) and
+//   published beside the pages (data/); the playground's speed headline
+//   and the note at its comparison come from the same numbers.
 //
 // The languages and their options, and quicktype's general (run-level)
 // options, are read from quicktype-core's API here, at build time, and
@@ -46,7 +47,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 
-import { benchmarksFile, benchmarksPageHtml, bigInputsFile, browserFile, headlineHtml, readBenchmarks, speedFacts, times } from "./benchmarks.mjs";
+import { benchmarksPageHtml, dataFiles, headlineHtml, readBenchmarks, speedFacts, times } from "./benchmarks.mjs";
 import { landingDescription, landingFacts, landingPageHtml, raceCss, specimenCss } from "./landing.mjs";
 import { quicktypeReference } from "./reference.mjs";
 import { hashKeys } from "./src/hash.js";
@@ -380,7 +381,7 @@ if (/%[A-Z_]+%/.test(benchmarksHtml.replace(/data:image\/svg\+xml,[^"]*/, ""))) 
 }
 fs.writeFileSync(path.join(dist, "benchmarks.html"), benchmarksHtml);
 fs.mkdirSync(path.join(dist, "data"));
-for (const file of [benchmarksFile, bigInputsFile, browserFile]) fs.copyFileSync(file, path.join(dist, "data", path.basename(file)));
+for (const file of dataFiles) fs.copyFileSync(file, path.join(dist, "data", path.basename(file)));
 
 // The landing page. Its numbers come from the repository (landing.mjs); its
 // example is generated here, by both of quickertype-core's engines.

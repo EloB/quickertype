@@ -1,0 +1,88 @@
+{
+  "format": 1,
+  "date": "2026-11-15",
+  "machine": "Apple M2 Max, 12 cores, 64 GiB, macOS 26.6.2",
+  "browser": "Chrome 157.0.8103.78, headless",
+  "commit": "84c638d9de0f2d0fbedb862af3c27a5f55974362",
+  "command": "node site/test/parts-bench.mjs --rounds 5 <files>",
+  "how": "each input opened in a fresh page (its file chooser) and run to TypeScript with the page's defaults on quickertype's worker: in one go (the test hooks lift the size from which it reads in parts, and the longest text) and in parts on its part workers, the default. First: the request's whole time as the page sees it, reading the file and starting the part workers included. Warm: the median of 5 runs that each read the file again, after one. Memory: the WebAssembly memory of quickertype's engine and of the part workers together, the most each held. Both ways wrote the same output.",
+  "load_average": "2.5 to 4.7",
+  "part_workers": 8,
+  "inputs": [
+    {
+      "input": "100k records (rulings, generated)",
+      "bytes": 26752869,
+      "one_go": {
+        "first_ms": 67,
+        "warm_ms": 43,
+        "memory_mib": 72
+      },
+      "parts": {
+        "first_ms": 45,
+        "warm_ms": 18,
+        "engine_mib": 32,
+        "part_workers_mib": 171
+      }
+    },
+    {
+      "input": "generated cards",
+      "bytes": 100830331,
+      "one_go": {
+        "first_ms": 493,
+        "warm_ms": 397,
+        "memory_mib": 280
+      },
+      "parts": {
+        "first_ms": 164,
+        "warm_ms": 107,
+        "engine_mib": 45,
+        "part_workers_mib": 245
+      }
+    },
+    {
+      "input": "generated cards",
+      "bytes": 453416515,
+      "one_go": {
+        "first_ms": 2424,
+        "warm_ms": 1997,
+        "memory_mib": 1107
+      },
+      "parts": {
+        "first_ms": 413,
+        "warm_ms": 362,
+        "engine_mib": 41,
+        "part_workers_mib": 359
+      }
+    },
+    {
+      "input": "Scryfall cards (real data)",
+      "bytes": 656501037,
+      "one_go": {
+        "first_ms": 3137,
+        "warm_ms": 2625,
+        "memory_mib": 1485
+      },
+      "parts": {
+        "first_ms": 528,
+        "warm_ms": 501,
+        "engine_mib": 32,
+        "part_workers_mib": 280
+      }
+    },
+    {
+      "input": "Scryfall cards (real data), JSON Lines",
+      "bytes": 656380941,
+      "one_go": {
+        "first_ms": 3100,
+        "warm_ms": 2595,
+        "memory_mib": 1485
+      },
+      "parts": {
+        "first_ms": 525,
+        "warm_ms": 496,
+        "engine_mib": 32,
+        "part_workers_mib": 261
+      }
+    }
+  ]
+}

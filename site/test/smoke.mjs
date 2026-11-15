@@ -110,8 +110,8 @@
 // exits with their note, or as a warning; a Linux machine without its
 // memory; a commit bench could not tell); the playground's headline, the
 // note under its comparison and the benchmarks page (benchmarks.html) say
-// what site/data/benchmarks.json
-// and big-inputs.json hold; every chart and bar there has an accessible
+// what site/data/benchmarks.json, big-inputs.json, head-to-head.json and
+// browser-workers.json hold; every chart and bar there has an accessible
 // label and a table; the charts take their colours from the theme; every
 // link resolves (pages and data here, anchors, files in this repository,
 // commits); and neither page scrolls sideways at 360 or 390 px. The
@@ -142,16 +142,18 @@ import { fileURLToPath } from "node:url";
 
 import {
     benchmarkWarnings,
-    benchmarksFile,
     benchmarksPageHtml,
     bigCells,
-    bigInputsFile,
-    browserFile,
     checkBenchmarks,
     checkBigInputs,
     checkBrowser,
+    checkBrowserWorkers,
+    checkHeadToHead,
+    dataFiles,
     formatMiB,
     formatMs as formatBenchMs,
+    headToHeadFacts,
+    headToHeadName,
     inputSize,
     isTypical,
     links as benchLinks,
@@ -162,6 +164,8 @@ import {
     speedFacts,
     speedupText,
     times as speedup,
+    wholeMiB,
+    wholeMs,
 } from "../benchmarks.mjs";
 import { fuzzFacts, landingLinks, readQuicktype, workflowFacts } from "../landing.mjs";
 import { chartProblems, chartUrl, readmeFile, readmeRows } from "../readme-charts.mjs";
@@ -489,9 +493,38 @@ const speedNow = speedFacts(benchmarkData.bench);
         browserData((d) => (d.warm[0].quickertype.total_ms = d.warm[0].quicktype.total_ms * 1.1)),
         /says it is faster/,
     );
+    const workersData = (change) => {
+        const data = structuredClone(benchmarkData.workers);
+        change(data);
+        return data;
+    };
+    refused("a workers row without memory", checkBrowserWorkers, "browser-workers.json", workersData((d) => delete d.inputs[0].parts.engine_mib), /engine_mib/);
+    refused(
+        "reading in parts slower",
+        checkBrowserWorkers,
+        "browser-workers.json",
+        workersData((d) => (d.inputs[0].parts.warm_ms = d.inputs[0].one_go.warm_ms * 1.1)),
+        /the pages say it is faster/,
+    );
+    const h2hData = (change) => {
+        const data = structuredClone(benchmarkData.h2h);
+        change(data);
+        return data;
+    };
+    const ranBoth = benchmarkData.h2h.inputs.findIndex((i) => i.quicktype.refused === undefined);
+    refused("a head-to-head row that is not an object", checkHeadToHead, "head-to-head.json", h2hData((d) => (d.inputs[0] = null)), /inputs\[0\]/);
+    refused(
+        "quickertype slower on a large file",
+        checkHeadToHead,
+        "head-to-head.json",
+        h2hData((d) => (d.inputs[ranBoth].quickertype.warm_s = d.inputs[ranBoth].quicktype.warm_s * 1.1)),
+        /the pages say it is faster/,
+    );
+    refused("quicktype refusing without saying why", checkHeadToHead, "head-to-head.json", h2hData((d) => (d.inputs[ranBoth].quicktype = { refused: "" })), /say why/);
+    refused("no input both ran", checkHeadToHead, "head-to-head.json", h2hData((d) => d.inputs.forEach((i) => (i.quicktype = { refused: "too large" }))), /both ran/);
     assert.equal(inputSize(43_688_373), "43.7 MB");
     assert.equal(inputSize(3_010_396_357), "3.01 GB");
-    console.log(`ok: benchmark data checked (${benchmarkData.bench.cli.length} CLI benchmarks, ${benchmarkData.bench.date}); broken data, and data that makes a summary claim false, is refused (big-inputs.json and browser.json too)`);
+    console.log(`ok: benchmark data checked (${benchmarkData.bench.cli.length} CLI benchmarks, ${benchmarkData.bench.date}); broken data, and data that makes a summary claim false, is refused (big-inputs.json, browser.json, browser-workers.json and head-to-head.json too)`);
 
     // Test data the page must show truthfully, derived from the real file:
     // the page's text for it (rendered as the build does), and what the
@@ -3276,7 +3309,8 @@ try {
 
     // The benchmarks page: rendered from site/data/*.json at build time.
     {
-        const { bench: data, big } = benchmarkData;
+        const { bench: data, big, workers, h2h } = benchmarkData;
+        const large = headToHeadFacts(h2h);
         const benchUrl = `${siteUrl}benchmarks.html`;
         await page.viewport(1440, 900);
         await page.navigate(benchUrl, { playground: false });
@@ -3293,6 +3327,8 @@ try {
                 big: [...document.querySelectorAll("#big-files table.plain tbody tr")].map((r) => [...r.children].map((c) => c.textContent)),
                 report: [...document.querySelectorAll("#big-files .bars .bar-value")].map((v) => v.textContent),
                 browser: [...document.querySelectorAll("#browser .bar-row")].map((r) => [r.querySelector(".bar-value").textContent, r.querySelector(".bar-note").textContent]),
+                large: [...document.querySelectorAll("#browser-files .bar-row")].map((r) => [r.querySelector(".bar-name").textContent, r.querySelector(".bar-value").textContent, ...[...r.querySelectorAll("text.tip")].map((t) => t.textContent)]),
+                workers: [...document.querySelectorAll("#browser-files table.plain tbody tr")].map((r) => [...r.children].map((c) => c.textContent)),
                 method: Object.fromEntries([...document.querySelectorAll("#method .facts div")].map((d) => [d.querySelector("dt").textContent, d.querySelector("dd").textContent])),
                 h2: text("h2"),
             };
@@ -3348,7 +3384,24 @@ try {
         assert.equal(pageNow.method.Command, data.command);
         assert.ok(pageNow.method.quicktype.startsWith(data.commits.quicktype.slice(0, 7)), pageNow.method.quicktype);
         assert.ok(pageNow.method.quickertype.startsWith(data.commits.quickertype.slice(0, 7)), pageNow.method.quickertype);
-        assert.deepEqual(pageNow.h2, ["Every CLI run, 96× to 8.1× faster".replace("96×", `${speedNow.upTo}×`).replace("8.1×", speedup(speedNow.lowest)), "Memory", `The whole test corpus, ${speedup(speedNow.corpus)} faster`, "Big files", "In the browser", "Method", "Get the CLI"]);
+        assert.deepEqual(pageNow.h2, ["Every CLI run, 96× to 8.1× faster".replace("96×", `${speedNow.upTo}×`).replace("8.1×", speedup(speedNow.lowest)), "Memory", `The whole test corpus, ${speedup(speedNow.corpus)} faster`, "Big files", "In the browser", `Large files in the browser, ${large.low === large.high ? speedup(large.low) : `${speedup(large.low).slice(0, -1)}× to ${speedup(large.high)}`} faster`, "Method", "Get the CLI"]);
+        assert.deepEqual(
+            pageNow.large,
+            large.both.map((i) => [headToHeadName(i), `${speedup(i.speedup)} faster`, bigSeconds(i.quicktype.warm_s), bigSeconds(i.quickertype.warm_s)]),
+            "the large files in the browser",
+        );
+        assert.deepEqual(
+            pageNow.workers,
+            workers.inputs.map((i) => [
+                `${i.input}, ${inputSize(i.bytes)}`,
+                `${wholeMs(i.one_go.first_ms)}, ${wholeMs(i.one_go.warm_ms)}`,
+                `${wholeMs(i.parts.first_ms)}, ${wholeMs(i.parts.warm_ms)}`,
+                speedup(i.one_go.warm_ms / i.parts.warm_ms),
+                wholeMiB(i.one_go.memory_mib),
+                `${wholeMiB(i.parts.engine_mib)} + ${wholeMiB(i.parts.part_workers_mib)}`,
+            ]),
+            "reading on workers",
+        );
         console.log(`ok: the benchmarks page says what the data holds: ${pageNow.cli.length} CLI benchmarks, ${pageNow.memory.length} memory rows, the corpus, ${pageNow.big.length} big inputs and a user's report, the method (${pageNow.method.Date})`);
 
         // Accessible: every chart a figure with a caption; every bar an image
@@ -3401,7 +3454,7 @@ try {
                 const response = await fetch(target);
                 assert.equal(response.status, 200, `${href}: ${response.status}`);
                 if (href.startsWith("./data/")) {
-                    const source = [benchmarksFile, bigInputsFile, browserFile].find((file) => href === `./data/${path.basename(file)}`);
+                    const source = dataFiles.find((file) => href === `./data/${path.basename(file)}`);
                     assert.ok(source !== undefined, `${href}: not a data file`);
                     assert.deepEqual(await response.json(), JSON.parse(fs.readFileSync(source, "utf8")), `${href} is not ${path.basename(source)}`);
                 }
@@ -3416,7 +3469,7 @@ try {
             } else if (href.startsWith(`${repository}/commit/`) || href.startsWith("https://github.com/glideapps/quicktype/commit/")) {
                 const commit = href.split("/").pop();
                 assert.match(commit, /^[0-9a-f]{40}$/, href);
-                assert.ok([data.commits.quickertype, data.commits.quicktype, big.measured.commit].includes(commit), `${href}: not a commit the data names`);
+                assert.ok([data.commits.quickertype, data.commits.quicktype, big.measured.commit, workers.commit, h2h.commit].includes(commit), `${href}: not a commit the data names`);
                 if (href.startsWith(repository)) {
                     const known = spawnSync("git", ["-C", repositoryRoot, "cat-file", "-e", `${commit}^{commit}`]);
                     assert.equal(known.status, 0, `${href}: not a commit of this repository`);
@@ -3433,12 +3486,12 @@ try {
         assert.equal((await fetch(new URL("../benchmarks.html", url))).status, 200);
         console.log(`ok: ${checked.length} links on the benchmarks page resolve (pages, data, anchors, repository files, commits)`);
         // Every data file the pages are made from is published beside them, as it is in site/data.
-        for (const file of [benchmarksFile, bigInputsFile, browserFile]) {
+        for (const file of dataFiles) {
             const response = await fetch(new URL(`data/${path.basename(file)}`, siteUrl));
             assert.equal(response.status, 200, `data/${path.basename(file)} is not published`);
             assert.deepEqual(await response.json(), JSON.parse(fs.readFileSync(file, "utf8")), `data/${path.basename(file)} is not site/data's`);
         }
-        console.log("ok: data/benchmarks.json, big-inputs.json and browser.json are published as they are in site/data");
+        console.log(`ok: ${dataFiles.map((f) => `data/${path.basename(f)}`).join(", ")} are published as they are in site/data`);
 
         // Phones: no sideways scrolling, at 360 and 390 px.
         for (const width of [360, 390]) {
@@ -3530,6 +3583,7 @@ try {
         const bigInputs = benchmarkData.big.measured.inputs;
         const largest = bigInputs.reduce((a, b) => (b.bytes > a.bytes ? b : a));
         const timedBoth = bigInputs.filter((i) => i.quicktype !== undefined).sort((a, b) => b.bytes - a.bytes)[0];
+        const h2hRefused = benchmarkData.h2h.inputs.filter((i) => i.quicktype.refused !== undefined).sort((a, b) => b.bytes - a.bytes)[0];
         const n = (v) => [String(v), v.toLocaleString("en-US")];
         const spaced = (v, text) => [String(v), text.replaceAll(" ", " ")];
         const expected = {
@@ -3563,6 +3617,13 @@ try {
             "big-size": spaced(largest.bytes, inputSize(largest.bytes)),
             "big-seconds": spaced(largest.seconds, bigSeconds(largest.seconds)),
             "big-memory": spaced(largest.peak_rss_mib, formatMiB(largest.peak_rss_mib)),
+            "browser-large-workers": n(benchmarkData.h2h.part_workers),
+            ...(h2hRefused === undefined
+                ? {}
+                : {
+                      "browser-large-full-size": spaced(h2hRefused.bytes, inputSize(h2hRefused.bytes)),
+                      "browser-large-full-seconds": spaced(h2hRefused.quickertype.warm_s, bigSeconds(h2hRefused.quickertype.warm_s)),
+                  }),
             ...(timedBoth === undefined
                 ? {}
                 : {

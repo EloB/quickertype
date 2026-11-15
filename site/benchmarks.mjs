@@ -1,7 +1,11 @@
 // The playground's benchmark numbers: site/data/benchmarks.json (written by
 // `cargo xtask bench --json`), site/data/big-inputs.json (large inputs,
-// measured by hand, and a user's report) and site/data/browser.json (the
-// WebAssembly engine in Chrome, from npm/quicktype-core's compare.mjs).
+// measured by hand, and a user's report), site/data/browser.json (the
+// WebAssembly engine in Chrome, from npm/quicktype-core's compare.mjs),
+// site/data/browser-workers.json (the playground reading large files in one
+// go and on several workers, from site/test/parts-bench.mjs) and
+// site/data/head-to-head.json (quicktype against quickertype in the
+// playground on large files; docs/BENCHMARKS.md says how).
 // Checked here, summed up for the playground's headline, and rendered as
 // the benchmarks page, at build time: the page needs no script. Used by
 // site/build.mjs, site/landing.mjs and site/test/smoke.mjs.
@@ -27,13 +31,15 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { bar, legend, pairChart, roomFor, rowSvg, startIds, tableView, tip } from "./charts.mjs";
+import { bar, legend, pairChart, pairRows, roomFor, rowSvg, startIds, tableView, tip } from "./charts.mjs";
 import { escapeHtml } from "./src/html.js";
 
 const siteRoot = path.dirname(fileURLToPath(import.meta.url));
 export const benchmarksFile = path.join(siteRoot, "data", "benchmarks.json");
 export const bigInputsFile = path.join(siteRoot, "data", "big-inputs.json");
 export const browserFile = path.join(siteRoot, "data", "browser.json");
+export const browserWorkersFile = path.join(siteRoot, "data", "browser-workers.json");
+export const headToHeadFile = path.join(siteRoot, "data", "head-to-head.json");
 
 const repository = "https://github.com/EloB/quickertype";
 export const links = {
@@ -278,7 +284,94 @@ export function checkBrowser(data, file = browserFile) {
     return data;
 }
 
-/** The three files, read and checked, and what the build should point out in them (`warnings`). */
+/** What every browser measurement says of itself: when, where, on which commit and how, and the load. */
+function checkBrowserRun(data, ok) {
+    ok(isObject(data) && data.format === 1, "format", "must be 1");
+    ok(isDate(data.date) && text(data.machine) && sha(data.commit) && text(data.how), "the file", "needs date, machine, commit and how");
+    ok(typeof data.browser === "string" && /^Chrome \d+/.test(data.browser), "browser", 'must be "Chrome N…"');
+    ok(data.command === undefined || text(data.command), "command", "must be a string if given");
+    ok(data.load_average === undefined || text(data.load_average), "load_average", "must be a string if given");
+    ok(Number.isInteger(data.part_workers) && data.part_workers >= 2, "part_workers", "must be the number of part workers (2 or more)");
+}
+
+/**
+ * site/data/browser-workers.json, checked: the playground reading large
+ * files on quickertype's worker in one go and in parts on its part workers
+ * (site/test/parts-bench.mjs): the first run and the warm median, ms, and
+ * the WebAssembly memory, MiB. The pages say reading in parts is faster,
+ * so data where it is not is refused.
+ */
+export function checkBrowserWorkers(data, file = browserWorkersFile) {
+    const ok = (condition, where, what) => check(condition, file, where, what);
+    checkBrowserRun(data, ok);
+    ok(Array.isArray(data.inputs) && data.inputs.length > 0, "inputs", "must be a non-empty array");
+    data.inputs.forEach((input, i) => {
+        const at = `inputs[${i}]`;
+        ok(isObject(input) && text(input.input) && Number.isInteger(input.bytes) && input.bytes > 0, at, "needs input and bytes");
+        const one = input.one_go;
+        const parts = input.parts;
+        ok(isObject(one) && positive(one.first_ms) && positive(one.warm_ms) && positive(one.memory_mib), `${at}.one_go (${input.input})`, "needs first_ms, warm_ms and memory_mib");
+        ok(
+            isObject(parts) && positive(parts.first_ms) && positive(parts.warm_ms) && positive(parts.engine_mib) && positive(parts.part_workers_mib),
+            `${at}.parts (${input.input})`,
+            "needs first_ms, warm_ms, engine_mib and part_workers_mib",
+        );
+        ok(parts.warm_ms < one.warm_ms, `${at} (${input.input})`, "has reading in parts as slow or slower: the pages say it is faster");
+    });
+    return data;
+}
+
+/**
+ * site/data/head-to-head.json, checked: quicktype against quickertype in
+ * the playground in headless Chrome, on large files, as a user runs them
+ * (the file opened, read and run to TypeScript): the first run, the warm
+ * median and best, s, and the tab's peak memory, MiB. quicktype may refuse
+ * a file (`refused`: why), as the playground does past the longest string;
+ * quickertype must run every one, faster: the pages say so.
+ */
+export function checkHeadToHead(data, file = headToHeadFile) {
+    const ok = (condition, where, what) => check(condition, file, where, what);
+    checkBrowserRun(data, ok);
+    ok(Array.isArray(data.inputs) && data.inputs.length > 0, "inputs", "must be a non-empty array");
+    const timed = (r, at) => {
+        ok(isObject(r) && positive(r.first_s) && positive(r.warm_s) && positive(r.warm_min_s) && positive(r.tab_mib), at, "needs first_s, warm_s, warm_min_s and tab_mib");
+        ok(r.warm_min_s <= r.warm_s, at, "needs warm_min_s ≤ warm_s");
+    };
+    data.inputs.forEach((input, i) => {
+        const at = `inputs[${i}]`;
+        ok(isObject(input) && text(input.input) && Number.isInteger(input.bytes) && input.bytes > 0, at, "needs input and bytes");
+        timed(input.quickertype, `${at}.quickertype (${input.input})`);
+        if (isObject(input.quicktype) && input.quicktype.refused !== undefined) {
+            ok(text(input.quicktype.refused), `${at}.quicktype (${input.input})`, "refused must say why");
+        } else {
+            timed(input.quicktype, `${at}.quicktype (${input.input})`);
+            ok(input.quickertype.warm_s < input.quicktype.warm_s, `${at} (${input.input})`, "has quickertype as slow or slower: the pages say it is faster");
+        }
+    });
+    ok(
+        data.inputs.some((input) => input.quicktype.refused === undefined),
+        "inputs",
+        "needs an input both ran: the pages compare them",
+    );
+    return data;
+}
+
+/**
+ * What the pages say of the head-to-head: the inputs both ran (`both`,
+ * with quickertype's warm speed-up), the range of those speed-ups, and the
+ * largest input quicktype refused (`refused`), if any.
+ */
+export function headToHeadFacts(h2h) {
+    const both = h2h.inputs.filter((i) => i.quicktype.refused === undefined).map((i) => ({ ...i, speedup: i.quicktype.warm_s / i.quickertype.warm_s }));
+    const refused = h2h.inputs.filter((i) => i.quicktype.refused !== undefined).reduce((a, b) => (a === undefined || b.bytes > a.bytes ? b : a), undefined);
+    const speedups = both.map((i) => i.speedup);
+    return { both, refused, low: Math.min(...speedups), high: Math.max(...speedups) };
+}
+
+/** The files the pages are made from, published beside them (data/). */
+export const dataFiles = [benchmarksFile, bigInputsFile, browserFile, browserWorkersFile, headToHeadFile];
+
+/** The files, read and checked, and what the build should point out in them (`warnings`). */
 export function readBenchmarks() {
     const read = (file) => {
         try {
@@ -288,7 +381,14 @@ export function readBenchmarks() {
         }
     };
     const bench = checkBenchmarks(read(benchmarksFile));
-    return { bench, big: checkBigInputs(read(bigInputsFile)), browser: checkBrowser(read(browserFile)), warnings: benchmarkWarnings(bench) };
+    return {
+        bench,
+        big: checkBigInputs(read(bigInputsFile)),
+        browser: checkBrowser(read(browserFile)),
+        workers: checkBrowserWorkers(read(browserWorkersFile)),
+        h2h: checkHeadToHead(read(headToHeadFile)),
+        warnings: benchmarkWarnings(bench),
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -408,6 +508,12 @@ export function bigCells(input, withOneThread) {
         input.quicktype === undefined ? "not timed" : run(input.quicktype),
     ];
 }
+
+/** A time measured in whole milliseconds (site/test/parts-bench.mjs): "43 ms", "397 ms", "2.00 s". */
+export const wholeMs = (x) => (x < 100 ? `${Math.round(x)} ms` : formatMs(x));
+
+/** Memory measured in whole MiB: "32 MiB", "245 MiB", "1.08 GiB". */
+export const wholeMiB = (x) => (x < 100 ? `${Math.round(x)} MiB` : formatMiB(x));
 
 export function formatMiB(x) {
     if (x >= 1024) return `${(x / 1024).toFixed(2)} GiB`;
@@ -626,8 +732,73 @@ function sizeRange(rows) {
     return low === high ? `${low} KB` : `${low} to ${high} KB`;
 }
 
+/** A measurement's fine print: the machine, the date, the commit (linked), the load average, then how. */
+function measuredText(m) {
+    return `${e(m.machine)}, ${e(m.browser)}, ${e(longDate(m.date))}, commit <a href="${links.commit(m.commit)}"><code>${m.commit.slice(0, 7)}</code></a>${
+        m.load_average === undefined ? "" : `, load average ${e(m.load_average)}`
+    }: ${e(m.how)}`;
+}
+
+/** A head-to-head input's name: its size, and its cards if counted ("100 MB, 18,243 cards"). */
+export const headToHeadName = (i) => `${inputSize(i.bytes)}${i.cards === undefined ? "" : `, ${i.cards.toLocaleString("en-US")} cards`}`;
+
+/**
+ * Large files in the browser: quicktype against quickertype in the
+ * playground (site/data/head-to-head.json), and quickertype's worker
+ * reading in one go against in parts (site/data/browser-workers.json).
+ */
+function browserFilesSection(workers, h2h) {
+    const facts = headToHeadFacts(h2h);
+    const span = facts.low === facts.high ? times(facts.low) : `${figure(facts.low)}× to ${times(facts.high)}`;
+    const refused = facts.refused;
+    const chart = pairRows({
+        rows: facts.both.map((i) => ({ name: headToHeadName(i), theirs: i.quicktype.warm_s, ours: i.quickertype.warm_s, value: `${times(i.speedup)} faster` })),
+        format: seconds,
+        what: "a warm run",
+    });
+    const run = (r) => (r.refused === undefined ? [seconds(r.first_s), seconds(r.warm_s), formatMiB(r.tab_mib)] : ["refused", "–", "–"]);
+    const table = tableView(
+        "quicktype and quickertype in the playground: the first run, the warm median, the tab's peak memory",
+        ["Input", "quicktype: first", "warm", "tab", "quickertype: first", "warm", "tab", "Faster (warm)"],
+        h2h.inputs.map((i) => [
+            headToHeadName(i),
+            ...run(i.quicktype),
+            ...run(i.quickertype),
+            i.quicktype.refused === undefined ? times(i.quicktype.warm_s / i.quickertype.warm_s) : "quicktype cannot",
+        ]),
+    );
+    const refusedText =
+        refused === undefined
+            ? ""
+            : ` The whole file, ${inputSize(refused.bytes)}, is past the longest string a browser holds, so quicktype cannot read it there (${e(refused.quicktype.refused)}); quickertype runs it in ${seconds(refused.quickertype.warm_s)} warm, at a peak of ${formatMiB(refused.quickertype.tab_mib)} in the tab.`;
+    const rows = workers.inputs
+        .map(
+            (i) =>
+                `<tr><th scope="row">${e(i.input)}, ${inputSize(i.bytes)}</th><td class="num">${wholeMs(i.one_go.first_ms)}, ${wholeMs(i.one_go.warm_ms)}</td><td class="num">${wholeMs(i.parts.first_ms)}, ${wholeMs(
+                    i.parts.warm_ms,
+                )}</td><td class="num">${times(i.one_go.warm_ms / i.parts.warm_ms)}</td><td class="num">${wholeMiB(i.one_go.memory_mib)}</td><td class="num">${wholeMiB(i.parts.engine_mib)} + ${wholeMiB(i.parts.part_workers_mib)}</td></tr>`,
+        )
+        .join("");
+    return `<section id="browser-files" aria-labelledby="browser-files-title">
+<h2 id="browser-files-title">Large files in the browser, ${span} faster</h2>
+<p>The playground reads a JSON array or JSON Lines file of 16 MiB or more on up to ${workers.part_workers} Web Workers at once, each with an engine instance of its own, and gives what reading it in one go gives, byte for byte. Here it runs Scryfall's card data (real data), cut to its first cards, against quicktype in the same page, as a user would: the file opened, read and turned into TypeScript.${refusedText}</p>
+<figure class="chart" aria-labelledby="browser-files-chart-title">
+<figcaption id="browser-files-chart-title">Scryfall cards (real data) in the playground: a warm run, quicktype against quickertype</figcaption>
+${legend()}
+${chart}
+${table}
+<p class="fineprint">${measuredText(h2h)}</p>
+</figure>
+<figure class="chart" aria-labelledby="browser-workers-title">
+<figcaption id="browser-workers-title">quickertype in the playground, reading in one go against in parts on ${workers.part_workers} workers</figcaption>
+<table class="plain"><thead><tr><th scope="col">Input</th><th scope="col" class="num">In one go: first, warm</th><th scope="col" class="num">In parts: first, warm</th><th scope="col" class="num">Warm ×</th><th scope="col" class="num">Memory in one go</th><th scope="col" class="num">In parts: engine + part workers</th></tr></thead><tbody>${rows}</tbody></table>
+<p class="fineprint">${measuredText(workers)}</p>
+</figure>
+</section>`;
+}
+
 /** The benchmarks page's content (inside <main>), from the checked data. */
-export function benchmarksPageHtml({ bench, big }) {
+export function benchmarksPageHtml({ bench, big, workers, h2h }) {
     startIds();
     const facts = speedFacts(bench);
     const cli = (name) => bench.cli.find((r) => r.name === name);
@@ -759,6 +930,8 @@ ${startup.html}
 <p><a href="./app/#v=2&amp;l=typescript&amp;s=pokedex">Compare both engines in your browser</a>: switch engines in the playground, then <i>Measure warm runs</i>.</p>
 </section>`);
 
+    if (workers !== undefined && h2h !== undefined) sections.push(browserFilesSection(workers, h2h));
+
     const facts2 = [
         ["Machine", machineText(machine)],
         ["Toolchain", [machine.rustc, machine.node && `Node.js ${machine.node}`].filter(Boolean).join(", ") || "not recorded"],
@@ -773,7 +946,9 @@ ${startup.html}
 <h2 id="method-title">Method</h2>
 <dl class="facts">${facts2.map(([k, v]) => `<div><dt>${e(k)}</dt><dd>${k === "Machine" || k === "Toolchain" || k === "Date" ? e(v) : v}</dd></div>`).join("")}</dl>
 ${bench.note ? `<p class="fineprint">${e(bench.note)}</p>` : ""}
-<p>The details, the profile behind each optimization and how to reproduce every number: <a href="${links.benchmarksDoc}">docs/BENCHMARKS.md</a>. The numbers on this page: <a href="./data/benchmarks.json">benchmarks.json</a> and <a href="./data/big-inputs.json">big-inputs.json</a>.</p>
+<p>The details, the profile behind each optimization and how to reproduce every number: <a href="${links.benchmarksDoc}">docs/BENCHMARKS.md</a>. The numbers on this page: ${new Intl.ListFormat("en-US").format(
+        ["benchmarks.json", "big-inputs.json", ...(workers !== undefined && h2h !== undefined ? ["head-to-head.json", "browser-workers.json"] : [])].map((f) => `<a href="./data/${f}">${f}</a>`),
+    )}.</p>
 </section>`);
 
     sections.push(`<section id="get-the-cli" aria-labelledby="get-title">
