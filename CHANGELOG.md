@@ -31,12 +31,19 @@ section are absolute.
   a JSON sample; a syntax error names the line its value starts on, then
   gives `JSON.parse`'s message for that value (`Syntax error in input
   JSON Cards: line 3: Expected ',' or '}' after property value in JSON at
-  position 9`), the same on both engines. The WebAssembly engine reads
-  JSON Lines as fast as the same values as an array (a 40 MB file as
-  bytes in 115 ms, the array in 116 ms, in Node), and bytes as they are;
-  on the TypeScript engine each value is decoded and parsed by itself, so
-  bytes too large for one string work there too. In the `.d.ts` files,
-  `JSONSourceData` has the optional `jsonLines` field.
+  position 9`; for a second value on a line, `line N: Unexpected
+  non-whitespace character after JSON`), the same on both engines, and a
+  sample that fails adds nothing to the input. The WebAssembly engine
+  reads JSON Lines as fast as the same values as an array (a 40 MB file
+  as bytes in 115 ms, the array in 116 ms, in Node), and bytes as they
+  are; elsewhere (the TypeScript engine, bytes that are not UTF-8) each
+  value is decoded, parsed and handed to the input by itself, so neither
+  the whole text nor all the values are held at once, and bytes too large
+  for one string work there too. JSON Lines need a
+  `CompressedJSONFromString` whose `parse` and `parseSync` are its own;
+  with another `CompressedJSON`, `addSource` throws a plain `Error` that
+  says so. In the `.d.ts` files, `JSONSourceData` has the optional
+  `jsonLines` field.
 - **JSON Lines in the playground:** a `.jsonl` or `.ndjson` file (by its
   extension, in any case), opened, chosen or dropped, is read as JSON
   Lines, and so is text typed or pasted with the new input kind JSON
@@ -44,10 +51,13 @@ section are absolute.
   the CLI's (`quickertype --lang typescript --top-level Cards
   cards.jsonl`), with `--src-lang` only where the input's kind is not
   what its name says. quicktype, which has no JSON Lines, is given the
-  JSON array of the values for the comparison, made in its worker (from
-  the bytes of a file), and the two outputs are identical. JSON Lines
-  files open at the same sizes as JSON files. Where the input pane is
-  too narrow for its controls on one row, the input kind fills the first.
+  JSON array of the values for the comparison, made in its worker from
+  quickertype-core's own scan of them (for a file, in the buffer its
+  bytes are read into), and the two outputs are identical; for text that
+  is not JSON Lines, the array is not JSON either. JSON Lines files open
+  at the same sizes as JSON files. Where the input pane is too narrow for
+  its controls on one row, the input kind fills the first, and the
+  output's head is as tall, so the rows under them still line up.
 
 ### Fixed
 
