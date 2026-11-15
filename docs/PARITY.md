@@ -760,3 +760,14 @@ failing with the TypeScript CLI as well; each is worth reporting upstream:
   `from_date(obj["to_date"])` fails: mypy reports `"date" not callable`
   (the local's type), and Python a `NameError`. Upstream CI sets
   `QUICKTEST`, which leaves out the `misc` inputs.
+
+quicktype itself fails on some input, and the port fails the same way:
+
+- **TypeScript input with string enums (`--src-lang typescript`).**
+  `export enum E { A = "a", B = "b" } export interface X { f: E | null }`
+  stops with `Internal error: Cannot combine type attribute
+  accessorNames.` So do two optional properties of the same string enum
+  in one interface (`f?: E; g?: E`), `E[] | F`, and two string enums with
+  the same values. A string-literal type alias in the same places works.
+  The enum's accessor names (its member names) are a type attribute that
+  quicktype cannot combine when two such types meet in a union.
