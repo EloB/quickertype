@@ -137,6 +137,13 @@ git clone https://github.com/EloB/quickertype && cd quickertype
 cargo build --release -p quickertype  # the binary is target/release/quickertype
 ```
 
+**TypeScript input works out of the box** with Homebrew, npm, the MSI and
+the release archives: they include the TypeScript compiler it needs, next
+to `quickertype` ([below](#typescript-input)). `cargo install`, a build
+from source and the shell and PowerShell installers give the binary alone;
+for TypeScript input, install the compiler with
+`npm install -g typescript@7.0.2`.
+
 **The command is `quickertype`,** so it installs beside the TypeScript
 quicktype. For a drop-in replacement, `alias quicktype=quickertype` covers
 what you type in your shell; scripts, Makefiles and CI don't read aliases,
@@ -190,9 +197,25 @@ cat events.log | quickertype -s jsonl -l go -t Events
 quickertype --help
 ```
 
-TypeScript input runs the TypeScript 7 native compiler, where quicktype runs
-TypeScript 5.9. Install it with `npm install -g typescript@7.0.2` (a local
-`node_modules` works too), or set `QUICKTYPE_TSC` to its `tsc`.
+### TypeScript input
+
+TypeScript input runs the TypeScript 7 native compiler, version 7.0.2,
+where quicktype runs TypeScript 5.9. Homebrew, npm, the MSI and the release
+archives bundle it, so it works out of the box: Microsoft's compiler,
+unmodified (the npm package `@typescript/typescript-<os>-<arch>`, with its
+license and notices), in a `typescript` directory next to the binary
+(Homebrew puts it in `share/quickertype`). Keep that directory next to
+`quickertype` if you move the binary out of an unpacked archive, or link
+to the binary instead: quickertype follows links to find it.
+
+`cargo install`, a build from source and the shell and PowerShell
+installers give the binary alone. Install the compiler with
+`npm install -g typescript@7.0.2` (a local `node_modules` works too), or
+set `QUICKTYPE_TSC` to its `tsc`; without one, TypeScript input fails with
+an error that names the package for your platform. quickertype takes the
+first compiler of version 7.0.2 it finds: `QUICKTYPE_TSC`, the bundled one,
+the npm package in `node_modules` of the working directory or a parent,
+then `tsgo` or `tsc` on `PATH`.
 
 ### JSON Lines
 

@@ -58,6 +58,23 @@ section are absolute.
   at the same sizes as JSON files. Where the input pane is too narrow for
   its controls on one row, the input kind fills the first, and the
   output's head is as tall, so the rows under them still line up.
+- **TypeScript input works out of the box:** the release archives, and
+  with them the Homebrew formula, the `quickertype` npm package and the
+  MSI, include the TypeScript 7.0.2 compiler that TypeScript input needs:
+  Microsoft's, unmodified (the npm package
+  `@typescript/typescript-<os>-<arch>` for the platform, with its license
+  and notices), in a `typescript` directory next to `quickertype`
+  (Homebrew: `share/quickertype/typescript`). quickertype looks for it
+  after `QUICKTYPE_TSC` and before `node_modules` and `PATH`, from its
+  executable's real path, so links to the binary work. `cargo install`
+  and the shell and PowerShell installers still give the binary alone;
+  without a compiler, the error now names the platform's package
+  (`npm install -g typescript@7.0.2`, which installs
+  `@typescript/typescript-darwin-arm64@7.0.2` on Apple Silicon Macs) and
+  no longer ends in two periods. The release downloads each package from
+  the npm registry and checks it against the sha512 pinned in
+  [`release/typescript/pins.json`](https://github.com/EloB/quickertype/blob/main/release/typescript/pins.json),
+  and an archive grows by about 7 MB (the Windows zip by about 9.5 MB).
 
 ### Fixed
 

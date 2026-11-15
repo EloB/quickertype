@@ -4,10 +4,12 @@ Pushing a version tag such as `v0.1.0` runs
 [`.github/workflows/release.yml`](../.github/workflows/release.yml), which
 [dist](https://axodotdev.github.io/cargo-dist/book/) generates (version
 pinned in [`dist-workspace.toml`](../dist-workspace.toml)). It builds the
-`quickertype` CLI for every target and creates the GitHub Release. Then it
-publishes the Homebrew formula, the `quickertype` npm installer, the crates
-on crates.io ([`publish-crates.yml`](../.github/workflows/publish-crates.yml))
-and the `quickertype-core` npm package
+`quickertype` CLI for every target, packs it with the TypeScript compiler
+([below](#the-bundled-typescript-compiler)) and creates the GitHub Release.
+Then it publishes the Homebrew formula, the `quickertype` npm installer, the
+crates on crates.io
+([`publish-crates.yml`](../.github/workflows/publish-crates.yml)) and the
+`quickertype-core` npm package
 ([`publish-npm-core.yml`](../.github/workflows/publish-npm-core.yml)).
 
 ## Names and versions
@@ -72,21 +74,22 @@ with quicktype's own packages:
 
 | Where | What | Users install with |
 |---|---|---|
-| GitHub Release `vX.Y.Z` on EloB/quickertype | `quickertype-<target>.tar.xz` (`.zip` on Windows), each with a `.sha256`; `sha256.sum`; `source.tar.gz`; the installers below; `dist-manifest.json`. The notes are the version's section of [`CHANGELOG.md`](../CHANGELOG.md), the title its heading. | download and unpack |
+| GitHub Release `vX.Y.Z` on EloB/quickertype | `quickertype-<target>.tar.xz` (`.zip` on Windows) with the TypeScript compiler for the target, each with a `.sha256`; `sha256.sum`; `source.tar.gz`; the installers below; `dist-manifest.json`. The notes are the version's section of [`CHANGELOG.md`](../CHANGELOG.md), the title its heading. | download and unpack |
 | the same release | `quickertype-installer.sh` | `curl --proto '=https' --tlsv1.2 -LsSf https://github.com/EloB/quickertype/releases/latest/download/quickertype-installer.sh \| sh` |
 | the same release | `quickertype-installer.ps1` | `powershell -ExecutionPolicy Bypass -c "irm https://github.com/EloB/quickertype/releases/latest/download/quickertype-installer.ps1 \| iex"` |
-| the same release | `quickertype-x86_64-pc-windows-msvc.msi`: installs to `C:\Program Files\quickertype\bin` and adds it to `PATH` | run the MSI |
-| [EloB/homebrew-tap](https://github.com/EloB/homebrew-tap) | `Formula/quickertype.rb` (macOS and Linux), committed by the release | `brew install EloB/tap/quickertype` |
-| npm: [`quickertype`](https://www.npmjs.com/package/quickertype) | the CLI's installer package, which downloads the matching archive from the GitHub Release when it is installed | `npm install -g quickertype` or `npx quickertype` |
+| the same release | `quickertype-x86_64-pc-windows-msvc.msi`: installs to `C:\Program Files\quickertype\bin` (the compiler in `bin\typescript`) and adds it to `PATH` | run the MSI |
+| [EloB/homebrew-tap](https://github.com/EloB/homebrew-tap) | `Formula/quickertype.rb` (macOS and Linux), committed by the release: installs an archive, the compiler into `share/quickertype` | `brew install EloB/tap/quickertype` |
+| npm: [`quickertype`](https://www.npmjs.com/package/quickertype) | the CLI's installer package, which downloads the matching archive from the GitHub Release when it is installed and unpacks all of it, the compiler too | `npm install -g quickertype` or `npx quickertype` |
 | npm: [`quickertype-core`](https://www.npmjs.com/package/quickertype-core) | quicktype's `quicktype-core` API on the WebAssembly engine, with provenance | `npm install quickertype-core` |
 | crates.io: [`quickertype`](https://crates.io/crates/quickertype) and the four library crates | the sources, built by Cargo on install | `cargo install quickertype`, or `quickertype-core = "0.2"` as a dependency |
 
 Every CLI install gives one binary, `quickertype`. The shell and PowerShell
 installers and `cargo install` put it in `$CARGO_HOME/bin` (`~/.cargo/bin`
 by default). Each archive holds the binary, `README.md`, `LICENSE`,
-`CHANGELOG.md` and `NOTICE`; each crate and `quickertype-core` also ship
-`LICENSE` and `NOTICE` (the copies in the crate directories and in
-`npm/quicktype-core` must stay equal to the ones at the root).
+`CHANGELOG.md`, `NOTICE` and `typescript/`, the TypeScript compiler; each
+crate and `quickertype-core` also ship `LICENSE` and `NOTICE` (the copies in
+the crate directories must stay equal to the ones at the root, and so must
+`npm/quicktype-core`'s `LICENSE`; its `NOTICE` is its own).
 
 Targets (`targets` in `dist-workspace.toml`):
 
@@ -106,6 +109,115 @@ crates.io alike. Turning `publish-prereleases` on would publish a
 prerelease as `latest` on npm (dist's `publish-npm` job sets no dist-tag)
 and as the Homebrew formula, so it stays off; `publish-npm-core.yml`
 publishes as `latest` only.
+
+## The bundled TypeScript compiler
+
+TypeScript input needs the TypeScript 7 native compiler of exactly the
+version the `tsc --api` client was generated for (`TSC_VERSION` in
+[`crates/quicktype-typescript-input/src/tsc/generated.rs`](../crates/quicktype-typescript-input/src/tsc/generated.rs)).
+A release ships Microsoft's, unmodified: the npm platform package
+`@typescript/typescript-<os>-<arch>` (the Go `tsc` binary, the `lib.*.d.ts`
+files, `LICENSE`, `NOTICE.txt`, `README.md` and `package.json`) as the
+`typescript` directory of every archive, next to `quickertype`, with
+[`release/typescript/pins.json`](../release/typescript/pins.json) beside it.
+The Linux packages' binaries are static, so the musl archive takes the same
+package as the glibc one.
+
+| Target | Package |
+|---|---|
+| `aarch64-apple-darwin` | `darwin-arm64` |
+| `x86_64-apple-darwin` | `darwin-x64` |
+| `aarch64-unknown-linux-gnu` | `linux-arm64` |
+| `x86_64-unknown-linux-gnu`, `x86_64-unknown-linux-musl` | `linux-x64` |
+| `x86_64-pc-windows-msvc` | `win32-x64` |
+
+It adds about 7 MB to each `.tar.xz` (the `aarch64-apple-darwin` archive
+of 0.2.0 grows from 2.8 to 9.6 MB) and about 9.5 MB to the Windows `.zip`.
+
+How each install gets it, and where quickertype finds it
+([`locate.rs`](../crates/quicktype-typescript-input/src/tsc/locate.rs):
+`QUICKTYPE_TSC`, then the bundled compiler, then `node_modules` and `PATH`):
+
+| Install | The compiler |
+|---|---|
+| an archive | `typescript/` next to `quickertype` |
+| MSI | `C:\Program Files\quickertype\bin\typescript` |
+| Homebrew | `share/quickertype/typescript` in the keg: the formula installs the binary into `bin` and what else the archive has into `pkgshare`; quickertype finds it from its real path, through Homebrew's `bin` link |
+| npm | the archive, unpacked whole into `node_modules/quickertype/node_modules/.bin_real` |
+| shell and PowerShell installers | not installed: they install only the archive's binaries (dist 0.34 has no setting to install more) |
+| `cargo install` | not installed: a crate cannot carry it (crates.io's 10 MB limit) |
+
+Without a compiler, TypeScript input fails with an error that names the
+command and the platform package to install (`npm install -g
+typescript@7.0.2`, which installs `@typescript/typescript-<os>-<arch>`).
+
+How the release does it, with dist 0.34, whose `include` is the same for
+every archive (and the npm installer package):
+
+- `include` in [`dist-workspace.toml`](../dist-workspace.toml) has
+  `release/typescript`, where git tracks only `pins.json`.
+- [`.github/build-setup.yml`](../.github/build-setup.yml) (dist's
+  `github-build-setup`, which release.yml runs in every
+  `build-local-artifacts` job before `dist build`) runs
+  [`release/bundle-typescript.mjs`](../release/bundle-typescript.mjs) with
+  the job's target. It downloads the target's package from
+  registry.npmjs.org, checks it against its pinned `dist.integrity`
+  (sha512), its name and version and, where it runs, `tsc --version`, and
+  unpacks it into `release/typescript`; any mismatch fails the job, so no
+  release goes out without the pinned compiler.
+- The `build-global-artifacts` job has no build setup, so the npm
+  installer package that it builds gets `typescript/pins.json` alone (the
+  installer unpacks the archive for the platform at install time).
+- The MSI: for a Windows target, the script also writes
+  `crates/quicktype-cli/wix/typescript.wxs` (not committed), a WiX fragment
+  with a component for each file of the staged directory under `bin`;
+  cargo-wix compiles every `.wxs` in `wix/`, and `main.wxs` references the
+  fragment's `TypeScriptCompiler` component group. That one line is ours,
+  so dist-workspace.toml has `allow-dirty = ["msi"]`, and CI's `dist` job
+  checks that `main.wxs` without it is what dist renders.
+
+CI's `release-bundle` job builds the archive for its runner the same way
+and runs [`release/check-bundle.mjs`](../release/check-bundle.mjs) on it:
+the archive's quickertype must convert `release/check-bundle/person.ts`
+to exactly `person.expected.rs` (what the TypeScript quicktype prints)
+with no other compiler on `PATH` or in `node_modules`, unpacked and in
+Homebrew's layout, and without the compiler it must fail with the error
+above.
+
+### Bumping the TypeScript version
+
+1. In [`release/typescript/pins.json`](../release/typescript/pins.json), set
+   `version`, and each package's `tarball` and `integrity` to what the npm
+   registry gives:
+
+   ```sh
+   for p in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-x64; do
+     npm view "@typescript/typescript-$p@X.Y.Z" dist.tarball dist.integrity
+   done
+   npm view typescript@X.Y.Z optionalDependencies   # still a package for every target?
+   ```
+
+2. Regenerate the protocol tables, which set `TSC_VERSION`:
+   `node xtask/typescript-input/gen-tables.mjs <quicktype checkout>`, with
+   `typescript@X.Y.Z` in the checkout's `node_modules`
+   (`crates/quicktype-typescript-input/src/tsc/generated.rs`).
+3. Update the other places that name the version: the `typescript-input`
+   job in `.github/workflows/ci.yml` and both jobs in `roundtrip.yml`,
+   `README.md`, and the tests that spell it out (`locate.rs`,
+   `crates/quicktype-cli/tests/cli.rs`): `git grep -n 7\.0\.2`.
+4. Rerun the TypeScript corpus with the new compiler and review what
+   changed (`crates/quicktype-typescript-input/tests/known-differences.txt`):
+
+   ```sh
+   node release/bundle-typescript.mjs           # the new package for this machine
+   QUICKTYPE_TSC=$PWD/release/typescript/lib/tsc \
+     cargo test -p quickertype-typescript-input --lib --test differential
+   cargo test -p quickertype-typescript-input --lib locate   # pins.json pins TSC_VERSION
+   ```
+
+5. Check an archive ([Dry runs](#dry-runs)), and on the pull request get a
+   [full release build](#a-full-release-build-without-releasing), which
+   builds the MSI.
 
 ## The `quicktype` name
 
@@ -267,7 +379,9 @@ repository that change it.
    `custom-publish-crates` and `custom-publish-npm-core`, then `announce`.
 7. Check that every registry has X.Y.Z, then install it once or twice and
    check the installed version with the installer's own tool
-   ([above](#names-and-versions)). `quickertype --version` cannot tell: it
+   ([above](#names-and-versions)), and that TypeScript input works without
+   another compiler (`printf 'export interface A { b: string }\n' > a.ts
+   && quickertype a.ts -l rust`). `quickertype --version` cannot tell: it
    prints quicktype's version, 24.0.0, for every release.
 
    ```sh
@@ -315,14 +429,18 @@ published: delete the tag (`git push origin :refs/tags/vX.Y.Z` and
 
   ```sh
   dist plan                     # the plan CI makes
+  node release/bundle-typescript.mjs    # the TypeScript compiler for this machine
   dist build                    # the archive for this machine, in target/distrib/
-  dist generate --check         # release.yml and wix/main.wxs match the config
+  node release/check-bundle.mjs target/distrib/quickertype-<target>.tar.xz
+  dist generate --check         # release.yml matches the config
   cargo publish --dry-run -p quickertype-js-compat -p quickertype-core \
     -p quickertype-graphql-input -p quickertype-typescript-input -p quickertype
   (cd npm/quicktype-core && npm run build && npm test && npm pack --dry-run)
   ```
 
-  The MSI needs Windows and the WiX v3 toolset, so only CI builds it.
+  `dist build` fails if the compiler is not staged. The MSI needs Windows
+  and the WiX v3 toolset (and `node release/bundle-typescript.mjs
+  x86_64-pc-windows-msvc` first), so only CI builds it.
 - **Secrets:** the [Release preflight](#release-preflight).
 
 ### A full release build without releasing
@@ -355,7 +473,12 @@ release.yml is regenerated with the config.
 ## Changing the pipeline
 
 - `release.yml` and `crates/quicktype-cli/wix/main.wxs` are generated:
-  never edit them. Change [`dist-workspace.toml`](../dist-workspace.toml)
+  never edit them, except for the one line of `main.wxs` that references
+  the TypeScript compiler's components (`allow-dirty = ["msi"]` makes
+  `dist generate` leave the file alone). To regenerate `main.wxs`, delete
+  that line and the `allow-dirty` setting, run `dist generate`, and put
+  both back. The build setup steps are in `.github/build-setup.yml`;
+  `dist generate` copies them into release.yml. Change [`dist-workspace.toml`](../dist-workspace.toml)
   (workspace settings, publish jobs and their permissions) or
   `[package.metadata.dist]` in
   [`crates/quicktype-cli/Cargo.toml`](../crates/quicktype-cli/Cargo.toml)
