@@ -226,7 +226,9 @@ async fn add_json_source(
 /// the library's defaults, but for the internal variables
 /// `QUICKTYPE_READ_THREADS` (the threads), `QUICKTYPE_READ_CHUNK` (the
 /// range size, for samples of any size) and `QUICKTYPE_READ_BUDGET` (the
-/// bytes the parts' trees may take), for tests and benchmarks. There is
+/// budget for the parts' trees: a part whose tree would take half of it is
+/// read in one go, and those under way may take twice it), for tests and
+/// benchmarks. There is
 /// no option, and the output does not depend on them; values that are not
 /// numbers are ignored, and the library bounds the threads.
 fn read_options() -> ParallelOptions {

@@ -442,9 +442,12 @@ bytes until it is appended: its tree as estimated while it is read (by
 the largest ratio of tree to text seen, and at least the smallest tree
 seen; the first ratio is that of the first parts' trees, read on the
 reading thread before any part is given out), its tree's own size once
-read and while it waits for the parts before it. Together they may hold
-at most the threads that read times the range size, or 32 MiB, and at
-most 2 × threads + 2 parts are given out beyond the last one appended.
+read and while it waits for the parts before it. The budget is the
+threads that read times the range size, or 32 MiB; together the parts
+given out may hold twice that (with once, a thread could not read on
+while the part it read last waited to be appended, and the 3.0 GB cards
+kept about half the threads waiting), and at most 2 × threads + 2 parts
+are given out beyond the last one appended.
 Where a single part's tree would take half of the budget, the parallel
 reading stops and the rest is read in one go (below), which shares one
 set of tallies for all elements; so it does, without scanning on, once
@@ -697,7 +700,7 @@ rules say which of theirs is which (`InOneGo::always`).
   last, between, at a part's end, trailing commas, garbage after the
   array, invalid UTF-8 in and out of strings); a tree budget that admits
   one part reads the rest in one go; behind a part read slowly (a test
-  hook), the parts' trees stay within the budget but for one, and parts
+  hook), the parts' trees stay within twice the budget but for one, and parts
   longer than the ranges scanned ahead are still read beside it; arrays of
   elements longer than a part the budget lets be read beside others are
   read in one go after scanning that much; a thread that does not start
@@ -706,7 +709,7 @@ rules say which of theirs is which (`InOneGo::always`).
   were; the plans: threads as many as the ranges keep busy (two at
   least, 1,024 at most however many are asked for), ranges of 256 KiB at
   least and at most 65,536 of them; parts whose trees are 30 times their
-  text are measured before any is given out, and stay within the budget;
+  text are measured before any is given out, and stay within twice the budget;
   long runs of backslashes, cut anywhere, give the escapes of a
   byte-by-byte scan, and are read whole on several threads; a file
   opened again for each thread reads as in one go, and a file put in its
@@ -931,7 +934,9 @@ not depend on it): `QUICKTYPE_READ_THREADS` the number of threads (the
 default is as many as the machine runs at once; 1 reads in one go), and
 `QUICKTYPE_READ_CHUNK` the range size in bytes, which also reads samples
 of any size so (by default only those of 8 MiB or more), and
-`QUICKTYPE_READ_BUDGET` the bytes the parts' trees under way may take.
+`QUICKTYPE_READ_BUDGET` the budget for the parts' trees (a part whose
+tree would take half of it is read in one go; those under way may take
+twice it).
 The CLI reads them and hands the library a `ParallelOptions`
 (`Readable::open_sample`); the library itself reads no environment
 variable, and its defaults are the CLI's.

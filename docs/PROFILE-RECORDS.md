@@ -616,9 +616,10 @@ How it differs from the prototypes:
   file read again: the rest is read in one go from the last comma the
   appended parts end at, on into their tree, which reports the same first
   error. Standard input redirected from a file is read the same way;
-  a pipe is read in one go. The parts' trees under way are bounded (the
-  threads times the range size, or 32 MiB): elements whose own tallies
-  are that large (the 2.6 GB input of 40 MB elements with 209,519-key
+  a pipe is read in one go. The parts' trees under way are bounded
+  (twice the budget, which is the threads times the range size, or
+  32 MiB): elements whose own tallies take half the budget (the 2.6 GB
+  input of 40 MB elements with 209,519-key
   maps) are read in one go after the first, which keeps that input at
   its 65 MiB instead of 1–1.4 GiB, but without the gain.
 
