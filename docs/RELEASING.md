@@ -190,16 +190,20 @@ every archive (and the npm installer package):
   is a custom job of dist's `global-artifacts-jobs`: it runs after every
   `build-local-artifacts` job, and `host`, which creates the GitHub Release
   before any publish job runs, waits for it and runs only if it passed. It
-  downloads what the build jobs uploaded and runs
-  [`release/check-release.mjs`](../release/check-release.mjs) on all six
-  archives: each must have `typescript/lib/tsc` (`tsc.exe` for Windows)
-  with the pinned SHA-256, executable but on Windows, the pinned package's
-  `package.json`, its LICENSE and NOTICE.txt, and `pins.json` equal to the
-  repository's, and its NOTICE must attribute TypeScript. Then
-  [`release/check-bundle.mjs`](../release/check-bundle.mjs) converts a
-  TypeScript file with the two Linux x86_64 archives (on Ubuntu) and with
-  the MSI and the zip (on Windows; the MSI unpacked with `msiexec /a`),
-  with no other compiler around.
+  downloads what the build jobs uploaded and checks each of the six
+  archives and the MSI once. Each must have `typescript/lib/tsc`
+  (`tsc.exe` for Windows) with the pinned SHA-256, executable (checked
+  for the non-Windows archives, on its Ubuntu runner), the pinned
+  package's `package.json`, its LICENSE and NOTICE.txt, and `pins.json`
+  equal to the repository's, and a LICENSE and a NOTICE that attributes
+  TypeScript (the checks of
+  [`release/check-release.mjs`](../release/check-release.mjs), with the
+  shared [`release/package.mjs`](../release/package.mjs), which also
+  unpacks zips itself). The two Linux x86_64 archives (on Ubuntu) and the
+  MSI and the zip (on Windows; the MSI unpacked with `msiexec /a`) are
+  checked by [`release/check-bundle.mjs`](../release/check-bundle.mjs),
+  which then converts a TypeScript file with each, with no other compiler
+  around; `check-release.mjs` checks the other three archives.
 - The `build-global-artifacts` job has no build setup, so the npm
   installer package that it builds gets `typescript/pins.json` alone (the
   installer unpacks the archive for the platform at install time).
@@ -215,9 +219,14 @@ every archive (and the npm installer package):
 
 quickertype does not run the bundled compiler to ask its version: it uses
 it only if `typescript/package.json` names this platform's package at the
-pinned version and `typescript/pins.json` is beside it, so a stray
-`typescript/lib/tsc` next to a binary is not run. Other compilers
-(`QUICKTYPE_TSC`, `node_modules`, `PATH`) must print the pinned version.
+pinned version, `typescript/pins.json` is beside it and (but on Windows)
+`lib/tsc` is executable, so a stray `typescript/lib/tsc` next to a binary
+is not run, and one without its execute bits is passed over for
+`node_modules` and `PATH`. Other compilers (`QUICKTYPE_TSC`,
+`node_modules`, `PATH`) must print the pinned version. If the chosen
+compiler cannot be started because the system refuses it, the error names
+its path and the fix (`chmod +x`, the platform's package, or
+`QUICKTYPE_TSC`).
 
 CI's `release-bundle` job builds the archive for its runner the same way
 (the same action, then `dist build`), runs the gate's check on it, and runs

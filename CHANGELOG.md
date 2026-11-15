@@ -67,8 +67,9 @@ section are absolute.
   (Homebrew: `share/quickertype/typescript`). quickertype looks for it
   after `QUICKTYPE_TSC` and before `node_modules` and `PATH`, from its
   executable's real path, so links to the binary work, and uses it only
-  with the release's `package.json` and `pins.json` beside it, without
-  starting it to ask its version. `cargo install` and the shell and
+  when it is executable with the release's `package.json` and `pins.json`
+  beside it, without starting it to ask its version. A compiler the
+  system refuses to start gives an error with its path and the fix. `cargo install` and the shell and
   PowerShell installers still give the binary alone; without a compiler,
   the error now names the platform's package (`npm install -g
   typescript@7.0.2`, which installs

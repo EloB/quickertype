@@ -335,9 +335,9 @@ crates/quicktype-typescript-input/
   2. the compiler a release bundles: the platform package `@typescript/typescript-<os>-<arch>@7.0.2`, unmodified
      (a 24 MB binary plus 3.9 MB of `lib.*.d.ts`), in `typescript/` next to the executable's real path (the
      release archives, the MSI, the npm package, which unpacks the archive) or in `../share/quickertype/typescript`
-     (Homebrew). It is used only if its `package.json` names this platform's package at 7.0.2 and the release's
-     `pins.json` is beside it, and is not run with `--version` (the release checked its hash; docs/RELEASING.md,
-     "The bundled TypeScript compiler");
+     (Homebrew). It is used only if `lib/tsc` is executable (but on Windows), its `package.json` names this
+     platform's package at 7.0.2 and the release's `pins.json` is beside it, and is not run with `--version` (the
+     release checked its hash; docs/RELEASING.md, "The bundled TypeScript compiler");
   3. `node_modules/@typescript/typescript-<os>-<arch>/lib/tsc`, searched upward from the cwd;
   4. `tsgo`/`tsc` on `PATH`.
 
