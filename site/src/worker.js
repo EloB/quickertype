@@ -11,7 +11,8 @@
 //             parts, ran, reason, first, workerFailure (a failure that is not quicktype's) }
 //
 // `{ kind: "stats" }` replies `{ stats }`: the engines' memory, for
-// measurements.
+// measurements; the engine runs are on, and the bytes a file read in parts
+// keeps, for the smoke test.
 //
 // `heldLimit` (for the smoke test) sets quickertype-core's limit on the
 // bytes its engine's inputs hold together, past which it copies the
@@ -19,9 +20,10 @@
 // the request). `partsFrom`, `partWorkers`, `textLimit` and `linesInOneGo`
 // (for the smoke test too) set the smallest file read in parts, the part
 // workers, the largest text and the largest JSON Lines read in one go (see
-// below), from that request on; `partModule` ("compile", "link", "type",
-// "version"; null) gives new part workers a module they cannot start with;
-// `typescript` runs that one request on the TypeScript engine.
+// below), from that request on; `partModule` (null for none) gives new part
+// workers that module instead of the engine (the smoke test's, which they
+// cannot start with); `typescript` runs that one request on the TypeScript
+// engine.
 //
 // `options` are `quicktype()` options from the page's general options
 // (`allPropertiesOptional`, the inference flags, …), as quicktype's CLI sets
@@ -92,18 +94,17 @@
 
 import { jsonLinesToArray, jsonLinesToArrayInPlace, readForArray } from "./json-lines.js";
 import {
+    checkText,
     decodedTooLong,
     formatBytes,
     linesInOneGo,
     maxFileBytes,
     maxTextBytes,
     partsFrom,
-    textFits,
     textTooLarge,
     tooLarge,
     tooLargeInOneGo,
     unreadable,
-    utf16Length,
 } from "./input-file.js";
 import { PartPool, maxPartWorkers } from "./part-pool.js";
 import { boot } from "./worker-boot.js";
@@ -136,34 +137,16 @@ function partWorkers() {
 }
 
 /**
- * A module part workers cannot start with (a test hook, `partModule`): one
- * that does not compile, one that does not link, not a module at all, and
- * one that is not the engine.
+ * A file read in parts, kept while requests carry it: its bytes, while it is
+ * read in one go; why it is (once that is for good); and how often reading
+ * it in parts failed for a reason of the reading's own.
  */
-function brokenModule(kind) {
-    const header = [0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00];
-    switch (kind) {
-        case "compile":
-            return new Uint8Array([...header, 0x63]);
-        case "link": {
-            // One function import, x, of the glue's imports, which have no x.
-            const from = [..."./quicktype_wasm_bg.js"].map((c) => c.charCodeAt(0));
-            const imports = [0x01, from.length, ...from, 0x01, 0x78, 0x00, 0x00];
-            return new WebAssembly.Module(new Uint8Array([...header, 0x01, 0x04, 0x01, 0x60, 0x00, 0x00, 0x02, imports.length, ...imports]));
-        }
-        case "type":
-            return 42;
-        default:
-            return new WebAssembly.Module(new Uint8Array(header));
-    }
-}
-
-/** A file read in parts, kept while requests carry it: its bytes, once read in one go, and why. */
 class PartsFile {
     constructor(file) {
         this.file = file;
         this.bytes = undefined;
         this.inOneGo = undefined;
+        this.failures = 0;
     }
 }
 
@@ -176,13 +159,17 @@ async function addPartsFile(input, sample, name, lines, phases) {
     if (sample.inOneGo === undefined) {
         const read = await readInParts(input, file, name, lines);
         if (read.read === true) {
+            // Read in parts: the bytes read in one go before, if any, go.
+            sample.bytes = undefined;
             phases.parts = { workers: read.workers, parts: read.parts };
             return;
         }
 
-        // Remembered for the file only if it is the file's own (no split,
-        // not JSON there, ...); a worker that failed, say, is not.
-        if (read.always) sample.inOneGo = read.inOneGo;
+        // Remembered for the file if it is the file's own (no split, not
+        // JSON there, ...). A reason of this reading (part workers that
+        // failed, say) is tried again once more, then the file is read in
+        // one go for as long as it is kept here.
+        if (read.always || ++sample.failures >= 2) sample.inOneGo = read.inOneGo;
         phases.parts = { inOneGo: read.inOneGo, cached: false };
     } else {
         phases.parts = { inOneGo: sample.inOneGo, cached: true };
@@ -190,18 +177,19 @@ async function addPartsFile(input, sample, name, lines, phases) {
 
     // In one go, as any file, as far as the engine holds JSON Lines, and
     // one string JSON's text (for its errors).
-    const fits = lines ? file.size <= hooks.linesInOneGo : textFits(file.size, hooks.textLimit);
-    if (fits === false) throw tooLargeInOneGo(file.name, file.size, phases.parts.inOneGo);
+    const tooLarge = () => tooLargeInOneGo(file.name, file.size, phases.parts.inOneGo);
+    if (lines && file.size > hooks.linesInOneGo) throw tooLarge();
+    if (!lines) checkText(undefined, file.size, hooks.textLimit, tooLarge);
     if (sample.bytes === undefined) {
         let bytes;
         try {
             bytes = new Uint8Array(await file.arrayBuffer());
         } catch (e) {
-            throw unreadable(file.name, e);
+            throw e instanceof RangeError ? tooLarge() : unreadable(file.name, e);
         }
 
         if (bytes.length !== file.size) throw unreadable(file.name, new Error("the browser returned no bytes"));
-        if (fits === undefined && utf16Length(bytes) > hooks.textLimit) throw tooLargeInOneGo(file.name, file.size, phases.parts.inOneGo);
+        if (!lines) checkText(bytes, file.size, hooks.textLimit, tooLarge);
         sample.bytes = bytes;
     }
 
@@ -219,7 +207,7 @@ async function readInParts(input, file, name, lines) {
     try {
         const count = partWorkers();
         if (count < 2) return { inOneGo: "no part workers", always: false };
-        const readers = await pool.readers(file, hooks.partModule === undefined ? globalThis[Symbol.for("quicktype-core.wasmModule")] : brokenModule(hooks.partModule), count);
+        const readers = await pool.readers(file, hooks.partModule ?? globalThis[Symbol.for("quicktype-core.wasmModule")], count);
         return await readJSONInputInParts(
             input,
             {
@@ -233,10 +221,15 @@ async function readInParts(input, file, name, lines) {
                 // text).
                 reread: () => {
                     const tooLong = () => new RangeError(`${file.name} is too large to read again with TypeScript (${formatBytes(file.size)})`);
-                    const fits = textFits(file.size, hooks.textLimit);
-                    if (fits === false) throw tooLong();
-                    const bytes = new Uint8Array(new FileReaderSync().readAsArrayBuffer(file));
-                    if (fits === undefined && utf16Length(bytes) > hooks.textLimit) throw tooLong();
+                    checkText(undefined, file.size, hooks.textLimit, tooLong);
+                    let bytes;
+                    try {
+                        bytes = new Uint8Array(new FileReaderSync().readAsArrayBuffer(file));
+                    } catch (e) {
+                        throw e instanceof RangeError ? tooLong() : e;
+                    }
+
+                    checkText(bytes, file.size, hooks.textLimit, tooLong);
                     return bytes;
                 },
             },
@@ -326,6 +319,8 @@ async function generate({ kind, lang, name, sample, rendererOptions, options = {
     // (A test hook: this run on the TypeScript engine, which reads the
     // input's tables.)
     const engineKey = Symbol.for("quicktype-core.engine");
+    // (What it was, which the TypeScript worker's start set for good.)
+    const engineWas = Object.prototype.hasOwnProperty.call(globalThis, engineKey) ? { value: globalThis[engineKey] } : undefined;
     if (hooks.typescript) globalThis[engineKey] = "ts";
     try {
         return await quicktypeMultiFile({ ...options, inputData, lang, rendererOptions });
@@ -336,7 +331,10 @@ async function generate({ kind, lang, name, sample, rendererOptions, options = {
         if (lastRead !== undefined && tablesFailed(lastRead.input)) settleLastRead(undefined, undefined, false);
         throw e;
     } finally {
-        if (hooks.typescript) delete globalThis[engineKey];
+        if (hooks.typescript) {
+            if (engineWas === undefined) delete globalThis[engineKey];
+            else globalThis[engineKey] = engineWas.value;
+        }
         if (release !== undefined) releaseJSONInput(release);
     }
 }
@@ -398,65 +396,61 @@ async function inputSample({ kind, text, file }) {
     if (lastFile !== undefined && lastFile.key !== key) lastFile = undefined;
     if (file === undefined) return form === "array" ? jsonLinesToArray(text) : text;
     if (lastFile !== undefined) return lastFile.sample;
-    // A text must fit one string; bytes too (but JSON Lines, read value by
-    // value), where they are JSON whose errors need it. Past the longest
-    // text in bytes, the text may still fit: it is counted once read.
-    const fits =
-        form === "parts"
-            ? tooLarge(file.name, file.size, file.size, maxFileBytes) === undefined
-            : form === "array"
-              ? true
-              : form === "bytes" && kind === "jsonl"
-                ? file.size <= hooks.linesInOneGo
-                : textFits(file.size, hooks.textLimit);
-    if (fits === false) {
-        if (form === "parts") throw tooLarge(file.name, file.size, file.size, maxFileBytes);
-        // (A file this large is read in parts where there are part workers.)
-        throw form === "bytes" && kind === "jsonl" ? tooLargeInOneGo(file.name, file.size, "no part workers") : textTooLarge(file.name, file.size);
-    }
     if (parts) {
+        const large = tooLarge(file.name, file.size, file.size, maxFileBytes);
+        if (large !== undefined) throw large;
         // Another file: the input read from the one before goes first.
         settleLastRead(undefined, undefined, false);
         lastFile = { key, sample: new PartsFile(file) };
         return lastFile.sample;
     }
 
+    // What is read must fit: a text one string (quicktype's text, the JSON
+    // array of JSON Lines for quicktype, JSON's bytes for their errors),
+    // JSON Lines' bytes what the engine holds in one go (they are read value
+    // by value). Past the longest text in bytes, the text may still fit
+    // (UTF-8 takes up to three bytes a unit): JSON's bytes are counted once
+    // read, and a text checked once decoded. A file read at once larger
+    // than a buffer can be is too large too.
+    const linesBytes = form === "bytes" && kind === "jsonl";
+    // (A file of JSON Lines this large is read in parts where there are part workers.)
+    const tooLargeHere = () => (linesBytes ? tooLargeInOneGo(file.name, file.size, "no part workers") : textTooLarge(file.name, file.size));
+    if (linesBytes && file.size > hooks.linesInOneGo) throw tooLargeHere();
+    if (!linesBytes) checkText(undefined, file.size, hooks.textLimit, tooLargeHere);
     // Another file: the input read from the one before goes before this
     // one is read, so that the two are never held at once.
     settleLastRead(undefined, undefined, false);
     let read;
     try {
-        // A text past the longest in bytes is decoded from its bytes once
-        // they are counted (decoding one too long gives "", in Chrome).
-        if (form === "text") read = fits === true ? await file.text() : new Uint8Array(await file.arrayBuffer());
+        if (form === "text") read = await file.text();
         else if (form === "bytes") read = new Uint8Array(await file.arrayBuffer());
         else read = await readForArray(file);
     } catch (e) {
-        throw unreadable(file.name, e);
+        throw e instanceof RangeError ? tooLargeHere() : unreadable(file.name, e);
     }
 
-    if (read.length === 0 && file.size > 0) throw unreadable(file.name, new Error(`the browser returned no ${form === "text" ? "text" : "bytes"}`));
-    if (fits === undefined) {
-        if (utf16Length(read) > hooks.textLimit) throw textTooLarge(file.name, file.size);
-        if (form === "text") read = new TextDecoder().decode(read);
-    }
-
-    // A text too long for one string reads as "" (Chrome): never quicktype's input.
-    if (form === "text" && decodedTooLong(read, file.size)) throw textTooLarge(file.name, file.size);
-    if (form === "array") {
+    if (form === "bytes") {
+        if (read.length !== file.size) throw unreadable(file.name, new Error("the browser returned no bytes"));
+        if (!linesBytes) checkText(read, file.size, hooks.textLimit, tooLargeHere);
+    } else if (form === "text") {
+        // A text too long for one string reads as "" (Chrome): never quicktype's input.
+        if (decodedTooLong(read, file.size) || read.length > hooks.textLimit) throw tooLargeHere();
+    } else {
         // The array, in the bytes' buffer; then its text, which is what
         // quicktype's API takes. The text is decoded from the array, at most
         // two bytes longer than the file, if it fits one string.
         const length = jsonLinesToArrayInPlace(read);
         const array = read.subarray(0, length);
-        const arrayFits = textFits(length, hooks.textLimit);
-        if (arrayFits === false || (arrayFits === undefined && utf16Length(array) > hooks.textLimit)) {
-            throw textTooLarge(file.name, file.size, length);
+        const tooLong = () => textTooLarge(file.name, file.size, length);
+        checkText(undefined, length, hooks.textLimit, tooLong);
+        read = undefined;
+        try {
+            read = new TextDecoder().decode(array);
+        } catch (e) {
+            throw e instanceof RangeError ? tooLong() : e;
         }
 
-        read = undefined;
-        read = new TextDecoder().decode(array);
-        if (decodedTooLong(read, length)) throw textTooLarge(file.name, file.size, length);
+        if (decodedTooLong(read, length) || read.length > hooks.textLimit) throw tooLong();
     }
 
     lastFile = { key, sample: read };
@@ -468,7 +462,17 @@ async function handle(request) {
         // For measurements: the WebAssembly memory of this worker's engine
         // and of each part worker's (it never shrinks: the most each held).
         const memory = (currentEngine()?.__memoryPages() ?? 0) * 65536;
-        return { type: "result", id: request.id, ok: true, stats: { memory, partMemory: await pool.memory(), engineStats: { ...engineStats } } };
+        // For the smoke test too: the engine runs are on (`ts` for the
+        // TypeScript worker, for good), and the bytes the file read in parts
+        // keeps (those it was read in one go with, if it was).
+        const engineMode = globalThis[Symbol.for("quicktype-core.engine")] ?? null;
+        const keptBytes = lastFile?.sample instanceof PartsFile ? (lastFile.sample.bytes?.length ?? 0) : null;
+        return {
+            type: "result",
+            id: request.id,
+            ok: true,
+            stats: { memory, partMemory: await pool.memory(), engineStats: { ...engineStats }, engineMode, keptBytes },
+        };
     }
 
     const first = runs === 0;

@@ -2643,10 +2643,23 @@ try {
     // A file at the limit whose array is past it: its own size, and the array's.
     assert.equal(tooLarge("big.jsonl", maxTextBytes), undefined);
     // The UTF-16 units UTF-8 decodes to, as TextDecoder counts them (a byte
-    // order mark first is not text); and the bounds bytes give.
+    // order mark first is not text; each piece of a sequence that is not
+    // UTF-8 is one U+FFFD): on texts, and on seeded random bytes, mostly
+    // those that begin, continue or break sequences; and the bounds bytes
+    // give.
     for (const text of ["", "plain", "é€😀", "\ufeff[\"€\"]", "€".repeat(1000), "😀".repeat(500) + "x"]) {
         const bytes = new TextEncoder().encode(text);
         assert.equal(utf16Length(bytes), new TextDecoder().decode(bytes).length, JSON.stringify(text.slice(0, 20)));
+    }
+    {
+        let seed = 5;
+        const random = (n) => Math.floor(((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648) * n);
+        const pieces = [0x41, 0x80, 0x8f, 0x90, 0x9f, 0xa0, 0xbf, 0xc0, 0xc2, 0xdf, 0xe0, 0xed, 0xef, 0xf0, 0xf4, 0xf5, 0xff, 0xbb];
+        for (let i = 0; i < 50_000; i++) {
+            const bytes = Uint8Array.from({ length: random(12) }, () => (random(4) === 0 ? random(256) : pieces[random(pieces.length)]));
+            if (random(8) === 0) bytes.set([0xef, 0xbb, 0xbf].slice(0, Math.min(3, bytes.length)));
+            assert.equal(utf16Length(bytes), new TextDecoder().decode(bytes).length, `[${bytes.join(", ")}]`);
+        }
     }
     assert.deepEqual([textFits(10, 10), textFits(11, 10), textFits(33, 10), textFits(34, 10)], [true, undefined, undefined, false]);
     assert.ok(decodedTooLong("", 4) && !decodedTooLong("", 3) && !decodedTooLong("x", 4));
@@ -2855,27 +2868,51 @@ try {
     assert.match(brokenCli.stderr, new RegExp(`^Error: Syntax error in input JSON PartsBroken: line ${badLine}: `), "the CLI names the same line");
     console.log(`ok: a broken element late in parts-broken.json and a bad line in parts-broken.jsonl: read in one go, with its errors ("${brokenLinesRead.error}"); why is remembered for the file`);
 
-    // Part workers that do not start (more than there are, with a module
-    // that does not link): the file is read in one go, why is not
-    // remembered, and the next reading, with new part workers in their
-    // place, reads it in parts.
-    const cardsRead = await (async () => {
-        await openFile(sampleFiles["parts-cards.json"], { timeout: 300_000 });
-        return wasmResult();
-    })();
-    await hooks({ partWorkers: 10, partModule: "link" });
-    await click("general-no-ignore-json-refs");
-    const notStarted = await wasmResult();
+    // Part workers that do not start (more of them than there are, given a
+    // module that does not link, through the hook): the file is read in one
+    // go, why is not remembered, and the next reading tries parts again,
+    // with new part workers in their place, and lets go of the bytes read
+    // in one go. A second such failure for the file, and it is read in one
+    // go for as long as it is kept. (Each reading is a run of the file
+    // shown, carrying the hooks, with `$ref`s read the other way than the
+    // run before, so that the input kept is not reused; a request without
+    // the file would let it go.)
+    const retryFile = chosen("retry-cards.json", cardsArray);
+    const size = fs.statSync(retryFile).size;
+    await openFile(retryFile, { timeout: 300_000 });
+    const cardsRead = await wasmResult();
+    assert.ok(cardsRead.parts?.workers >= 2 && cardsRead.parts.workers < 10, `retry-cards.json: read in parts (${JSON.stringify(cardsRead.parts)})`);
+    let refs = false;
+    const readAgain = (settings, unlinked = false) => {
+        refs = !refs;
+        return page.evaluate(`(async () => {
+            const settings = ${JSON.stringify(settings)};
+            if (${unlinked}) {
+                const header = [0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00];
+                const from = [..."./quicktype_wasm_bg.js"].map((c) => c.charCodeAt(0));
+                const imports = [0x01, from.length, ...from, 0x01, 0x78, 0x00, 0x00];
+                settings.partModule = new WebAssembly.Module(new Uint8Array([...header, 0x01, 0x04, 0x01, 0x60, 0x00, 0x00, 0x02, imports.length, ...imports]));
+            }
+            const request = playground.view.request;
+            const r = await playground.engines.wasm.run({ ...request, options: { ...request.options, ignoreJsonRefs: ${!refs} }, ...settings });
+            const { stats } = await playground.engines.wasm.run({ kind: "stats" });
+            return { ok: r.ok, reused: r.reused, parts: r.parts, files: r.files?.map((f) => f.text), keptBytes: stats.keptBytes };
+        })()`);
+    };
+    const notStarted = await readAgain({ partWorkers: 10 }, true);
     assert.equal(notStarted.ok, true, "part workers that do not start: the run");
     assert.match(notStarted.parts?.inOneGo ?? "", /^LinkError: /, "part workers that do not start: in one go");
-    assert.equal(notStarted.parts.cached, false);
-    assert.deepEqual(notStarted.files, cardsRead.files, "part workers that do not start: the output");
-    await hooks({ partModule: null });
-    await click("general-no-ignore-json-refs");
-    const restarted = await wasmResult();
-    assert.deepEqual([restarted.parts?.workers, restarted.files], [10, cardsRead.files], "new part workers in their place: read in parts");
+    assert.deepEqual([notStarted.parts.cached, notStarted.reused, notStarted.files], [false, false, cardsRead.files], "part workers that do not start: the output");
+    assert.equal(notStarted.keptBytes, size, "read in one go: its bytes kept");
+    const restarted = await readAgain({ partModule: null });
+    assert.deepEqual([restarted.parts, restarted.reused, restarted.files], [{ workers: 10, parts: restarted.parts?.parts }, false, cardsRead.files], "new part workers in their place: read in parts");
+    assert.equal(restarted.keptBytes, 0, "read in parts again: the bytes read in one go let go");
+    const again = await readAgain({ partWorkers: 11 }, true);
+    assert.deepEqual([again.parts?.cached, /^LinkError: /.test(again.parts?.inOneGo), again.files], [false, true, cardsRead.files], "a second failure");
+    const remembered = await readAgain({ partModule: null });
+    assert.deepEqual([remembered.parts, remembered.files, remembered.keptBytes], [{ inOneGo: again.parts.inOneGo, cached: true }, cardsRead.files, size], "after a second failure: in one go, without trying parts");
     await hooks({ partWorkers: null });
-    console.log(`ok: part workers that do not start ("${notStarted.parts.inOneGo.slice(0, 60)}…"): read in one go, not remembered; the next reading has new part workers and reads in parts`);
+    console.log(`ok: part workers that do not start ("${notStarted.parts.inOneGo.slice(0, 60)}…"): read in one go, not remembered; the next reading has new part workers, reads in parts and lets the bytes go; after a second failure, in one go for as long as the file is kept`);
 
     await hooks({ textLimit: 10e6 }, ["wasm", "ts"]);
     await openFile(sampleFiles["parts-cards.json"], { timeout: 300_000 });
@@ -2890,6 +2927,11 @@ try {
     assert.equal(tablesRun.ok, false, "a run on the TypeScript engine past the longest text");
     assert.match(tablesRun.error, /^quicktype-core: the tables cannot be had for this input: parts-cards\.json is too large to read again with TypeScript \(20\.\d MB\)$/);
     const afterTables = await page.evaluate(`playground.engines.wasm.run(playground.view.request).then((r) => ({ ok: r.ok, reused: r.reused, workers: r.parts?.workers, files: r.files?.map((f) => f.text) }))`);
+    // The hook's run on the TypeScript engine leaves each worker's engine
+    // as it was: none set on quickertype's, TypeScript on quicktype's.
+    const engineMode = (engine) => page.evaluate(`playground.engines.${engine}.run({ kind: "stats" }).then((r) => r.stats.engineMode)`);
+    await page.evaluate(`playground.engines.ts.run({ kind: "json", lang: "typescript", name: "X", text: "[1]", rendererOptions: {}, options: {}, typescript: true }).then(() => true)`);
+    assert.deepEqual([await engineMode("wasm"), await engineMode("ts")], [null, "ts"], "the engines after the typescript hook");
     assert.deepEqual({ ...afterTables, workers: afterTables.workers >= 2 }, { ok: true, reused: false, workers: true, files: pastText.files }, "the run after the tables failed");
     ran = await switchEngine("ts", "quicktype on parts-cards.json past the longest text");
     const tooLong = await page.evaluate(`({ title: document.querySelector("#error .error-title")?.textContent, message: document.querySelector("#error .error-message")?.textContent })`);
@@ -2930,6 +2972,24 @@ try {
     }
 
     const shownError = () => page.evaluate(`({ status: document.body.dataset.status, title: document.querySelector("#error .error-title")?.textContent, message: document.querySelector("#error .error-message")?.textContent })`);
+    // JSON Lines on quicktype's worker past the longest text (made 6 MB
+    // here) once made its JSON array: too large for the browser, which the
+    // array's size says, never read as they are, nor unreadable; more than
+    // three times past it in bytes, refused before they are read (no array
+    // to say the size of).
+    await hooks({ textLimit: 6e6 }, ["ts"]);
+    for (const [name, lines, read] of [["array.jsonl", 1_750_000, true], ["thrice.jsonl", 4_750_000, false]]) {
+        const refused = await page.evaluate(`(async () => {
+            const file = new File(["[1]\\n".repeat(${lines})], ${JSON.stringify(name)});
+            const r = await playground.engines.ts.run({ kind: "jsonl", lang: "typescript", name: "Lines", file, rendererOptions: {}, options: {} });
+            return { ok: r.ok, title: r.error?.title, message: r.error?.message, size: file.size };
+        })()`);
+        assert.deepEqual([refused.ok, refused.title, refused.size], [false, `${name} is too large for the browser`, lines * 4], `${name} on quicktype past the longest text`);
+        const array = `Made into the JSON array that quicktype reads, it is ${(lines * 4 + 1).toLocaleString("en-US")} bytes.`;
+        assert.equal(refused.message.includes(array), read, `${name}: ${refused.message}`);
+    }
+    await hooks({ textLimit: 10e6 }, ["ts"]);
+    console.log("ok: JSON Lines whose JSON array is past the longest text (made 6 MB), and three times past it in bytes: too large for quicktype in the browser");
     const ascii = JSON.stringify(Array.from({ length: 40_000 }, (_, i) => ({ id: i, note: "e".repeat(300), tag: `t${i % 5}` })));
     assert.ok(ascii.length > 10e6 && ascii.length < partsFrom);
     await openFile(chosen("ascii.json", ascii), { failing: true, timeout: 300_000 });

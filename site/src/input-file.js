@@ -75,19 +75,57 @@ export function textTooLarge(name, size, decoded = size) {
 }
 
 /**
- * How many UTF-16 units the UTF-8 `bytes` decode to (as `TextDecoder`
- * decodes them: a leading byte order mark is not part of the text): every
- * byte that does not continue a sequence starts a unit, and one of four
- * bytes two. Exact for UTF-8; for bytes that are not, about what the
- * decoder's replacement characters take.
+ * How many UTF-16 units `bytes` decode to, exactly as `TextDecoder` (UTF-8,
+ * the WHATWG decoder) decodes them: a code point of one to three bytes is
+ * one unit and one of four bytes two; each maximal subpart of an invalid
+ * sequence is one U+FFFD, and the byte that ended it is read again; an
+ * incomplete sequence at the end is one U+FFFD; a leading byte order mark
+ * is not part of the text.
  */
 export function utf16Length(bytes) {
     let units = 0;
+    // The continuation bytes the sequence under way needs, has, and may be.
+    let needed = 0;
+    let seen = 0;
+    let lower = 0x80;
+    let upper = 0xbf;
     for (let i = 0; i < bytes.length; i++) {
         const b = bytes[i];
-        if ((b & 0xc0) !== 0x80) units += b >= 0xf0 ? 2 : 1;
+        if (needed === 0) {
+            if (b < 0x80) units++;
+            else if (b >= 0xc2 && b <= 0xdf) needed = 1;
+            else if (b >= 0xe0 && b <= 0xef) {
+                if (b === 0xe0) lower = 0xa0;
+                else if (b === 0xed) upper = 0x9f;
+                needed = 2;
+            } else if (b >= 0xf0 && b <= 0xf4) {
+                if (b === 0xf0) lower = 0x90;
+                else if (b === 0xf4) upper = 0x8f;
+                needed = 3;
+            } else units++;
+            seen = 0;
+            continue;
+        }
+
+        if (b < lower || b > upper) {
+            // What came so far is one U+FFFD, and this byte starts afresh.
+            needed = 0;
+            lower = 0x80;
+            upper = 0xbf;
+            units++;
+            i--;
+            continue;
+        }
+
+        lower = 0x80;
+        upper = 0xbf;
+        if (++seen === needed) {
+            units += needed === 3 ? 2 : 1;
+            needed = 0;
+        }
     }
 
+    if (needed !== 0) units++;
     return bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf ? units - 1 : units;
 }
 
@@ -100,6 +138,18 @@ export function textFits(size, limit) {
     if (size <= limit) return true;
     if (size > 3 * limit + 3) return false;
     return undefined;
+}
+
+/**
+ * Throws `onTooLarge()` unless the text of `size` bytes of UTF-8 fits
+ * `limit` UTF-16 units: by the bounds (`textFits`), before the bytes are
+ * read (`bytes` undefined); where those do not tell, by counting the bytes
+ * (`utf16Length`) once they are. The one size check of the workers'
+ * texts.
+ */
+export function checkText(bytes, size, limit, onTooLarge) {
+    const fits = textFits(size, limit);
+    if (fits === false || (fits === undefined && bytes !== undefined && utf16Length(bytes) > limit)) throw onTooLarge();
 }
 
 /**
