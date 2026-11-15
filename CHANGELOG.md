@@ -99,11 +99,13 @@ section are absolute.
   read (the file is broken, the engine declines a value, bytes that are
   not UTF-8) or the CLI would read in one go, the file is read in one go,
   with its errors. In headless Chrome on 8 workers, warm, reading and
-  running: the 100k records (27 MB) in 19 ms instead of 43, 100 MB of
-  cards in 116 ms instead of 412, and Scryfall cards (real data, 656 MB)
-  in 0.57 s instead of 2.8 s, the engine's WebAssembly memory 45 MiB
-  instead of 1.7 GiB, with 280 MiB in the part workers
-  ([BENCHMARKS.md](https://github.com/EloB/quickertype/blob/main/docs/BENCHMARKS.md#reading-on-several-workers)). quickertype
+  running: the 100k records (27 MB) in 18 ms instead of 43, 100 MB of
+  cards in 107 ms instead of 397, and Scryfall cards (real data, 656 MB)
+  in 0.50 s instead of 2.6 s, the engine's WebAssembly memory 32 MiB
+  instead of 1.5 GiB, with 280 MiB in the part workers; against
+  quicktype in the same page, 17× to 25× faster warm on the first 100 to
+  537 MB of those cards
+  ([BENCHMARKS.md](https://github.com/EloB/quickertype/blob/main/docs/BENCHMARKS.md#large-files-in-the-browser-quicktype-against-quickertype)). quickertype
   now opens files of up to 2 GiB in the playground: those it reads in
   parts at any size; in one go, JSON up to the longest string a browser
   holds (512 MiB) and JSON Lines up to 1.25 GiB (what its engine holds,

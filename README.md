@@ -2,7 +2,7 @@
 
 **quicktype, rewritten in Rust: the same CLI, the same API and the same
 output, byte for byte apart from [a few fixed
-bugs](docs/PARITY.md#bugs-fixed-in-quickertype), up to 86× faster.**
+bugs](docs/PARITY.md#bugs-fixed-in-quickertype), up to 89× faster.**
 
 [![CI](https://github.com/EloB/quickertype/actions/workflows/ci.yml/badge.svg)](https://github.com/EloB/quickertype/actions/workflows/ci.yml)
 [![Playground](https://img.shields.io/badge/playground-try%20it%20in%20the%20browser-6e56cf)](https://elob.github.io/quickertype/app/)
@@ -47,15 +47,15 @@ files. Wall time, median of 10 runs:
 
 | Run | quicktype | quickertype | Faster |
 |---|---:|---:|---:|
-| Startup (`--version`) | 226 ms | 2.9 ms | 77× |
-| Tiny JSON (77 B) → TypeScript | 244 ms | 2.8 ms | 86× |
-| `pokedex.json` (82 KB) → TypeScript | 266 ms | 4.0 ms | 67× |
-| `github-events.json` (82 KB) → 8 languages | 284–312 ms | 5.9–8.5 ms | 37–49× |
-| GraphQL schema (1.2 MB) and query → TypeScript | 269 ms | 9.2 ms | 29× |
-| JSON Schema (vega-lite, 306 KB) → TypeScript | 439 ms | 39 ms | 11× |
-| Generated JSON (40 MB) → TypeScript | 2,676 ms | 155 ms | 17× |
-| quicktype's test corpus: 11,178 CLI runs, 12 in parallel | 474 s | 9.0 s | 52× |
-| Peak memory, generated JSON (40 MB) | 653 MiB | 61 MiB | 11× less |
+| Startup (`--version`) | 226 ms | 2.6 ms | 89× |
+| Tiny JSON (77 B) → TypeScript | 246 ms | 2.9 ms | 85× |
+| `pokedex.json` (82 KB) → TypeScript | 265 ms | 4.1 ms | 65× |
+| `github-events.json` (82 KB) → 8 languages | 285–303 ms | 5.3–8.0 ms | 38–54× |
+| GraphQL schema (1.2 MB) and query → TypeScript | 253 ms | 8.3 ms | 30× |
+| JSON Schema (vega-lite, 306 KB) → TypeScript | 429 ms | 38 ms | 11× |
+| Generated JSON (40 MB) → TypeScript | 2,786 ms | 166 ms | 17× |
+| quicktype's test corpus: 11,178 CLI runs, 12 in parallel | 495 s | 10.2 s | 48× |
+| Peak memory, generated JSON (40 MB) | 681 MiB | 61 MiB | 11× less |
 
 <p>
 <picture>
@@ -64,19 +64,19 @@ files. Wall time, median of 10 runs:
 </picture>
 </p>
 
-- **Large files:** a 2.6 GB JSON file becomes TypeScript types in 8.4 s
+- **Large files:** a 2.6 GB JSON file becomes TypeScript types in 7.3 s
   at a peak of 64 MiB; memory grows with what is distinct in the JSON,
   not with its size. Scryfall cards (real data): 657 MB take 0.28 s and
-  50 MiB, against quicktype's 30 s and 3.2 GiB, and the cards in every
-  language (3.0 GB) take 1.4 s.
+  50 MiB, against quicktype's 28 s and 3.2 GiB, and the cards in every
+  language (3.0 GB) take 1.3 s.
 - **Several cores:** a file of 8 MiB or more whose top-level value is an
   array, or that holds JSON Lines, is read on all cores: an array of 1
-  million records (267 MB) becomes TypeScript types in 57 ms instead of
-  262 ms on a 12-core M2 Max, with the same output.
+  million records (267 MB) becomes TypeScript types in 50 ms instead of
+  260 ms on a 12-core M2 Max, with the same output.
 - **Where the time goes:** on small inputs, most of the difference is
   starting Node.js and loading quicktype (226 ms for `--version` alone);
   on large inputs it is the engine. As
-  libraries in a warm process, the native engine is 3.7× faster than
+  libraries in a warm process, the native engine is 4.0× faster than
   quicktype's TypeScript.
 - **In the browser and on npm:** the table is the native CLI's. The
   WebAssembly engine behind quicktype's own API (`addSource`, then
@@ -93,15 +93,21 @@ files. Wall time, median of 10 runs:
   | Input | quicktype | quickertype | Faster |
   |---|---:|---:|---:|
   | `pokedex.json` (82 KB) | 4.7 ms | 1.6 ms | 2.9× |
-  | Generated JSON (20 MB) | 406 ms | 122 ms | 3.3× |
+  | Generated JSON (20 MB) | 407 ms | 122 ms | 3.3× |
   | Array of 100k small records (27 MB) | 156 ms | 53 ms | 2.9× |
-  | The same, generating the code only | 76 ms | 6.6 ms | 12× |
+  | The same, generating the code only | 76 ms | 6.2 ms | 12× |
 
   A first run also compiles the 5 MiB engine: in a fresh Node process,
-  `pokedex.json` takes 51 ms against quicktype's 29 ms, and the records
-  114 ms against 245 ms.
+  `pokedex.json` takes 50 ms against quicktype's 28 ms, and the records
+  109 ms against 233 ms.
 
-Measured on November 14, 2026, on an Apple M2 Max (12 cores, 64 GiB),
+  The playground reads a large file on up to 8 workers at once. On
+  Scryfall cards (real data), 100 to 537 MB, it is 17× to 25× faster than
+  quicktype in the same page, warm (0.40 s against 10.2 s at 537 MB, in
+  a quarter of the memory); the whole 657 MB file, which quicktype cannot
+  read in a browser, takes 0.48 s.
+
+Measured on November 15, 2026, on an Apple M2 Max (12 cores, 64 GiB),
 macOS 26.6.2, Node.js 24.16.0, Chrome 157, rustc 1.99.1. Method, every
 benchmark and how to reproduce them:
 [docs/BENCHMARKS.md](docs/BENCHMARKS.md) and the
