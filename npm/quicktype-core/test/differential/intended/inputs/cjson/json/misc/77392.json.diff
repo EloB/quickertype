@@ -1,0 +1,20 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -103,7 +103,7 @@
+ 
+ enum OrbitClass cJSON_GetOrbitClassValue(const cJSON * j) {
+     enum OrbitClass x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Apollo")) x = ORBITCLASS_APOLLO;
+         else if (!strcmp(cJSON_GetStringValue(j), "Amor")) x = ORBITCLASS_AMOR;
+         else if (!strcmp(cJSON_GetStringValue(j), "Aten")) x = ORBITCLASS_ATEN;
+@@ -135,7 +135,7 @@
+ 
+ enum Pha cJSON_GetPhaValue(const cJSON * j) {
+     enum Pha x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Y")) x = PHA_Y;
+         else if (!strcmp(cJSON_GetStringValue(j), "N")) x = PHA_N;
+         else if (!strcmp(cJSON_GetStringValue(j), "n/a")) x = PHA_N_A;

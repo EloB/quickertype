@@ -1,0 +1,30 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -113,7 +113,7 @@
+ 
+ enum Language cJSON_GetLanguageValue(const cJSON * j) {
+     enum Language x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Markdown")) x = LANGUAGE_MARKDOWN;
+     }
+     return x;
+@@ -129,7 +129,7 @@
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j) {
+     enum Type x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "text/plain")) x = TYPE_TEXT_PLAIN;
+     }
+     return x;
+@@ -362,8 +362,7 @@
+                             cJSON_DeleteTopLevelElement(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteFile(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetFileValue(e1), sizeof(struct File *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct File *));
+                     }
+                     x->files = x1;
+                 }

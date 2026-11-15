@@ -570,7 +570,11 @@ impl<'a> CJsonRenderer<'a> {
             ],
             |r| {
                 r.emit_line(sl!["enum ", enum_name, " x = 0;"]);
-                r.emit_block(sl!["if (NULL != j)"], |r| {
+                // quicktype checks `NULL != j` and calls `strcmp` on
+                // `cJSON_GetStringValue(j)`, `NULL` for a value that is not
+                // a string (a fix of ours, docs/PARITY.md, "Bugs fixed in
+                // quickertype").
+                r.emit_block(sl!["if (cJSON_IsString(j))"], |r| {
                     let mut on_first = true;
                     let combined_name =
                         all_upper_word_style(&r.sourcelike_to_string(&enum_name.into())?);
@@ -1797,8 +1801,12 @@ impl<'a> CJsonRenderer<'a> {
                 ));
             }
             if let Some(pattern) = &pattern {
+                // Matched only when it compiled: quicktype ignores what
+                // `regcomp` returns (a fix of ours, docs/PARITY.md, "Bugs
+                // fixed in quickertype"), and a JSON Schema pattern is not
+                // always a POSIX extended one.
                 r.emit_line(format!(
-                    "regex_t regex; regcomp(&regex, \"{}\", REG_EXTENDED); if (regexec(&regex, {value}->valuestring, 0, NULL, 0)) {{ regfree(&regex); cJSON_Delete{class}(x); return NULL; }} regfree(&regex);",
+                    "regex_t regex; if (0 == regcomp(&regex, \"{}\", REG_EXTENDED)) {{ if (regexec(&regex, {value}->valuestring, 0, NULL, 0)) {{ regfree(&regex); cJSON_Delete{class}(x); return NULL; }} regfree(&regex); }}",
                     string_escape(pattern)
                 ));
             }
@@ -2207,27 +2215,24 @@ impl<'a> CJsonRenderer<'a> {
             let get_value = self.sourcelike_to_string(&items.get_value)?;
             let property = self.sourcelike_to_string(&name.into())?;
             let class = self.sourcelike_to_string(&class_name.into())?;
-            let delete_type = self.sourcelike_to_string(&items.delete_type)?;
             let l = lvl(level);
+            // quicktype deletes `validated` and parses the value again for
+            // the map (a fix of ours, docs/PARITY.md, "Bugs fixed in
+            // quickertype").
             self.emit_multiline(&format!(
                 "{c_type} * validated = {get_value}({element});
 if (NULL == validated) {{
     x{l}->{property} = x{child};
     cJSON_Delete{class}(x);
     return NULL;
-}}
-{delete_type}(validated);"
+}}"
             ))?;
             self.emit_line(sl![
                 "hashtable_add(x",
                 cs.as_str(),
                 ", e",
                 cs.as_str(),
-                "->string, ",
-                &items.get_value,
-                "(e",
-                cs.as_str(),
-                "), sizeof(",
+                "->string, validated, sizeof(",
                 &items.c_type,
                 " *));"
             ]);
@@ -2937,8 +2942,9 @@ if (NULL == validated) {{
         }
     }
 
-    /// The `add` of a top-level array's getter (note `0xDEADBEAF`, as in
-    /// the TypeScript).
+    /// The `add` of a top-level array's getter. quicktype's marker for
+    /// `null` here is `0xDEADBEAF`, which nothing compares with (a fix of
+    /// ours, docs/PARITY.md, "Bugs fixed in quickertype").
     fn top_level_list_add(&mut self, items: &TypeCJSON) {
         if items.is("cJSON_Array") || items.is("cJSON_Map") {
             // Not supported.
@@ -2946,7 +2952,7 @@ if (NULL == validated) {{
             self.emit_line(sl![
                 "list_add_tail(x->value, (",
                 &items.c_type,
-                " *)0xDEADBEAF, sizeof(",
+                " *)0xDEADBEEF, sizeof(",
                 &items.c_type,
                 " *));"
             ]);
@@ -2976,7 +2982,11 @@ if (NULL == validated) {{
         }
     }
 
-    /// The `add` of a top-level map's getter.
+    /// The `add` of a top-level map's getter. A value freed with
+    /// `cJSON_free` (an integer, a boolean, a double or an enum) is
+    /// allocated as in the top-level list; quicktype stores the value
+    /// itself as the pointer (a fix of ours, docs/PARITY.md, "Bugs fixed
+    /// in quickertype").
     fn top_level_hashtable_add(&mut self, items: &TypeCJSON) {
         if items.is("cJSON_Array") || items.is("cJSON_Map") {
             // Not supported.
@@ -2995,6 +3005,13 @@ if (NULL == validated) {{
                 "(e)), sizeof(",
                 &items.c_type,
                 " *));"
+            ]);
+        } else if items.is_freed_with_cjson_free() {
+            self.emit_line(sl![&items.c_type, " * item = cJSON_malloc(sizeof(*item));"]);
+            self.emit_line(sl![
+                "if (NULL != item) { *item = ",
+                &items.get_value,
+                "(e); hashtable_add(x->value, e->string, item, sizeof(*item)); }"
             ]);
         } else {
             self.emit_line(sl![
@@ -3077,7 +3094,9 @@ if (NULL == validated) {{
     }
 
     /// The body of a top-level's `cJSON_Delete<name>`, inside
-    /// `if (NULL != x)` and before `cJSON_free(x)`.
+    /// `if (NULL != x)` and before `cJSON_free(x)`. The values of a list or
+    /// map of `null` are the marker `0xDEADBEEF`, which quicktype frees (a
+    /// fix of ours, docs/PARITY.md, "Bugs fixed in quickertype").
     fn top_level_delete(&mut self, t: TypeRef) -> Result<()> {
         let c = self.quicktype_type_to_cjson(t, false, false)?;
         if c.is("cJSON_Array")
@@ -3086,7 +3105,9 @@ if (NULL == validated) {{
             self.emit_block(sl!["if (NULL != x->value)"], |r| {
                 r.emit_line(sl![&items.c_type, " * x1 = list_get_head(x->value);"]);
                 r.emit_block(sl!["while (NULL != x1)"], |r| {
-                    if items.is_nullable {
+                    if items.is("cJSON_NULL") || items.is("cJSON_Invalid") {
+                        // Nothing to free: the values are 0xDEADBEEF.
+                    } else if items.is_nullable {
                         r.emit_block(sl!["if ((void *)0xDEADBEEF != x1)"], |r| {
                             r.emit_line(sl![&items.delete_type, "(x1);"]);
                             Ok(())
@@ -3114,7 +3135,10 @@ if (NULL == validated) {{
                             " *x2 = hashtable_lookup(x->value, keys[index]);"
                         ]);
                         r.emit_block(sl!["if (NULL != x2)"], |r| {
-                            if items.is_nullable {
+                            if items.is("cJSON_NULL") || items.is("cJSON_Invalid") {
+                                // Nothing to free: the values are 0xDEADBEEF.
+                                Ok(())
+                            } else if items.is_nullable {
                                 r.emit_block(
                                     sl!["if ((", &items.c_type, " *)0xDEADBEEF != x2)"],
                                     |r| {

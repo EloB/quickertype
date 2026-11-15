@@ -1,0 +1,65 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -253,7 +253,7 @@
+ 
+ enum PostHint cJSON_GetPostHintValue(const cJSON * j) {
+     enum PostHint x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "link")) x = POSTHINT_LINK;
+     }
+     return x;
+@@ -269,7 +269,7 @@
+ 
+ enum Subreddit cJSON_GetSubredditValue(const cJSON * j) {
+     enum Subreddit x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "science")) x = SUBREDDIT_SCIENCE;
+     }
+     return x;
+@@ -285,7 +285,7 @@
+ 
+ enum SubredditId cJSON_GetSubredditIdValue(const cJSON * j) {
+     enum SubredditId x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "t5_mouw")) x = SUBREDDITID_T5_MOUW;
+     }
+     return x;
+@@ -301,7 +301,7 @@
+ 
+ enum SubredditNamePrefixed cJSON_GetSubredditNamePrefixedValue(const cJSON * j) {
+     enum SubredditNamePrefixed x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "r/science")) x = SUBREDDITNAMEPREFIXED_R_SCIENCE;
+     }
+     return x;
+@@ -317,7 +317,7 @@
+ 
+ enum SubredditType cJSON_GetSubredditTypeValue(const cJSON * j) {
+     enum SubredditType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "public")) x = SUBREDDITTYPE_PUBLIC;
+     }
+     return x;
+@@ -333,7 +333,7 @@
+ 
+ enum SuggestedSort cJSON_GetSuggestedSortValue(const cJSON * j) {
+     enum SuggestedSort x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "confidence")) x = SUGGESTEDSORT_CONFIDENCE;
+         else if (!strcmp(cJSON_GetStringValue(j), "qa")) x = SUGGESTEDSORT_QA;
+     }
+@@ -351,7 +351,7 @@
+ 
+ enum Kind cJSON_GetKindValue(const cJSON * j) {
+     enum Kind x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "t3")) x = KIND_T3;
+     }
+     return x;

@@ -1,0 +1,406 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -7109,7 +7109,7 @@
+ 
+ enum Contains cJSON_GetContainsValue(const cJSON * j) {
+     enum Contains x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "content")) x = CONTAINS_CONTENT;
+         else if (!strcmp(cJSON_GetStringValue(j), "padding")) x = CONTAINS_PADDING;
+     }
+@@ -7127,7 +7127,7 @@
+ 
+ enum AutosizeType cJSON_GetAutosizeTypeValue(const cJSON * j) {
+     enum AutosizeType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "pad")) x = AUTOSIZETYPE_PAD;
+         else if (!strcmp(cJSON_GetStringValue(j), "fit")) x = AUTOSIZETYPE_FIT;
+         else if (!strcmp(cJSON_GetStringValue(j), "none")) x = AUTOSIZETYPE_NONE;
+@@ -7147,7 +7147,7 @@
+ 
+ enum HorizontalAlign cJSON_GetHorizontalAlignValue(const cJSON * j) {
+     enum HorizontalAlign x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "left")) x = HORIZONTALALIGN_LEFT;
+         else if (!strcmp(cJSON_GetStringValue(j), "right")) x = HORIZONTALALIGN_RIGHT;
+         else if (!strcmp(cJSON_GetStringValue(j), "center")) x = HORIZONTALALIGN_CENTER;
+@@ -7167,7 +7167,7 @@
+ 
+ enum VerticalAlign cJSON_GetVerticalAlignValue(const cJSON * j) {
+     enum VerticalAlign x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "top")) x = VERTICALALIGN_TOP;
+         else if (!strcmp(cJSON_GetStringValue(j), "middle")) x = VERTICALALIGN_MIDDLE;
+         else if (!strcmp(cJSON_GetStringValue(j), "bottom")) x = VERTICALALIGN_BOTTOM;
+@@ -7187,7 +7187,7 @@
+ 
+ enum Cursor cJSON_GetCursorValue(const cJSON * j) {
+     enum Cursor x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "auto")) x = CURSOR_AUTO;
+         else if (!strcmp(cJSON_GetStringValue(j), "default")) x = CURSOR_DEFAULT;
+         else if (!strcmp(cJSON_GetStringValue(j), "none")) x = CURSOR_NONE;
+@@ -7273,7 +7273,7 @@
+ 
+ enum FontStyle cJSON_GetFontStyleValue(const cJSON * j) {
+     enum FontStyle x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "normal")) x = FONTSTYLE_NORMAL;
+         else if (!strcmp(cJSON_GetStringValue(j), "italic")) x = FONTSTYLE_ITALIC;
+     }
+@@ -7291,7 +7291,7 @@
+ 
+ enum FontWeight cJSON_GetFontWeightValue(const cJSON * j) {
+     enum FontWeight x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "normal")) x = FONTWEIGHT_NORMAL;
+         else if (!strcmp(cJSON_GetStringValue(j), "bold")) x = FONTWEIGHT_BOLD;
+     }
+@@ -7309,7 +7309,7 @@
+ 
+ enum Interpolate cJSON_GetInterpolateValue(const cJSON * j) {
+     enum Interpolate x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "linear")) x = INTERPOLATE_LINEAR;
+         else if (!strcmp(cJSON_GetStringValue(j), "linear-closed")) x = INTERPOLATE_LINEAR_CLOSED;
+         else if (!strcmp(cJSON_GetStringValue(j), "step")) x = INTERPOLATE_STEP;
+@@ -7349,7 +7349,7 @@
+ 
+ enum Orient cJSON_GetOrientValue(const cJSON * j) {
+     enum Orient x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "horizontal")) x = ORIENT_HORIZONTAL;
+         else if (!strcmp(cJSON_GetStringValue(j), "vertical")) x = ORIENT_VERTICAL;
+     }
+@@ -7367,7 +7367,7 @@
+ 
+ enum LabelOverlapEnum cJSON_GetLabelOverlapEnumValue(const cJSON * j) {
+     enum LabelOverlapEnum x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "parity")) x = LABELOVERLAPENUM_PARITY;
+         else if (!strcmp(cJSON_GetStringValue(j), "greedy")) x = LABELOVERLAPENUM_GREEDY;
+     }
+@@ -7385,7 +7385,7 @@
+ 
+ enum FieldTitle cJSON_GetFieldTitleValue(const cJSON * j) {
+     enum FieldTitle x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "verbal")) x = FIELDTITLE_VERBAL;
+         else if (!strcmp(cJSON_GetStringValue(j), "functional")) x = FIELDTITLE_FUNCTIONAL;
+         else if (!strcmp(cJSON_GetStringValue(j), "plain")) x = FIELDTITLE_PLAIN;
+@@ -7405,7 +7405,7 @@
+ 
+ enum InvalidValues cJSON_GetInvalidValuesValue(const cJSON * j) {
+     enum InvalidValues x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "filter")) x = INVALIDVALUES_FILTER;
+     }
+     return x;
+@@ -7421,7 +7421,7 @@
+ 
+ enum LegendOrient cJSON_GetLegendOrientValue(const cJSON * j) {
+     enum LegendOrient x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "left")) x = LEGENDORIENT_LEFT;
+         else if (!strcmp(cJSON_GetStringValue(j), "right")) x = LEGENDORIENT_RIGHT;
+         else if (!strcmp(cJSON_GetStringValue(j), "top-left")) x = LEGENDORIENT_TOP_LEFT;
+@@ -7449,7 +7449,7 @@
+ 
+ enum VgProjectionType cJSON_GetVgProjectionTypeValue(const cJSON * j) {
+     enum VgProjectionType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "albers")) x = VGPROJECTIONTYPE_ALBERS;
+         else if (!strcmp(cJSON_GetStringValue(j), "albersUsa")) x = VGPROJECTIONTYPE_ALBERS_USA;
+         else if (!strcmp(cJSON_GetStringValue(j), "azimuthalEqualArea")) x = VGPROJECTIONTYPE_AZIMUTHAL_EQUAL_AREA;
+@@ -7489,7 +7489,7 @@
+ 
+ enum BindEnum cJSON_GetBindEnumValue(const cJSON * j) {
+     enum BindEnum x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "scales")) x = BINDENUM_SCALES;
+     }
+     return x;
+@@ -7505,7 +7505,7 @@
+ 
+ enum Empty cJSON_GetEmptyValue(const cJSON * j) {
+     enum Empty x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "all")) x = EMPTY_ALL;
+         else if (!strcmp(cJSON_GetStringValue(j), "none")) x = EMPTY_NONE;
+     }
+@@ -7523,7 +7523,7 @@
+ 
+ enum SingleDefChannel cJSON_GetSingleDefChannelValue(const cJSON * j) {
+     enum SingleDefChannel x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "x")) x = SINGLEDEFCHANNEL_X;
+         else if (!strcmp(cJSON_GetStringValue(j), "y")) x = SINGLEDEFCHANNEL_Y;
+         else if (!strcmp(cJSON_GetStringValue(j), "x2")) x = SINGLEDEFCHANNEL_X2;
+@@ -7563,7 +7563,7 @@
+ 
+ enum SelectionResolution cJSON_GetSelectionResolutionValue(const cJSON * j) {
+     enum SelectionResolution x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "global")) x = SELECTIONRESOLUTION_GLOBAL;
+         else if (!strcmp(cJSON_GetStringValue(j), "union")) x = SELECTIONRESOLUTION_UNION;
+         else if (!strcmp(cJSON_GetStringValue(j), "intersect")) x = SELECTIONRESOLUTION_INTERSECT;
+@@ -7583,7 +7583,7 @@
+ 
+ enum StackOffset cJSON_GetStackOffsetValue(const cJSON * j) {
+     enum StackOffset x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "zero")) x = STACKOFFSET_ZERO;
+         else if (!strcmp(cJSON_GetStringValue(j), "center")) x = STACKOFFSET_CENTER;
+         else if (!strcmp(cJSON_GetStringValue(j), "normalize")) x = STACKOFFSET_NORMALIZE;
+@@ -7603,7 +7603,7 @@
+ 
+ enum Anchor cJSON_GetAnchorValue(const cJSON * j) {
+     enum Anchor x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "start")) x = ANCHOR_START;
+         else if (!strcmp(cJSON_GetStringValue(j), "middle")) x = ANCHOR_MIDDLE;
+         else if (!strcmp(cJSON_GetStringValue(j), "end")) x = ANCHOR_END;
+@@ -7623,7 +7623,7 @@
+ 
+ enum TitleOrient cJSON_GetTitleOrientValue(const cJSON * j) {
+     enum TitleOrient x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "top")) x = TITLEORIENT_TOP;
+         else if (!strcmp(cJSON_GetStringValue(j), "bottom")) x = TITLEORIENT_BOTTOM;
+         else if (!strcmp(cJSON_GetStringValue(j), "left")) x = TITLEORIENT_LEFT;
+@@ -7645,7 +7645,7 @@
+ 
+ enum ParseEnum cJSON_GetParseEnumValue(const cJSON * j) {
+     enum ParseEnum x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "auto")) x = PARSEENUM_AUTO;
+     }
+     return x;
+@@ -7661,7 +7661,7 @@
+ 
+ enum DataFormatType cJSON_GetDataFormatTypeValue(const cJSON * j) {
+     enum DataFormatType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "csv")) x = DATAFORMATTYPE_CSV;
+         else if (!strcmp(cJSON_GetStringValue(j), "tsv")) x = DATAFORMATTYPE_TSV;
+         else if (!strcmp(cJSON_GetStringValue(j), "json")) x = DATAFORMATTYPE_JSON;
+@@ -7683,7 +7683,7 @@
+ 
+ enum AggregateOp cJSON_GetAggregateOpValue(const cJSON * j) {
+     enum AggregateOp x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "argmax")) x = AGGREGATEOP_ARGMAX;
+         else if (!strcmp(cJSON_GetStringValue(j), "argmin")) x = AGGREGATEOP_ARGMIN;
+         else if (!strcmp(cJSON_GetStringValue(j), "average")) x = AGGREGATEOP_AVERAGE;
+@@ -7739,7 +7739,7 @@
+ 
+ enum TimeUnit cJSON_GetTimeUnitValue(const cJSON * j) {
+     enum TimeUnit x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "year")) x = TIMEUNIT_YEAR;
+         else if (!strcmp(cJSON_GetStringValue(j), "quarter")) x = TIMEUNIT_QUARTER;
+         else if (!strcmp(cJSON_GetStringValue(j), "month")) x = TIMEUNIT_MONTH;
+@@ -7841,7 +7841,7 @@
+ 
+ enum RepeatEnum cJSON_GetRepeatEnumValue(const cJSON * j) {
+     enum RepeatEnum x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "row")) x = REPEATENUM_ROW;
+         else if (!strcmp(cJSON_GetStringValue(j), "column")) x = REPEATENUM_COLUMN;
+     }
+@@ -7859,7 +7859,7 @@
+ 
+ enum LegendType cJSON_GetLegendTypeValue(const cJSON * j) {
+     enum LegendType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "symbol")) x = LEGENDTYPE_SYMBOL;
+         else if (!strcmp(cJSON_GetStringValue(j), "gradient")) x = LEGENDTYPE_GRADIENT;
+     }
+@@ -7877,7 +7877,7 @@
+ 
+ enum Domain cJSON_GetDomainValue(const cJSON * j) {
+     enum Domain x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "unaggregated")) x = DOMAIN_UNAGGREGATED;
+     }
+     return x;
+@@ -7893,7 +7893,7 @@
+ 
+ enum InterpolateParamsType cJSON_GetInterpolateParamsTypeValue(const cJSON * j) {
+     enum InterpolateParamsType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "rgb")) x = INTERPOLATEPARAMSTYPE_RGB;
+         else if (!strcmp(cJSON_GetStringValue(j), "cubehelix")) x = INTERPOLATEPARAMSTYPE_CUBEHELIX;
+         else if (!strcmp(cJSON_GetStringValue(j), "cubehelix-long")) x = INTERPOLATEPARAMSTYPE_CUBEHELIX_LONG;
+@@ -7913,7 +7913,7 @@
+ 
+ enum NiceTime cJSON_GetNiceTimeValue(const cJSON * j) {
+     enum NiceTime x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "second")) x = NICETIME_SECOND;
+         else if (!strcmp(cJSON_GetStringValue(j), "minute")) x = NICETIME_MINUTE;
+         else if (!strcmp(cJSON_GetStringValue(j), "hour")) x = NICETIME_HOUR;
+@@ -7941,7 +7941,7 @@
+ 
+ enum ScaleType cJSON_GetScaleTypeValue(const cJSON * j) {
+     enum ScaleType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "linear")) x = SCALETYPE_LINEAR;
+         else if (!strcmp(cJSON_GetStringValue(j), "bin-linear")) x = SCALETYPE_BIN_LINEAR;
+         else if (!strcmp(cJSON_GetStringValue(j), "log")) x = SCALETYPE_LOG;
+@@ -7979,7 +7979,7 @@
+ 
+ enum SortEnum cJSON_GetSortEnumValue(const cJSON * j) {
+     enum SortEnum x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "ascending")) x = SORTENUM_ASCENDING;
+         else if (!strcmp(cJSON_GetStringValue(j), "descending")) x = SORTENUM_DESCENDING;
+     }
+@@ -7997,7 +7997,7 @@
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j) {
+     enum Type x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "quantitative")) x = TYPE_QUANTITATIVE;
+         else if (!strcmp(cJSON_GetStringValue(j), "ordinal")) x = TYPE_ORDINAL;
+         else if (!strcmp(cJSON_GetStringValue(j), "temporal")) x = TYPE_TEMPORAL;
+@@ -8025,7 +8025,7 @@
+ 
+ enum Mark cJSON_GetMarkValue(const cJSON * j) {
+     enum Mark x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "area")) x = MARK_AREA;
+         else if (!strcmp(cJSON_GetStringValue(j), "bar")) x = MARK_BAR;
+         else if (!strcmp(cJSON_GetStringValue(j), "line")) x = MARK_LINE;
+@@ -8061,7 +8061,7 @@
+ 
+ enum ResolveMode cJSON_GetResolveModeValue(const cJSON * j) {
+     enum ResolveMode x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "independent")) x = RESOLVEMODE_INDEPENDENT;
+         else if (!strcmp(cJSON_GetStringValue(j), "shared")) x = RESOLVEMODE_SHARED;
+     }
+@@ -8079,7 +8079,7 @@
+ 
+ enum SelectionDefType cJSON_GetSelectionDefTypeValue(const cJSON * j) {
+     enum SelectionDefType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "single")) x = SELECTIONDEFTYPE_SINGLE;
+         else if (!strcmp(cJSON_GetStringValue(j), "multi")) x = SELECTIONDEFTYPE_MULTI;
+         else if (!strcmp(cJSON_GetStringValue(j), "interval")) x = SELECTIONDEFTYPE_INTERVAL;
+@@ -12900,8 +12900,7 @@
+                             cJSON_DeleteProjectionConfig(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteTitleFontWeight(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetTitleFontWeightValue(e1), sizeof(struct TitleFontWeight *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct TitleFontWeight *));
+                     }
+                     x->precision = x1;
+                 }
+@@ -14257,8 +14256,7 @@
+                             cJSON_DeleteSingleSelectionConfig(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteVgBinding(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetVgBindingValue(e1), sizeof(struct VgBinding *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct VgBinding *));
+                     }
+                     x->bind = x1;
+                 }
+@@ -16350,8 +16348,7 @@
+                             cJSON_DeleteConfig(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteRangeConfigValue(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetRangeConfigValueValue(e1), sizeof(struct RangeConfigValue *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct RangeConfigValue *));
+                     }
+                     x->range = x1;
+                 }
+@@ -16402,8 +16399,7 @@
+                             cJSON_DeleteConfig(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteVgMarkConfig(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetVgMarkConfigValue(e1), sizeof(struct VgMarkConfig *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct VgMarkConfig *));
+                     }
+                     x->style = x1;
+                 }
+@@ -21691,8 +21687,7 @@
+                             cJSON_DeleteProjection(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteTitleFontWeight(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetTitleFontWeightValue(e1), sizeof(struct TitleFontWeight *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct TitleFontWeight *));
+                     }
+                     x->precision = x1;
+                 }
+@@ -23185,8 +23180,7 @@
+                             cJSON_DeleteLayerSpec(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteSelectionDef(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetSelectionDefValue(e1), sizeof(struct SelectionDef *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct SelectionDef *));
+                     }
+                     x->selection = x1;
+                 }
+@@ -23568,8 +23562,7 @@
+                             cJSON_DeleteSpec(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteSelectionDef(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetSelectionDefValue(e1), sizeof(struct SelectionDef *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct SelectionDef *));
+                     }
+                     x->selection = x1;
+                 }
+@@ -23918,8 +23911,7 @@
+                             cJSON_DeleteTopLevel(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteSelectionDef(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetSelectionDefValue(e1), sizeof(struct SelectionDef *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct SelectionDef *));
+                     }
+                     x->selection = x1;
+                 }

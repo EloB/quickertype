@@ -1,0 +1,21 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -197,7 +197,7 @@
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j) {
+     enum Type x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "string")) x = TYPE_STRING;
+     }
+     return x;
+@@ -318,8 +318,7 @@
+                             cJSON_DeleteProvider(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteProperty(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetPropertyValue(e1), sizeof(struct Property *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Property *));
+                     }
+                     x->properties = x1;
+                 }

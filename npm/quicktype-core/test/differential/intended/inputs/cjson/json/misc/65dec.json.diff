@@ -1,0 +1,56 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -189,7 +189,7 @@
+ 
+ enum ColorIdentity cJSON_GetColorIdentityValue(const cJSON * j) {
+     enum ColorIdentity x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "W")) x = COLORIDENTITY_W;
+         else if (!strcmp(cJSON_GetStringValue(j), "R")) x = COLORIDENTITY_R;
+         else if (!strcmp(cJSON_GetStringValue(j), "B")) x = COLORIDENTITY_B;
+@@ -213,7 +213,7 @@
+ 
+ enum Watermark cJSON_GetWatermarkValue(const cJSON * j) {
+     enum Watermark x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "White")) x = WATERMARK_WHITE;
+         else if (!strcmp(cJSON_GetStringValue(j), "Red")) x = WATERMARK_RED;
+         else if (!strcmp(cJSON_GetStringValue(j), "Black")) x = WATERMARK_BLACK;
+@@ -237,7 +237,7 @@
+ 
+ enum Layout cJSON_GetLayoutValue(const cJSON * j) {
+     enum Layout x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "normal")) x = LAYOUT_NORMAL;
+     }
+     return x;
+@@ -253,7 +253,7 @@
+ 
+ enum LegalityEnum cJSON_GetLegalityEnumValue(const cJSON * j) {
+     enum LegalityEnum x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Legal")) x = LEGALITYENUM_LEGAL;
+         else if (!strcmp(cJSON_GetStringValue(j), "Banned")) x = LEGALITYENUM_BANNED;
+         else if (!strcmp(cJSON_GetStringValue(j), "Restricted")) x = LEGALITYENUM_RESTRICTED;
+@@ -273,7 +273,7 @@
+ 
+ enum Rarity cJSON_GetRarityValue(const cJSON * j) {
+     enum Rarity x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Uncommon")) x = RARITY_UNCOMMON;
+         else if (!strcmp(cJSON_GetStringValue(j), "Rare")) x = RARITY_RARE;
+         else if (!strcmp(cJSON_GetStringValue(j), "Common")) x = RARITY_COMMON;
+@@ -295,7 +295,7 @@
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j) {
+     enum Type x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Creature")) x = TYPE_CREATURE;
+         else if (!strcmp(cJSON_GetStringValue(j), "Artifact")) x = TYPE_ARTIFACT;
+         else if (!strcmp(cJSON_GetStringValue(j), "Instant")) x = TYPE_INSTANT;

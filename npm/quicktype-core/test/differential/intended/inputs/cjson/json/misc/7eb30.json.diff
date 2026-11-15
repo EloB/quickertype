@@ -1,0 +1,47 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -136,7 +136,7 @@
+ 
+ enum Code cJSON_GetCodeValue(const cJSON * j) {
+     enum Code x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "sf")) x = CODE_SF;
+     }
+     return x;
+@@ -152,7 +152,7 @@
+ 
+ enum English cJSON_GetEnglishValue(const cJSON * j) {
+     enum English x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "SF")) x = ENGLISH_SF;
+     }
+     return x;
+@@ -168,7 +168,7 @@
+ 
+ enum Thai cJSON_GetThaiValue(const cJSON * j) {
+     enum Thai x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "เอสเอฟ")) x = THAI_EMPTY;
+     }
+     return x;
+@@ -184,7 +184,7 @@
+ 
+ enum Location cJSON_GetLocationValue(const cJSON * j) {
+     enum Location x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "")) x = LOCATION_EMPTY;
+         else if (!strcmp(cJSON_GetStringValue(j), "5th Fl. Emporium")) x = LOCATION_THE_5_TH_FL_EMPORIUM;
+     }
+@@ -202,7 +202,7 @@
+ 
+ enum Tel cJSON_GetTelValue(const cJSON * j) {
+     enum Tel x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "")) x = TEL_EMPTY;
+         else if (!strcmp(cJSON_GetStringValue(j), "02-268-8899")) x = TEL_THE_022688899;
+     }

@@ -1,0 +1,74 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -298,7 +298,7 @@
+ 
+ enum Distinguished cJSON_GetDistinguishedValue(const cJSON * j) {
+     enum Distinguished x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "admin")) x = DISTINGUISHED_ADMIN;
+     }
+     return x;
+@@ -314,7 +314,7 @@
+ 
+ enum Domain cJSON_GetDomainValue(const cJSON * j) {
+     enum Domain x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "self.announcements")) x = DOMAIN_SELF_ANNOUNCEMENTS;
+         else if (!strcmp(cJSON_GetStringValue(j), "i.redd.it")) x = DOMAIN_I_REDD_IT;
+     }
+@@ -332,7 +332,7 @@
+ 
+ enum PostHint cJSON_GetPostHintValue(const cJSON * j) {
+     enum PostHint x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "self")) x = POSTHINT_SELF;
+         else if (!strcmp(cJSON_GetStringValue(j), "image")) x = POSTHINT_IMAGE;
+     }
+@@ -350,7 +350,7 @@
+ 
+ enum Subreddit cJSON_GetSubredditValue(const cJSON * j) {
+     enum Subreddit x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "announcements")) x = SUBREDDIT_ANNOUNCEMENTS;
+     }
+     return x;
+@@ -366,7 +366,7 @@
+ 
+ enum SubredditId cJSON_GetSubredditIdValue(const cJSON * j) {
+     enum SubredditId x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "t5_2r0ij")) x = SUBREDDITID_T5_2_R0_IJ;
+     }
+     return x;
+@@ -382,7 +382,7 @@
+ 
+ enum SubredditNamePrefixed cJSON_GetSubredditNamePrefixedValue(const cJSON * j) {
+     enum SubredditNamePrefixed x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "r/announcements")) x = SUBREDDITNAMEPREFIXED_R_ANNOUNCEMENTS;
+     }
+     return x;
+@@ -398,7 +398,7 @@
+ 
+ enum SubredditType cJSON_GetSubredditTypeValue(const cJSON * j) {
+     enum SubredditType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "restricted")) x = SUBREDDITTYPE_RESTRICTED;
+     }
+     return x;
+@@ -414,7 +414,7 @@
+ 
+ enum Kind cJSON_GetKindValue(const cJSON * j) {
+     enum Kind x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "t3")) x = KIND_T3;
+     }
+     return x;

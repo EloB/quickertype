@@ -1,0 +1,20 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -80,7 +80,7 @@
+ 
+ enum Frequency cJSON_GetFrequencyValue(const cJSON * j) {
+     enum Frequency x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Weekly")) x = FREQUENCY_WEEKLY;
+         else if (!strcmp(cJSON_GetStringValue(j), "Monthly")) x = FREQUENCY_MONTHLY;
+         else if (!strcmp(cJSON_GetStringValue(j), "Annually")) x = FREQUENCY_ANNUALLY;
+@@ -100,7 +100,7 @@
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j) {
+     enum Type x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "GrossSalaryAmount")) x = TYPE_GROSS_SALARY_AMOUNT;
+         else if (!strcmp(cJSON_GetStringValue(j), "Overtime")) x = TYPE_OVERTIME;
+     }

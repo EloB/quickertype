@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -358,7 +358,7 @@
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j) {
+     enum Type x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "PushEvent")) x = TYPE_PUSH_EVENT;
+         else if (!strcmp(cJSON_GetStringValue(j), "CreateEvent")) x = TYPE_CREATE_EVENT;
+         else if (!strcmp(cJSON_GetStringValue(j), "WatchEvent")) x = TYPE_WATCH_EVENT;

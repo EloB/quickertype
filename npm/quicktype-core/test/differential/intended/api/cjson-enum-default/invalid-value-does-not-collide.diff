@@ -1,0 +1,11 @@
+--- $.ok.lines
++++ $.ok.lines
+@@ -69,7 +69,7 @@
+ 
+ enum Subscription cJSON_GetSubscriptionValue(const cJSON * j) {
+     enum Subscription x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "state")) x = SUBSCRIPTION_STATE;
+         else if (!strcmp(cJSON_GetStringValue(j), "config")) x = SUBSCRIPTION_CONFIG;
+         else if (!strcmp(cJSON_GetStringValue(j), "heartbeat")) x = SUBSCRIPTION_HEARTBEAT;

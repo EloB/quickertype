@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -136,7 +136,7 @@
+ 
+ enum Name cJSON_GetNameValue(const cJSON * j) {
+     enum Name x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Office on Violence Against Women")) x = NAME_OFFICE_ON_VIOLENCE_AGAINST_WOMEN;
+     }
+     return x;

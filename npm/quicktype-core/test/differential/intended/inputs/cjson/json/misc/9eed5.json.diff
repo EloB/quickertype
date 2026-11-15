@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -119,7 +119,7 @@
+ 
+ enum Keyword cJSON_GetKeywordValue(const cJSON * j) {
+     enum Keyword x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "special-purpose")) x = KEYWORD_SPECIAL_PURPOSE;
+         else if (!strcmp(cJSON_GetStringValue(j), "osi-approved")) x = KEYWORD_OSI_APPROVED;
+     }

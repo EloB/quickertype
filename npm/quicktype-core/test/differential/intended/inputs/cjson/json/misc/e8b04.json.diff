@@ -1,0 +1,164 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -572,7 +572,7 @@
+ 
+ enum DisplayType cJSON_GetDisplayTypeValue(const cJSON * j) {
+     enum DisplayType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "table")) x = DISPLAYTYPE_TABLE;
+         else if (!strcmp(cJSON_GetStringValue(j), "data_lens")) x = DISPLAYTYPE_DATA_LENS;
+         else if (!strcmp(cJSON_GetStringValue(j), "fatrow")) x = DISPLAYTYPE_FATROW;
+@@ -594,7 +594,7 @@
+ 
+ enum TopLevelFlag cJSON_GetTopLevelFlagValue(const cJSON * j) {
+     enum TopLevelFlag x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "default")) x = TOPLEVELFLAG_DEFAULT;
+         else if (!strcmp(cJSON_GetStringValue(j), "restorable")) x = TOPLEVELFLAG_RESTORABLE;
+         else if (!strcmp(cJSON_GetStringValue(j), "restorePossibleForType")) x = TOPLEVELFLAG_RESTORE_POSSIBLE_FOR_TYPE;
+@@ -614,7 +614,7 @@
+ 
+ enum GrantFlag cJSON_GetGrantFlagValue(const cJSON * j) {
+     enum GrantFlag x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "public")) x = GRANTFLAG_PUBLIC;
+     }
+     return x;
+@@ -630,7 +630,7 @@
+ 
+ enum GrantType cJSON_GetGrantTypeValue(const cJSON * j) {
+     enum GrantType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "viewer")) x = GRANTTYPE_VIEWER;
+     }
+     return x;
+@@ -646,7 +646,7 @@
+ 
+ enum OrderColumnFieldName cJSON_GetOrderColumnFieldNameValue(const cJSON * j) {
+     enum OrderColumnFieldName x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "date_received")) x = ORDERCOLUMNFIELDNAME_DATE_RECEIVED;
+         else if (!strcmp(cJSON_GetStringValue(j), "agreement_date")) x = ORDERCOLUMNFIELDNAME_AGREEMENT_DATE;
+         else if (!strcmp(cJSON_GetStringValue(j), "in_effect_as_of_1_1_2012")) x = ORDERCOLUMNFIELDNAME_IN_EFFECT_AS_OF_1_1_2012;
+@@ -666,7 +666,7 @@
+ 
+ enum ChildOperator cJSON_GetChildOperatorValue(const cJSON * j) {
+     enum ChildOperator x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "EQUALS")) x = CHILDOPERATOR_EQUALS;
+         else if (!strcmp(cJSON_GetStringValue(j), "IS_NOT_BLANK")) x = CHILDOPERATOR_IS_NOT_BLANK;
+     }
+@@ -684,7 +684,7 @@
+ 
+ enum ChildColumnFieldName cJSON_GetChildColumnFieldNameValue(const cJSON * j) {
+     enum ChildColumnFieldName x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "product")) x = CHILDCOLUMNFIELDNAME_PRODUCT;
+         else if (!strcmp(cJSON_GetStringValue(j), "complaint_what_happened")) x = CHILDCOLUMNFIELDNAME_COMPLAINT_WHAT_HAPPENED;
+         else if (!strcmp(cJSON_GetStringValue(j), "sub_product")) x = CHILDCOLUMNFIELDNAME_SUB_PRODUCT;
+@@ -706,7 +706,7 @@
+ 
+ enum MetadataOperator cJSON_GetMetadataOperatorValue(const cJSON * j) {
+     enum MetadataOperator x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "EQUALS")) x = METADATAOPERATOR_EQUALS;
+         else if (!strcmp(cJSON_GetStringValue(j), "blank?")) x = METADATAOPERATOR_BLANK;
+     }
+@@ -724,7 +724,7 @@
+ 
+ enum WhereOperator cJSON_GetWhereOperatorValue(const cJSON * j) {
+     enum WhereOperator x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "EQUALS")) x = WHEREOPERATOR_EQUALS;
+         else if (!strcmp(cJSON_GetStringValue(j), "AND")) x = WHEREOPERATOR_AND;
+     }
+@@ -742,7 +742,7 @@
+ 
+ enum FieldType cJSON_GetFieldTypeValue(const cJSON * j) {
+     enum FieldType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "columnLabel")) x = FIELDTYPE_COLUMN_LABEL;
+         else if (!strcmp(cJSON_GetStringValue(j), "columnData")) x = FIELDTYPE_COLUMN_DATA;
+     }
+@@ -760,7 +760,7 @@
+ 
+ enum Width cJSON_GetWidthValue(const cJSON * j) {
+     enum Width x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "27%")) x = WIDTH_THE_27;
+         else if (!strcmp(cJSON_GetStringValue(j), "40%")) x = WIDTH_THE_40;
+         else if (!strcmp(cJSON_GetStringValue(j), "30%")) x = WIDTH_THE_30;
+@@ -782,7 +782,7 @@
+ 
+ enum ModifyingViewUid cJSON_GetModifyingViewUidValue(const cJSON * j) {
+     enum ModifyingViewUid x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "s6ew-h6mp")) x = MODIFYINGVIEWUID_S6_EW_H6_MP;
+     }
+     return x;
+@@ -798,7 +798,7 @@
+ 
+ enum RoleName cJSON_GetRoleNameValue(const cJSON * j) {
+     enum RoleName x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "administrator")) x = ROLENAME_ADMINISTRATOR;
+         else if (!strcmp(cJSON_GetStringValue(j), "publisher")) x = ROLENAME_PUBLISHER;
+     }
+@@ -816,7 +816,7 @@
+ 
+ enum Provenance cJSON_GetProvenanceValue(const cJSON * j) {
+     enum Provenance x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "official")) x = PROVENANCE_OFFICIAL;
+     }
+     return x;
+@@ -832,7 +832,7 @@
+ 
+ enum PublicationStage cJSON_GetPublicationStageValue(const cJSON * j) {
+     enum PublicationStage x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "published")) x = PUBLICATIONSTAGE_PUBLISHED;
+     }
+     return x;
+@@ -848,7 +848,7 @@
+ 
+ enum Right cJSON_GetRightValue(const cJSON * j) {
+     enum Right x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "read")) x = RIGHT_READ;
+     }
+     return x;
+@@ -864,7 +864,7 @@
+ 
+ enum RowsUpdatedBy cJSON_GetRowsUpdatedByValue(const cJSON * j) {
+     enum RowsUpdatedBy x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "pjxg-ve4m")) x = ROWSUPDATEDBY_PJXG_VE4_M;
+         else if (!strcmp(cJSON_GetStringValue(j), "54a3-qyun")) x = ROWSUPDATEDBY_THE_54_A3_QYUN;
+         else if (!strcmp(cJSON_GetStringValue(j), "9e3m-2843")) x = ROWSUPDATEDBY_THE_9_E3_M_2843;
+@@ -886,7 +886,7 @@
+ 
+ enum ViewType cJSON_GetViewTypeValue(const cJSON * j) {
+     enum ViewType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "tabular")) x = VIEWTYPE_TABULAR;
+     }
+     return x;

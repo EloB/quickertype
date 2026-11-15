@@ -1,0 +1,175 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -518,7 +518,7 @@
+ 
+ enum LeaddatumEnum cJSON_GetLeaddatumEnumValue(const cJSON * j) {
+     enum LeaddatumEnum x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "")) x = LEADDATUMENUM_EMPTY;
+         else if (!strcmp(cJSON_GetStringValue(j), "P1")) x = LEADDATUMENUM_P1;
+         else if (!strcmp(cJSON_GetStringValue(j), "P2")) x = LEADDATUMENUM_P2;
+@@ -542,7 +542,7 @@
+ 
+ enum PerType cJSON_GetPerTypeValue(const cJSON * j) {
+     enum PerType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "REGULAR")) x = PERTYPE_REGULAR;
+     }
+     return x;
+@@ -558,7 +558,7 @@
+ 
+ enum ActionType cJSON_GetActionTypeValue(const cJSON * j) {
+     enum ActionType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "game")) x = ACTIONTYPE_GAME;
+         else if (!strcmp(cJSON_GetStringValue(j), "period")) x = ACTIONTYPE_PERIOD;
+         else if (!strcmp(cJSON_GetStringValue(j), "3pt")) x = ACTIONTYPE_THE_3_PT;
+@@ -602,7 +602,7 @@
+ 
+ enum FamilyNameInitial cJSON_GetFamilyNameInitialValue(const cJSON * j) {
+     enum FamilyNameInitial x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "R")) x = FAMILYNAMEINITIAL_R;
+         else if (!strcmp(cJSON_GetStringValue(j), "M")) x = FAMILYNAMEINITIAL_M;
+         else if (!strcmp(cJSON_GetStringValue(j), "s")) x = FAMILYNAMEINITIAL_S;
+@@ -644,7 +644,7 @@
+ 
+ enum FirstNameInitial cJSON_GetFirstNameInitialValue(const cJSON * j) {
+     enum FirstNameInitial x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "D")) x = FIRSTNAMEINITIAL_D;
+         else if (!strcmp(cJSON_GetStringValue(j), "J")) x = FIRSTNAMEINITIAL_J;
+         else if (!strcmp(cJSON_GetStringValue(j), "T")) x = FIRSTNAMEINITIAL_T;
+@@ -682,7 +682,7 @@
+ 
+ enum ScoreboardName cJSON_GetScoreboardNameValue(const cJSON * j) {
+     enum ScoreboardName x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "")) x = SCOREBOARDNAME_EMPTY;
+         else if (!strcmp(cJSON_GetStringValue(j), "T. s")) x = SCOREBOARDNAME_T_S;
+         else if (!strcmp(cJSON_GetStringValue(j), "R. Ihata")) x = SCOREBOARDNAME_R_IHATA;
+@@ -706,7 +706,7 @@
+ 
+ enum SubType cJSON_GetSubTypeValue(const cJSON * j) {
+     enum SubType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "jumpshot")) x = SUBTYPE_JUMPSHOT;
+         else if (!strcmp(cJSON_GetStringValue(j), "layup")) x = SUBTYPE_LAYUP;
+         else if (!strcmp(cJSON_GetStringValue(j), "dunk")) x = SUBTYPE_DUNK;
+@@ -1907,8 +1907,7 @@
+                             cJSON_DeleteLds(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteScorer(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetScorerValue(e1), sizeof(struct Scorer *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Scorer *));
+                     }
+                     x->s_steals = x1;
+                 }
+@@ -1931,8 +1930,7 @@
+                             cJSON_DeleteLds(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteScorer(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetScorerValue(e1), sizeof(struct Scorer *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Scorer *));
+                     }
+                     x->s_assists = x1;
+                 }
+@@ -1955,8 +1953,7 @@
+                             cJSON_DeleteLds(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteScorer(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetScorerValue(e1), sizeof(struct Scorer *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Scorer *));
+                     }
+                     x->s_rebounds_total = x1;
+                 }
+@@ -1979,8 +1976,7 @@
+                             cJSON_DeleteLds(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteScorer(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetScorerValue(e1), sizeof(struct Scorer *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Scorer *));
+                     }
+                     x->s_points = x1;
+                 }
+@@ -3142,8 +3138,7 @@
+                             cJSON_DeleteTm(x);
+                             return NULL;
+                         }
+-                        cJSON_DeletePl(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetPlValue(e1), sizeof(struct Pl *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Pl *));
+                     }
+                     x->pl = x1;
+                 }
+@@ -3510,8 +3505,7 @@
+                             cJSON_DeleteTotallds(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteScorer(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetScorerValue(e1), sizeof(struct Scorer *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Scorer *));
+                     }
+                     x->s_blocks = x1;
+                 }
+@@ -3534,8 +3528,7 @@
+                             cJSON_DeleteTotallds(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteScorer(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetScorerValue(e1), sizeof(struct Scorer *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Scorer *));
+                     }
+                     x->s_steals = x1;
+                 }
+@@ -3558,8 +3551,7 @@
+                             cJSON_DeleteTotallds(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteScorer(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetScorerValue(e1), sizeof(struct Scorer *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Scorer *));
+                     }
+                     x->s_assists = x1;
+                 }
+@@ -3582,8 +3574,7 @@
+                             cJSON_DeleteTotallds(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteScorer(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetScorerValue(e1), sizeof(struct Scorer *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Scorer *));
+                     }
+                     x->s_rebounds_total = x1;
+                 }
+@@ -3606,8 +3597,7 @@
+                             cJSON_DeleteTotallds(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteScorer(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetScorerValue(e1), sizeof(struct Scorer *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Scorer *));
+                     }
+                     x->s_points = x1;
+                 }
+@@ -3850,8 +3840,7 @@
+                             cJSON_DeleteTopLevel(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteTm(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetTmValue(e1), sizeof(struct Tm *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Tm *));
+                     }
+                     x->tm = x1;
+                 }

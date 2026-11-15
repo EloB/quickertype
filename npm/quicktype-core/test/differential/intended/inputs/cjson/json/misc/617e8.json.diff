@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -402,7 +402,7 @@
+ 
+ enum TypeName cJSON_GetTypeNameValue(const cJSON * j) {
+     enum TypeName x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "meta_data")) x = TYPENAME_META_DATA;
+         else if (!strcmp(cJSON_GetStringValue(j), "calendar_date")) x = TYPENAME_CALENDAR_DATE;
+         else if (!strcmp(cJSON_GetStringValue(j), "text")) x = TYPENAME_TEXT;

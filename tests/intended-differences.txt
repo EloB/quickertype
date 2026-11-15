@@ -22,3 +22,272 @@
 #
 # `bug <id> <upstream report>` declares a bug; `<case id> <bug id>...`
 # lists a case.
+
+bug cjson-enum-getter-strcmp (link pending)
+bug cjson-map-parsed-twice (link pending)
+bug cjson-pattern-regcomp (link pending)
+bug cjson-top-level-map-values (link pending)
+bug cjson-top-level-null-marker (link pending)
+
+# Golden cases (tests/golden).
+cjson-default/json/priority/nbl-stats.json/b2d393358b cjson-enum-getter-strcmp cjson-map-parsed-twice
+cjson-multi-header/json/priority/nbl-stats.json/1c60dbc05b cjson-enum-getter-strcmp cjson-map-parsed-twice
+cjson-multi-split/json/priority/nbl-stats.json/08975b77ae cjson-enum-getter-strcmp cjson-map-parsed-twice
+cjson/json/misc/00c36.json/bc58cf51d6 cjson-enum-getter-strcmp
+cjson/json/misc/00ec5.json/e6324d6d12 cjson-enum-getter-strcmp cjson-map-parsed-twice
+cjson/json/misc/010b1.json/e7710a9406 cjson-enum-getter-strcmp
+cjson/json/misc/050b0.json/f7dceed481 cjson-enum-getter-strcmp
+cjson/json/misc/06bee.json/08d6d17e35 cjson-enum-getter-strcmp
+cjson/json/misc/09f54.json/abff045166 cjson-map-parsed-twice
+cjson/json/misc/0a91a.json/9c26683408 cjson-enum-getter-strcmp
+cjson/json/misc/0cffa.json/6f4581aed9 cjson-enum-getter-strcmp
+cjson/json/misc/0e0c2.json/1da24d3af7 cjson-enum-getter-strcmp
+cjson/json/misc/10be4.json/05271d06b7 cjson-enum-getter-strcmp
+cjson/json/misc/127a1.json/030c9a27b9 cjson-enum-getter-strcmp
+cjson/json/misc/1a7f5.json/69f58c03a2 cjson-enum-getter-strcmp
+cjson/json/misc/1b409.json/8d2ac3f334 cjson-enum-getter-strcmp
+cjson/json/misc/262f0.json/397fa8044a cjson-enum-getter-strcmp
+cjson/json/misc/26b49.json/260f399c95 cjson-enum-getter-strcmp
+cjson/json/misc/27332.json/10ff8e13d8 cjson-enum-getter-strcmp
+cjson/json/misc/29f47.json/b2d70728f6 cjson-enum-getter-strcmp
+cjson/json/misc/2d4e2.json/3aee68f6b8 cjson-enum-getter-strcmp
+cjson/json/misc/2df80.json/60b8637fd4 cjson-enum-getter-strcmp
+cjson/json/misc/32431.json/7cdf9da591 cjson-enum-getter-strcmp
+cjson/json/misc/337ed.json/29bea3f0ad cjson-enum-getter-strcmp
+cjson/json/misc/33d2e.json/bed18c9886 cjson-enum-getter-strcmp
+cjson/json/misc/34702.json/9811a8b455 cjson-enum-getter-strcmp
+cjson/json/misc/3536b.json/a33c8f08d8 cjson-enum-getter-strcmp
+cjson/json/misc/3f1ce.json/85098a0625 cjson-enum-getter-strcmp
+cjson/json/misc/437e7.json/200627efbb cjson-enum-getter-strcmp
+cjson/json/misc/458db.json/2bf3cf8e71 cjson-enum-getter-strcmp
+cjson/json/misc/4a455.json/25605d5db5 cjson-enum-getter-strcmp
+cjson/json/misc/4d6fb.json/43d3481e90 cjson-enum-getter-strcmp
+cjson/json/misc/54d32.json/0d7b59a4d6 cjson-enum-getter-strcmp
+cjson/json/misc/570ec.json/829824dce8 cjson-enum-getter-strcmp
+cjson/json/misc/5f7fe.json/c15183ef22 cjson-enum-getter-strcmp
+cjson/json/misc/617e8.json/e39f8c4efc cjson-enum-getter-strcmp
+cjson/json/misc/65dec.json/f5f44efe42 cjson-enum-getter-strcmp
+cjson/json/misc/66121.json/82966f7a25 cjson-enum-getter-strcmp
+cjson/json/misc/6de06.json/6073455a84 cjson-enum-getter-strcmp
+cjson/json/misc/6dec6.json/a9091988f7 cjson-enum-getter-strcmp
+cjson/json/misc/734ad.json/69a7290b89 cjson-enum-getter-strcmp
+cjson/json/misc/7681c.json/872cfa3943 cjson-enum-getter-strcmp
+cjson/json/misc/76ae1.json/229486e67d cjson-enum-getter-strcmp cjson-map-parsed-twice
+cjson/json/misc/77392.json/3d4e2573d9 cjson-enum-getter-strcmp
+cjson/json/misc/7d397.json/28adede6d2 cjson-enum-getter-strcmp cjson-map-parsed-twice
+cjson/json/misc/7eb30.json/96fa6b7a26 cjson-enum-getter-strcmp
+cjson/json/misc/7f568.json/f09a4fc3b7 cjson-enum-getter-strcmp cjson-map-parsed-twice
+cjson/json/misc/7fbfb.json/e2f2e1807c cjson-enum-getter-strcmp
+cjson/json/misc/8592b.json/881c23e7e7 cjson-enum-getter-strcmp
+cjson/json/misc/996bd.json/e55b948bb0 cjson-enum-getter-strcmp
+cjson/json/misc/9a503.json/e05920a661 cjson-enum-getter-strcmp
+cjson/json/misc/9ac3b.json/d3d373e679 cjson-enum-getter-strcmp
+cjson/json/misc/9eed5.json/d9f846fbf6 cjson-enum-getter-strcmp
+cjson/json/misc/a3d8c.json/ce7dea3b96 cjson-enum-getter-strcmp
+cjson/json/misc/a45b0.json/aebaf7549c cjson-enum-getter-strcmp
+cjson/json/misc/ab0d1.json/f9beee7915 cjson-enum-getter-strcmp
+cjson/json/misc/ad8be.json/69824de0a9 cjson-enum-getter-strcmp
+cjson/json/misc/ae7f0.json/bfa5112c53 cjson-enum-getter-strcmp
+cjson/json/misc/ae9ca.json/104d42c1f1 cjson-enum-getter-strcmp
+cjson/json/misc/af2d1.json/bdf975ab5d cjson-enum-getter-strcmp
+cjson/json/misc/b4865.json/ef69c3db67 cjson-enum-getter-strcmp
+cjson/json/misc/be234.json/a4c12b673d cjson-enum-getter-strcmp
+cjson/json/misc/c0356.json/8685134e39 cjson-map-parsed-twice
+cjson/json/misc/c3303.json/7d6475649e cjson-enum-getter-strcmp
+cjson/json/misc/c8c7e.json/4a623d3ea3 cjson-enum-getter-strcmp
+cjson/json/misc/cb0cc.json/da48cbc4b7 cjson-enum-getter-strcmp
+cjson/json/misc/cda6c.json/c516361387 cjson-enum-getter-strcmp
+cjson/json/misc/dbfb3.json/a241b5f425 cjson-enum-getter-strcmp
+cjson/json/misc/dc44f.json/c4e6315f3a cjson-enum-getter-strcmp
+cjson/json/misc/dd1ce.json/25bb6d3303 cjson-enum-getter-strcmp
+cjson/json/misc/e0ac7.json/60dc93c322 cjson-enum-getter-strcmp
+cjson/json/misc/e2915.json/c99dcceecf cjson-enum-getter-strcmp
+cjson/json/misc/e324e.json/3c285a614d cjson-enum-getter-strcmp cjson-map-parsed-twice
+cjson/json/misc/e53b5.json/bd4ef92a16 cjson-enum-getter-strcmp
+cjson/json/misc/e8a0b.json/6bc09e2f4f cjson-enum-getter-strcmp
+cjson/json/misc/e8b04.json/b71016f27d cjson-enum-getter-strcmp
+cjson/json/misc/f22f5.json/28fd54385a cjson-enum-getter-strcmp
+cjson/json/misc/f3edf.json/03d50a0003 cjson-enum-getter-strcmp
+cjson/json/misc/f466a.json/fd27b9f58c cjson-enum-getter-strcmp
+cjson/json/misc/f6a65.json/bd99b2203e cjson-enum-getter-strcmp
+cjson/json/misc/f74d5.json/94f4cc6f91 cjson-enum-getter-strcmp
+cjson/json/misc/f82d9.json/95e62dc78f cjson-enum-getter-strcmp
+cjson/json/misc/fcca3.json/4eed27a1a9 cjson-enum-getter-strcmp
+cjson/json/misc/fd329.json/02976971e5 cjson-map-parsed-twice
+cjson/json/priority/bug2037.json/fd18ba5449 cjson-map-parsed-twice
+cjson/json/priority/bug427.json/34a5f52161 cjson-enum-getter-strcmp
+cjson/json/priority/bug863.json/4fb358a428 cjson-enum-getter-strcmp
+cjson/json/priority/coin-pairs.json/2914e65df7 cjson-map-parsed-twice
+cjson/json/priority/combined-enum.json/a925f8deb3 cjson-enum-getter-strcmp
+cjson/json/priority/keywords.json/60b743987b cjson-enum-getter-strcmp
+cjson/json/priority/kotlin-enum-class-case-collision.json/194cea6bfe cjson-enum-getter-strcmp
+cjson/json/priority/nbl-stats.json/5d9dac3414 cjson-enum-getter-strcmp cjson-map-parsed-twice
+cjson/json/samples/github-events.json/4047b962fc cjson-enum-getter-strcmp
+cjson/json/samples/objc-control-characters.json/79956a905d cjson-enum-getter-strcmp
+cjson/json/samples/pokedex.json/9bb0e3a49f cjson-enum-getter-strcmp
+cjson/json/samples/reddit.json/8474429a8a cjson-enum-getter-strcmp
+cjson/json/samples/us-avg-temperatures.json/a9c7a91c7e cjson-map-parsed-twice
+cjson/json/samples/us-senators.json/7f88730cee cjson-enum-getter-strcmp
+cli-stdout/schema/description.schema/8f1f0fb0c2 cjson-enum-getter-strcmp
+graphql-cjson/graphql/github3.graphql/c7164a881b cjson-enum-getter-strcmp
+graphql-cjson/graphql/github4.graphql/0e25ca2268 cjson-enum-getter-strcmp
+graphql-cjson/graphql/github8.graphql/ef85f777fa cjson-enum-getter-strcmp
+graphql-cjson/graphql/github9.graphql/d5ff62e0c1 cjson-enum-getter-strcmp
+schema-cjson/schema/accessors.schema/82f90d67df cjson-enum-getter-strcmp
+schema-cjson/schema/all-of-additional-properties-false.schema/692993e832 cjson-enum-getter-strcmp
+schema-cjson/schema/any.schema/e62cc488d7 cjson-map-parsed-twice
+schema-cjson/schema/class-map-union.schema/5c2eef3944 cjson-map-parsed-twice
+schema-cjson/schema/class-with-additional.schema/2229739a5c cjson-map-parsed-twice
+schema-cjson/schema/comment-injection-enum-nested-comment.schema/5cc51fc8ea cjson-enum-getter-strcmp
+schema-cjson/schema/comment-injection-enum.schema/b62e317fee cjson-enum-getter-strcmp
+schema-cjson/schema/const-non-string.schema/97d1a22bd1 cjson-enum-getter-strcmp
+schema-cjson/schema/description.schema/a40cef1a66 cjson-enum-getter-strcmp
+schema-cjson/schema/direct-union.schema/7a3e6f5cad cjson-map-parsed-twice
+schema-cjson/schema/enum-large.schema/83b89a63f3 cjson-enum-getter-strcmp
+schema-cjson/schema/enum-with-null.schema/968a394997 cjson-enum-getter-strcmp
+schema-cjson/schema/enum-with-values.schema/f115032865 cjson-enum-getter-strcmp
+schema-cjson/schema/enum.schema/22ac9bd87b cjson-enum-getter-strcmp
+schema-cjson/schema/haskell-enum-forbidden.schema/bdbed3afd5 cjson-enum-getter-strcmp
+schema-cjson/schema/keyword-enum.schema/34741f230c cjson-enum-getter-strcmp
+schema-cjson/schema/multi-type-enum.schema/d28cc7bc66 cjson-enum-getter-strcmp
+schema-cjson/schema/nullable-optional-one-of.schema/c964d73870 cjson-enum-getter-strcmp
+schema-cjson/schema/optional-constraints.schema/03d278be81 cjson-pattern-regcomp
+schema-cjson/schema/optional-enum.schema/d5c3d08925 cjson-enum-getter-strcmp
+schema-cjson/schema/pattern.schema/a6e72d9b15 cjson-pattern-regcomp
+schema-cjson/schema/renaming-bug.schema/82d2a673ea cjson-enum-getter-strcmp cjson-pattern-regcomp
+schema-cjson/schema/unicode-codepoint-length.schema/3f5184cf89 cjson-pattern-regcomp
+schema-cjson/schema/vega-lite.schema/9a2eed59ba cjson-enum-getter-strcmp cjson-map-parsed-twice
+
+# Render scenarios (crates/quicktype-core/tests/fixtures/core-rendering/
+# scenarios): render_scenarios.rs reads <id>.<render>.<file>.intended.
+render-scenarios/cjson-enum-values cjson-enum-getter-strcmp
+render-scenarios/cjson-shapes cjson-enum-getter-strcmp cjson-map-parsed-twice cjson-pattern-regcomp
+render-scenarios/cjson-top-levels cjson-enum-getter-strcmp cjson-top-level-map-values cjson-top-level-null-marker
+render-scenarios/vitest-cjson-enum-default cjson-enum-getter-strcmp
+
+# npm differential suite scenarios (npm/quicktype-core/test/differential) that
+# are not golden cases: intended/<scenario id>.diff is the corrected result,
+# as a diff of the reference's (its corpus/<case> scenarios use the golden
+# cases' .intended files).
+npm/corpus/cjson/json/misc/76ae1.json/229486e67d cjson-enum-getter-strcmp cjson-map-parsed-twice
+npm/api/cjson-enum-default/invalid-value-does-not-collide cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/00c36.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/00ec5.json cjson-enum-getter-strcmp cjson-map-parsed-twice
+npm/inputs/cjson/json/misc/010b1.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/050b0.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/06bee.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/09f54.json cjson-map-parsed-twice
+npm/inputs/cjson/json/misc/0a91a.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/0cffa.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/0e0c2.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/10be4.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/127a1.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/1a7f5.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/1b409.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/262f0.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/26b49.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/27332.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/29f47.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/2d4e2.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/2df80.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/32431.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/337ed.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/33d2e.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/34702.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/3536b.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/3f1ce.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/437e7.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/458db.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/4a455.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/4d6fb.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/54d32.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/570ec.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/5f7fe.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/617e8.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/65dec.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/66121.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/6de06.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/6dec6.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/734ad.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/7681c.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/76ae1.json cjson-enum-getter-strcmp cjson-map-parsed-twice
+npm/inputs/cjson/json/misc/77392.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/7d397.json cjson-enum-getter-strcmp cjson-map-parsed-twice
+npm/inputs/cjson/json/misc/7eb30.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/7f568.json cjson-enum-getter-strcmp cjson-map-parsed-twice
+npm/inputs/cjson/json/misc/7fbfb.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/8592b.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/996bd.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/9a503.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/9ac3b.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/9eed5.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/a3d8c.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/a45b0.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/ab0d1.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/ad8be.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/ae7f0.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/ae9ca.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/af2d1.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/b4865.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/be234.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/c0356.json cjson-map-parsed-twice
+npm/inputs/cjson/json/misc/c3303.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/c8c7e.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/cb0cc.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/cda6c.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/dbfb3.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/dc44f.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/dd1ce.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/e0ac7.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/e2915.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/e324e.json cjson-enum-getter-strcmp cjson-map-parsed-twice
+npm/inputs/cjson/json/misc/e53b5.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/e8a0b.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/e8b04.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/f22f5.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/f3edf.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/f466a.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/f6a65.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/f74d5.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/f82d9.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/fcca3.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/misc/fd329.json cjson-map-parsed-twice
+npm/inputs/cjson/json/priority/bug2037.json cjson-map-parsed-twice
+npm/inputs/cjson/json/priority/bug427.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/priority/bug863.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/priority/coin-pairs.json cjson-map-parsed-twice
+npm/inputs/cjson/json/priority/combined-enum.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/priority/keywords.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/priority/kotlin-enum-class-case-collision.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/priority/nbl-stats.json cjson-enum-getter-strcmp cjson-map-parsed-twice
+npm/inputs/cjson/json/samples/github-events.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/samples/objc-control-characters.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/samples/pokedex.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/samples/reddit.json cjson-enum-getter-strcmp
+npm/inputs/cjson/json/samples/us-avg-temperatures.json cjson-map-parsed-twice
+npm/inputs/cjson/json/samples/us-senators.json cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/accessors.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/all-of-additional-properties-false.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/any.schema cjson-map-parsed-twice
+npm/inputs/cjson/schema/class-map-union.schema cjson-map-parsed-twice
+npm/inputs/cjson/schema/class-with-additional.schema cjson-map-parsed-twice
+npm/inputs/cjson/schema/comment-injection-enum-nested-comment.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/comment-injection-enum.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/const-non-string.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/description.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/direct-union.schema cjson-map-parsed-twice
+npm/inputs/cjson/schema/enum-large.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/enum-with-null.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/enum-with-values.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/enum.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/haskell-enum-forbidden.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/keyword-enum.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/multi-type-enum.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/nullable-optional-one-of.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/optional-constraints.schema cjson-pattern-regcomp
+npm/inputs/cjson/schema/optional-enum.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/pattern.schema cjson-pattern-regcomp
+npm/inputs/cjson/schema/renaming-bug.schema cjson-enum-getter-strcmp cjson-pattern-regcomp
+npm/inputs/cjson/schema/top-level-enum.schema cjson-enum-getter-strcmp
+npm/inputs/cjson/schema/unicode-codepoint-length.schema cjson-pattern-regcomp
+npm/inputs/cjson/schema/vega-lite.schema cjson-enum-getter-strcmp cjson-map-parsed-twice

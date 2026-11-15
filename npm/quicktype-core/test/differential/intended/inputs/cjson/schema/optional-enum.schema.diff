@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -69,7 +69,7 @@
+ 
+ enum Shortcut cJSON_GetShortcutValue(const cJSON * j) {
+     enum Shortcut x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "hidden")) x = SHORTCUT_HIDDEN;
+         else if (!strcmp(cJSON_GetStringValue(j), "visible")) x = SHORTCUT_VISIBLE;
+     }

@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -82,7 +82,7 @@
+ 
+ enum Country cJSON_GetCountryValue(const cJSON * j) {
+     enum Country x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "United States")) x = COUNTRY_UNITED_STATES;
+     }
+     return x;

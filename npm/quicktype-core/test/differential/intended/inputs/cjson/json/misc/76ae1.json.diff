@@ -1,0 +1,39 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -400,7 +400,7 @@
+ 
+ enum FormatEnum cJSON_GetFormatEnumValue(const cJSON * j) {
+     enum FormatEnum x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "string")) x = FORMATENUM_STRING;
+     }
+     return x;
+@@ -416,7 +416,7 @@
+ 
+ enum In cJSON_GetInValue(const cJSON * j) {
+     enum In x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "query")) x = IN_QUERY;
+     }
+     return x;
+@@ -432,7 +432,7 @@
+ 
+ enum SchemaType cJSON_GetSchemaTypeValue(const cJSON * j) {
+     enum SchemaType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "array")) x = SCHEMATYPE_ARRAY;
+     }
+     return x;
+@@ -553,8 +553,7 @@
+                             cJSON_DeleteArticle(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteProperty(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetPropertyValue(e1), sizeof(struct Property *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Property *));
+                     }
+                     x->properties = x1;
+                 }

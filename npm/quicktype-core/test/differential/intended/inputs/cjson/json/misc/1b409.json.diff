@@ -1,0 +1,65 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -203,7 +203,7 @@
+ 
+ enum Party cJSON_GetPartyValue(const cJSON * j) {
+     enum Party x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Republican")) x = PARTY_REPUBLICAN;
+         else if (!strcmp(cJSON_GetStringValue(j), "Democrat")) x = PARTY_DEMOCRAT;
+     }
+@@ -221,7 +221,7 @@
+ 
+ enum Gender cJSON_GetGenderValue(const cJSON * j) {
+     enum Gender x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "male")) x = GENDER_MALE;
+         else if (!strcmp(cJSON_GetStringValue(j), "female")) x = GENDER_FEMALE;
+     }
+@@ -239,7 +239,7 @@
+ 
+ enum GenderLabel cJSON_GetGenderLabelValue(const cJSON * j) {
+     enum GenderLabel x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Male")) x = GENDERLABEL_MALE;
+         else if (!strcmp(cJSON_GetStringValue(j), "Female")) x = GENDERLABEL_FEMALE;
+     }
+@@ -257,7 +257,7 @@
+ 
+ enum Namemod cJSON_GetNamemodValue(const cJSON * j) {
+     enum Namemod x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "")) x = NAMEMOD_EMPTY;
+         else if (!strcmp(cJSON_GetStringValue(j), "Jr.")) x = NAMEMOD_JR;
+         else if (!strcmp(cJSON_GetStringValue(j), "II")) x = NAMEMOD_II;
+@@ -281,7 +281,7 @@
+ 
+ enum RoleType cJSON_GetRoleTypeValue(const cJSON * j) {
+     enum RoleType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "representative")) x = ROLETYPE_REPRESENTATIVE;
+     }
+     return x;
+@@ -297,7 +297,7 @@
+ 
+ enum RoleTypeLabel cJSON_GetRoleTypeLabelValue(const cJSON * j) {
+     enum RoleTypeLabel x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Representative")) x = ROLETYPELABEL_REPRESENTATIVE;
+         else if (!strcmp(cJSON_GetStringValue(j), "Delegate")) x = ROLETYPELABEL_DELEGATE;
+         else if (!strcmp(cJSON_GetStringValue(j), "Resident Commissioner")) x = ROLETYPELABEL_RESIDENT_COMMISSIONER;
+@@ -317,7 +317,7 @@
+ 
+ enum Title cJSON_GetTitleValue(const cJSON * j) {
+     enum Title x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Rep.")) x = TITLE_REP;
+         else if (!strcmp(cJSON_GetStringValue(j), "Commish.")) x = TITLE_COMMISH;
+     }

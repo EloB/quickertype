@@ -1,0 +1,29 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -114,7 +114,7 @@
+ 
+ enum Fall cJSON_GetFallValue(const cJSON * j) {
+     enum Fall x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Fell")) x = FALL_FELL;
+         else if (!strcmp(cJSON_GetStringValue(j), "Found")) x = FALL_FOUND;
+     }
+@@ -132,7 +132,7 @@
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j) {
+     enum Type x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Point")) x = TYPE_POINT;
+     }
+     return x;
+@@ -148,7 +148,7 @@
+ 
+ enum Nametype cJSON_GetNametypeValue(const cJSON * j) {
+     enum Nametype x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Valid")) x = NAMETYPE_VALID;
+     }
+     return x;

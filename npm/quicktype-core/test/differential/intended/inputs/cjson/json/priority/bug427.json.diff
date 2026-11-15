@@ -1,0 +1,74 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -1073,7 +1073,7 @@
+ 
+ enum PurpleKindString cJSON_GetPurpleKindStringValue(const cJSON * j) {
+     enum PurpleKindString x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Variable")) x = PURPLEKINDSTRING_VARIABLE;
+         else if (!strcmp(cJSON_GetStringValue(j), "Function")) x = PURPLEKINDSTRING_FUNCTION;
+         else if (!strcmp(cJSON_GetStringValue(j), "Property")) x = PURPLEKINDSTRING_PROPERTY;
+@@ -1105,7 +1105,7 @@
+ 
+ enum SignatureKindString cJSON_GetSignatureKindStringValue(const cJSON * j) {
+     enum SignatureKindString x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Call signature")) x = SIGNATUREKINDSTRING_CALL_SIGNATURE;
+         else if (!strcmp(cJSON_GetStringValue(j), "Constructor signature")) x = SIGNATUREKINDSTRING_CONSTRUCTOR_SIGNATURE;
+     }
+@@ -1123,7 +1123,7 @@
+ 
+ enum Name cJSON_GetNameValue(const cJSON * j) {
+     enum Name x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "string")) x = NAME_STRING;
+         else if (!strcmp(cJSON_GetStringValue(j), "number")) x = NAME_NUMBER;
+         else if (!strcmp(cJSON_GetStringValue(j), "void")) x = NAME_VOID;
+@@ -1155,7 +1155,7 @@
+ 
+ enum TypeEnum cJSON_GetTypeEnumValue(const cJSON * j) {
+     enum TypeEnum x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "intrinsic")) x = TYPEENUM_INTRINSIC;
+         else if (!strcmp(cJSON_GetStringValue(j), "reflection")) x = TYPEENUM_REFLECTION;
+         else if (!strcmp(cJSON_GetStringValue(j), "array")) x = TYPEENUM_ARRAY;
+@@ -1185,7 +1185,7 @@
+ 
+ enum FileName cJSON_GetFileNameValue(const cJSON * j) {
+     enum FileName x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "modules.ts")) x = FILENAME_MODULES_TS;
+         else if (!strcmp(cJSON_GetStringValue(j), "classes.ts")) x = FILENAME_CLASSES_TS;
+         else if (!strcmp(cJSON_GetStringValue(j), "flattened.ts")) x = FILENAME_FLATTENED_TS;
+@@ -1225,7 +1225,7 @@
+ 
+ enum ParameterKindString cJSON_GetParameterKindStringValue(const cJSON * j) {
+     enum ParameterKindString x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Parameter")) x = PARAMETERKINDSTRING_PARAMETER;
+     }
+     return x;
+@@ -1241,7 +1241,7 @@
+ 
+ enum FluffyKindString cJSON_GetFluffyKindStringValue(const cJSON * j) {
+     enum FluffyKindString x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "Module")) x = FLUFFYKINDSTRING_MODULE;
+         else if (!strcmp(cJSON_GetStringValue(j), "Class")) x = FLUFFYKINDSTRING_CLASS;
+         else if (!strcmp(cJSON_GetStringValue(j), "Variable")) x = FLUFFYKINDSTRING_VARIABLE;
+@@ -1271,7 +1271,7 @@
+ 
+ enum TentacledKindString cJSON_GetTentacledKindStringValue(const cJSON * j) {
+     enum TentacledKindString x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "External module")) x = TENTACLEDKINDSTRING_EXTERNAL_MODULE;
+     }
+     return x;

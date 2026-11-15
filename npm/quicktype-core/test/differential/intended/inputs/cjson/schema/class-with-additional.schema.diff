@@ -1,0 +1,12 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -146,8 +146,7 @@
+                             cJSON_DeleteTopLevel(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteMap(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetMapValue(e1), sizeof(struct Map *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Map *));
+                     }
+                     x->map = x1;
+                 }

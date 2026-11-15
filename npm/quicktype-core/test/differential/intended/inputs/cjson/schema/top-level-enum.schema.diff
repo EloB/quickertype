@@ -1,0 +1,11 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -59,7 +59,7 @@
+ 
+ enum TopLevel cJSON_GetTopLevelValue(const cJSON * j) {
+     enum TopLevel x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "one")) x = TOPLEVEL_ONE;
+         else if (!strcmp(cJSON_GetStringValue(j), "three")) x = TOPLEVEL_THREE;
+         else if (!strcmp(cJSON_GetStringValue(j), "two")) x = TOPLEVEL_TWO;

@@ -1,0 +1,47 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -150,7 +150,7 @@
+ 
+ enum Scheme cJSON_GetSchemeValue(const cJSON * j) {
+     enum Scheme x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "SPDX")) x = SCHEME_SPDX;
+         else if (!strcmp(cJSON_GetStringValue(j), "Trove")) x = SCHEME_TROVE;
+         else if (!strcmp(cJSON_GetStringValue(j), "DEP5")) x = SCHEME_DEP5;
+@@ -170,7 +170,7 @@
+ 
+ enum Keyword cJSON_GetKeywordValue(const cJSON * j) {
+     enum Keyword x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "osi-approved")) x = KEYWORD_OSI_APPROVED;
+         else if (!strcmp(cJSON_GetStringValue(j), "discouraged")) x = KEYWORD_DISCOURAGED;
+         else if (!strcmp(cJSON_GetStringValue(j), "redundant")) x = KEYWORD_REDUNDANT;
+@@ -190,7 +190,7 @@
+ 
+ enum Note cJSON_GetNoteValue(const cJSON * j) {
+     enum Note x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "OSI Page")) x = NOTE_OSI_PAGE;
+     }
+     return x;
+@@ -206,7 +206,7 @@
+ 
+ enum MediaType cJSON_GetMediaTypeValue(const cJSON * j) {
+     enum MediaType x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "text/html")) x = MEDIATYPE_TEXT_HTML;
+     }
+     return x;
+@@ -222,7 +222,7 @@
+ 
+ enum Title cJSON_GetTitleValue(const cJSON * j) {
+     enum Title x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "HTML")) x = TITLE_HTML;
+     }
+     return x;

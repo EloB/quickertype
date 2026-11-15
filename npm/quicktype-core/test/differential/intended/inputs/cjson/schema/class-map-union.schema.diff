@@ -1,0 +1,12 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -240,8 +240,7 @@
+                             cJSON_DeleteTopLevel(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteUnionValue(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetUnionValueValue(e1), sizeof(struct UnionValue *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct UnionValue *));
+                     }
+                     x->top_level_union = x1;
+                 }
