@@ -149,7 +149,7 @@ pub fn split_summarize(before: &[u8], at_start: bool, range: &[u8]) -> Vec<f64> 
 /// `undefined` for numbers that are not summaries.
 #[wasm_bindgen(js_name = splitResolve)]
 pub fn split_resolve(summaries: &[f64], lines: bool) -> Option<Vec<f64>> {
-    if summaries.len() % RangeSummary::NUMBERS != 0 {
+    if !summaries.len().is_multiple_of(RangeSummary::NUMBERS) {
         return None;
     }
     let summaries = summaries
@@ -270,7 +270,7 @@ pub fn split_decide(
 ) -> JsValue {
     let decided = (|| {
         let plan = plan_of(plan).ok_or(NOT_THE_ENGINES)?;
-        if parts.len() % 3 != 0 {
+        if !parts.len().is_multiple_of(3) {
             return Err(NOT_THE_ENGINES);
         }
         let parts = parts

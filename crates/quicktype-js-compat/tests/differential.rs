@@ -314,7 +314,7 @@ fn sort_with(kind: &str, n: u32, seed: u32) -> Vec<u32> {
             i64::from(mix(seed, a, 7) % 13) - i64::from(mix(seed, b, 7) % 13)
         }),
         "noisy" => sort::sort_by(&mut v, |&a, &b| {
-            if mix(seed, a, b) % 17 == 0 {
+            if mix(seed, a, b).is_multiple_of(17) {
                 i64::from(mix(seed, b, a) % 3) - 1
             } else {
                 i64::from(mix(seed, a, 7) % 50) - i64::from(mix(seed, b, 7) % 50)
@@ -325,14 +325,14 @@ fn sort_with(kind: &str, n: u32, seed: u32) -> Vec<u32> {
             let key = |i: u32| {
                 let segment = i / period;
                 let base = i64::from(mix(seed, segment, 2) % 1000);
-                if mix(seed, segment, 1) % 2 == 0 {
+                if mix(seed, segment, 1).is_multiple_of(2) {
                     base - i64::from(i)
                 } else {
                     base + i64::from(i)
                 }
             };
             sort::sort_by(&mut v, |&a, &b| {
-                if mix(seed, a, b) % 101 == 0 {
+                if mix(seed, a, b).is_multiple_of(101) {
                     -1
                 } else {
                     key(a) - key(b)
@@ -340,7 +340,7 @@ fn sort_with(kind: &str, n: u32, seed: u32) -> Vec<u32> {
             });
         }
         "nan" => sort::sort_by(&mut v, |&a, &b| {
-            if mix(seed, a, b) % 5 == 0 {
+            if mix(seed, a, b).is_multiple_of(5) {
                 f64::NAN
             } else {
                 (f64::from(mix(seed, a, 3) % 9) - f64::from(mix(seed, b, 3) % 9)) / 3.0

@@ -676,11 +676,11 @@ impl<W: Window> Tokenizer<'_, W> {
 
     #[cold]
     fn discard(&mut self) {
-        if self.text().is_char_boundary(self.index) {
-            if let Some(text) = self.text.as_string() {
-                text.drain(..self.index);
-                self.index = 0;
-            }
+        if self.text().is_char_boundary(self.index)
+            && let Some(text) = self.text.as_string()
+        {
+            text.drain(..self.index);
+            self.index = 0;
         }
     }
 
@@ -702,11 +702,11 @@ impl<W: Window> Tokenizer<'_, W> {
             if self.index < self.text().len() {
                 return;
             }
-            if self.reader.is_some() {
-                if let Some(text) = self.text.as_string() {
-                    text.clear();
-                    self.index = 0;
-                }
+            if self.reader.is_some()
+                && let Some(text) = self.text.as_string()
+            {
+                text.clear();
+                self.index = 0;
             }
             if !self.fill() {
                 return;
@@ -728,11 +728,11 @@ impl<W: Window> Tokenizer<'_, W> {
             if self.index < self.text().len() {
                 return;
             }
-            if self.reader.is_some() {
-                if let Some(text) = self.text.as_string() {
-                    text.clear();
-                    self.index = 0;
-                }
+            if self.reader.is_some()
+                && let Some(text) = self.text.as_string()
+            {
+                text.clear();
+                self.index = 0;
             }
             if !self.fill() {
                 return;

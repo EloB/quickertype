@@ -77,13 +77,6 @@ all = { level = "warn", priority = -1 }
 dbg_macro = "warn"
 todo = "warn"
 unimplemented = "warn"
-# Deferred: the lints that rust-version 1.88 turns on (`if let` chains for
-# nested ifs, 1.88; `is_multiple_of`, 1.87) flag about 50 places in 30
-# files that open branches are changing. Fixing them is a follow-up after
-# those branches merge (docs/ROADMAP.md, cleanup backlog); then remove
-# these two lines.
-collapsible_if = "allow"
-manual_is_multiple_of = "allow"
 
 [profile.release]
 lto = "fat"

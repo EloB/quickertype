@@ -224,15 +224,15 @@ impl Walk<'_> {
             if r.member && t.flags & LITERAL != 0 || !self.seen_types.insert(t.id) {
                 continue;
             }
-            if let Some(h) = t.symbol {
-                if s.known_symbol(h).is_none() {
-                    queries.push(Query::SymbolOfType(t.id));
-                }
+            if let Some(h) = t.symbol
+                && s.known_symbol(h).is_none()
+            {
+                queries.push(Query::SymbolOfType(t.id));
             }
-            if let Some(h) = t.alias_symbol {
-                if s.known_symbol(h).is_none() {
-                    queries.push(Query::AliasSymbolOfType(t.id));
-                }
+            if let Some(h) = t.alias_symbol
+                && s.known_symbol(h).is_none()
+            {
+                queries.push(Query::AliasSymbolOfType(t.id));
             }
             queries.push(Query::TypeToString(
                 t.id,
@@ -399,11 +399,11 @@ impl Walk<'_> {
                 .and_then(|sym| sym.declarations.first().map(|d| d.to_handle()));
             for p in props {
                 queries.push(Query::TypeOfSymbol(p.id));
-                if let Some(owner) = &owner {
-                    if !type_at_is_declared_type(&p, owner) {
-                        queries.push(Query::TypeOfSymbolAt(p.id, owner.clone()));
-                        located.push((Rc::clone(&p), owner.clone()));
-                    }
+                if let Some(owner) = &owner
+                    && !type_at_is_declared_type(&p, owner)
+                {
+                    queries.push(Query::TypeOfSymbolAt(p.id, owner.clone()));
+                    located.push((Rc::clone(&p), owner.clone()));
                 }
                 self.symbol_queries(&p, &mut queries);
                 properties.push(p);
@@ -630,10 +630,11 @@ impl Walk<'_> {
         if sym.flags & sf::Alias != 0 {
             out.push(Query::AliasedSymbol(sym.id));
         }
-        if let Some(p) = sym.parent {
-            if self.s.known_symbol(p).is_none() && self.asked_parents.insert(p) {
-                out.push(Query::ParentOfSymbol(sym.id));
-            }
+        if let Some(p) = sym.parent
+            && self.s.known_symbol(p).is_none()
+            && self.asked_parents.insert(p)
+        {
+            out.push(Query::ParentOfSymbol(sym.id));
         }
     }
 }

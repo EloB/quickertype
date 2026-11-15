@@ -117,12 +117,12 @@ fn process_collection(
                 stack.extend(items.iter().rev().map(|item| (item, depth + 1, false)));
                 continue;
             }
-        } else if let Some(info) = get(c, "info")? {
-            if truthy(info) && is_object(info) {
-                if let Some(JsonValue::String(description)) = get(info, "description")? {
-                    descriptions.push(description.clone());
-                }
-            }
+        } else if let Some(info) = get(c, "info")?
+            && truthy(info)
+            && is_object(info)
+            && let Some(JsonValue::String(description)) = get(info, "description")?
+        {
+            descriptions.push(description.clone());
         }
         add_request(c, sources)?;
     }
@@ -159,17 +159,17 @@ fn add_request(c: &JsonValue, sources: &mut Vec<JsonSourceData<String>>) -> Resu
     if let Some(request) = request {
         let method = get(request, "method")?;
         let url = get(request, "url")?;
-        if let (Some(method), Some(url)) = (method, url) {
-            if is_object(url) {
-                if let JsonValue::Null = url {
-                    return Err(type_error(
-                        "Cannot use 'in' operator to search for 'raw' in null".to_owned(),
-                    ));
-                }
-                if let Some(raw) = get(url, "raw")? {
-                    let method = js_string(method)?;
-                    source_description.push(format!("{method} {}", js_string(raw)?));
-                }
+        if let (Some(method), Some(url)) = (method, url)
+            && is_object(url)
+        {
+            if let JsonValue::Null = url {
+                return Err(type_error(
+                    "Cannot use 'in' operator to search for 'raw' in null".to_owned(),
+                ));
+            }
+            if let Some(raw) = get(url, "raw")? {
+                let method = js_string(method)?;
+                source_description.push(format!("{method} {}", js_string(raw)?));
             }
         }
         if let Some(JsonValue::String(description)) = get(request, "description")? {

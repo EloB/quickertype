@@ -15,10 +15,7 @@
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
-use std::future::Future;
 use std::path::{Path, PathBuf};
-use std::pin::pin;
-use std::task::{Context, Poll, Waker};
 
 use quicktype_core::attributes::type_attributes::AttributeKind;
 use quicktype_core::attributes::uri_attributes::{
@@ -29,6 +26,7 @@ use quicktype_core::inference::{INFERENCE_FLAGS, InferenceFlags};
 use quicktype_core::input::compressed_json::{CompressedJson, JsonSample};
 use quicktype_core::input::inputs::{InputData, JsonInput, JsonSourceData};
 use quicktype_core::input::postman_collection::sources_from_postman_collection;
+use quicktype_core::internal::block_on;
 use quicktype_core::language::all::{default_target_languages, language_named};
 use quicktype_core::language::kotlin::utils::KotlinDateTimeRecognizer;
 use quicktype_core::language::swift::utils::SwiftDateTimeRecognizer;
@@ -53,18 +51,6 @@ fn load(name: &str) -> Value {
     let path = fixtures().join(name);
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
     serde_json::from_str(&text).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
-}
-
-/// Polls a future that never has to wait (nothing in the JSON input
-/// does), as a minimal executor.
-fn block_on<F: Future>(future: F) -> F::Output {
-    let mut cx = Context::from_waker(Waker::noop());
-    let mut future = pin!(future);
-    loop {
-        if let Poll::Ready(output) = future.as_mut().poll(&mut cx) {
-            return output;
-        }
-    }
 }
 
 /// A configuration of `configs.json`.

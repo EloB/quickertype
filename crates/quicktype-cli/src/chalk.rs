@@ -369,13 +369,13 @@ fn unescape(escape: &str) -> String {
                 .unwrap_or_default();
         }
     }
-    if let Some(digits) = escape.strip_prefix('x') {
-        if digits.len() == 2 {
-            return hex(digits)
-                .and_then(char::from_u32)
-                .map(String::from)
-                .unwrap_or_default();
-        }
+    if let Some(digits) = escape.strip_prefix('x')
+        && digits.len() == 2
+    {
+        return hex(digits)
+            .and_then(char::from_u32)
+            .map(String::from)
+            .unwrap_or_default();
     }
     match escape {
         "n" => "\n".to_owned(),
@@ -466,10 +466,10 @@ fn style_item_len(s: &str) -> Option<usize> {
         return None;
     }
     let mut len = hash + name;
-    if s[len..].starts_with('(') {
-        if let Some(close) = s[len..].find(')') {
-            len += close + 1;
-        }
+    if s[len..].starts_with('(')
+        && let Some(close) = s[len..].find(')')
+    {
+        len += close + 1;
     }
     Some(len)
 }

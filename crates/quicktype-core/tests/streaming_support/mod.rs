@@ -554,7 +554,8 @@ pub fn check(seed: u64, limits: Limits, effort: Effort, path: Path) -> Result<St
     // The graphs right after inference, for every combination of the
     // inference flags.
     let lang = if rng.chance(70) {
-        language(rng.pick(LANGUAGES))
+        // `::<&str>`: Rust 1.88 (the rust-version) infers `str` without it.
+        language(rng.pick::<&str>(LANGUAGES))
     } else {
         *rng.pick(all)
     };
@@ -574,14 +575,14 @@ pub fn check(seed: u64, limits: Limits, effort: Effort, path: Path) -> Result<St
         .map_err(|e| format!("seed {seed}: {e}"))?;
 
     // Whole runs.
-    let runs = if seed % effort.runs_every.max(1) == 0 {
+    let runs = if seed.is_multiple_of(effort.runs_every.max(1)) {
         effort.runs
     } else {
         0
     };
     for _ in 0..runs {
         let lang = if rng.chance(80) {
-            language(rng.pick(LANGUAGES))
+            language(rng.pick::<&str>(LANGUAGES))
         } else {
             *rng.pick(all)
         };
@@ -746,7 +747,7 @@ pub fn check_many(
                                 }
                             }
                         }
-                        if progress && (i + 1) % 10_000 == 0 {
+                        if progress && (i + 1).is_multiple_of(10_000) {
                             eprintln!("{} / {count} seeds", i + 1);
                         }
                     }

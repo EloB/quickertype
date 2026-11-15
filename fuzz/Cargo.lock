@@ -157,9 +157,8 @@ dependencies = [
 
 [[package]]
 name = "quickertype-core"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
- "foldhash",
  "hashbrown",
  "indexmap",
  "quickertype-js-compat",
@@ -169,17 +168,17 @@ dependencies = [
 
 [[package]]
 name = "quickertype-graphql-input"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
- "indexmap",
  "quickertype-core",
  "quickertype-js-compat",
 ]
 
 [[package]]
 name = "quickertype-js-compat"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
+ "foldhash",
  "indexmap",
  "regex",
  "regex-automata",

@@ -714,7 +714,7 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
                         elapsed,
                     });
                     let n = done.fetch_add(1, Ordering::Relaxed) + 1;
-                    if n % 1000 == 0 {
+                    if n.is_multiple_of(1000) {
                         eprintln!("  {n}/{} ...", cases.len());
                     }
                 }

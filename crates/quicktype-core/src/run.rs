@@ -634,15 +634,14 @@ impl<'a> Run<'a> {
             graph.print_graph()?;
         }
 
-        if did_add_forwarding_intersection || !self.flags.ignore_json_refs {
-            if let Some(g) = self
+        if (did_add_forwarding_intersection || !self.flags.ignore_json_refs)
+            && let Some(g) = self
                 .ctx
                 .time_result("remove indirection intersections", || {
                     remove_indirection_intersections(&graph, stm, dpr)
                 })?
-            {
-                graph = g;
-            }
+        {
+            graph = g;
         }
 
         let mut unions_done = false;
@@ -763,13 +762,12 @@ impl<'a> Run<'a> {
             "We should only have to flatten unions once after expanding strings",
         )?;
 
-        if need_schema_processing {
-            if let Some(g) = self
+        if need_schema_processing
+            && let Some(g) = self
                 .ctx
                 .time_result("flatten strings", || flatten_strings(&graph, stm, dpr))?
-            {
-                graph = g;
-            }
+        {
+            graph = g;
         }
 
         if let Some(g) = self
@@ -778,12 +776,12 @@ impl<'a> Run<'a> {
         {
             graph = g;
         }
-        if !self.lang.supports_optional_class_properties() {
-            if let Some(g) = self.ctx.time_result("optional to nullable", || {
+        if !self.lang.supports_optional_class_properties()
+            && let Some(g) = self.ctx.time_result("optional to nullable", || {
                 optional_to_nullable(&graph, stm, dpr)
-            })? {
-                graph = g;
-            }
+            })?
+        {
+            graph = g;
         }
 
         if let Some(g) = self

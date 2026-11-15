@@ -2316,12 +2316,12 @@ pub trait ConvenienceRendererExt<'a>: ConvenienceRenderer<'a> {
         // A quote at the end of the line would merge with a closing `"""`
         // emitted right after it. The quote needs escaping iff it's
         // preceded by an even number of backslashes.
-        if line_end.is_some_and(|e| e.starts_with('"')) {
-            if let Some(without_quote) = escaped.strip_suffix('"') {
-                let backslashes = without_quote.len() - without_quote.trim_end_matches('\\').len();
-                if backslashes % 2 == 0 {
-                    escaped = format!("{without_quote}\\\"");
-                }
+        if line_end.is_some_and(|e| e.starts_with('"'))
+            && let Some(without_quote) = escaped.strip_suffix('"')
+        {
+            let backslashes = without_quote.len() - without_quote.trim_end_matches('\\').len();
+            if backslashes % 2 == 0 {
+                escaped = format!("{without_quote}\\\"");
             }
         }
         if splice && escaped.ends_with('\\') {

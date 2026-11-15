@@ -93,11 +93,12 @@ impl<'a> NewtonsoftCSharpRenderer<'a> {
         let mut t = t;
         let mut xf = transformation_for_type(graph, t)?;
 
-        if xf.is_none() && graph.type_at(t)?.is_union() {
-            if let Some(maybe_nullable) = nullable_from_union(graph, t)? {
-                t = maybe_nullable;
-                xf = transformation_for_type(graph, t)?;
-            }
+        if xf.is_none()
+            && graph.type_at(t)?.is_union()
+            && let Some(maybe_nullable) = nullable_from_union(graph, t)?
+        {
+            t = maybe_nullable;
+            xf = transformation_for_type(graph, t)?;
         }
 
         let Some(xf) = xf else {

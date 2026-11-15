@@ -293,12 +293,12 @@ impl Generator<'_> {
         };
         for jsdoc in earlier {
             for tag in jsdoc.named_list("tags") {
-                if tag.kind() == sk::JSDocOverloadTag {
-                    if let Some(c) = tag.named("comment") {
-                        let parts = self.comment_parts(&c)?;
-                        if !groups.contains(&parts) {
-                            groups.push(parts);
-                        }
+                if tag.kind() == sk::JSDocOverloadTag
+                    && let Some(c) = tag.named("comment")
+                {
+                    let parts = self.comment_parts(&c)?;
+                    if !groups.contains(&parts) {
+                        groups.push(parts);
                     }
                 }
             }
@@ -411,19 +411,19 @@ impl Generator<'_> {
                     }
                 }
             }
-            if in_table(SUB_DEFINITIONS, &name) {
-                if let Some((k, v)) = text::group_jsdoc(&text) {
-                    let value = if v.is_empty() {
-                        Value::Bool(true)
-                    } else {
-                        parse_value(v)?
-                    };
-                    let merged =
-                        js::spread(&[get(definition, &name).as_ref().and_then(Value::as_object)]);
-                    merged.borrow_mut().define(k, value);
-                    set(definition, &name, Value::Object(merged));
-                    continue;
-                }
+            if in_table(SUB_DEFINITIONS, &name)
+                && let Some((k, v)) = text::group_jsdoc(&text)
+            {
+                let value = if v.is_empty() {
+                    Value::Bool(true)
+                } else {
+                    parse_value(v)?
+                };
+                let merged =
+                    js::spread(&[get(definition, &name).as_ref().and_then(Value::as_object)]);
+                merged.borrow_mut().define(k, value);
+                set(definition, &name, Value::Object(merged));
+                continue;
             }
             if name.contains('.') {
                 let parts: Vec<&str> = name.split('.').collect();

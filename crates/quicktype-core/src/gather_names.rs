@@ -155,10 +155,9 @@ impl Gatherer<'_> {
         // Always use the type's given names if it has some
         if let Some(original_names) =
             NamesTypeAttributeKind.try_get_in_attributes(self.graph.attributes(t)?)
+            && !original_names.are_inferred()
         {
-            if !original_names.are_inferred() {
-                names = Some(Rc::new(original_names.names().clone()));
-            }
+            names = Some(Rc::new(original_names.names().clone()));
         }
 
         let old_names = self.names_for_type.get(&t).cloned();
@@ -263,38 +262,38 @@ impl Gatherer<'_> {
                 direct_alternatives = Some(None);
             }
             Some(names) => {
-                if let Some(ancestor) = ancestor {
-                    if ancestor_alternatives != Some(None) {
-                        match self.names_for_type.get(&ancestor) {
-                            Some(None) => ancestor_alternatives = Some(None),
-                            Some(Some(ancestor_names)) => {
-                                let mut alternatives = Vec::new();
-                                for name in names.iter() {
-                                    alternatives.extend(
-                                        ancestor_names.iter().map(|an| underscored(&[an, name])),
-                                    );
-                                    alternatives.extend(
-                                        ancestor_names
-                                            .iter()
-                                            .map(|an| underscored(&[an, name, kind.as_str()])),
-                                    );
-                                }
-                                ancestor_alternatives =
-                                    add_alternatives(ancestor_alternatives, alternatives);
+                if let Some(ancestor) = ancestor
+                    && ancestor_alternatives != Some(None)
+                {
+                    match self.names_for_type.get(&ancestor) {
+                        Some(None) => ancestor_alternatives = Some(None),
+                        Some(Some(ancestor_names)) => {
+                            let mut alternatives = Vec::new();
+                            for name in names.iter() {
+                                alternatives.extend(
+                                    ancestor_names.iter().map(|an| underscored(&[an, name])),
+                                );
+                                alternatives.extend(
+                                    ancestor_names
+                                        .iter()
+                                        .map(|an| underscored(&[an, name, kind.as_str()])),
+                                );
                             }
-                            None => {}
+                            ancestor_alternatives =
+                                add_alternatives(ancestor_alternatives, alternatives);
                         }
+                        None => {}
                     }
                 }
 
-                if let Some(suffix) = alternative_suffix {
-                    if direct_alternatives != Some(None) {
-                        let alternatives = names
-                            .iter()
-                            .map(|name| underscored(&[name, suffix]))
-                            .collect();
-                        direct_alternatives = add_alternatives(direct_alternatives, alternatives);
-                    }
+                if let Some(suffix) = alternative_suffix
+                    && direct_alternatives != Some(None)
+                {
+                    let alternatives = names
+                        .iter()
+                        .map(|name| underscored(&[name, suffix]))
+                        .collect();
+                    direct_alternatives = add_alternatives(direct_alternatives, alternatives);
                 }
             }
         }

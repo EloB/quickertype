@@ -123,10 +123,10 @@ fn extract_underlying_typerefs(
 
             // need to extract additional properties for object, class and map
             // types
-            if ty.is_object_type() {
-                if let Some(additional) = ty.additional_properties()? {
-                    type_refs.extend(extract_underlying_typerefs(graph, additional)?);
-                }
+            if ty.is_object_type()
+                && let Some(additional) = ty.additional_properties()?
+            {
+                type_refs.extend(extract_underlying_typerefs(graph, additional)?);
             }
 
             // need to extract items types for ArrayType
