@@ -54,8 +54,15 @@ use super::compressed_json_from_stream::{
     parse_stream_reader_into,
 };
 use super::json_split::{
-    BLOCK, ScanState, Separator, Summarizer, Summary, blocks, escaped_after, trailing_backslashes,
+    BLOCK, RangeSummarizer, RangeSummary, ScanState, Separator, escaped_after,
 };
+#[cfg(doc)]
+use super::parts::PARTS_PER_THREAD;
+use super::parts::{
+    self, DEFAULT_MIN_LEN, DEFAULT_RANGE, FIRST_LINE_MAX, MAX_RATIO, MIN_RANGE, PROBE_LEN,
+};
+#[cfg(any(doc, test))]
+use super::parts::{MAX_RANGES, MAX_THREADS, TREE_BUDGET};
 use super::tallies::{NodeId, PortableTree, RunningTallies, TallyBuilder};
 use crate::date_time::DateTimeRecognizer;
 use crate::input::io::node_io::stream_read_error;
@@ -400,59 +407,6 @@ pub enum Fault {
     Prepend,
 }
 
-/// The default range size: large enough that the tallies of a part, and
-/// appending them, cost little next to reading it, small enough that the
-/// threads share the work evenly (see docs/BENCHMARKS.md).
-pub const DEFAULT_RANGE: usize = 4 << 20;
-
-/// The least range size for a sample that the default ranges would cut
-/// into too few parts.
-pub const MIN_RANGE: usize = 256 << 10;
-
-/// How many parts each thread should get, at least, for the work to be
-/// shared evenly: where the default ranges give fewer, they are smaller.
-pub const PARTS_PER_THREAD: usize = 4;
-
-/// The default smallest sample read on several threads: below it, reading
-/// on several threads saves at most a millisecond or two, at two to three
-/// times the CPU time (see docs/BENCHMARKS.md).
-pub const DEFAULT_MIN_LEN: u64 = 8 << 20;
-
-/// The least the trees of the parts being read on other threads may take
-/// together by default (see [`Reading::coordinate`]); otherwise the
-/// threads that read times the range size.
-pub const TREE_BUDGET: u64 = 32 << 20;
-
-/// The most threads that read a sample, whatever the options ask for.
-pub const MAX_THREADS: usize = 1024;
-
-/// The most ranges a sample is cut into, whatever the options ask for:
-/// what is kept for each takes about 100 bytes.
-pub const MAX_RANGES: usize = 1 << 16;
-
-/// Parts shorter than this tell little about how large other parts' trees
-/// are (a single element has a tree as large as its text, many share
-/// theirs).
-const PROBE_LEN: u64 = 64 << 10;
-
-/// Where the first parts' trees are more than this many times their text
-/// (elements of distinct keys; measured on PROBE_LEN of text, in samples
-/// of 4 MiB or more), the rest is read in one go: appending such trees on
-/// the reading thread costs about as much as reading them, so the threads
-/// would only add memory. (Measured: trees 4.3 times their
-/// text read 2.5 times as fast on 12 threads, 9.5 and 27 times 1.3 and 1.15
-/// times as slow; see docs/BENCHMARKS.md.)
-const MAX_RATIO: f64 = 8.0;
-
-/// How near its start JSON Lines must have a line feed between two values
-/// to be read on several threads; otherwise they are read in one go. A
-/// first value longer than this is rare, and a stray `[` or `{` at the
-/// start, which leaves no line feed at depth 0 anywhere (an error reading
-/// in one go reports at once), would otherwise have the ranges scanned
-/// until a part as long as the budget allows (half of it). Arrays have no
-/// such bound: their first element may be that long.
-const FIRST_LINE_MAX: u64 = 1 << 20;
-
 impl Default for ParallelOptions {
     /// As many threads as the machine runs at once, ranges of
     /// [`DEFAULT_RANGE`] bytes for samples of [`DEFAULT_MIN_LEN`] or more,
@@ -590,44 +544,26 @@ impl Plan {
     /// How a sample of `size` bytes is read with `options`; `None` for in
     /// one go.
     fn new(options: ParallelOptions, size: u64) -> Option<Plan> {
-        if options.threads < 2 {
-            return None;
-        }
-        let threads = options.threads.min(MAX_THREADS);
-        let share = size / threads.saturating_mul(PARTS_PER_THREAD) as u64;
         let least = if options.small_ranges {
             1
         } else {
             MIN_RANGE as u64
         };
-        let range = (options.range as u64)
-            .min(share.max(MIN_RANGE as u64))
-            .max(least)
-            .max(size.div_ceil(MAX_RANGES as u64 - 1));
-        if size < options.min_len || size <= range {
-            return None;
-        }
-        // PROBE_LEN, or a 64th of a smaller sample; the first range twice
-        // that, if the ranges are longer.
-        let probe = PROBE_LEN.min(size / 64).max(1);
-        let head = range.min(2 * probe);
-        let ranges = 1 + usize::try_from((size - head).div_ceil(range)).ok()?;
-        // No more threads than the ranges give PARTS_PER_THREAD each (more
-        // would wait for work, and the default budget grows with them); a
-        // single one would only add the scan to reading in one go.
-        let threads = threads.min(ranges.div_ceil(PARTS_PER_THREAD));
-        if threads < 2 {
-            return None;
-        }
+        let plan = parts::Plan::with(
+            options.threads,
+            options.range as u64,
+            least,
+            options.min_len,
+            options.budget,
+            size,
+        )?;
         Some(Plan {
-            range,
-            head,
-            ranges,
-            probe,
-            threads,
-            budget: options
-                .budget
-                .unwrap_or_else(|| (threads as u64).saturating_mul(range).max(TREE_BUDGET)),
+            range: plan.range,
+            head: plan.head,
+            ranges: plan.ranges,
+            probe: plan.probe,
+            threads: plan.threads,
+            budget: plan.budget,
             #[cfg(any(test, feature = "test-support"))]
             fault: options.fault,
         })
@@ -843,27 +779,6 @@ enum Done {
     Panicked(Box<dyn std::any::Any + Send>),
 }
 
-/// A range's summary, or, where the bytes just before it are all
-/// backslashes, one for each case of its first byte: escaped or not, which
-/// the ranges before it then tell ([`Summary::escaped_out`]). (Looking
-/// further back for where the run starts would read a long run again for
-/// every range in it.)
-#[derive(Clone, Copy)]
-enum RangeSummary {
-    Known(Summary),
-    Either([Summary; 2]),
-}
-
-impl RangeSummary {
-    /// The summary for a range whose first byte is `escaped` or not.
-    fn given(self, escaped: bool) -> Summary {
-        match self {
-            RangeSummary::Known(summary) => summary,
-            RangeSummary::Either(both) => both[usize::from(escaped)],
-        }
-    }
-}
-
 /// The jobs waiting: scans first, which the parts wait for.
 #[derive(Default)]
 struct Queue {
@@ -1049,22 +964,6 @@ impl Reading<'_> {
         Ok(None)
     }
 
-    /// Feeds the bytes from `from` to `to` to `f`, block by block (the last
-    /// one padded with spaces), until it returns a value.
-    fn scan<T>(
-        &self,
-        from: u64,
-        to: u64,
-        buffer: &mut [u8],
-        mut f: impl FnMut(u64, &[u8; BLOCK]) -> Option<T>,
-    ) -> io::Result<Option<T>> {
-        self.pieces(from, to, buffer, |at, piece| {
-            blocks(piece)
-                .enumerate()
-                .find_map(|(j, block)| f(at + (j * BLOCK) as u64, &block))
-        })
-    }
-
     /// Whether the byte at `at` is escaped, by the run of backslashes just
     /// before it; `None` if the bytes just before it are all backslashes.
     fn escaped_at(&self, at: u64) -> io::Result<Option<bool>> {
@@ -1081,34 +980,12 @@ impl Reading<'_> {
     /// bytes just before it do not tell, for both.
     fn summarize(&self, k: usize, buffer: &mut [u8]) -> io::Result<RangeSummary> {
         let (from, to) = self.bounds(k);
-        let escaped = self.escaped_at(from)?;
-        let mut summarizer = Summarizer::new(escaped.unwrap_or(false));
-        let mut escaped_one = escaped.is_none().then(|| Summarizer::new(true));
-        // The backslashes the range ends with, so far.
-        let mut run = 0;
+        let mut summarizer = RangeSummarizer::new(self.escaped_at(from)?);
         self.pieces::<()>(from, to, buffer, |_, piece| {
-            let tail = trailing_backslashes(piece);
-            run = if tail == piece.len() {
-                run + tail
-            } else {
-                tail
-            };
-            for block in blocks(piece) {
-                summarizer.block(&block);
-            }
-            if let Some(escaped_one) = &mut escaped_one {
-                for block in blocks(piece) {
-                    escaped_one.block(&block);
-                }
-            }
+            summarizer.piece(piece);
             None
         })?;
-        let (len, run) = (to - from, run as u64);
-        let summary = summarizer.finish(len, run);
-        Ok(match escaped_one {
-            Some(escaped_one) => RangeSummary::Either([summary, escaped_one.finish(len, run)]),
-            None => RangeSummary::Known(summary),
-        })
+        Ok(summarizer.finish())
     }
 
     /// The line feeds an appended part adds to those before the next part:
@@ -1142,10 +1019,8 @@ impl Reading<'_> {
     fn split(&self, k: usize, mut state: ScanState, buffer: &mut [u8]) -> io::Result<Option<u64>> {
         let (from, to) = self.bounds(k);
         let separator = self.separator();
-        self.scan(from, to, buffer, |offset, block| {
-            state
-                .find_split(block, separator)
-                .map(|i| offset + i as u64)
+        self.pieces(from, to, buffer, |offset, piece| {
+            state.split_in(piece, separator).map(|i| offset + i as u64)
         })
     }
 
@@ -1330,18 +1205,17 @@ impl Reading<'_> {
             // Resolve the states in order, and search the ranges that may
             // split.
             while resolved < n {
-                // (Whether the range's first byte is escaped, the state
-                // says, from the ranges before it.)
-                let Some(summary) = summaries[resolved].map(|s| s.given(state.escaped)) else {
+                let Some(summary) = summaries[resolved] else {
                     break;
                 };
-                if state.may_split(&summary, self.separator()) {
+                let (may_split, after) = state.through(summary, self.separator());
+                if may_split {
                     self.push(Job::Split(resolved, state));
                     pending += 1;
                 } else {
                     splits[resolved] = Split::Found(None);
                 }
-                state = state.after(&summary);
+                state = after;
                 resolved += 1;
             }
             // Form the parts in order, between consecutive splits.

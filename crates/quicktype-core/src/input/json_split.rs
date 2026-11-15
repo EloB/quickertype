@@ -380,6 +380,106 @@ pub(crate) fn trailing_backslashes(bytes: &[u8]) -> usize {
     bytes.iter().rev().take_while(|&&b| b == b'\\').count()
 }
 
+/// A range's summary, or, where the bytes just before it are all
+/// backslashes, one for each case of its first byte: escaped or not, which
+/// the ranges before it then tell ([`Summary::escaped_out`]). (Looking
+/// further back for where the run starts would read a long run again for
+/// every range in it.)
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum RangeSummary {
+    Known(Summary),
+    Either([Summary; 2]),
+}
+
+impl RangeSummary {
+    /// The summary for a range whose first byte is `escaped` or not.
+    pub(crate) fn given(self, escaped: bool) -> Summary {
+        match self {
+            RangeSummary::Known(summary) => summary,
+            RangeSummary::Either(both) => both[usize::from(escaped)],
+        }
+    }
+}
+
+/// Summarizes a range piece by piece ([`RangeSummary`]): the CLI's reading
+/// threads read it 64 KiB at a time, the WebAssembly engine's workers hand
+/// it over whole.
+pub(crate) struct RangeSummarizer {
+    summarizer: Summarizer,
+    /// The case of a first byte that is escaped, where the bytes before the
+    /// range do not tell.
+    escaped_one: Option<Summarizer>,
+    /// The bytes so far, and the backslashes they end with.
+    len: u64,
+    run: u64,
+}
+
+impl RangeSummarizer {
+    /// A range whose first byte is escaped or not, if the bytes before it
+    /// tell ([`escaped_after`]); for both cases if they do not (`None`).
+    pub(crate) fn new(escaped: Option<bool>) -> Self {
+        RangeSummarizer {
+            summarizer: Summarizer::new(escaped.unwrap_or(false)),
+            escaped_one: escaped.is_none().then(|| Summarizer::new(true)),
+            len: 0,
+            run: 0,
+        }
+    }
+
+    /// The next bytes of the range; every piece but the last must be a
+    /// multiple of [`BLOCK`] long (the last block of a piece is padded).
+    pub(crate) fn piece(&mut self, piece: &[u8]) {
+        let tail = trailing_backslashes(piece) as u64;
+        self.run = if tail == piece.len() as u64 {
+            self.run + tail
+        } else {
+            tail
+        };
+        self.len += piece.len() as u64;
+        for block in blocks(piece) {
+            self.summarizer.block(&block);
+        }
+        if let Some(escaped_one) = &mut self.escaped_one {
+            for block in blocks(piece) {
+                escaped_one.block(&block);
+            }
+        }
+    }
+
+    /// The range's summary.
+    pub(crate) fn finish(self) -> RangeSummary {
+        let summary = self.summarizer.finish(self.len, self.run);
+        match self.escaped_one {
+            Some(escaped_one) => {
+                RangeSummary::Either([summary, escaped_one.finish(self.len, self.run)])
+            }
+            None => RangeSummary::Known(summary),
+        }
+    }
+}
+
+impl ScanState {
+    /// The first `separator` in `piece` (outside strings, at its depth),
+    /// which starts in this state: its index, or `None` and this state
+    /// moved past the piece. Every piece of a scan but the last must be a
+    /// multiple of [`BLOCK`] long (the last block of a piece is padded with
+    /// spaces, which change nothing).
+    pub(crate) fn split_in(&mut self, piece: &[u8], separator: Separator) -> Option<usize> {
+        blocks(piece)
+            .enumerate()
+            .find_map(|(k, block)| self.find_split(&block, separator).map(|i| k * BLOCK + i))
+    }
+
+    /// For the range of summary `summary` that starts in this state:
+    /// whether it may hold `separator` (by the bound of its depths), and
+    /// the state after it. (Whether its first byte is escaped, this state
+    /// says, from the ranges before it.)
+    pub(crate) fn through(self, summary: RangeSummary, separator: Separator) -> (bool, ScanState) {
+        let summary = summary.given(self.escaped);
+        (self.may_split(&summary, separator), self.after(&summary))
+    }
+}
+
 /// The input as a sequence of blocks: `bytes`, the last block padded
 /// with spaces.
 pub(crate) fn blocks(bytes: &[u8]) -> impl Iterator<Item = [u8; BLOCK]> + '_ {

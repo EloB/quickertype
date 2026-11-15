@@ -14,13 +14,15 @@ pub(crate) mod json_scan;
 pub mod json_schema_input;
 pub mod json_schema_store;
 /// Not a quicktype file: where to split a large top-level array, to read
-/// it on several threads.
-#[cfg(not(target_family = "wasm"))]
+/// it on several threads (or, in WebAssembly, on several workers).
 pub(crate) mod json_split;
 /// Not a quicktype file: reading a large top-level array on several
 /// threads.
 #[cfg(not(target_family = "wasm"))]
 pub(crate) mod parallel_read;
+/// Not a quicktype file: the parts a large top-level array is read in, on
+/// several threads or (in WebAssembly) on several workers.
+pub mod parts;
 pub mod path_element;
 pub mod postman_collection;
 pub(crate) mod tallies;

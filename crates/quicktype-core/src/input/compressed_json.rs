@@ -59,8 +59,8 @@ use crate::ty::transformed_string_type::{TypeKind, transformed_string_type_attri
 
 mod from_string;
 
-pub(crate) use from_string::StringReaderState;
 pub use from_string::{Decline, ReadStringError, StringSampleLimits};
+pub(crate) use from_string::{StringReaderState, read_string_sample_into};
 
 /// One JSON value in compressed form (TS `Value`, a tag plus an index).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
