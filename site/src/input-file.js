@@ -10,6 +10,22 @@
  */
 export const maxTextBytes = 2 ** 29 - 24;
 
+/**
+ * The largest file the playground opens: quickertype reads a JSON array or
+ * JSON Lines this large in parts, on several workers, without ever making
+ * it one string (worker.js); quicktype, and quickertype where it reads a
+ * file in one go, only up to `maxTextBytes` (but JSON Lines, read value by
+ * value).
+ */
+export const maxFileBytes = 2 ** 31;
+
+/**
+ * The smallest file quickertype reads in parts, in bytes: below it, starting
+ * the part workers costs a file's first read about what reading in parts
+ * saves (docs/BENCHMARKS.md, "Reading on several workers").
+ */
+export const partsFrom = 16 << 20;
+
 /** Where to get the CLI, which reads files of any size. */
 export const cliLink = { href: "https://github.com/EloB/quickertype#install", text: "the quickertype CLI" };
 
@@ -24,13 +40,14 @@ export function formatBytes(n) {
 export const isJsonLinesName = (name) => /\.(jsonl|ndjson)$/i.test(name);
 
 /**
- * The error for a file too large to read as text, or undefined if it is not:
- * a file of `size` bytes, whose text is decoded from `decoded` bytes (the
- * file's own, or, for quicktype's side of JSON Lines, the JSON array made
- * of them). Its message names the CLI; `link` is where to get it.
+ * The error for a file too large to read, or undefined if it is not: a file
+ * of `size` bytes, whose text is decoded from `decoded` bytes (the file's
+ * own, or, for quicktype's side of JSON Lines, the JSON array made of
+ * them), past `limit` (by default the longest text). Its message names the
+ * CLI; `link` is where to get it.
  */
-export function tooLarge(name, size, decoded = size) {
-    if (size <= maxTextBytes && decoded <= maxTextBytes) return undefined;
+export function tooLarge(name, size, decoded = size, limit = maxTextBytes) {
+    if (size <= limit && decoded <= limit) return undefined;
     const array = decoded === size ? "" : ` Made into the JSON array that quicktype reads, it is ${decoded.toLocaleString("en-US")} bytes.`;
     return {
         title: `${name} is too large for the browser`,

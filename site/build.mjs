@@ -17,6 +17,8 @@
 // The playground, in app/ (it was the root until the landing page; links to
 // the root that carry its state still reach it):
 // * worker.js: quicktype-core (its ES module build) in a Web Worker;
+// * part-worker.js: the engine's glue and its jobs for reading a large
+//   file in parts, in Web Workers that worker.js starts (part-pool.js);
 // * main.js and style.css: the page; head.js, inlined in its head (it
 //   decides where the options go before the first paint);
 // * quicktype.wasm: the engine, compiled by the worker and handed to
@@ -308,10 +310,14 @@ fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(path.join(app, "samples"), { recursive: true });
 
 const wasmFile = writeHashed("quicktype", "wasm", fs.readFileSync(wasmSource));
+const partWorkerFile = writeHashed("part-worker", "js", await bundle("part-worker.js"));
 const workerFile = writeHashed(
     "worker",
     "js",
-    await bundle("worker.js", { __WASM_FILE__: JSON.stringify(`./${wasmFile}`) }),
+    await bundle("worker.js", {
+        __WASM_FILE__: JSON.stringify(`./${wasmFile}`),
+        __PART_WORKER_FILE__: JSON.stringify(`./${partWorkerFile}`),
+    }),
 );
 const mainFile = writeHashed(
     "main",
@@ -427,7 +433,7 @@ const listed = [
     ...Object.values(images).flatMap((i) => [i.full, i.small]),
     "benchmarks.html",
     benchmarksStyleFile,
-    ...[mainFile, styleFile, "index.html", workerFile, wasmFile].map((file) => `app/${file}`),
+    ...[mainFile, styleFile, "index.html", workerFile, partWorkerFile, wasmFile].map((file) => `app/${file}`),
 ];
 for (const file of listed) {
     const content = fs.readFileSync(path.join(dist, file));

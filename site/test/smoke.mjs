@@ -89,6 +89,14 @@
 // site/src/json-lines.js, checked here too), identical; a file of another
 // kind than its name says shows `--src-lang`; and an error names its line,
 // as the CLI's does.
+// Reading on several workers: a 20 MB array of generated cards, and its
+// JSON Lines, are read in parts on quickertype's part workers, give the
+// CLI's output, which reading them in one go gives too, and quicktype's,
+// identical; the next run on them uses what was read (another language); a
+// file broken late is read in one go, with its error (JSON Lines name the
+// CLI's line); past the longest text (made small), JSON read in parts
+// reads, quicktype and broken JSON say it is too large, and broken JSON
+// Lines name their line.
 // A worker keeps a large file's text only while requests carry that file: it
 // lets it go once a sample is loaded. "Show in the editor" reads a large file
 // once, however often it is clicked ("Reading…" until then), and is not
@@ -159,7 +167,8 @@ import { fuzzFacts, landingLinks, readQuicktype, workflowFacts } from "../landin
 import { chartProblems, chartUrl, readmeFile, readmeRows } from "../readme-charts.mjs";
 import { quicktypeReference } from "../reference.mjs";
 import { eachJSONLinesValue } from "../../npm/quicktype-core/dist/esm/native/lines.js";
-import { formatBytes, isJsonLinesName, maxTextBytes, tooLarge } from "../src/input-file.js";
+import { formatBytes, isJsonLinesName, maxFileBytes, maxTextBytes, partsFrom, tooLarge } from "../src/input-file.js";
+import { generateCards } from "../../npm/quicktype-core/test/bench/generate.mjs";
 import { jsonLinesToArray, jsonLinesToArrayInPlace } from "../src/json-lines.js";
 import { serve } from "./serve.mjs";
 
@@ -2398,7 +2407,7 @@ try {
         { posted: "rulings.json", text: false, kept: 0, panel: true, name: "rulings.json", size: "26.5 MB", status: undefined },
         "the large file: posted as a File, not read on the page",
     );
-    assert.match(largeOpened.status, /^quickertype ran it in \d[\d.]* m?s\.$/, "the large file's status");
+    assert.match(largeOpened.status, /^quickertype ran it in \d[\d.]* m?s, reading it on \d+ workers\.$/, "the large file's status");
     // Nothing to edit: the output takes more of the room.
     const largeLayout = await page.evaluate(
         `({ input: document.body.dataset.input, ratio: document.getElementById("output-pane").offsetWidth / document.getElementById("input-pane").offsetWidth })`,
@@ -2662,6 +2671,113 @@ try {
     assert.match(badCli.stderr, /^Error: Syntax error in input JSON Bad: line 4: /, "the CLI names the same line");
     await page.screenshot("jsonl-error.png");
     console.log(`ok: JSON Lines (.jsonl, .NDJSON, dropped, ${(bigLines.length / 1e6).toFixed(1)} MB as a File, typed) give the CLI's output on both engines, identical; --src-lang where the name says otherwise; an error names its line: "${badShown.message}"`);
+
+    // Reading on several workers: a file of `partsFrom` bytes or more is
+    // read in parts by quickertype's worker, on part workers of its own
+    // (each an engine instance), and gives what reading it in one go gives
+    // (the same request with every file read in one go, `partsFrom` past
+    // it), which is the CLI's; quicktype reads it in one go, and the
+    // comparison says the outputs are identical. A file broken late fails
+    // as it fails in one go (its parts do not read, and it is read in one
+    // go), with the error reading in one go gives; JSON Lines name the line
+    // the CLI names. Past the longest text (made 10 MB here, `textLimit`):
+    // JSON read in parts still reads, quicktype says it is too large, and
+    // broken JSON is too large for the browser to say where; broken JSON
+    // Lines still name their line.
+    // (A whole number written `3.0` is a double to the CLI's reader and an
+    // integer to `JSON.parse`, which quickertype-core's API reads with, as
+    // quicktype's does: the cards' `cmc` is made `3.5`, so that the CLI's
+    // output is the page's.)
+    const cardsArray = generateCards(4_600).replace(/"cmc":(\d+)\.0/g, '"cmc":$1.5');
+    const cardsAsLines = `${JSON.parse(cardsArray).map((c) => JSON.stringify(c)).join("\n")}\n`;
+    assert.ok(cardsArray.length >= partsFrom && cardsAsLines.length >= partsFrom);
+    /** Sets the worker's test hooks (from the next request on) for `engines`. */
+    const hooks = (settings, engines = ["wasm"]) =>
+        page.evaluate(
+            `Promise.all(${JSON.stringify(engines)}.map((e) => playground.engines[e].run({ kind: "json", lang: "typescript", name: "X", text: "[1]", rendererOptions: {}, options: {}, ...${JSON.stringify(settings)} }))).then(() => true)`,
+        );
+    /** quickertype's result for the request shown: how it read the input, its files or error. */
+    const wasmResult = () =>
+        page.evaluate(`(() => {
+            const r = playground.view.results.wasm.result;
+            return { ok: r.ok, parts: r.parts, files: r.files?.map((f) => f.text), error: r.error?.message, title: r.error?.title, reused: r.reused };
+        })()`);
+    /** The request shown, read in one go on quickertype's worker: its files or error. */
+    const inOneGo = async () => {
+        await hooks({ partsFrom: 2 ** 53 });
+        const r = await page.evaluate(`playground.engines.wasm.run(playground.view.request).then((r) => ({ ok: r.ok, parts: r.parts ?? null, files: r.files?.map((f) => f.text), error: r.error?.message }))`);
+        await hooks({ partsFrom });
+        return r;
+    };
+    for (const [name, text] of [["parts-cards.json", cardsArray], ["parts-cards.jsonl", cardsAsLines]]) {
+        const label = `${name} (${(text.length / 1e6).toFixed(1)} MB)`;
+        await openFile(chosen(name, text), { timeout: 300_000 });
+        const read = await wasmResult();
+        assert.ok(read.parts?.workers >= 2 && read.parts.parts > read.parts.workers, `${label}: read in parts (${JSON.stringify(read.parts)})`);
+        const status = await page.evaluate(`document.getElementById("large-status").textContent`);
+        assert.match(status, new RegExp(`^quickertype ran it in \\d[\\d.]* m?s, reading it on ${read.parts.workers} workers\\.$`), `${label}: the status`);
+        await sameAsCli(`Open file: ${label}, read on ${read.parts.workers} workers in ${read.parts.parts} parts`, `quickertype --lang typescript --top-level PartsCards ${name}`);
+        if (name.endsWith(".json")) await page.screenshot("parts-large-file.png");
+        ran = await switchEngine("ts", `quicktype on ${name}`);
+        assert.deepEqual(ran, { wasm: 0, ts: 1 });
+        await sameAsCli(`${label} on quicktype`, `quickertype --lang typescript --top-level PartsCards ${name}`, "ts");
+        await comparedIdentical(name);
+        await switchEngine("wasm", `back to quickertype on ${name}`);
+        // A run on the input read in parts uses its tallies: another
+        // language that reads samples as TypeScript does (Flow); and one
+        // that reads them otherwise (Go's integers) reads the file in parts
+        // again.
+        await select("lang", "flow");
+        assert.equal((await wasmResult()).reused, true, `${label}: the input read in parts, reused`);
+        await sameAsCli(`${label} → Flow, on the input read in parts`, `quickertype --lang flow --top-level PartsCards ${name}`);
+        await select("lang", "go");
+        const goRead = await wasmResult();
+        assert.ok(!goRead.reused && goRead.parts?.workers >= 2, `${label} → Go: read in parts again (${JSON.stringify(goRead.parts)})`);
+        await sameAsCli(`${label} → Go, read in parts again`, `quickertype --lang go --top-level PartsCards ${name}`);
+        await select("lang", "typescript");
+        const one = await inOneGo();
+        assert.deepEqual(one, { ok: true, parts: null, files: read.files }, `${label}: in one go`);
+    }
+
+    const cut = (text, at, edit) => {
+        const lines = !text.startsWith("[");
+        const i = text.indexOf(lines ? "\n" : "},", Math.floor(text.length * at)) + (lines ? 1 : 2);
+        return edit(text.slice(0, i), text.slice(i));
+    };
+    const brokenArray = chosen("parts-broken.json", cut(cardsArray, 0.9, (a, b) => `${a}}${b}`));
+    await openFile(brokenArray, { failing: true, timeout: 300_000 });
+    const brokenRead = await wasmResult();
+    assert.equal(brokenRead.parts?.inOneGo, "a part did not read", "parts-broken.json: read in one go");
+    assert.match(brokenRead.error, /^Syntax error in input JSON PartsBroken: /);
+    assert.deepEqual((await inOneGo()).error, brokenRead.error, "parts-broken.json: the error of reading in one go");
+    const brokenLines = chosen("parts-broken.jsonl", cut(cardsAsLines, 0.9, (a, b) => `${a}{"id": }\n${b}`));
+    const badLine = cardsAsLines.slice(0, cut(cardsAsLines, 0.9, (a) => a).length).split("\n").length;
+    await openFile(brokenLines, { failing: true, timeout: 300_000 });
+    const brokenLinesRead = await wasmResult();
+    assert.equal(brokenLinesRead.parts?.inOneGo, "a part did not read", "parts-broken.jsonl: read in one go");
+    assert.match(brokenLinesRead.error, new RegExp(`^Syntax error in input JSON PartsBroken: line ${badLine}: `), "parts-broken.jsonl: the line");
+    assert.deepEqual((await inOneGo()).error, brokenLinesRead.error, "parts-broken.jsonl: the error of reading in one go");
+    const brokenCli = spawnSync(cli, ["--lang", "typescript", "--top-level", "PartsBroken", brokenLines], { encoding: "utf8" });
+    assert.match(brokenCli.stderr, new RegExp(`^Error: Syntax error in input JSON PartsBroken: line ${badLine}: `), "the CLI names the same line");
+    console.log(`ok: a broken element late in parts-broken.json and a bad line in parts-broken.jsonl: read in one go, with its errors ("${brokenLinesRead.error}")`);
+
+    await hooks({ textLimit: 10e6 }, ["wasm", "ts"]);
+    await openFile(sampleFiles["parts-cards.json"], { timeout: 300_000 });
+    assert.ok((await wasmResult()).parts?.workers >= 2, "past the longest text: read in parts");
+    await sameAsCli("parts-cards.json past the longest text (10 MB here), read in parts", "quickertype --lang typescript --top-level PartsCards parts-cards.json");
+    ran = await switchEngine("ts", "quicktype on parts-cards.json past the longest text");
+    const tooLong = await page.evaluate(`({ title: document.querySelector("#error .error-title")?.textContent, message: document.querySelector("#error .error-message")?.textContent })`);
+    assert.deepEqual(tooLong.title, "parts-cards.json is too large for the browser", "quicktype, past the longest text");
+    await switchEngine("wasm", "back to quickertype past the longest text");
+    await openFile(brokenArray, { failing: true, timeout: 300_000 });
+    const brokenLong = await wasmResult();
+    assert.equal(brokenLong.title, "parts-broken.json is too large for the browser", "broken JSON past the longest text");
+    await openFile(brokenLines, { failing: true, timeout: 300_000 });
+    assert.equal((await wasmResult()).error, brokenLinesRead.error, "broken JSON Lines past the longest text: the line");
+    await hooks({ textLimit: maxTextBytes }, ["wasm", "ts"]);
+    assert.deepEqual(tooLarge("big.json", maxFileBytes + 1, maxFileBytes + 1, maxFileBytes)?.title, "big.json is too large for the browser");
+    assert.equal(tooLarge("big.json", maxFileBytes, maxFileBytes, maxFileBytes), undefined);
+    console.log(`ok: past the longest text (made 10 MB): JSON read in parts reads, quicktype says "${tooLong.title}", broken JSON is too large to show where, broken JSON Lines name their line`);
     await select("sample", "pokedex");
 
     // Typed input survives a file that cannot be opened: it stays the input,

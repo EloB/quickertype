@@ -4,15 +4,20 @@
 // each starts when the page first needs it.
 //
 // Request:  { id, kind: "json" | "jsonl" | "schema", lang, name, text | file, rendererOptions,
-//             options, warmup?, repeat?, heldLimit? }
+//             options, warmup?, repeat?, heldLimit?, partsFrom?, partWorkers?, textLimit? }
 // Replies:  { type: "ready", engine, compileMs, loadError, readyMs }
 //           { type: "result", id, ok, files | error, ms, times, inputTimes, reused, evicted,
-//             ran, reason, first, workerFailure (a failure that is not quicktype's) }
+//             parts, ran, reason, first, workerFailure (a failure that is not quicktype's) }
+//
+// `{ kind: "stats" }` replies `{ stats }`: the engines' memory, for
+// measurements.
 //
 // `heldLimit` (for the smoke test) sets quickertype-core's limit on the
 // bytes its engine's inputs hold together, past which it copies the
 // tables of the least recently used out (`evicted`: how many it did during
-// the request).
+// the request). `partsFrom`, `partWorkers` and `textLimit` (for the smoke
+// test too) set the smallest file read in parts, the part workers, and the
+// largest text (see below), from that request on.
 //
 // `options` are `quicktype()` options from the page's general options
 // (`allPropertiesOptional`, the inference flags, …), as quicktype's CLI sets
@@ -56,9 +61,29 @@
 // and decoded once: the worker holds the bytes and the text, never a copy
 // of either. Making the array is part of reading the input, not of the
 // timed runs.
+//
+// A large JSON or JSON Lines file (`partsFrom` bytes or more) is read in
+// parts on the WebAssembly worker: on several part workers at once
+// (part-pool.js, part-worker.js; quickertype-core's src/native/parallel.ts),
+// each with an engine instance of its own, which read the file's ranges
+// themselves and hand back their tallies, which this worker's engine
+// appends in order, for every run on the input. That gives what reading
+// the file in one go gives (the engine's argument), and where the parts do
+// not read, or the engine would read the file in one go anyway (not an
+// array, no split, a part that is not JSON: see parallel.ts), it is read in
+// one go, as before, with its errors; that is remembered for the file
+// (`parts` in the reply: { workers, parts } or { inOneGo: why }). The input
+// keeps no compressed form, only the tallies; should a run go to the
+// TypeScript engine, quickertype-core reads the file again
+// (`FileReaderSync`) for the tables it needs. So a file of up to
+// `maxFileBytes` can be read, past the longest string a browser holds
+// (`maxTextBytes`): read in one go, only JSON Lines can be that large (their
+// errors are read value by value); JSON past it is too large for the browser
+// unless it is read in parts.
 
 import { jsonLinesToArray, jsonLinesToArrayInPlace, readForArray } from "./json-lines.js";
-import { maxTextBytes, tooLarge, unreadable } from "./input-file.js";
+import { maxFileBytes, maxTextBytes, partsFrom, tooLarge, unreadable } from "./input-file.js";
+import { PartPool, maxPartWorkers } from "./part-pool.js";
 import { boot } from "./worker-boot.js";
 
 import {
@@ -69,10 +94,83 @@ import {
     quicktypeMultiFile,
 } from "../../npm/quicktype-core/dist/esm/index.js";
 import { engineStats } from "../../npm/quicktype-core/dist/esm/native/bridge.js";
+import { currentEngine } from "../../npm/quicktype-core/dist/esm/native/engine.js";
 // Not quickertype-core's public API, but its internals the playground
 // uses: should they move, the site's build fails (esbuild: no such file or
 // export), and the smoke test's checks of eviction would too.
 import { readingKey, releaseJSONInput, setHeldLimit } from "../../npm/quicktype-core/dist/esm/native/samples.js";
+import { readJSONInputInParts } from "../../npm/quicktype-core/dist/esm/native/parallel.js";
+
+/** The part workers, started on the first file read in parts. */
+const pool = new PartPool();
+
+/** The test hooks' settings (see the top). */
+const hooks = { partsFrom, partWorkers: undefined, textLimit: maxTextBytes };
+
+/** How many part workers read a file: as many as the machine runs at once, at most `maxPartWorkers`; none without nested workers. */
+function partWorkers() {
+    if (boot.engine !== "wasm" || boot.loadError !== undefined || typeof Worker !== "function" || typeof FileReaderSync !== "function") return 0;
+    return hooks.partWorkers ?? Math.min(navigator.hardwareConcurrency ?? 1, maxPartWorkers);
+}
+
+/** A file read in parts, kept while requests carry it: its bytes, once read in one go, and why. */
+class PartsFile {
+    constructor(file) {
+        this.file = file;
+        this.bytes = undefined;
+        this.inOneGo = undefined;
+    }
+}
+
+/**
+ * Reads `sample`'s file into `input`, in parts if it can be (see the top),
+ * else in one go: how (`phases.parts`). Throws what `addSource` throws.
+ */
+async function addPartsFile(input, sample, name, lines, phases) {
+    const { file } = sample;
+    if (sample.inOneGo === undefined) {
+        const count = partWorkers();
+        const read =
+            count < 2
+                ? { inOneGo: "no part workers" }
+                : await readJSONInputInParts(
+                      input,
+                      {
+                          name,
+                          lines,
+                          size: file.size,
+                          read: async (from, to) => new Uint8Array(await file.slice(from, to).arrayBuffer()),
+                          // The tables, should a run go to the TypeScript engine.
+                          reread: () => new Uint8Array(new FileReaderSync().readAsArrayBuffer(file)),
+                      },
+                      await pool.readers(file, globalThis[Symbol.for("quicktype-core.wasmModule")], count),
+                      { minLength: hooks.partsFrom },
+                  );
+        pool.idle();
+        if (read.read === true) {
+            phases.parts = { workers: read.workers, parts: read.parts };
+            return;
+        }
+
+        sample.inOneGo = read.inOneGo;
+    }
+
+    phases.parts = { inOneGo: sample.inOneGo };
+    // In one go, as any file: JSON is read in one go as text where it is
+    // not JSON, which only so large a text can be; JSON Lines value by value.
+    if (!lines && file.size > hooks.textLimit) throw tooLarge(file.name, file.size, file.size, hooks.textLimit);
+    if (sample.bytes === undefined) {
+        try {
+            sample.bytes = new Uint8Array(await file.arrayBuffer());
+        } catch (e) {
+            throw unreadable(file.name, e);
+        }
+
+        if (sample.bytes.length !== file.size) throw unreadable(file.name, new Error("the browser returned no bytes"));
+    }
+
+    await input.addSource(lines ? { name, samples: [sample.bytes], jsonLines: true } : { name, samples: [sample.bytes] });
+}
 
 /**
  * The JSON input read last, kept for the next run that reads the same
@@ -131,7 +229,8 @@ async function generate({ kind, lang, name, sample, rendererOptions, options = {
             phases.reused = true;
         } else {
             try {
-                await input.addSource(lines ? { name, samples: [sample], jsonLines: true } : { name, samples: [sample] });
+                if (sample instanceof PartsFile) await addPartsFile(input, sample, name, lines, phases);
+                else await input.addSource(lines ? { name, samples: [sample], jsonLines: true } : { name, samples: [sample] });
             } catch (e) {
                 // A failed read keeps nothing.
                 releaseJSONInput(input);
@@ -200,15 +299,25 @@ let lastFile;
  */
 async function inputSample({ kind, text, file }) {
     // What the sample is made of: the file's bytes, its text, or (JSON
-    // Lines for quicktype) the array made from its bytes.
-    const form = boot.engine === "wasm" && kind !== "schema" ? "bytes" : kind === "jsonl" ? "array" : "text";
+    // Lines for quicktype) the array made from its bytes; or, for a large
+    // file on the WebAssembly worker, the file, read in parts.
+    const bytes = boot.engine === "wasm" && kind !== "schema";
+    const parts = bytes && file !== undefined && file.size >= hooks.partsFrom && partWorkers() >= 2;
+    const form = parts ? "parts" : bytes ? "bytes" : kind === "jsonl" ? "array" : "text";
     const key = file === undefined ? undefined : JSON.stringify([file.name, file.size, file.lastModified, file.type, form]);
     // Another input than the file kept: let it go (before reading the next file, if there is one).
     if (lastFile !== undefined && lastFile.key !== key) lastFile = undefined;
     if (file === undefined) return form === "array" ? jsonLinesToArray(text) : text;
     if (lastFile !== undefined) return lastFile.sample;
-    const large = tooLarge(file.name, file.size);
+    const large = tooLarge(file.name, file.size, file.size, parts ? maxFileBytes : hooks.textLimit);
     if (large !== undefined) throw large;
+    if (parts) {
+        // Another file: the input read from the one before goes first.
+        settleLastRead(undefined, undefined, false);
+        lastFile = { key, sample: new PartsFile(file) };
+        return lastFile.sample;
+    }
+
     // Another file: the input read from the one before goes before this
     // one is read, so that the two are never held at once.
     settleLastRead(undefined, undefined, false);
@@ -228,7 +337,7 @@ async function inputSample({ kind, text, file }) {
         // quicktype's API takes. The text is decoded from the array, at most
         // two bytes longer than the file.
         const length = jsonLinesToArrayInPlace(read);
-        if (length > maxTextBytes) throw tooLarge(file.name, file.size, length);
+        if (length > hooks.textLimit) throw tooLarge(file.name, file.size, length, hooks.textLimit);
         const array = read.subarray(0, length);
         read = undefined;
         read = new TextDecoder().decode(array);
@@ -239,7 +348,17 @@ async function inputSample({ kind, text, file }) {
 }
 
 async function handle(request) {
+    if (request.kind === "stats") {
+        // For measurements: the WebAssembly memory of this worker's engine
+        // and of each part worker's (it never shrinks: the most each held).
+        const memory = (currentEngine()?.__memoryPages() ?? 0) * 65536;
+        return { type: "result", id: request.id, ok: true, stats: { memory, partMemory: await pool.memory(), engineStats: { ...engineStats } } };
+    }
+
     const first = runs === 0;
+    if (request.partsFrom !== undefined) hooks.partsFrom = request.partsFrom;
+    if (request.partWorkers !== undefined) hooks.partWorkers = request.partWorkers;
+    if (request.textLimit !== undefined) hooks.textLimit = request.textLimit;
     let sample;
     try {
         sample = await inputSample(request);
@@ -266,6 +385,7 @@ async function timedRuns(request, sample, first) {
     const inputTimes = [];
     let reply;
     let reused = false;
+    let parts;
     for (let i = 0; i < warmup + repeat; i++) {
         const before = snapshot();
         const phases = {};
@@ -273,6 +393,7 @@ async function timedRuns(request, sample, first) {
         try {
             const result = await generate({ ...request, sample }, phases, reuse);
             reused = phases.reused === true;
+            parts = phases.parts;
             const ms = performance.now() - start;
             if (i >= warmup) {
                 times.push(ms);
@@ -283,11 +404,10 @@ async function timedRuns(request, sample, first) {
         } catch (e) {
             const ms = performance.now() - start;
             times.push(ms);
-            reply = {
-                ok: false,
-                error: { message: String(e?.message ?? e), messageName: e?.messageName, name: e?.constructor?.name },
-                ...whoRan(before),
-            };
+            parts = phases.parts;
+            // A file too large to read in one go is the input's error, as a too large file is.
+            const error = e?.title !== undefined ? e : { message: String(e?.message ?? e), messageName: e?.messageName, name: e?.constructor?.name };
+            reply = { ok: false, error, ...whoRan(before) };
             break;
         } finally {
             runs++;
@@ -302,6 +422,7 @@ async function timedRuns(request, sample, first) {
         inputTimes,
         reused,
         evicted: engineStats.evicted - evicted,
+        parts,
         first,
         ...reply,
     };

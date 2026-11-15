@@ -26,7 +26,7 @@ import { EngineClient, Lane, engineKinds } from "./engine-client.js";
 import { hashKeys, hashVersion } from "./hash.js";
 import { highlight } from "./highlight.js";
 import { escapeHtml } from "./html.js";
-import { formatBytes, isJsonLinesName, tooLarge, unreadable } from "./input-file.js";
+import { formatBytes, isJsonLinesName, maxFileBytes, tooLarge, unreadable } from "./input-file.js";
 import { openAtLoad, panelKey, roomBesideQuery } from "./panel.js";
 
 const languages = __LANGUAGES__;
@@ -484,6 +484,7 @@ function renderInputStatus() {
     else if (shown.gen === generation && shown.result !== undefined && view.request !== undefined) {
         const result = shown.result;
         if (!result.ok) text = result.ms === undefined ? "Not run: see the output." : `${engineNames[shown.engine]} stopped with an error: see the output.`;
+        else if (result.parts?.workers !== undefined && !result.reused) text = `${engineNames[shown.engine]} ran it in ${formatMs(result.ms)}, reading it on ${result.parts.workers} workers.`;
         else text = `${engineNames[shown.engine]} ran it in ${formatMs(result.ms)}.`;
     }
 
@@ -1560,7 +1561,8 @@ async function loadFile(file) {
     const { name, size, lastModified } = file;
     const source = { type: "file", fileName: name, size, lastModified };
     const schemaName = /\.schema(\.json)?$/i.test(name);
-    const large = tooLarge(name, size);
+    // Past the longest text, only quickertype can read it (in parts): the workers say so.
+    const large = tooLarge(name, size, size, maxFileBytes);
     if (large !== undefined) return inputFailed(large);
 
     const ticket = ++opening;
