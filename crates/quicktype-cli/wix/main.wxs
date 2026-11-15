@@ -150,7 +150,7 @@
             <!--<ComponentRef Id='License'/>-->
 
             <ComponentRef Id='binary0'/>
-            <ComponentGroupRef Id='TypeScriptCompiler'/><!-- The bundled TypeScript compiler: wix/typescript.wxs, written by release/bundle-typescript.mjs. -->
+            <ComponentGroupRef Id='BundledFiles'/><!-- The TypeScript compiler, LICENSE and NOTICE: wix/bundled.wxs, written by release/bundle-typescript.mjs. -->
 
             <Feature
                 Id='Environment'

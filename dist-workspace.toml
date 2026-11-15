@@ -63,8 +63,9 @@ include = ["NOTICE", "release/typescript"]
 # TypeScript compiler for the job's target, verified against its pins.
 github-build-setup = "../build-setup.yml"
 # crates/quicktype-cli/wix/main.wxs is dist's rendering plus one line, the
-# reference to the TypeScript compiler's components (the WiX fragment
-# wix/typescript.wxs that release/bundle-typescript.mjs writes for a Windows
-# target), so `dist generate` leaves it alone. CI's `dist` job checks that
-# the rest is still what dist renders.
+# reference to the MSI's bundled files: the WiX fragment wix/bundled.wxs,
+# which release/bundle-typescript.mjs writes when it stages a Windows
+# package, with the TypeScript compiler and quickertype's LICENSE and
+# NOTICE. So `dist generate` leaves main.wxs alone; CI's `dist` job checks
+# that the rest is still what dist renders.
 allow-dirty = ["msi"]

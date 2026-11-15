@@ -1,26 +1,42 @@
 // Stages the TypeScript compiler that a release bundles next to quickertype:
 // the npm platform package pinned in release/typescript/pins.json,
 // downloaded from the npm registry, checked against its pinned
-// `dist.integrity` and unpacked unmodified into release/typescript, beside
-// pins.json. That directory is the archives' `typescript` directory
-// (`include` in dist-workspace.toml); git ignores everything in it but
-// pins.json.
+// `dist.integrity` and compiler hash, and unpacked unmodified into
+// release/typescript, beside pins.json. That directory is the archives'
+// `typescript` directory (`include` in dist-workspace.toml); git ignores
+// everything in it but pins.json.
 //
-//   node release/bundle-typescript.mjs [<target>...]
+//   node release/bundle-typescript.mjs [--run] [<target>...]
+//   node release/bundle-typescript.mjs --pin <version>
 //
 // <target> is a release target (a Rust target triple, as in
-// dist-workspace.toml); release.yml passes its job's
-// (.github/build-setup.yml). Without one, the package for this machine
-// (Node's platform and architecture). Every target must take the same
-// package. For a Windows target it also writes
-// crates/quicktype-cli/wix/typescript.wxs, the WiX fragment that puts the
-// directory into the MSI next to quickertype.exe (main.wxs references its
-// `TypeScriptCompiler` component group).
+// dist-workspace.toml); release.yml passes its job's, through
+// .github/actions/stage-typescript. Without one, the package for this
+// machine (Node's platform and architecture). Every target must take the
+// same package.
+//
+// The staged compiler is run (`tsc --version` must print the pinned
+// version) where this machine can run it: always for its own platform,
+// and for another architecture of its OS when the OS can (Rosetta runs
+// darwin-x64 on Apple Silicon). With --run it must run, as it does on
+// every release runner; without, a compiler this machine cannot run is
+// only checked against its hash.
+//
+// When the staged package is a Windows one, it also writes
+// crates/quicktype-cli/wix/bundled.wxs, the WiX fragment that puts it into
+// the MSI next to quickertype.exe, with the repository's LICENSE and NOTICE
+// in the install directory (main.wxs references its `BundledFiles`
+// component group); for any other package it removes that fragment.
 //
 // Fails, leaving what was staged before, when the download does not match
-// its integrity, the package is not the pinned name and version, or (when
-// it can run here) its `tsc --version` is not the pinned version. A
-// verified tarball is kept in target/tsc-bundle and reused.
+// its integrity, the package is not the pinned name and version, its
+// compiler not the pinned hash, or `tsc --version` not the pinned
+// version. A verified tarball is kept in target/tsc-bundle and reused.
+//
+// --pin <version> rewrites pins.json for another TypeScript release (see
+// docs/RELEASING.md): for each pinned package, the registry's tarball URL
+// and integrity, checked against the tarball it downloads, and the hash of
+// the compiler in it. The packages and their targets stay.
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -33,21 +49,26 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.join(here, "..");
 const bundleDir = path.join(here, "typescript");
 const pinsName = "pins.json";
+const pinsFile = path.join(bundleDir, pinsName);
 const stagingDir = path.join(repositoryRoot, "target", "tsc-bundle");
-const wxsFile = path.join(repositoryRoot, "crates", "quicktype-cli", "wix", "typescript.wxs");
+const wxsFile = path.join(repositoryRoot, "crates", "quicktype-cli", "wix", "bundled.wxs");
 const registry = "https://registry.npmjs.org/";
+const host = `${process.platform}-${process.arch}`;
 
 function fail(message) {
     console.error(`bundle-typescript: ${message}`);
     process.exit(1);
 }
 
+function log(message) {
+    console.error(`bundle-typescript: ${message}`);
+}
+
 /** The pinned package for `targets` (or for this machine): `[key, pin]`. */
 function packageFor(pins, targets) {
     if (targets.length === 0) {
-        const key = `${process.platform}-${process.arch}`;
-        if (!pins.packages[key]) fail(`no TypeScript platform package is pinned for this machine (${key})`);
-        return [key, pins.packages[key]];
+        if (!pins.packages[host]) fail(`no TypeScript platform package is pinned for this machine (${host})`);
+        return [host, pins.packages[host]];
     }
     const keys = new Set();
     for (const target of targets) {
@@ -60,45 +81,50 @@ function packageFor(pins, targets) {
     return [key, pins.packages[key]];
 }
 
+const tarballUrl = (name, version) => `${registry}${name}/-/${name.split("/").pop()}-${version}.tgz`;
+const compilerPath = (key) => `lib/${key.startsWith("win32-") ? "tsc.exe" : "tsc"}`;
+
 /** Checks a pin's shape: an npm registry tarball of the pinned version. */
 function checkPin(pins, key, pin) {
-    const base = pin.name.split("/").pop();
-    const expected = `${registry}${pin.name}/-/${base}-${pins.version}.tgz`;
     if (pin.name !== `@typescript/typescript-${key}`) fail(`${key}: the package is named ${pin.name}`);
+    const expected = tarballUrl(pin.name, pins.version);
     if (pin.tarball !== expected) fail(`${key}: the tarball must be ${expected}, not ${pin.tarball}`);
     if (!/^sha512-[A-Za-z0-9+/]{86}==$/.test(pin.integrity)) fail(`${key}: the integrity must be a sha512 one`);
+    if (!/^[0-9a-f]{64}$/.test(pin.tscSha256 ?? "")) fail(`${key}: tscSha256 must be the compiler's SHA-256, in hex`);
 }
 
-function integrityOf(bytes) {
-    return `sha512-${createHash("sha512").update(bytes).digest("base64")}`;
+const integrityOf = (bytes) => `sha512-${createHash("sha512").update(bytes).digest("base64")}`;
+const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
+
+async function fetchWithRetries(url, as) {
+    for (let attempt = 1; ; attempt++) {
+        try {
+            const response = await fetch(url, { redirect: "error" });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return as === "json" ? await response.json() : Buffer.from(await response.arrayBuffer());
+        } catch (error) {
+            if (attempt === 3) fail(`downloading ${url} failed: ${error.message}`);
+            await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
+        }
+    }
 }
 
-async function download(pin) {
-    const cached = path.join(stagingDir, path.basename(new URL(pin.tarball).pathname));
+/** The tarball `url`, which must have the integrity `integrity`. */
+async function download(url, integrity) {
+    const cached = path.join(stagingDir, path.basename(new URL(url).pathname));
     if (fs.existsSync(cached)) {
         const bytes = fs.readFileSync(cached);
-        if (integrityOf(bytes) === pin.integrity) {
-            console.error(`bundle-typescript: using ${path.relative(repositoryRoot, cached)}`);
+        if (integrityOf(bytes) === integrity) {
+            log(`using ${path.relative(repositoryRoot, cached)}`);
             return bytes;
         }
         fs.rmSync(cached);
     }
-    console.error(`bundle-typescript: downloading ${pin.tarball}`);
-    let bytes;
-    for (let attempt = 1; ; attempt++) {
-        try {
-            const response = await fetch(pin.tarball, { redirect: "error" });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            bytes = Buffer.from(await response.arrayBuffer());
-            break;
-        } catch (error) {
-            if (attempt === 3) fail(`downloading ${pin.tarball} failed: ${error.message}`);
-            await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
-        }
-    }
+    log(`downloading ${url}`);
+    const bytes = await fetchWithRetries(url, "bytes");
     const actual = integrityOf(bytes);
-    if (actual !== pin.integrity) {
-        fail(`${pin.tarball} does not match its pinned integrity\n  pinned: ${pin.integrity}\n  actual: ${actual}`);
+    if (actual !== integrity) {
+        fail(`${url} does not match its integrity\n  expected: ${integrity}\n  actual:   ${actual}`);
     }
     fs.mkdirSync(stagingDir, { recursive: true });
     fs.writeFileSync(cached, bytes);
@@ -175,36 +201,61 @@ function checkPackage(pins, pin, dir, key) {
     for (const file of ["LICENSE", "NOTICE.txt"]) {
         if (!fs.existsSync(path.join(dir, file))) fail(`${pin.name} has no ${file}`);
     }
-    const tsc = path.join(dir, "lib", key.startsWith("win32-") ? "tsc.exe" : "tsc");
-    if (!fs.statSync(tsc, { throwIfNoEntry: false })?.isFile()) fail(`${pin.name} has no ${path.relative(dir, tsc)}`);
-    if (key === `${process.platform}-${process.arch}`) {
-        const version = execFileSync(tsc, ["--version"], { encoding: "utf8" }).trim();
-        if (version !== `Version ${pins.version}`) fail(`${tsc} --version printed ${JSON.stringify(version)}`);
+    const tsc = path.join(dir, ...compilerPath(key).split("/"));
+    if (!fs.statSync(tsc, { throwIfNoEntry: false })?.isFile()) fail(`${pin.name} has no ${compilerPath(key)}`);
+    const hash = sha256(fs.readFileSync(tsc));
+    if (hash !== pin.tscSha256) fail(`${pin.name}'s ${compilerPath(key)} has the SHA-256 ${hash}, not the pinned ${pin.tscSha256}`);
+    if (!key.startsWith("win32-") && (fs.statSync(tsc).mode & 0o111) === 0) fail(`${pin.name}'s ${compilerPath(key)} is not executable`);
+    return tsc;
+}
+
+/**
+ * Runs the staged `tsc --version` where this machine can: true if it ran
+ * (and printed the pinned version), false if it cannot run here.
+ */
+function runCompiler(pins, key, tsc) {
+    const [os] = key.split("-");
+    if (os !== process.platform) return false;
+    let version;
+    try {
+        version = execFileSync(tsc, ["--version"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+    } catch (error) {
+        // Another architecture of this OS that it cannot run (no Rosetta,
+        // no emulation): ENOEXEC, EBADARCH ("Bad CPU type") and the like.
+        if (key !== host && !error.status) return false;
+        fail(`${tsc} --version failed: ${error.message}`);
     }
+    if (version !== `Version ${pins.version}`) fail(`${tsc} --version printed ${JSON.stringify(version)}`);
+    return true;
 }
 
 const xml = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&apos;");
 
 /**
  * The WiX v3 fragment for the MSI: `dir` (the staged package) as
- * `bin\typescript` (the `Bin` directory of main.wxs), one component per
- * file, all in the component group `TypeScriptCompiler`.
+ * `bin\typescript` (the `Bin` directory of main.wxs) and the repository's
+ * LICENSE and NOTICE in the install directory (`APPLICATIONFOLDER`), one
+ * component per file, all in the component group `BundledFiles`.
  */
 function wixFragment(dir) {
-    const lines = [];
     const components = [];
+    const component = (source, name, indent) => {
+        const n = components.length;
+        components.push(`BundledComponent${n}`);
+        return [
+            `${indent}<Component Id='BundledComponent${n}' Guid='*'>`,
+            `${indent}    <File Id='BundledFile${n}' Name='${xml(name)}' DiskId='1' Source='${xml(source)}' KeyPath='yes'/>`,
+            `${indent}</Component>`,
+        ];
+    };
+    const notices = ["LICENSE", "NOTICE"].flatMap((name) => component(path.join(repositoryRoot, name), name, "            "));
+    const lines = [];
     let directories = 0;
     const walk = (current, name, indent) => {
-        lines.push(`${indent}<Directory Id='TypeScriptDir${directories++}' Name='${xml(name)}'>`);
+        lines.push(`${indent}<Directory Id='BundledDir${directories++}' Name='${xml(name)}'>`);
         const children = fs.readdirSync(current, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
         for (const child of children.filter((c) => c.isFile())) {
-            const n = components.length;
-            components.push(`TypeScriptComponent${n}`);
-            lines.push(
-                `${indent}    <Component Id='TypeScriptComponent${n}' Guid='*'>`,
-                `${indent}        <File Id='TypeScriptFile${n}' Name='${xml(child.name)}' DiskId='1' Source='${xml(path.resolve(current, child.name))}' KeyPath='yes'/>`,
-                `${indent}    </Component>`,
-            );
+            lines.push(...component(path.resolve(current, child.name), child.name, `${indent}    `));
         }
         for (const child of children.filter((c) => c.isDirectory())) walk(path.join(current, child.name), child.name, `${indent}    `);
         lines.push(`${indent}</Directory>`);
@@ -215,10 +266,13 @@ function wixFragment(dir) {
         "<!-- Generated by release/bundle-typescript.mjs for this build: do not edit or commit. -->",
         "<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>",
         "    <Fragment>",
+        "        <DirectoryRef Id='APPLICATIONFOLDER'>",
+        ...notices,
+        "        </DirectoryRef>",
         "        <DirectoryRef Id='Bin'>",
         ...lines,
         "        </DirectoryRef>",
-        "        <ComponentGroup Id='TypeScriptCompiler'>",
+        "        <ComponentGroup Id='BundledFiles'>",
         ...components.map((id) => `            <ComponentRef Id='${id}'/>`),
         "        </ComponentGroup>",
         "    </Fragment>",
@@ -227,26 +281,67 @@ function wixFragment(dir) {
     ].join("\n");
 }
 
-const targets = process.argv.slice(2);
-const pins = JSON.parse(fs.readFileSync(path.join(bundleDir, pinsName), "utf8"));
-const [key, pin] = packageFor(pins, targets);
-checkPin(pins, key, pin);
-const entries = untar(await download(pin));
-if (entries.some((e) => e.path === pinsName)) fail(`${pin.name} has a ${pinsName} of its own`);
-const temporary = path.join(here, ".typescript.tmp");
-unpack(entries, temporary);
-checkPackage(pins, pin, temporary, key);
-// What an earlier run staged goes, pins.json stays.
-for (const name of fs.readdirSync(bundleDir)) {
-    if (name !== pinsName) fs.rmSync(path.join(bundleDir, name), { recursive: true, force: true });
+async function stage(targets, mustRun) {
+    const pins = JSON.parse(fs.readFileSync(pinsFile, "utf8"));
+    const [key, pin] = packageFor(pins, targets);
+    checkPin(pins, key, pin);
+    const entries = untar(await download(pin.tarball, pin.integrity));
+    if (entries.some((e) => e.path === pinsName)) fail(`${pin.name} has a ${pinsName} of its own`);
+    const temporary = path.join(here, ".typescript.tmp");
+    unpack(entries, temporary);
+    const tsc = checkPackage(pins, pin, temporary, key);
+    if (runCompiler(pins, key, tsc)) {
+        log(`ran ${pin.name}'s ${compilerPath(key)} --version on ${host}: Version ${pins.version}`);
+    } else if (mustRun) {
+        fail(`${pin.name} cannot run on ${host}, and --run requires it`);
+    } else {
+        log(`${pin.name} cannot run on ${host}: checked against its hash only`);
+    }
+    // What an earlier run staged goes, pins.json stays.
+    for (const name of fs.readdirSync(bundleDir)) {
+        if (name !== pinsName) fs.rmSync(path.join(bundleDir, name), { recursive: true, force: true });
+    }
+    for (const name of fs.readdirSync(temporary)) fs.renameSync(path.join(temporary, name), path.join(bundleDir, name));
+    fs.rmSync(temporary, { recursive: true });
+    log(`${pin.name}@${pins.version} (${entries.filter((e) => !e.directory).length} files) in ${path.relative(repositoryRoot, bundleDir)}`);
+    if (key.startsWith("win32-")) {
+        fs.writeFileSync(wxsFile, wixFragment(bundleDir));
+        log(`wrote ${path.relative(repositoryRoot, wxsFile)}`);
+    } else if (fs.existsSync(wxsFile)) {
+        // It would list the files of a Windows package no longer staged.
+        fs.rmSync(wxsFile);
+        log(`removed ${path.relative(repositoryRoot, wxsFile)}`);
+    }
 }
-for (const name of fs.readdirSync(temporary)) fs.renameSync(path.join(temporary, name), path.join(bundleDir, name));
-fs.rmSync(temporary, { recursive: true });
-console.error(`bundle-typescript: ${pin.name}@${pins.version} (${entries.filter((e) => !e.directory).length} files) in ${path.relative(repositoryRoot, bundleDir)}`);
-if (targets.some((t) => t.includes("-windows-"))) {
-    fs.writeFileSync(wxsFile, wixFragment(bundleDir));
-    console.error(`bundle-typescript: wrote ${path.relative(repositoryRoot, wxsFile)}`);
+
+async function pin(version) {
+    if (!/^\d+\.\d+\.\d+$/.test(version ?? "")) fail("--pin takes a version, such as 7.0.2");
+    const pins = JSON.parse(fs.readFileSync(pinsFile, "utf8"));
+    const packages = {};
+    for (const [key, old] of Object.entries(pins.packages)) {
+        const name = `@typescript/typescript-${key}`;
+        const metadata = await fetchWithRetries(`${registry}${name.replace("/", "%2f")}/${version}`, "json");
+        const tarball = metadata.dist.tarball;
+        if (metadata.name !== name || metadata.version !== version || tarball !== tarballUrl(name, version)) {
+            fail(`the registry's ${name}@${version} is ${metadata.name}@${metadata.version} at ${tarball}`);
+        }
+        const entries = untar(await download(tarball, metadata.dist.integrity));
+        const tsc = entries.find((e) => e.path === compilerPath(key));
+        if (!tsc) fail(`${name}@${version} has no ${compilerPath(key)}`);
+        packages[key] = { name, targets: old.targets, tarball, integrity: metadata.dist.integrity, tscSha256: sha256(tsc.data) };
+        log(`${name}@${version}: ${metadata.dist.integrity}`);
+    }
+    fs.writeFileSync(pinsFile, `${JSON.stringify({ $comment: pins.$comment, version, packages }, null, 4)}\n`);
+    log(`wrote ${path.relative(repositoryRoot, pinsFile)}`);
+}
+
+const args = process.argv.slice(2);
+if (args[0] === "--pin") {
+    await pin(args[1]);
 } else {
-    // A fragment for an earlier Windows target would list files no longer staged.
-    fs.rmSync(wxsFile, { force: true });
+    const mustRun = args.includes("--run");
+    await stage(
+        args.filter((a) => a !== "--run"),
+        mustRun,
+    );
 }

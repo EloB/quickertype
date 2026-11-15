@@ -74,13 +74,13 @@ jobs:
           curl --proto '=https' --tlsv1.2 -LsSf "https://github.com/axodotdev/cargo-dist/releases/download/v$version/cargo-dist-installer.sh" | sh
       - run: dist generate --check
       # main.wxs is dist's rendering plus the line that adds the bundled
-      # TypeScript compiler (allow-dirty in dist-workspace.toml, so the
-      # check above skips it): without that line, it must still be what
-      # dist renders.
+      # files, the TypeScript compiler and the notices (allow-dirty in
+      # dist-workspace.toml, so the check above skips it): without that
+      # line, it must still be what dist renders.
       - name: Check main.wxs against dist's rendering
         run: |
           sed -i '/^allow-dirty = \["msi"\]$/d' dist-workspace.toml
-          sed -i "/<ComponentGroupRef Id='TypeScriptCompiler'\/>/d" crates/quicktype-cli/wix/main.wxs
+          sed -i "/<ComponentGroupRef Id='BundledFiles'\/>/d" crates/quicktype-cli/wix/main.wxs
           dist generate --mode msi --check
           git checkout -- dist-workspace.toml crates/quicktype-cli/wix/main.wxs
       - run: dist plan

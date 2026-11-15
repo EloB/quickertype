@@ -11,4 +11,4 @@ node_modules/
 /release/typescript/*
 !/release/typescript/pins.json
 /release/.typescript.tmp/
-/crates/quicktype-cli/wix/typescript.wxs
+/crates/quicktype-cli/wix/bundled.wxs
