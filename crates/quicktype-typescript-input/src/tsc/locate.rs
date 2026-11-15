@@ -104,15 +104,17 @@ pub fn bundled_packages(exe: &Path) -> Vec<PathBuf> {
     packages
 }
 
-/// Whether `package` is the compiler a release bundles: the release's
-/// [`BUNDLED_PINS`] is in it, and its `package.json` names this platform's
-/// package at [`TSC_VERSION`]. Anything else at `typescript/lib/tsc` next
-/// to an executable (a binary downloaded beside `quickertype`, say) is not
-/// run. The version comes from `package.json`, so the compiler is not
+/// Whether `package` is the compiler a release bundles: its compiler is a
+/// file (executable, but on Windows), the release's [`BUNDLED_PINS`] is in
+/// it, and its `package.json` names this platform's package at
+/// [`TSC_VERSION`]. Anything else at `typescript/lib/tsc` next to an
+/// executable (a binary downloaded beside `quickertype`, say, or a compiler
+/// unpacked without its execute bits) is passed over for the next
+/// candidates. The version comes from `package.json`, so the compiler is not
 /// started to ask it, as the other candidates are ([`has_pinned_version`]):
 /// the release checked it against the pinned package's hash.
 pub fn is_bundled_package(package: &Path) -> bool {
-    if !package.join(BUNDLED_PINS).is_file() {
+    if !is_executable_file(&package_exe(package)) || !package.join(BUNDLED_PINS).is_file() {
         return false;
     }
     let Ok(text) = std::fs::read_to_string(package.join("package.json")) else {
@@ -122,6 +124,61 @@ pub fn is_bundled_package(package: &Path) -> bool {
         return false;
     };
     manifest["name"] == platform_package_name().as_str() && manifest["version"] == TSC_VERSION
+}
+
+/// Whether `path` is a file that its execute bits let this process run
+/// (any file on Windows, which has no such bits): one `stat`, no spawn.
+fn is_executable_file(path: &Path) -> bool {
+    let Ok(metadata) = std::fs::metadata(path) else {
+        return false;
+    };
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        metadata.is_file() && metadata.permissions().mode() & 0o111 != 0
+    }
+    #[cfg(not(unix))]
+    {
+        metadata.is_file()
+    }
+}
+
+/// The error for a compiler `exe` that [`locate`] chose but that could not
+/// be started (`error`, from spawning it). When the system refused to run
+/// it (EACCES: not executable; ENOEXEC, or Windows' "not a valid Win32
+/// application": not a program for this system), the message names the
+/// path and how to fix it.
+pub fn start_error(exe: &Path, error: &std::io::Error) -> Error {
+    const ENOEXEC: i32 = 8;
+    const ERROR_BAD_EXE_FORMAT: i32 = 193;
+    let code = error.raw_os_error();
+    if error.kind() == std::io::ErrorKind::PermissionDenied {
+        let path = exe.display();
+        Error::Tsc(format!(
+            "could not start the TypeScript compiler {path}: {error}. Make it executable \
+             (chmod +x {path}), or set {TSC_ENV} to the TypeScript {TSC_VERSION} compiler's path"
+        ))
+    } else if (cfg!(unix) && code == Some(ENOEXEC))
+        || (cfg!(windows) && code == Some(ERROR_BAD_EXE_FORMAT))
+    {
+        not_a_program_error(exe, &error.to_string())
+    } else {
+        Error::Tsc(format!("could not start {}: {error}", exe.display()))
+    }
+}
+
+/// The error for a compiler `exe` that is not a program this system runs;
+/// `why` is how that showed: the error of spawning it, or, where `exec`
+/// handed the file to a shell instead, the shell's exit status 126 ("cannot
+/// execute").
+pub fn not_a_program_error(exe: &Path, why: &str) -> Error {
+    Error::Tsc(format!(
+        "could not start the TypeScript compiler {}: {why}: it is not a program for this \
+         system. Install the compiler for this platform ({}@{TSC_VERSION}), or set {TSC_ENV} \
+         to its path",
+        exe.display(),
+        platform_package_name()
+    ))
 }
 
 /// Whether `exe` runs and reports exactly the pinned version.
@@ -253,7 +310,7 @@ fn find(cwd: &Path, env: &Environment<'_>) -> Result<PathBuf> {
         .exe
         .iter()
         .flat_map(|exe| bundled_packages(exe))
-        .find(|package| package_exe(package).is_file() && is_bundled_package(package))
+        .find(|package| is_bundled_package(package))
     {
         return Ok(package_exe(&bundled));
     }
@@ -337,6 +394,17 @@ mod tests {
         simplified(std::fs::canonicalize(dir.join(relative)).unwrap())
     }
 
+    /// Sets `path`'s permission bits (a no-op where there are none).
+    fn set_mode(path: &Path, mode: u32) {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(path, std::fs::Permissions::from_mode(mode)).unwrap();
+        }
+        #[cfg(not(unix))]
+        let _ = (path, mode);
+    }
+
     fn manifest(name: &str, version: &str) -> String {
         format!("{{\n    \"name\": \"{name}\",\n    \"version\": \"{version}\"\n}}\n")
     }
@@ -346,7 +414,8 @@ mod tests {
     /// its version), this platform's `package.json` and the pins. Returns
     /// the compiler's relative path.
     fn bundle(dir: &Path, package: &Path) -> PathBuf {
-        write(dir, &package_exe(package), "bundled tsc");
+        let tsc = write(dir, &package_exe(package), "bundled tsc");
+        set_mode(&tsc, 0o755);
         write(
             dir,
             &package.join("package.json"),
@@ -563,6 +632,91 @@ mod tests {
         skipped("locate-no-compiler", |dir, package| {
             std::fs::remove_file(dir.join(package_exe(package))).unwrap();
         });
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn bundled_compiler_that_is_not_executable_is_skipped() {
+        // An archive unpacked by a tool that drops the execute bits: the
+        // lookup sees it with one stat and goes on, instead of choosing a
+        // compiler that cannot start.
+        skipped("locate-not-executable", |dir, package| {
+            set_mode(&dir.join(package_exe(package)), 0o644);
+        });
+    }
+
+    #[test]
+    fn start_errors_name_the_compiler_and_the_fix() {
+        let exe = Path::new("/opt/quickertype/typescript/lib/tsc");
+        let denied = std::io::Error::from(std::io::ErrorKind::PermissionDenied);
+        let message = start_error(exe, &denied).message();
+        assert!(
+            message.starts_with(
+                "could not start the TypeScript compiler /opt/quickertype/typescript/lib/tsc: "
+            ) && message.ends_with(
+                ". Make it executable (chmod +x /opt/quickertype/typescript/lib/tsc), or set \
+                 QUICKTYPE_TSC to the TypeScript 7.0.2 compiler's path"
+            ),
+            "{message}"
+        );
+        let format = std::io::Error::from_raw_os_error(if cfg!(windows) { 193 } else { 8 });
+        let message = start_error(exe, &format).message();
+        assert!(
+            message.ends_with(&format!(
+                ": it is not a program for this system. Install the compiler for this platform \
+                 ({}@7.0.2), or set QUICKTYPE_TSC to its path",
+                platform_package_name()
+            )),
+            "{message}"
+        );
+        let other = std::io::Error::from(std::io::ErrorKind::NotFound);
+        assert_eq!(
+            start_error(exe, &other).message(),
+            format!("could not start {}: {other}", exe.display())
+        );
+    }
+
+    /// What starting a file that cannot run gives: the error of the
+    /// compiler's own spawn ([`super::super::channel::Channel::spawn`]).
+    #[cfg(unix)]
+    #[test]
+    fn starting_a_compiler_that_cannot_run_says_how_to_fix_it() {
+        let dir = ScratchDir::new("locate-start");
+        let not_executable = write(&dir, Path::new("not-executable/tsc"), "tsc");
+        let error = Command::new(&not_executable).spawn().unwrap_err();
+        let message = start_error(&not_executable, &error).message();
+        assert!(
+            message.contains(&format!("chmod +x {}", not_executable.display())),
+            "{message}"
+        );
+        // Not a program at all, though executable. Some systems run such a
+        // file as a shell script instead; then there is no error to check.
+        let garbage = write(
+            &dir,
+            Path::new("garbage/tsc"),
+            "\u{0}\u{1}\u{2} not a program",
+        );
+        set_mode(&garbage, 0o755);
+        match Command::new(&garbage)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+        {
+            Err(error) => {
+                let message = start_error(&garbage, &error).message();
+                assert!(
+                    message.contains(&garbage.display().to_string()),
+                    "{message}"
+                );
+                assert!(
+                    message.contains("not a program for this system"),
+                    "{message}"
+                );
+            }
+            Ok(mut child) => {
+                let _ = child.wait();
+            }
+        }
     }
 
     #[test]

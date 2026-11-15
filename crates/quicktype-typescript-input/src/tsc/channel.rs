@@ -10,7 +10,7 @@
 
 use std::collections::BTreeMap;
 use std::io::{self, BufReader, BufWriter, Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
@@ -143,6 +143,8 @@ thread_local! {
 
 /// A running `tsc --api` process.
 pub struct Channel {
+    /// The compiler, for errors.
+    exe: PathBuf,
     child: Child,
     writer: Option<BufWriter<ChildStdin>>,
     reader: BufReader<TimedReader>,
@@ -245,7 +247,7 @@ impl Channel {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|e| Error::Tsc(format!("could not start {}: {e}", exe.display())))?;
+            .map_err(|e| super::locate::start_error(exe, &e))?;
         let (Some(stdin), Some(stdout), Some(mut err)) =
             (child.stdin.take(), child.stdout.take(), child.stderr.take())
         else {
@@ -271,6 +273,7 @@ impl Channel {
             }
         });
         Ok(Channel {
+            exe: exe.to_path_buf(),
             child,
             writer: Some(BufWriter::with_capacity(1 << 16, stdin)),
             reader: BufReader::with_capacity(
@@ -551,6 +554,17 @@ impl Channel {
             .lock()
             .map(|s| String::from_utf8_lossy(&s).trim().to_owned())
             .unwrap_or_default();
+        // Where exec fails with ENOEXEC (a file that is not a program for
+        // this system), the C library runs it with /bin/sh, which exits with
+        // 126, "cannot execute", before answering anything.
+        if cfg!(unix) && status.and_then(|s| s.code()) == Some(126) {
+            let why = match status {
+                Some(status) if stderr.is_empty() => status.to_string(),
+                Some(status) => format!("{status} ({stderr})"),
+                None => unreachable!(),
+            };
+            return super::locate::not_a_program_error(&self.exe, &why);
+        }
         let mut msg = format!("TypeScript compiler request `{method}` failed: {e}");
         if let Some(status) = status {
             msg.push_str(&format!(" (compiler exited: {status})"));
@@ -647,5 +661,45 @@ mod tests {
         std::fs::remove_dir_all(&dir).unwrap();
         assert!(err.contains("compiler exited"), "{err}");
         assert!(err.ends_with("panic: boom"), "{err}");
+    }
+
+    /// A file that is executable but not a program for this system: the
+    /// spawn fails with ENOEXEC, or the C library hands the file to
+    /// /bin/sh, which exits with 126. Either way the error names the file
+    /// and what to install.
+    #[test]
+    fn a_compiler_that_is_not_a_program_is_reported_as_such() {
+        let dir = crate::testing::ScratchDir::new("channel-not-a-program");
+        let exe = dir.join("tsc");
+        std::fs::write(&exe, b"\x7fELF\x00\x01\x02 not a program").unwrap();
+        std::fs::set_permissions(&exe, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let mut err = None;
+        for _ in 0..50 {
+            match Channel::spawn(&exe, &dir, Vec::new()) {
+                Ok(mut ch) => {
+                    err = Some(ch.request("initialize", b"null").unwrap_err().message());
+                    break;
+                }
+                Err(e) if e.message().contains("Text file busy") => {
+                    std::thread::sleep(std::time::Duration::from_millis(20));
+                }
+                Err(e) => {
+                    err = Some(e.message());
+                    break;
+                }
+            }
+        }
+        let err = err.expect("the file stayed busy");
+        assert!(
+            err.starts_with(&format!(
+                "could not start the TypeScript compiler {}: ",
+                exe.display()
+            )),
+            "{err}"
+        );
+        assert!(
+            err.contains(": it is not a program for this system. "),
+            "{err}"
+        );
     }
 }
