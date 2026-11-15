@@ -441,3 +441,121 @@ fn ruby_union_classes_are_forward_declared() {
         expected
     );
 }
+
+// ---- Java ---------------------------------------------------------------
+
+/// The class path with Jackson, or `None`.
+fn jackson_classpath() -> Option<String> {
+    if let Ok(classpath) = std::env::var("QUICKTYPE_JACKSON_CLASSPATH") {
+        return Some(classpath);
+    }
+    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
+    let repository = Path::new(&home).join(".m2/repository/com/fasterxml/jackson/core");
+    let mut jars = vec![];
+    for artifact in ["jackson-core", "jackson-databind", "jackson-annotations"] {
+        let dir = repository.join(artifact);
+        let mut versions: Vec<PathBuf> = fs::read_dir(&dir)
+            .ok()?
+            .flatten()
+            .map(|e| e.path())
+            .collect();
+        versions.sort();
+        let jar = versions.iter().rev().find_map(|v| {
+            let version = v.file_name()?.to_str()?;
+            let jar = v.join(format!("{artifact}-{version}.jar"));
+            jar.is_file().then_some(jar)
+        })?;
+        jars.push(jar.to_string_lossy().into_owned());
+    }
+    Some(jars.join(if cfg!(windows) { ";" } else { ":" }))
+}
+
+/// optional-date-time.schema with `--datetime-provider legacy`:
+/// `parseAllDateTimeString` returns `null` when no format matches, so an
+/// invalid date-time is read as `null` instead of rejected.
+#[test]
+fn java_legacy_dates_that_do_not_parse_are_rejected() {
+    const TEST: &str = "java-legacy-date";
+    if !runs("javac", &["-version"]) || !runs("java", &["-version"]) {
+        skipped(TEST, "no javac and java");
+        return;
+    }
+    let Some(classpath) = jackson_classpath() else {
+        skipped(
+            TEST,
+            "no Jackson (set QUICKTYPE_JACKSON_CLASSPATH, or have it in ~/.m2)",
+        );
+        return;
+    };
+    let dir = work_dir(TEST);
+    let sources = dir.join("src/io/quicktype");
+    fs::create_dir_all(&sources).unwrap();
+    let schema = inputs().join("schema/optional-date-time.schema");
+    generate(
+        &sources,
+        &[
+            "--src-lang",
+            "schema",
+            "--lang",
+            "java",
+            "--datetime-provider",
+            "legacy",
+            "--package",
+            "io.quicktype",
+            "--top-level",
+            "TopLevel",
+            "--src",
+            schema.to_str().unwrap(),
+            "--out",
+            "TopLevel.java",
+        ],
+    );
+    fs::write(
+        sources.join("App.java"),
+        "package io.quicktype;\n\
+         public class App {\n\
+         \x20   public static void main(String[] args) throws Exception {\n\
+         \x20       String input = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(args[0])), \"UTF-8\");\n\
+         \x20       System.out.print(Converter.toJsonString(Converter.fromJsonString(input)));\n\
+         \x20   }\n\
+         }\n",
+    )
+    .unwrap();
+    let java_files: Vec<PathBuf> = fs::read_dir(&sources)
+        .unwrap()
+        .flatten()
+        .map(|e| e.path())
+        .collect();
+    let output = Command::new("javac")
+        .args(["-nowarn", "-d", "classes", "-cp", &classpath])
+        .args(&java_files)
+        .current_dir(&dir)
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "javac: {}", text(&output));
+    let separator = if cfg!(windows) { ";" } else { ":" };
+    let run = |sample: &str| {
+        Command::new("java")
+            .args([
+                "-cp",
+                &format!("classes{separator}{classpath}"),
+                "io.quicktype.App",
+            ])
+            .arg(inputs().join("schema").join(sample))
+            .current_dir(&dir)
+            .output()
+            .unwrap()
+    };
+    let good = run("optional-date-time.1.json");
+    assert!(good.status.success(), "{}", text(&good));
+    let printed: Value = serde_json::from_slice(&good.stdout).unwrap();
+    assert!(printed["required-date-time"].is_string(), "{printed}");
+    let bad = run("optional-date-time.1.fail.date-time.json");
+    assert!(!bad.status.success(), "accepted: {}", text(&bad));
+    assert!(
+        String::from_utf8_lossy(&bad.stderr)
+            .contains("Unparseable date: not a valid date-time at all"),
+        "{}",
+        text(&bad)
+    );
+}
