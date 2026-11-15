@@ -205,8 +205,9 @@ archives bundle it, so it works out of the box: Microsoft's compiler,
 unmodified (the npm package `@typescript/typescript-<os>-<arch>`, with its
 license and notices), in a `typescript` directory next to the binary
 (Homebrew puts it in `share/quickertype`). Keep that directory next to
-`quickertype` if you move the binary out of an unpacked archive, or link
-to the binary instead: quickertype follows links to find it.
+`quickertype`, as it is, if you move the binary out of an unpacked
+archive, or link to the binary instead: quickertype follows links to find
+it.
 
 `cargo install`, a build from source and the shell and PowerShell
 installers give the binary alone. Install the compiler with

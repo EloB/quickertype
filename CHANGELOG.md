@@ -66,15 +66,22 @@ section are absolute.
   and notices), in a `typescript` directory next to `quickertype`
   (Homebrew: `share/quickertype/typescript`). quickertype looks for it
   after `QUICKTYPE_TSC` and before `node_modules` and `PATH`, from its
-  executable's real path, so links to the binary work. `cargo install`
-  and the shell and PowerShell installers still give the binary alone;
-  without a compiler, the error now names the platform's package
-  (`npm install -g typescript@7.0.2`, which installs
+  executable's real path, so links to the binary work, and uses it only
+  with the release's `package.json` and `pins.json` beside it, without
+  starting it to ask its version. `cargo install` and the shell and
+  PowerShell installers still give the binary alone; without a compiler,
+  the error now names the platform's package (`npm install -g
+  typescript@7.0.2`, which installs
   `@typescript/typescript-darwin-arm64@7.0.2` on Apple Silicon Macs) and
   no longer ends in two periods. The release downloads each package from
-  the npm registry and checks it against the sha512 pinned in
+  the npm registry, checks it against the sha512 and compiler hash pinned
+  in
   [`release/typescript/pins.json`](https://github.com/EloB/quickertype/blob/main/release/typescript/pins.json),
-  and an archive grows by about 7 MB (the Windows zip by about 9.5 MB).
+  runs it on its build runner, and publishes nothing unless every archive
+  and the MSI have it. An archive grows by about 7 MB (the Windows zip by
+  about 9.5 MB).
+- The MSI installs quickertype's `LICENSE` and `NOTICE` in
+  `C:\Program Files\quickertype`.
 
 ### Fixed
 

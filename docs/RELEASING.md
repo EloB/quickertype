@@ -155,48 +155,92 @@ How the release does it, with dist 0.34, whose `include` is the same for
 every archive (and the npm installer package):
 
 - `include` in [`dist-workspace.toml`](../dist-workspace.toml) has
-  `release/typescript`, where git tracks only `pins.json`.
+  `release/typescript`, where git tracks only `pins.json`. So `dist build`
+  packs whatever is staged there, and an archive built without staging has
+  `typescript/pins.json` alone: the release gate (below) is what stops such
+  a release.
 - [`.github/build-setup.yml`](../.github/build-setup.yml) (dist's
   `github-build-setup`, which release.yml runs in every
-  `build-local-artifacts` job before `dist build`) runs
-  [`release/bundle-typescript.mjs`](../release/bundle-typescript.mjs) with
-  the job's target. It downloads the target's package from
-  registry.npmjs.org, checks it against its pinned `dist.integrity`
-  (sha512), its name and version and, where it runs, `tsc --version`, and
-  unpacks it into `release/typescript`; any mismatch fails the job, so no
-  release goes out without the pinned compiler.
+  `build-local-artifacts` job before `dist build`) runs the action
+  [`.github/actions/stage-typescript`](../.github/actions/stage-typescript/action.yml)
+  with the job's target, which runs
+  [`release/bundle-typescript.mjs --run`](../release/bundle-typescript.mjs).
+  It downloads the target's package from registry.npmjs.org, checks it
+  against its pinned `dist.integrity` (sha512), name, version and compiler
+  hash (`tscSha256`, the SHA-256 of `lib/tsc`), runs `tsc --version`, and
+  unpacks it into `release/typescript`. A mismatch, or a compiler that does
+  not run, fails the job.
+- Every build job runs its own target's compiler, natively: no target is
+  cross-built.
+
+  | Target | Runner | Runs |
+  |---|---|---|
+  | `aarch64-apple-darwin` | `macos-15` (Apple Silicon) | `darwin-arm64` |
+  | `x86_64-apple-darwin` | `macos-15-intel` | `darwin-x64` |
+  | `aarch64-unknown-linux-gnu` | `ubuntu-22.04-arm` | `linux-arm64` |
+  | `x86_64-unknown-linux-gnu`, `x86_64-unknown-linux-musl` | `ubuntu-22.04` | `linux-x64` |
+  | `x86_64-pc-windows-msvc` | `windows-2022` | `win32-x64` |
+
+  Locally the script also runs another architecture of the machine's OS
+  where the OS can (Rosetta runs `darwin-x64` on Apple Silicon); a package
+  it cannot run (another OS) is checked against its hash only, unless
+  `--run` is given.
+- **The release gate,**
+  [`.github/workflows/check-release.yml`](../.github/workflows/check-release.yml),
+  is a custom job of dist's `global-artifacts-jobs`: it runs after every
+  `build-local-artifacts` job, and `host`, which creates the GitHub Release
+  before any publish job runs, waits for it and runs only if it passed. It
+  downloads what the build jobs uploaded and runs
+  [`release/check-release.mjs`](../release/check-release.mjs) on all six
+  archives: each must have `typescript/lib/tsc` (`tsc.exe` for Windows)
+  with the pinned SHA-256, executable but on Windows, the pinned package's
+  `package.json`, its LICENSE and NOTICE.txt, and `pins.json` equal to the
+  repository's, and its NOTICE must attribute TypeScript. Then
+  [`release/check-bundle.mjs`](../release/check-bundle.mjs) converts a
+  TypeScript file with the two Linux x86_64 archives (on Ubuntu) and with
+  the MSI and the zip (on Windows; the MSI unpacked with `msiexec /a`),
+  with no other compiler around.
 - The `build-global-artifacts` job has no build setup, so the npm
   installer package that it builds gets `typescript/pins.json` alone (the
   installer unpacks the archive for the platform at install time).
-- The MSI: for a Windows target, the script also writes
-  `crates/quicktype-cli/wix/typescript.wxs` (not committed), a WiX fragment
-  with a component for each file of the staged directory under `bin`;
+- The MSI: when it stages a Windows package, the script also writes
+  `crates/quicktype-cli/wix/bundled.wxs` (not committed), a WiX fragment
+  with a component for each file of the staged directory under `bin`, and
+  for quickertype's `LICENSE` and `NOTICE` in the install directory
+  (`C:\Program Files\quickertype`; dist's MSI has neither otherwise).
   cargo-wix compiles every `.wxs` in `wix/`, and `main.wxs` references the
-  fragment's `TypeScriptCompiler` component group. That one line is ours,
-  so dist-workspace.toml has `allow-dirty = ["msi"]`, and CI's `dist` job
+  fragment's `BundledFiles` component group. That one line is ours, so
+  dist-workspace.toml has `allow-dirty = ["msi"]`, and CI's `dist` job
   checks that `main.wxs` without it is what dist renders.
 
+quickertype does not run the bundled compiler to ask its version: it uses
+it only if `typescript/package.json` names this platform's package at the
+pinned version and `typescript/pins.json` is beside it, so a stray
+`typescript/lib/tsc` next to a binary is not run. Other compilers
+(`QUICKTYPE_TSC`, `node_modules`, `PATH`) must print the pinned version.
+
 CI's `release-bundle` job builds the archive for its runner the same way
-and runs [`release/check-bundle.mjs`](../release/check-bundle.mjs) on it:
-the archive's quickertype must convert `release/check-bundle/person.ts`
-to exactly `person.expected.rs` (what the TypeScript quicktype prints)
-with no other compiler on `PATH` or in `node_modules`, unpacked and in
-Homebrew's layout, and without the compiler it must fail with the error
-above.
+(the same action, then `dist build`), runs the gate's check on it, and runs
+`release/check-bundle.mjs`: the archive's quickertype must convert
+`release/check-bundle/person.ts` to exactly `person.expected.rs` (what the
+TypeScript quicktype prints) with no other compiler on `PATH` or in
+`node_modules`, unpacked and in Homebrew's layout, and without the
+compiler it must fail with the error above.
 
 ### Bumping the TypeScript version
 
-1. In [`release/typescript/pins.json`](../release/typescript/pins.json), set
-   `version`, and each package's `tarball` and `integrity` to what the npm
-   registry gives:
+1. Pin the new release's packages:
 
    ```sh
-   for p in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-x64; do
-     npm view "@typescript/typescript-$p@X.Y.Z" dist.tarball dist.integrity
-   done
    npm view typescript@X.Y.Z optionalDependencies   # still a package for every target?
+   node release/bundle-typescript.mjs --pin X.Y.Z
    ```
 
+   This rewrites [`release/typescript/pins.json`](../release/typescript/pins.json):
+   for each package, the registry's tarball URL and `dist.integrity`,
+   checked against the tarball it downloads, and the SHA-256 of the
+   compiler in it. The packages and their targets stay; edit those by hand
+   if TypeScript adds or drops a platform.
 2. Regenerate the protocol tables, which set `TSC_VERSION`:
    `node xtask/typescript-input/gen-tables.mjs <quicktype checkout>`, with
    `typescript@X.Y.Z` in the checkout's `node_modules`
@@ -217,7 +261,7 @@ above.
 
 5. Check an archive ([Dry runs](#dry-runs)), and on the pull request get a
    [full release build](#a-full-release-build-without-releasing), which
-   builds the MSI.
+   builds the MSI and runs the release gate.
 
 ## The `quicktype` name
 
@@ -374,7 +418,9 @@ repository that change it.
 6. Follow the Release workflow (`gh run watch`). Its jobs: `plan`,
    `build-local-artifacts` (one per target, the MSI on Windows),
    `build-global-artifacts` (installers, formula, npm installer package,
-   checksums), `host` (uploads everything and creates the GitHub Release),
+   checksums), `custom-check-release` (the release gate for the bundled
+   TypeScript compiler), `host` (uploads everything and creates the GitHub
+   Release; it runs only if the gate passed),
    then in parallel `publish-homebrew-formula`, `publish-npm`,
    `custom-publish-crates` and `custom-publish-npm-core`, then `announce`.
 7. Check that every registry has X.Y.Z, then install it once or twice and
@@ -403,8 +449,8 @@ If a publish job fails after `host`, the GitHub Release already exists: fix
 the cause (usually a token) and re-run the failed jobs
 (`gh run rerun <run-id> --failed`). Every publish job skips what is already
 published (a crate version on crates.io, a package version on npm), so a
-re-run after a partial failure is safe. If a build fails, nothing was
-published: delete the tag (`git push origin :refs/tags/vX.Y.Z` and
+re-run after a partial failure is safe. If a build or the release gate
+fails, nothing was published: delete the tag (`git push origin :refs/tags/vX.Y.Z` and
 `git tag -d vX.Y.Z`), fix it on `main` and tag again.
 
 ## Dry runs
@@ -431,6 +477,7 @@ published: delete the tag (`git push origin :refs/tags/vX.Y.Z` and
   dist plan                     # the plan CI makes
   node release/bundle-typescript.mjs    # the TypeScript compiler for this machine
   dist build                    # the archive for this machine, in target/distrib/
+  node release/check-release.mjs target/distrib <target>   # the release gate's check
   node release/check-bundle.mjs target/distrib/quickertype-<target>.tar.xz
   dist generate --check         # release.yml matches the config
   cargo publish --dry-run -p quickertype-js-compat -p quickertype-core \
@@ -438,47 +485,61 @@ published: delete the tag (`git push origin :refs/tags/vX.Y.Z` and
   (cd npm/quicktype-core && npm run build && npm test && npm pack --dry-run)
   ```
 
-  `dist build` fails if the compiler is not staged. The MSI needs Windows
-  and the WiX v3 toolset (and `node release/bundle-typescript.mjs
-  x86_64-pc-windows-msvc` first), so only CI builds it.
+  Without the staging step, `dist build` packs an archive with
+  `typescript/pins.json` alone, which the gate's check rejects. The MSI
+  needs Windows and the WiX v3 toolset (and `node
+  release/bundle-typescript.mjs` there first, which writes the WiX
+  fragment), so only CI builds it.
 - **Secrets:** the [Release preflight](#release-preflight).
 
 ### A full release build without releasing
 
 dist 0.34 builds on pull requests only in upload mode (its
 `dispatch-releases` would replace the tag trigger with a manual one, so it
-is not used). To get every archive, installer and the MSI without
-releasing, on a branch with an open pull request:
+is not used). This is the only way to build the MSI and to run the release
+gate (`custom-check-release`) before a tag. On a branch whose pull request
+is open, from the repository root, with the pinned dist installed:
 
 ```sh
+git switch <branch> && git pull
 sed -i.bak 's/^pr-run-mode = "plan"/pr-run-mode = "upload"/' dist-workspace.toml && rm dist-workspace.toml.bak
-dist generate        # upload mode also caches builds: release.yml gains a rust-cache step
+dist generate                 # release.yml for upload mode (it gains a rust-cache step)
+git diff --stat               # dist-workspace.toml and .github/workflows/release.yml only
 git commit -am "ci: full release build (revert before merging)" && git push
 ```
 
-The pull request's Release run then has `plan`, every
-`build-local-artifacts` job and `build-global-artifacts`, without `host`,
-the publish jobs or `announce`, and attaches the artifacts:
+The push starts the pull request's Release run: `plan`, every
+`build-local-artifacts` job (the six targets and the MSI, about 15
+minutes), `build-global-artifacts` and `custom-check-release` (the gate:
+`archives` on Ubuntu, `windows` with the MSI), without `host`, the publish
+jobs or `announce`. Follow it and fetch what it built:
 
 ```sh
-gh run list --workflow Release --branch <branch> --limit 1
-gh run download <run-id> --name artifacts-build-local-aarch64-apple-darwin
-gh run download <run-id> --name artifacts-build-global   # installers, formula, npm package
+run=$(gh run list --workflow Release --branch <branch> --limit 1 --json databaseId --jq '.[0].databaseId')
+gh run watch "$run"
+gh run view "$run"                       # every job, the gate's two included, must pass
+gh run download "$run" --name artifacts-build-local-x86_64-pc-windows-msvc   # the MSI and the zip
+gh run download "$run" --name artifacts-build-local-aarch64-apple-darwin
+gh run download "$run" --name artifacts-build-global   # installers, formula, npm package
 ```
 
-Revert that commit before merging (`git revert <commit>`), so that `main`
-stays in plan mode; `dist generate --check` passes in both modes as long as
-release.yml is regenerated with the config.
+Then revert the commit and push, so that the branch, and `main` after the
+merge, stays in plan mode (`git revert --no-edit <commit> && git push`);
+`dist generate --check` passes in both modes as long as release.yml is
+regenerated with the config.
 
 ## Changing the pipeline
 
 - `release.yml` and `crates/quicktype-cli/wix/main.wxs` are generated:
   never edit them, except for the one line of `main.wxs` that references
-  the TypeScript compiler's components (`allow-dirty = ["msi"]` makes
+  the bundled files (`BundledFiles`; `allow-dirty = ["msi"]` makes
   `dist generate` leave the file alone). To regenerate `main.wxs`, delete
   that line and the `allow-dirty` setting, run `dist generate`, and put
-  both back. The build setup steps are in `.github/build-setup.yml`;
-  `dist generate` copies them into release.yml. Change [`dist-workspace.toml`](../dist-workspace.toml)
+  both back. The build setup steps are in `.github/build-setup.yml`
+  (`dist generate` copies them into release.yml) and call
+  `.github/actions/stage-typescript`, which CI's `release-bundle` job calls
+  too; the release gate is `.github/workflows/check-release.yml`, an
+  ordinary reusable workflow that release.yml calls. Change [`dist-workspace.toml`](../dist-workspace.toml)
   (workspace settings, publish jobs and their permissions) or
   `[package.metadata.dist]` in
   [`crates/quicktype-cli/Cargo.toml`](../crates/quicktype-cli/Cargo.toml)
