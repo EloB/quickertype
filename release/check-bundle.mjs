@@ -7,7 +7,8 @@
 // target/distrib/quickertype-<target>.tar.xz, .zip, or .msi (Windows; it
 // is unpacked with `msiexec /a`, an administrative install into a
 // directory). It must pass release/check-release.mjs's checks of the
-// bundled compiler, and its quickertype must convert
+// bundled compiler (so the gate need not check it again), and its
+// quickertype must convert
 // release/check-bundle/person.ts to Rust, printing exactly
 // release/check-bundle/person.expected.rs (what the TypeScript quicktype
 // prints for it). Every run has an environment without another TypeScript
@@ -31,11 +32,13 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { layoutFailures, packageOf, pins, targetOf, unpackArchive } from "./check-release.mjs";
+import { layoutFailures } from "./check-release.mjs";
+import { packageOf, readPins, targetOf, unpackArchive } from "./package.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fixture = path.join(here, "check-bundle");
 const expected = fs.readFileSync(path.join(fixture, "person.expected.rs"), "utf8");
+const { pins } = readPins();
 const windows = process.platform === "win32";
 const exe = (name) => (windows ? `${name}.exe` : name);
 
@@ -76,15 +79,15 @@ if (!file || !fs.existsSync(file)) {
 const scratch = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), "quickertype-bundle-"));
 try {
     const target = targetOf(file);
-    const [key] = packageOf(target);
+    const [key, pin] = packageOf(pins, target);
     if (key !== `${process.platform}-${process.arch}`) throw new Error(`${file} is for ${key}, not this machine`);
     const msi = file.endsWith(".msi");
     // The MSI installs quickertype.exe and typescript\ into bin, LICENSE and
     // NOTICE into the directory above it.
     const root = msi ? unpackMsi(file, path.join(scratch, "msi")) : unpackArchive(file, path.join(scratch, "archive"));
     const layout = layoutFailures(root, target, msi ? path.dirname(root) : root);
-    for (const failure of layout) check(false, failure);
-    check(layout.length === 0, `${path.basename(file)} bundles ${packageOf(target)[1].name}@${pins.version}, as pinned`);
+    if (layout.length === 0) check(true, `${path.basename(file)} bundles ${pin.name}@${pins.version}, as pinned`);
+    for (const failure of layout) check(false, `${path.basename(file)}: ${failure}`);
     const bundled = path.join(root, "typescript");
 
     // Where quickertype runs: no compiler on PATH or in node_modules.

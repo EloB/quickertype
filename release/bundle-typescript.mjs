@@ -45,6 +45,8 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 
+import { compilerPath, packageFailures, sha256 } from "./package.mjs";
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.join(here, "..");
 const bundleDir = path.join(here, "typescript");
@@ -82,11 +84,11 @@ function packageFor(pins, targets) {
 }
 
 const tarballUrl = (name, version) => `${registry}${name}/-/${name.split("/").pop()}-${version}.tgz`;
-const compilerPath = (key) => `lib/${key.startsWith("win32-") ? "tsc.exe" : "tsc"}`;
 
 /** Checks a pin's shape: an npm registry tarball of the pinned version. */
 function checkPin(pins, key, pin) {
     if (pin.name !== `@typescript/typescript-${key}`) fail(`${key}: the package is named ${pin.name}`);
+    if (!Array.isArray(pin.targets) || pin.targets.length === 0) fail(`${key}: targets must list its release targets`);
     const expected = tarballUrl(pin.name, pins.version);
     if (pin.tarball !== expected) fail(`${key}: the tarball must be ${expected}, not ${pin.tarball}`);
     if (!/^sha512-[A-Za-z0-9+/]{86}==$/.test(pin.integrity)) fail(`${key}: the integrity must be a sha512 one`);
@@ -94,7 +96,6 @@ function checkPin(pins, key, pin) {
 }
 
 const integrityOf = (bytes) => `sha512-${createHash("sha512").update(bytes).digest("base64")}`;
-const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 
 async function fetchWithRetries(url, as) {
     for (let attempt = 1; ; attempt++) {
@@ -194,24 +195,27 @@ function unpack(entries, destination) {
 }
 
 function checkPackage(pins, pin, dir, key) {
-    const manifest = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
-    if (manifest.name !== pin.name || manifest.version !== pins.version) {
-        fail(`the tarball holds ${manifest.name}@${manifest.version}, not ${pin.name}@${pins.version}`);
-    }
-    for (const file of ["LICENSE", "NOTICE.txt"]) {
-        if (!fs.existsSync(path.join(dir, file))) fail(`${pin.name} has no ${file}`);
-    }
-    const tsc = path.join(dir, ...compilerPath(key).split("/"));
-    if (!fs.statSync(tsc, { throwIfNoEntry: false })?.isFile()) fail(`${pin.name} has no ${compilerPath(key)}`);
-    const hash = sha256(fs.readFileSync(tsc));
-    if (hash !== pin.tscSha256) fail(`${pin.name}'s ${compilerPath(key)} has the SHA-256 ${hash}, not the pinned ${pin.tscSha256}`);
-    if (!key.startsWith("win32-") && (fs.statSync(tsc).mode & 0o111) === 0) fail(`${pin.name}'s ${compilerPath(key)} is not executable`);
-    return tsc;
+    const failures = packageFailures(dir, pins, key, pin);
+    if (failures.length > 0) fail(`${pin.name}@${pins.version} is not as pinned:\n  ${failures.join("\n  ")}`);
+    return path.join(dir, ...compilerPath(key).split("/"));
 }
 
 /**
+ * Whether spawning failed because this OS cannot execute the file's format:
+ * ENOEXEC (Linux, an ELF of another architecture without emulation) or
+ * EBADARCH (macOS, "Bad CPU type" without Rosetta; libuv reports it as
+ * errno -86). Anything else, a crash included, is a compiler that does not
+ * work.
+ */
+const cannotExecute = (error) =>
+    error.code === "ENOEXEC" || error.code === "EBADARCH" || (process.platform === "darwin" && error.errno === -86);
+
+/**
  * Runs the staged `tsc --version` where this machine can: true if it ran
- * (and printed the pinned version), false if it cannot run here.
+ * (and printed the pinned version), false if this OS cannot run it (another
+ * OS, or an architecture it neither runs nor emulates). Fails if it starts
+ * and does not print the pinned version: an exit code, a signal, or other
+ * output.
  */
 function runCompiler(pins, key, tsc) {
     const [os] = key.split("-");
@@ -220,10 +224,9 @@ function runCompiler(pins, key, tsc) {
     try {
         version = execFileSync(tsc, ["--version"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
     } catch (error) {
-        // Another architecture of this OS that it cannot run (no Rosetta,
-        // no emulation): ENOEXEC, EBADARCH ("Bad CPU type") and the like.
-        if (key !== host && !error.status) return false;
-        fail(`${tsc} --version failed: ${error.message}`);
+        if (key !== host && cannotExecute(error)) return false;
+        const how = error.signal ? `was killed by ${error.signal}` : error.status !== null && error.status !== undefined ? `exited with ${error.status}` : `failed (${error.code ?? error.message})`;
+        fail(`${tsc} --version ${how}${error.stderr ? `: ${String(error.stderr).trim()}` : ""}`);
     }
     if (version !== `Version ${pins.version}`) fail(`${tsc} --version printed ${JSON.stringify(version)}`);
     return true;
@@ -328,10 +331,13 @@ async function pin(version) {
         const entries = untar(await download(tarball, metadata.dist.integrity));
         const tsc = entries.find((e) => e.path === compilerPath(key));
         if (!tsc) fail(`${name}@${version} has no ${compilerPath(key)}`);
-        packages[key] = { name, targets: old.targets, tarball, integrity: metadata.dist.integrity, tscSha256: sha256(tsc.data) };
+        packages[key] = { ...old, name, targets: old.targets, tarball, integrity: metadata.dist.integrity, tscSha256: sha256(tsc.data) };
         log(`${name}@${version}: ${metadata.dist.integrity}`);
     }
-    fs.writeFileSync(pinsFile, `${JSON.stringify({ $comment: pins.$comment, version, packages }, null, 4)}\n`);
+    // Every other key stays, in its place.
+    const updated = { ...pins, version, packages };
+    for (const [key, entry] of Object.entries(updated.packages)) checkPin(updated, key, entry);
+    fs.writeFileSync(pinsFile, `${JSON.stringify(updated, null, 4)}\n`);
     log(`wrote ${path.relative(repositoryRoot, pinsFile)}`);
 }
 
