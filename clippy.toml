@@ -1,15 +1,49 @@
-# Every hash map and set uses the seeded hasher of quicktype_js_compat::hash
-# (quickertype-core's support::fast_hash): their keys come from the input,
-# and in WebAssembly `std`'s RandomState has the same keys in every
-# instance, so crafted keys could make inference quadratic. That module is
-# the one place that names these types (with an `allow` and a comment).
+# Every IndexMap, IndexSet, HashMap and HashSet uses the seeded hasher of
+# quicktype_js_compat::hash (quickertype-core's support::fast_hash): their
+# keys come from the input, and in WebAssembly `std`'s RandomState has the
+# same keys in every instance, so crafted keys could make inference
+# quadratic. That module is the one place that names these types and
+# hashers (with an `allow` and a comment). Everything below is another way
+# to make a map, or a hasher that is unseeded or has a fixed seed.
 disallowed-types = [
     { path = "std::collections::HashMap", reason = "use quicktype_js_compat::hash::HashMap (core: support::fast_hash), which is seeded per instance in WebAssembly" },
     { path = "std::collections::HashSet", reason = "use quicktype_js_compat::hash::HashSet (core: support::fast_hash), which is seeded per instance in WebAssembly" },
     { path = "std::hash::RandomState", reason = "fixed in WebAssembly: use quicktype_js_compat::hash::SeededState" },
     { path = "std::hash::DefaultHasher", reason = "SipHash with fixed keys: use quicktype_js_compat::hash::SeededState" },
+    { path = "std::hash::SipHasher", reason = "SipHash with fixed keys: use quicktype_js_compat::hash::SeededState" },
+    { path = "std::hash::BuildHasherDefault", reason = "an unseeded hasher: use quicktype_js_compat::hash::SeededState" },
     { path = "indexmap::IndexMap", reason = "use quicktype_js_compat::hash::IndexMap (core: support::fast_hash), with the seeded hasher" },
     { path = "indexmap::IndexSet", reason = "use quicktype_js_compat::hash::IndexSet (core: support::fast_hash), with the seeded hasher" },
-    { path = "foldhash::fast::RandomState", reason = "use quicktype_js_compat::hash::SeededState, which is seeded per instance in WebAssembly" },
+    { path = "hashbrown::HashMap", reason = "use quicktype_js_compat::hash::HashMap (core: support::fast_hash), with the seeded hasher" },
+    { path = "hashbrown::HashSet", reason = "use quicktype_js_compat::hash::HashSet (core: support::fast_hash), with the seeded hasher" },
+    { path = "foldhash::HashMap", reason = "foldhash's own seed: use quicktype_js_compat::hash::HashMap" },
+    { path = "foldhash::HashSet", reason = "foldhash's own seed: use quicktype_js_compat::hash::HashSet" },
+    { path = "foldhash::HashMapExt", reason = "makes maps with foldhash's own seed: use quicktype_js_compat::hash" },
+    { path = "foldhash::HashSetExt", reason = "makes sets with foldhash's own seed: use quicktype_js_compat::hash" },
+    { path = "foldhash::SharedSeed", reason = "a seed chosen in code: use quicktype_js_compat::hash::SeededState" },
+    { path = "foldhash::fast::RandomState", reason = "foldhash's own seed: use quicktype_js_compat::hash::SeededState" },
+    { path = "foldhash::fast::SeedableRandomState", reason = "a seed chosen in code: use quicktype_js_compat::hash::SeededState" },
     { path = "foldhash::fast::FixedState", reason = "a fixed seed: use quicktype_js_compat::hash::SeededState" },
+    { path = "foldhash::fast::FoldHasher", reason = "a seed chosen in code: use quicktype_js_compat::hash::SeededState" },
+    { path = "foldhash::quality::RandomState", reason = "foldhash's own seed: use quicktype_js_compat::hash::SeededState" },
+    { path = "foldhash::quality::SeedableRandomState", reason = "a seed chosen in code: use quicktype_js_compat::hash::SeededState" },
+    { path = "foldhash::quality::FixedState", reason = "a fixed seed: use quicktype_js_compat::hash::SeededState" },
+    { path = "foldhash::quality::FoldHasher", reason = "a seed chosen in code: use quicktype_js_compat::hash::SeededState" },
+]
+
+# indexmap is built without `std` (Cargo.toml), and no crate in the tree
+# turns it on, so its `new` and `with_capacity` do not exist (hence
+# `allow-invalid`): serde_json's `preserve_order`, a dev-dependency of
+# quickertype-core, depends on indexmap without default features. If a
+# dependency ever turns `std` on, these make maps with `std`'s RandomState.
+disallowed-methods = [
+    { path = "indexmap::IndexMap::new", allow-invalid = true, reason = "std's RandomState: use quicktype_js_compat::hash::IndexMap::default()" },
+    { path = "indexmap::IndexMap::with_capacity", allow-invalid = true, reason = "std's RandomState: use quicktype_js_compat::hash::index_map_with_capacity" },
+    { path = "indexmap::IndexSet::new", allow-invalid = true, reason = "std's RandomState: use quicktype_js_compat::hash::IndexSet::default()" },
+    { path = "indexmap::IndexSet::with_capacity", allow-invalid = true, reason = "std's RandomState: use quicktype_js_compat::hash::IndexSet::with_capacity_and_hasher" },
+    { path = "std::collections::HashMap::new", reason = "std's RandomState: use quicktype_js_compat::hash::HashMap::default()" },
+    { path = "std::collections::HashMap::with_capacity", reason = "std's RandomState: use quicktype_js_compat::hash::HashMap::with_capacity_and_hasher" },
+    { path = "std::collections::HashSet::new", reason = "std's RandomState: use quicktype_js_compat::hash::HashSet::default()" },
+    { path = "std::collections::HashSet::with_capacity", reason = "std's RandomState: use quicktype_js_compat::hash::HashSet::with_capacity_and_hasher" },
+    { path = "std::hash::RandomState::new", reason = "fixed in WebAssembly: use quicktype_js_compat::hash::SeededState" },
 ]

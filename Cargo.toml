@@ -37,8 +37,12 @@ quickertype-js-compat = { path = "crates/quicktype-js-compat", version = "=0.2.0
 quickertype-typescript-input = { path = "crates/quicktype-typescript-input", version = "=0.2.0" }
 foldhash = "0.2"
 hashbrown = { version = "0.17", default-features = false }
-# Without `std`, so that no map can take `std`'s `RandomState` by default:
-# every map is `quicktype_js_compat::hash`'s, with the seeded hasher.
+# Without `std`: then indexmap's types have no `RandomState` default and no
+# `new()`, so every map is made with `quicktype_js_compat::hash`'s seeded
+# hasher. No crate in the tree turns `std` back on, tests included
+# (serde_json's `preserve_order` depends on indexmap without default
+# features; `cargo tree -i indexmap -e features`). Should one ever do,
+# clippy.toml's `disallowed-methods` rejects `new()` and `with_capacity()`.
 indexmap = { version = "2", default-features = false }
 mimalloc = { version = "0.1", default-features = false }
 regex = "1"

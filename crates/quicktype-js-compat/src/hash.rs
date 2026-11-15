@@ -19,10 +19,9 @@
 //! the same keys. clippy's `disallowed-types` and `disallowed-methods`
 //! (clippy.toml) reject `std`'s maps, its `RandomState` and
 //! `DefaultHasher`, indexmap's own types and their `RandomState`
-//! constructors, and foldhash's own states, everywhere but here. The builds
-//! that ship have indexmap without `std`, so its types have no
-//! `RandomState` default there at all; tests get `std` back through
-//! serde_json's `preserve_order`.
+//! constructors, and foldhash's own states, everywhere but here. indexmap
+//! is built without `std` (nothing in the tree turns it on, tests
+//! included), so its types have no `RandomState` default at all.
 //!
 //! Where the seed comes from:
 //!
