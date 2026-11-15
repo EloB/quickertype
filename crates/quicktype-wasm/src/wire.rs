@@ -87,7 +87,7 @@ pub enum InputRequest {
         /// The tallies.
         tallies: SharedTallies,
         /// How they were read.
-        reading: crate::parts::Reading,
+        reading: crate::samples::Reading,
         /// The top-level's name.
         name: String,
         /// Its description, if any.

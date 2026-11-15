@@ -127,15 +127,7 @@ pub fn json_create(
     min: Option<String>,
     max: Option<String>,
 ) -> std::result::Result<Option<f64>, JsValue> {
-    let recognizer = DateTimeKind::from_name(date_time)
-        .ok_or_else(|| JsValue::from_str("unknown date/time recognizer"))?
-        .recognizer()
-        .map_err(|e| JsValue::from_str(e.user_message()))?;
-    let range = match (min, max) {
-        (Some(min), Some(max)) => Some(IntegerRange::new(min, max)),
-        _ => None,
-    };
-    let cjson = CompressedJson::new(recognizer, handle_refs, range);
+    let cjson = Reading::new(date_time, handle_refs, min, max)?.config_for_js()?;
     let bytes = cjson.heap_size();
     let samples = Samples {
         cjson: Some(Rc::new(cjson)),
@@ -148,6 +140,54 @@ pub fn json_create(
         HELD.with(|held| held.set(held.get() + bytes));
     }
     Ok(id)
+}
+
+/// How a JavaScript `CompressedJSON` reads samples: its built-in date/time
+/// recognizer, whether `$ref`s are references, and its integer range
+/// (`None`: arbitrary precision). [`json_create`] and
+/// [`crate::parts::parts_create`] take it as these arguments; a run on
+/// tallies read in parts makes its configuration from it again.
+#[derive(Clone, Debug)]
+pub struct Reading {
+    pub date_time: DateTimeKind,
+    pub handle_refs: bool,
+    pub range: Option<(String, String)>,
+}
+
+impl Reading {
+    /// From the facade's arguments: `date_time` names a built-in recognizer
+    /// (as in the request), and the range is `null` unless both bounds are
+    /// given.
+    pub fn new(
+        date_time: &str,
+        handle_refs: bool,
+        min: Option<String>,
+        max: Option<String>,
+    ) -> std::result::Result<Self, JsValue> {
+        Ok(Reading {
+            date_time: DateTimeKind::from_name(date_time)
+                .ok_or_else(|| JsValue::from_str("unknown date/time recognizer"))?,
+            handle_refs,
+            range: min.zip(max),
+        })
+    }
+
+    /// A `CompressedJson` that reads as this says (and holds no samples).
+    pub fn config(&self) -> quicktype_core::Result<CompressedJson> {
+        Ok(CompressedJson::new(
+            self.date_time.recognizer()?,
+            self.handle_refs,
+            self.range
+                .as_ref()
+                .map(|(min, max)| IntegerRange::new(min.clone(), max.clone())),
+        ))
+    }
+
+    /// [`config`](Self::config), its error as the facade takes it.
+    pub fn config_for_js(&self) -> std::result::Result<CompressedJson, JsValue> {
+        self.config()
+            .map_err(|e| JsValue::from_str(e.user_message()))
+    }
 }
 
 /// `parseSync(text)` on compressed form `id`: the sample's root value as

@@ -28,39 +28,13 @@
 use std::cell::RefCell;
 
 use js_sys::{Float64Array, Object, Reflect};
-use quicktype_core::input::compressed_json::CompressedJson;
 use quicktype_core::input::parts::{
     self, NotRead, Part, PartTallies, Plan, Probe, RangeSummary, SharedTallies, SplitState,
 };
-use quicktype_core::support::integer_range::IntegerRange;
 use wasm_bindgen::prelude::*;
 
-use crate::samples::LIMITS;
+use crate::samples::{LIMITS, Reading};
 use crate::slots::Slots;
-use crate::wire::DateTimeKind;
-
-/// How a sample's parts are read: the configuration of the JavaScript
-/// `CompressedJSON` (`jsonCreate`'s arguments), from which each run makes
-/// its own.
-#[derive(Clone, Debug)]
-pub struct Reading {
-    pub date_time: DateTimeKind,
-    pub handle_refs: bool,
-    pub range: Option<(String, String)>,
-}
-
-impl Reading {
-    /// A `CompressedJson` that reads as this says (and holds no samples).
-    pub fn config(&self) -> quicktype_core::Result<CompressedJson> {
-        Ok(CompressedJson::new(
-            self.date_time.recognizer()?,
-            self.handle_refs,
-            self.range
-                .as_ref()
-                .map(|(min, max)| IntegerRange::new(min.clone(), max.clone())),
-        ))
-    }
-}
 
 /// Parts' tallies: being read, or read and kept for runs.
 enum Entry {
@@ -97,7 +71,6 @@ fn plan_of(numbers: &[f64]) -> Option<Plan> {
     let &[range, head, ranges, probe, threads, budget, len] = numbers else {
         return None;
     };
-    let whole = |x: f64| (x >= 0.0 && x.fract() == 0.0 && x <= 2f64.powi(53)).then_some(x as u64);
     let plan = Plan {
         range: whole(range)?,
         head: whole(head)?,
@@ -339,16 +312,8 @@ pub fn parts_create(
     min: Option<String>,
     max: Option<String>,
 ) -> std::result::Result<Option<f64>, JsValue> {
-    let date_time = DateTimeKind::from_name(date_time)
-        .ok_or_else(|| JsValue::from_str("unknown date/time recognizer"))?;
-    let reading = Reading {
-        date_time,
-        handle_refs,
-        range: min.zip(max),
-    };
-    let config = reading
-        .config()
-        .map_err(|e| JsValue::from_str(e.user_message()))?;
+    let reading = Reading::new(date_time, handle_refs, min, max)?;
+    let config = reading.config_for_js()?;
     let entry = Entry::Reading(Box::new(PartTallies::new(config, LIMITS)), reading);
     Ok(PARTS.with(|all| all.borrow_mut().insert(Some(entry))).ok())
 }
