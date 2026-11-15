@@ -380,8 +380,9 @@ part of the public API either. The input then holds the sample as
 go gives, but the engine keeps tallies of it rather than its compressed
 form; should anything read its `CompressedJSON`'s tables, they are filled
 by reading the sample again with TypeScript, so they are what TypeScript
-would have built (see the repository's docs/STREAMING-INFERENCE.md, "In
-the browser").
+would have built, or, if that fails, the input is left as it was and the
+error says the tables cannot be had (see the repository's
+docs/STREAMING-INFERENCE.md, "In the browser").
 
 **Why this cannot be told apart from TypeScript reading the samples:**
 

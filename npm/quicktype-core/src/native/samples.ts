@@ -53,7 +53,7 @@ import { engineFailed, engineStats } from "./bridge.js";
 import { dateTimeKind, hasOnlyBuiltinFields, isWellFormed } from "./encode.js";
 import { engineIfCompiled, engineMode, engineSync, isDiscarded } from "./engine.js";
 import { decodeUtf8, installSampleReader, isBytes, passDecoded, sampleText } from "./hook.js";
-import { eachJSONLinesValue } from "./lines.js";
+import { processLines } from "./lines.js";
 import type { Reading } from "./parts.js";
 import type { ExportedTables, WasmGlue } from "./wasm/glue.js";
 
@@ -761,14 +761,14 @@ function evict(current: NativeSamples[], held: number): void {
 export function materialize(cjson: any): void {
     const state = states.get(cjson);
     if (state === undefined) return;
-    states.delete(cjson);
-    recent.delete(state);
-    registry.unregister(state);
     if (state.tallies !== undefined) {
         materializeTallied(cjson, state, state.tallies);
         return;
     }
 
+    states.delete(cjson);
+    recent.delete(state);
+    registry.unregister(state);
     const { glue, texts, exported } = state;
     try {
         const tables = exported ?? (isDiscarded(glue) && texts !== undefined ? undefined : exportTables(state));
@@ -801,45 +801,61 @@ export function materialize(cjson: any): void {
 }
 
 /**
+ * The `CompressedJSON`s whose tables could not be had (`materializeTallied`):
+ * the playground's workers let go of such an input (`tablesFailed`).
+ */
+const unavailable = new WeakSet<object>();
+
+/**
+ * Not public (the playground's workers use it): whether `input`'s tables
+ * were asked for and could not be had (a sample read in parts that could
+ * not be read again). Its samples are still in the engine, for runs there.
+ */
+export function tablesFailed(input: any): boolean {
+    const cjson = input?._compressedJSON;
+    return cjson !== undefined && cjson !== null && unavailable.has(cjson);
+}
+
+/**
  * `materialize` for a sample read in parts: the tallies cannot be turned
  * into tables, so the sample is read again (`reread`) and TypeScript reads
- * it, as if it had read it when it was added. Without `reread`, or if
- * reading again fails, the tables cannot be had, and every use of them
- * throws.
+ * it into a `CompressedJSON` of its own, as it would have when the sample
+ * was added; only once that succeeded does `cjson` take those tables (and
+ * its tallies go). If it fails (no `reread`, reading again fails, the text
+ * is too long for one string), nothing changes: the tallies stay for runs
+ * on the engine, every use of the tables tries again, and this throws an
+ * error that says the tables cannot be had, whose `cause` is why.
  */
 function materializeTallied(cjson: any, state: NativeSamples, tallied: Tallied): void {
+    const { config } = state;
+    let read: any;
     try {
-        let sample: string | Uint8Array | undefined;
-        let failure: unknown;
-        try {
-            sample = tallied.reread?.();
-        } catch (e) {
-            failure = e;
+        if (tallied.reread === undefined) throw new Error("the sample was read in parts, and cannot be read again");
+        const sample = tallied.reread();
+        read = new CompressedJSONFromString(config.recognizer as any, !!config.handleRefs, config.range as any);
+        if (tallied.lines) {
+            processLines(read, sample);
+        } else {
+            read.process(JSON.parse(sampleText(sample) as string));
+            read.finish();
         }
-
-        if (sample === undefined) {
-            const lost =
-                failure ??
-                new Error("quicktype-core: the JSON samples of this input were read in parts, and its tables cannot be had");
-            for (const [name, descriptor] of state.fields) {
-                const fail = (): never => {
-                    throw lost;
-                };
-                Object.defineProperty(cjson, name, { configurable: true, enumerable: descriptor.enumerable, get: fail, set: fail });
-            }
-
-            throw lost;
-        }
-
-        for (const [name, descriptor] of state.fields) {
-            Object.defineProperty(cjson, name, descriptor);
-        }
-
-        replay(cjson, state.config, [{ text: sample, lines: tallied.lines }]);
-        engineStats.tablesFilled++;
-    } finally {
-        drop(state);
+    } catch (e) {
+        unavailable.add(cjson);
+        const error = new Error(`quicktype-core: the tables cannot be had for this input: ${String((e as any)?.message ?? e)}`);
+        (error as any).cause = e;
+        throw error;
     }
+
+    states.delete(cjson);
+    registry.unregister(state);
+    unavailable.delete(cjson);
+    for (const [name, descriptor] of state.fields) {
+        Object.defineProperty(cjson, name, descriptor);
+    }
+
+    for (const name of tableFields) cjson[name] = read[name];
+    engineStats.tablesFilled++;
+    drop(state);
 }
 
 /** The engine's tables of `state`, or `undefined` if they cannot be had. */
@@ -905,15 +921,12 @@ function replay(cjson: any, config: Config, texts: KeptSample[]): void {
         cjson.supportedIntegerRange = config.range;
         for (const { text, lines } of texts) {
             if (lines) {
-                // The array of its values (a kept sample is small).
-                const values: unknown[] = [];
-                eachJSONLinesValue(text, (value) => values.push(value));
-                cjson.process(values);
+                // Value by value, as the JSON Lines reader reads them (it finishes the sample).
+                processLines(cjson, text);
             } else {
                 cjson.process(JSON.parse(sampleText(text) as string));
+                cjson.finish();
             }
-
-            cjson.finish();
         }
     } finally {
         cjson.dateTimeRecognizer = current.dateTimeRecognizer;

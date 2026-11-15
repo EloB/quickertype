@@ -306,9 +306,10 @@ const hasOwn = (x: object, name: string): boolean => Object.prototype.hasOwnProp
 /**
  * `source` into `cjson`'s tables, value by value, as `process` of the array
  * of its values would put them (see the top); its root `Value`. Should a
- * line fail, the tables and the context are put back as they were.
+ * line fail, the tables and the context are put back as they were. (Also
+ * what samples.ts reads JSON Lines again with, for tables it fills.)
  */
-function processLines(cjson: any, source: JSONLinesSource): Value {
+export function processLines(cjson: any, source: JSONLinesSource): Value {
     // First use of the tables: those the engine read, if it did, are filled.
     const strings = cjson._strings.length;
     const objects = cjson._objects.length;

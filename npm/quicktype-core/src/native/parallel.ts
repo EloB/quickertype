@@ -33,9 +33,13 @@
 // Lines without one in their first MiB, a part too long, trees far larger
 // than their text), or a part does not read (it is not JSON there, the
 // engine declines one of its values, its bytes are not UTF-8), or a worker
-// fails: `readJSONInputInParts` resolves to `{ inOneGo: reason }`, and the
-// caller reads the sample in one go, which reports what it always reports,
-// errors and their messages included.
+// fails, or anything else goes wrong: `readJSONInputInParts` resolves (it
+// never rejects) to `{ inOneGo: reason, always }`, and the caller reads the
+// sample in one go, which reports what it always reports, errors and their
+// messages included. `always` says whether the reason is the sample's own
+// (the first ones, above), which a caller may remember for the sample, or
+// this reading's (a worker that failed, an input or engine that cannot),
+// which the next reading may not meet.
 //
 // A sample read in parts is the input's one sample, as `addSource` would
 // have added it (`addTalliedSample`, samples.ts), but what the engine keeps
@@ -81,6 +85,36 @@ export interface PartsOptions {
     range?: number;
 }
 
+/**
+ * Why a sample is to be read in one go after all, and whether that is so of
+ * the sample, whatever reads it and however often (`always`: it is not an
+ * array, has no split, is not JSON in a part, has trees far larger than its
+ * text), so that a caller may remember it for the sample; or only of this
+ * reading (the input, the engine, a worker, a limit of the moment), so that
+ * the next reading tries again.
+ */
+export interface InOneGo {
+    inOneGo: string;
+    always: boolean;
+}
+
+/** Of the sample: see `InOneGo`. */
+const always = (inOneGo: string): InOneGo => ({ inOneGo, always: true });
+
+/** Of this reading only: see `InOneGo`. */
+const forNow = (inOneGo: string): InOneGo => ({ inOneGo, always: false });
+
+/** What the engine's rules (`splitParts`, `splitDecide`) say of the sample itself. */
+const ofTheSample = new Set([
+    "no split",
+    "no line feed between values in the first MiB",
+    "a part too long to read beside others",
+    "trees far larger than their text",
+]);
+
+/** The engine's reason `why` for reading in one go, as an `InOneGo`. */
+const rule = (why: string): InOneGo => (ofTheSample.has(why) ? always(why) : forNow(why));
+
 /** How a sample was read in parts. */
 export interface ReadInParts {
     read: true;
@@ -97,19 +131,29 @@ const defaultMinLength = 8 << 20;
  * `jsonInputForTargetLanguage`), in parts on `workers` and this engine
  * instance (see the top): `{ read: true }` once `input` holds it, as
  * `input.addSource({ name, samples: [sample], description, jsonLines })`
- * would, or `{ inOneGo: reason }`, and `input` is as it was. Every worker is
- * `done` when it resolves.
+ * would, or `{ inOneGo: reason, always }` (see `InOneGo`), and `input` is as
+ * it was. It never rejects: whatever goes wrong (a worker that fails, an
+ * input that throws) is a reason to read in one go. Every worker is `done`
+ * when it resolves.
  */
 export async function readJSONInputInParts(
     input: any,
     source: PartsSource,
     workers: PartWorker[],
     options: PartsOptions = {},
-): Promise<ReadInParts | { inOneGo: string }> {
+): Promise<ReadInParts | InOneGo> {
     try {
         return await readInParts(input, source, workers, options);
+    } catch (e) {
+        return forNow(`reading in parts failed: ${String((e as any)?.message ?? e)}`);
     } finally {
-        for (const worker of workers) worker.done();
+        for (const worker of workers) {
+            try {
+                worker.done();
+            } catch {
+                // A worker that cannot be told has nothing more to do here.
+            }
+        }
     }
 }
 
@@ -118,41 +162,43 @@ async function readInParts(
     source: PartsSource,
     workers: PartWorker[],
     options: PartsOptions,
-): Promise<ReadInParts | { inOneGo: string }> {
+): Promise<ReadInParts | InOneGo> {
     const { lines, size } = source;
     const reading = freshReading(input);
-    if (reading === undefined) return { inOneGo: "not an input the engine reads in parts" };
+    if (reading === undefined) return forNow("not an input the engine reads in parts");
     const engine = await engineAsync();
-    if (engine === undefined) return { inOneGo: "no engine" };
+    if (engine === undefined) return forNow("no engine");
     // This instance's calls: should one trap, the instance is discarded (as
     // for any call of the facade), and the sample read in one go.
     const glue = onEngine(engine);
     let id: number | undefined;
     try {
         const plan = glue.splitPlan(size, workers.length, options.minLength ?? defaultMinLength, options.range ?? 0);
-        if (plan === undefined) return { inOneGo: "too small for parts" };
+        if (plan === undefined) return forNow("too small for parts");
         let first = 0;
         if (!lines) {
             const head = await source.read(0, Math.min(size, 1 << 16));
             first = glue.splitArrayStart(head);
-            if (first < 0) return { inOneGo: "not an array" };
+            if (first < 0) return always("not an array");
         }
 
-        // Each worker's ranges: blocks of consecutive ranges, as even as can be.
+        // Each worker's ranges: blocks of consecutive ranges, as even as can
+        // be. Each is given its own share (copies, not views: a view would
+        // post the whole buffer to every worker).
         const { starts, threads } = plan;
         const ranges = starts.length - 1;
         const used = workers.slice(0, threads);
         const block = (w: number): [number, number] => [Math.floor((w * ranges) / threads), Math.floor(((w + 1) * ranges) / threads)];
-        const summaries = await Promise.all(used.map((worker, w) => worker.summarize({ starts, first: block(w)[0], last: block(w)[1] })));
+        const summaries = await Promise.all(used.map((worker, w) => worker.summarize({ starts: starts.slice(block(w)[0], block(w)[1] + 1) })));
         const all = new Float64Array(15 * ranges);
         summaries.forEach((s, w) => all.set(s, 15 * block(w)[0]));
         const states = glue.splitResolve(all, lines);
-        if (states === undefined) return { inOneGo: "the summaries did not resolve" };
-        const found = await Promise.all(used.map((worker, w) => worker.split({ states: states.subarray(4 * block(w)[0], 4 * block(w)[1]), lines })));
+        if (states === undefined) return forNow("the summaries did not resolve");
+        const found = await Promise.all(used.map((worker, w) => worker.split({ states: states.slice(4 * block(w)[0], 4 * block(w)[1]), lines })));
         const splits = new Float64Array(ranges);
         found.forEach((s, w) => splits.set(s, block(w)[0]));
         const formed = glue.splitParts(plan.plan, first, splits, lines);
-        if (formed.parts === undefined) return { inOneGo: formed.inOneGo ?? "no parts" };
+        if (formed.parts === undefined) return rule(formed.inOneGo ?? "no parts");
         const parts = formed.parts;
         const count = parts.length / 3;
         const isLast = (i: number): boolean => parts[3 * i + 1] < 0;
@@ -160,14 +206,17 @@ async function readInParts(
 
         // The first parts, here, measured, until they hold `probe` bytes.
         id = glue.partsCreate(reading.dateTime, reading.handleRefs, reading.min, reading.max);
-        if (id === undefined) return { inOneGo: "as many tallies as the engine takes" };
+        if (id === undefined) return forNow("as many tallies as the engine takes");
         let probed = 0;
         const probe = { text: 0, trees: 0, smallest: 0 };
         while (probed < count && probe.text < plan.probe) {
             const from = parts[3 * probed];
             const bytes = await source.read(from, end(probed));
             const tree = glue.partsReadMeasured(id, bytes, lines, parts[3 * probed + 2] === 1, isLast(probed));
-            if (tree < 0) return { inOneGo: notRead[tree] ?? "a part did not read" };
+            if (tree < 0) {
+                const why = notRead(tree);
+                return { inOneGo: why.notRead, always: why.always };
+            }
             probe.text += end(probed) - from;
             probe.trees += tree;
             probe.smallest = probe.smallest === 0 ? tree : Math.min(probe.smallest, tree);
@@ -175,7 +224,7 @@ async function readInParts(
         }
 
         const why = glue.splitDecide(plan.plan, parts, probed, probe.text, probe.trees, probe.smallest);
-        if (why !== undefined) return { inOneGo: why };
+        if (why !== undefined) return rule(why);
 
         // The others, each by the worker whose ranges it starts in.
         const jobs = used.map((_, w) => {
@@ -189,7 +238,7 @@ async function readInParts(
             return mine;
         });
         const assigned = jobs.reduce((n, job) => n + job.length / 3, 0);
-        if (assigned !== count - probed) return { inOneGo: "a part no worker reads" };
+        if (assigned !== count - probed) return forNow("a part no worker reads");
         const tallied = await Promise.all(
             used.map((worker, w) =>
                 jobs[w].length === 0
@@ -199,21 +248,21 @@ async function readInParts(
         );
         for (const result of tallied) {
             if (result === undefined) continue;
-            if ("notRead" in result) return { inOneGo: result.notRead };
-            if (!glue.partsAppend(id, result.bytes)) return { inOneGo: "a worker's tallies could not be appended" };
+            if ("notRead" in result) return { inOneGo: result.notRead, always: result.always };
+            if (!glue.partsAppend(id, result.bytes)) return forNow("a worker's tallies could not be appended");
         }
 
         const rootIndex = glue.partsRootIndex(id);
-        if (rootIndex === undefined || !glue.partsFinish(id)) return { inOneGo: "no tallies" };
+        if (rootIndex === undefined || !glue.partsFinish(id)) return forNow("no tallies");
         if (!addTalliedSample(input, source.name, source.description, lines, engine, id, rootIndex, source.reread)) {
-            return { inOneGo: "the input changed, or its root does not fit" };
+            return forNow("the input changed, or its root does not fit");
         }
 
         id = undefined;
         return { read: true, workers: used.length, parts: count, probed };
     } catch (e) {
         // A worker that failed, a sample that changed, or this instance.
-        return { inOneGo: `${isDiscarded(engine) ? "the engine" : "a worker"} failed: ${String((e as any)?.message ?? e)}` };
+        return forNow(`${isDiscarded(engine) ? "the engine" : "a worker"} failed: ${String((e as any)?.message ?? e)}`);
     } finally {
         if (id !== undefined && !isDiscarded(engine)) {
             try {
