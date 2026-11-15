@@ -37,7 +37,7 @@ parallel; phases are ordered by dependency.
       cross-checked against quicktype's own output snapshot
 - [x] Parity runner with ratchet baseline (`cargo xtask parity`)
 - [x] Corpus self-check: 10,132/10,132 pass against the TypeScript CLI
-- [ ] Research notes per area (`docs/research/`)
+- [x] Research notes per area (`docs/research/`)
 
 ## Phase 1 — Leaf modules, data model, CLI (parallel) — ✅ done
 
@@ -85,7 +85,7 @@ Cross-cutting items each language package must pick up:
   TypeScript, Flow, JavaScript (L5) and JSON Schema; the trait default is
   `false`.
 
-## Cleanup backlog (cross-branch follow-ups) — ✅ done on `chore/cleanup-backlog`, two follow-ups left
+## Cleanup backlog (cross-branch follow-ups) — ✅ done on `chore/cleanup-backlog`; its two follow-ups are [parked](#parked)
 
 The branch also moved `acronymOption`/`convertersOption` into `support/`
 as in TypeScript, corrected module headers that named missing TS files,
@@ -114,14 +114,8 @@ and made GraphQL input's linear-time test independent of machine load.
       `crates/quicktype-core/tests/data/target_languages.json`
       (`xtask/core-rendering/record-target-languages.mjs`, which reproduces
       the committed file byte for byte).
-- [ ] `tests/json_input.rs` and `tests/json_input_vitest.rs` (quicktype-core)
-      keep their own `block_on`; `quicktype_core::internal::block_on` does
-      the same. Left to the branch that is changing JSON input.
-- [ ] The clippy lints that `rust-version = "1.88"` turns on
-      (`collapsible_if` with let chains, `manual_is_multiple_of`; about 50
-      places in 30 files) are allowed in `[workspace.lints.clippy]` until
-      the open branches have merged. Then fix them (`cargo clippy --fix`)
-      and remove the two `allow`s. From `feat/release-pipeline`.
+- Parked: the test files' own `block_on`, and the clippy lints that
+  `rust-version = "1.88"` turns on (see [Parked](#parked)).
 
 ## Phase 5 — Remaining inputs — ✅ done (GraphQL, Postman, URL sources, --graphql-introspect)
 
@@ -140,7 +134,7 @@ Schema enters the normal pipeline. Parity with the reference (which runs
 cases. Feasibility spike: `docs/research/07-typescript-input.md`.
 (TypeScript as an *output* language is just another renderer.)
 
-## Phase 6 — JavaScript API and distribution — ✅ JS API done; npm distribution of the native CLI pending
+## Phase 6 — JavaScript API and distribution — ✅ done
 
 - The JS API runs on WebAssembly in both Node.js and browsers, behind
   quicktype's own TypeScript API as a thin facade:
@@ -169,19 +163,15 @@ cases. Feasibility spike: `docs/research/07-typescript-input.md`.
 - [x] Differential API test suite against the reference npm package
       (including ports of quicktype's API-level Vitest tests), in CI
       against the package's own TypeScript engine
-- [ ] `quicktype-graphql-input` on the engine (after Phase 5's GraphQL input)
-- [ ] The engine parses plain JSON text itself (with `JSON.parse`
-      semantics) instead of receiving quicktype's TypeScript-built
-      `CompressedJSON` tables: in browsers the warm engine is only about
-      as fast as warm TypeScript today, because reading the input is still
-      TypeScript and the tables are converted at the boundary
-- [ ] The facade's fallback for `Object.prototype` enum option values can
-      go to the engine now (after a differential run)
-- [ ] Browser playground on GitHub Pages (`site/`)
-- [ ] Distribution: per-platform npm packages of the native CLI,
-      `cargo-dist` release archives and installers, and the TypeScript 7
-      compiler built from pinned source and shipped next to the binary
-      (`cargo xtask tsc`)
+- [x] The engine reads JSON text and bytes itself (with `JSON.parse`
+      semantics), instead of receiving quicktype's TypeScript-built
+      `CompressedJSON` tables
+- [x] Browser playground on GitHub Pages (`site/`)
+- [x] Distribution: the native CLI on npm (`quickertype`), dist's release
+      archives and installers, Homebrew, the MSI, and the TypeScript 7
+      compiler (Microsoft's pinned package) shipped next to the binary
+- Parked: GraphQL input and `Object.prototype` enum option values on the
+  engine, and a compiler of our own (see [Parked](#parked))
 
 ## Phase 7 — Performance — ✅ first round done
 
@@ -234,27 +224,114 @@ fields and strings instead of the file size.
       anything unexpected reads the rest in one go. The design and why it
       is exact: [STREAMING-INFERENCE.md](STREAMING-INFERENCE.md#reading-on-several-threads);
       1M records 4.5× faster on 12 cores
-      ([BENCHMARKS.md](BENCHMARKS.md#reading-on-several-threads)). The
-      WebAssembly engine still reads on one thread (workers in browsers
-      are not done).
+      ([BENCHMARKS.md](BENCHMARKS.md#reading-on-several-threads)).
+- [x] 8c — Workers in the browser (`perf/browser-workers`): the
+      playground reads a JSON array or JSON Lines file of 16 MiB or more
+      on up to eight Web Workers, by the same rules
+      ([BENCHMARKS.md](BENCHMARKS.md#reading-on-several-workers)). The npm
+      library still reads on one engine instance ([Parked](#parked)).
 
 ## Parked
 
-Possible improvements that are not planned yet.
+Ideas deliberately not done, each with why. This is the one list of them:
+the phases above have none left open.
+
+**Speed**
+
+- **SIMD in the JSON reader.** In WebAssembly, turning on simd128 gained
+  under 2% (below), and a hand-written SIMD string scan might save 3–5 ms
+  of the 100k records' 48 ms read. Natively, the string and structure
+  scans SIMD would speed up are at most 10–15% of the CPU work, and the
+  3 GB file, read on 12 threads, is bound by the disk. Either way it needs
+  `unsafe` code (intrinsics, or a 16-lane constructor), which the
+  workspace forbids (`unsafe_code = "deny"`); the reader scans 8 bytes at a
+  time in plain Rust instead.
+- **simd128 for the WebAssembly engine** (`-C target-feature=+simd128`).
+  Under 2% on every input measured (pokedex 2.20 → 2.20 ms, 20 MB 151–153
+  → 149–152 ms, the 100k records 55.5–56.1 → 55.1–55.3 ms), for a module
+  79 KB smaller, and it would raise the browsers the engine needs to
+  Safari 16.4 (from 15), Chrome 91 and Firefox 89
+  ([BENCHMARKS.md](BENCHMARKS.md#where-the-time-goes-in-the-browser-phase-by-phase)).
+- **Packing a compressed JSON value into 4 bytes.**
+  `input::compressed_json::Value` is a tag and a 32-bit index, 8 bytes;
+  with the tag in the index's top bits it would take 4, halving the
+  compressed form's object and array tables. `Value` is a public enum of
+  the Rust API, so this is a breaking change, and the CLI and the
+  playground's large files read into tallies, not the compressed form.
+- **TypeScript's `initTypeNames()` made lazy in the npm package.**
+  `Run.preRun()` seeds TypeScript's Mersenne Twister on every run, before
+  the run is handed to the engine: about 8% of a tiny run's time in a
+  profile of 20,000 of them. Making it lazy means changing
+  `attributes/TypeNames.ts`, an upstream file the package keeps verbatim
+  (the engine's own type names are already seeded lazily).
+- **TypeScript input's remaining engine phases.** At 10,000 interfaces
+  the engine's part is reading the schema (1.15 s), making optional
+  properties nullable (0.71 s) and resolving intersections (0.41 s). Each
+  is linear now (the quadratic steps were fixed;
+  [BENCHMARKS.md](BENCHMARKS.md#typescript-input)), the whole run is about
+  3× quicktype's speed, and these are ports of quicktype's passes whose
+  order decides the output.
+- **Linking the TypeScript compiler in-process** for TypeScript input. The
+  compiler is Go: linking it into the Rust binary needs cgo and a foreign
+  function interface (`unsafe` code, which the workspace forbids), a Go
+  toolchain in every build, and an API the compiler does not offer as a
+  library. The pipe is no longer what costs: the requests go out in 8 to
+  15 pipelined batches whatever the input's size, and what is left is the
+  compiler's own processing (2.0 s of the 10,000 typings' run).
+- **Reading in parts in the npm library.** Only the playground reads a
+  large file on several workers. quickertype-core's `src/native/parallel.ts`
+  is internal: a public API would need workers in Node.js and in every
+  bundler's browser build, which the playground provides itself
+  (`site/src/part-pool.js`, `part-worker.js`). The library reads a large
+  sample on one engine instance.
+
+**Distribution**
+
+- **A trimmed TypeScript compiler of our own.** The release archives
+  bundle Microsoft's unmodified `@typescript/typescript-<os>-<arch>`
+  package (about 7 MB per archive, 9.5 MB for the Windows zip). Building
+  our own, with only what `tsc --api` needs, would save about 2–3 MB per
+  download, at the cost of maintaining a compiler build for five targets
+  instead of checking a pinned hash
+  ([RELEASING.md](RELEASING.md)).
+- **The TypeScript compiler in the shell and PowerShell installers.**
+  They install only the archive's binaries, and dist (0.34) has no setting
+  to install more; Homebrew, npm, the MSI and the archives have it.
+  Without it, TypeScript input names the package to install.
+- **The npm package's GraphQL input on the engine.** Runs with
+  `quicktype-graphql-input` (npm) go to the TypeScript engine, which gives
+  quicktype's output; the CLI and the Rust API run GraphQL natively.
+- **Enum option values from `Object.prototype` on the engine.** An enum
+  renderer option whose value is a name only `Object.prototype` has
+  (`toString`, say) goes to the TypeScript engine, as quicktype reads it
+  with `in`; the engine does not model it.
+
+**Generated code**
 
 - **C (cJSON): reject enum values that are no case.** An enum's getter
   gives `0` for a value that is not one of its cases (quicktype's
   behavior, which the port keeps; it only stopped the getter from passing
   `NULL` to `strcmp`), so lists, maps and unions store that `0`, and a
   class property's `0 == cJSON_Get<E>Value(v)` check rejects a case whose
-  value is 0 (`qt-enum-values`). A first attempt (on
-  `fix/quicktype-bugs`, reverted in review) added a `cJSON_Is<E>Value`
-  check at every call site. Lessons for the next one: do it in the
-  getter (an out-parameter or a sentinel), not per call site; mind
-  nullable items (a `null` in a list of nullable enums is not an error),
-  union containers (lists and maps that are union members) and
+  value is 0 (`qt-enum-values`). A first attempt (on `fix/quicktype-bugs`, reverted in review) added a
+  `cJSON_Is<E>Value` check at every call site. Lessons for the next one:
+  do it in the getter (an out-parameter or a sentinel), not per call
+  site; mind nullable items (a `null` in a list of nullable enums is not
+  an error), union containers (lists and maps that are union members) and
   top-level lists of nullable enums; don't add rejection paths to maps,
   which leak the map when they reject an element; `cJSON_Is<Name>` is
   also how union check macros are named, so pick a name that cannot
   clash; and match each value against the cases once, not once to check
   and again to get it.
+
+**Cleanup** (from the cleanup backlog)
+
+- **`block_on` in two test files.** `tests/json_input.rs` and
+  `tests/json_input_vitest.rs` (quicktype-core) keep their own
+  `block_on`; `quicktype_core::internal::block_on` does the same. Left for
+  a branch that changes JSON input; the tests pass either way.
+- **The clippy lints `rust-version = "1.88"` turns on**
+  (`collapsible_if` with let chains, `manual_is_multiple_of`; about 50
+  places in 30 files), allowed in `[workspace.lints.clippy]`. Fixing them
+  (`cargo clippy --fix`, then removing the two `allow`s) changes no
+  behavior and conflicts with every open branch; do it when none is open.
