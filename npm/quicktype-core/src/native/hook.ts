@@ -1,14 +1,15 @@
 // The one place where upstream code outside Run.ts calls into the bridge:
 // `CompressedJSONFromString.parseSync` asks `readSampleNatively` before it
-// parses a sample itself, and parses what `sampleText` makes of it (and
-// so does src/native/lines.ts for a JSON Lines sample). The reader is
+// parses a sample itself, and parses what `sampleText` makes of it;
+// src/native/lines.ts asks it first for a JSON Lines sample. The reader is
 // installed by src/native/samples.ts when the bridge loads, so that
 // src/input/CompressedJSON.ts imports nothing that imports it back.
 
 /**
  * Reads a JSON sample into `cjson` on the WebAssembly engine (with
  * `lines`, a JSON Lines sample, as the array of its values), returning the
- * sample's `Value`, or `undefined` if TypeScript is to read it.
+ * sample's `Value`, or `undefined` if TypeScript is to read it; for JSON
+ * Lines, 0 if the engine found they are not JSON Lines (it read nothing).
  */
 export type SampleReader = (cjson: object, input: unknown, lines: boolean) => number | undefined;
 
@@ -65,21 +66,16 @@ export function passDecoded(bytes: Uint8Array | undefined, text?: string): void 
 }
 
 /**
- * The text the samples reader decoded `bytes` to (`passDecoded`), if it
- * did; taken, so that it is used once.
- */
-export function takeDecoded(bytes: Uint8Array): string | undefined {
-    const decoded = decodedByReader;
-    if (decoded === undefined || decoded.bytes !== bytes) return undefined;
-    decodedByReader = undefined;
-    return decoded.text;
-}
-
-/**
  * A JSON sample as `JSON.parse` takes it: the text of a `Uint8Array`
  * (`decodeUtf8`), and any other sample as it is.
  */
 export function sampleText(input: unknown): unknown {
     if (!isBytes(input)) return input;
-    return takeDecoded(input) ?? decodeUtf8(input);
+    const decoded = decodedByReader;
+    if (decoded !== undefined && decoded.bytes === input) {
+        decodedByReader = undefined;
+        return decoded.text;
+    }
+
+    return decodeUtf8(input);
 }

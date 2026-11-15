@@ -53,7 +53,7 @@ import { engineFailed, engineStats } from "./bridge.js";
 import { dateTimeKind, hasOnlyBuiltinFields, isWellFormed } from "./encode.js";
 import { engineIfCompiled, engineMode, engineSync, isDiscarded } from "./engine.js";
 import { decodeUtf8, installSampleReader, isBytes, passDecoded, sampleText } from "./hook.js";
-import { jsonLinesValues } from "./lines.js";
+import { eachJSONLinesValue } from "./lines.js";
 import type { ExportedTables, WasmGlue } from "./wasm/glue.js";
 
 // biome-ignore-all lint/suspicious/noExplicitAny: the samples reader reads private fields of the facade's objects
@@ -752,7 +752,15 @@ function replay(cjson: any, config: Config, texts: KeptSample[]): void {
         cjson.handleRefs = config.handleRefs;
         cjson.supportedIntegerRange = config.range;
         for (const { text, lines } of texts) {
-            cjson.process(lines ? jsonLinesValues(text) : JSON.parse(sampleText(text) as string));
+            if (lines) {
+                // The array of its values (a kept sample is small).
+                const values: unknown[] = [];
+                eachJSONLinesValue(text, (value) => values.push(value));
+                cjson.process(values);
+            } else {
+                cjson.process(JSON.parse(sampleText(text) as string));
+            }
+
             cjson.finish();
         }
     } finally {
@@ -924,6 +932,9 @@ function readSample(cjson: any, sample: unknown, lines: boolean): number | undef
     }
 
     let read = readOnEngine(state, text, lines);
+    // JSON Lines that are not UTF-8: read by src/native/lines.ts, which
+    // decodes the bytes of each value by itself (nothing was read here).
+    if (read?.value === notUtf8 && lines) return undefined;
     if (read?.value === notUtf8) {
         // What the decoder replaces is read as it replaces it. Decoded here,
         // outside the engine's calls: what the decoder throws (a text
@@ -933,8 +944,7 @@ function readSample(cjson: any, sample: unknown, lines: boolean): number | undef
         text = decodeUtf8(text as Uint8Array);
         read = readOnEngine(state, text, lines);
         if (read === undefined || read.value <= 0) {
-            // `parseSync` (or the JSON Lines reader) then parses this
-            // text, without decoding it again.
+            // `parseSync` then parses this text, without decoding it again.
             const result = read === undefined || read.value !== 0 ? declined(cjson) : undefined;
             passDecoded(sample as Uint8Array, text);
             return result;
@@ -969,10 +979,11 @@ function readSample(cjson: any, sample: unknown, lines: boolean): number | undef
     }
 
     // Not JSON (0): `JSON.parse` throws V8's error, before the tables are
-    // touched (not JSON Lines: the JSON Lines reader throws the error of
-    // the line, src/native/lines.ts). Declined (-1): TypeScript reads it,
-    // and every sample after.
-    return value === 0 ? undefined : declined(cjson);
+    // touched (not JSON Lines: 0, and the JSON Lines reader throws the
+    // error of the line, src/native/lines.ts). Declined (-1): TypeScript
+    // reads it, and every sample after.
+    if (value === 0) return lines ? 0 : undefined;
+    return declined(cjson);
 }
 
 installSampleReader(readSample);

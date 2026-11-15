@@ -23,6 +23,8 @@ const nativeSamples = require(path.join(packageRoot, "dist", "native", "samples.
 const { CompressedJSON, CompressedJSONFromString } = require(path.join(packageRoot, "dist", "input", "CompressedJSON.js"));
 const { DefaultDateTimeRecognizer } = require(path.join(packageRoot, "dist", "DateTime.js"));
 
+const { scanJSONLines } = require(path.join(packageRoot, "dist", "native", "lines.js"));
+
 const engineKey = Symbol.for("quicktype-core.engine");
 
 // Samples are read on the engine once it is compiled; here it is from the start.
@@ -208,6 +210,94 @@ test("JSON Lines as bytes and as strings, a Uint8Array or a Buffer", async () =>
     assert.deepEqual({ result: await run(input, "rust"), inside: inside(input) }, expected);
 });
 
+// Bytes are never decoded whole for JSON Lines, on either engine: those
+// that are not UTF-8 too (the engine leaves them to the JSON Lines reader,
+// which decodes each value by itself), so a sample too large to be one
+// string reads the same on both. A decoder that fails on a value (one too
+// long to be a string) is that error, not a syntax error. The limit of a
+// string is faked here: the decoder throws what V8's does past it.
+test("JSON Lines bytes that are not UTF-8, or too large for one string, read alike on both engines", async () => {
+    const decode = TextDecoder.prototype.decode;
+    const lines = [];
+    for (let i = 0; i < 20_000; i++) lines.push(JSON.stringify({ id: i, name: `n${i % 50}`, tags: ["a", "b"].slice(i % 3) }));
+    // A stray byte that is not UTF-8, in a string.
+    const bytes = utf8(`${lines.join("\n")}\n{"id": 1, "name": "x~y"}\n`);
+    bytes[bytes.lastIndexOf(0x7e)] = 0xff;
+    let whole = 0;
+    TextDecoder.prototype.decode = function (input, ...rest) {
+        // Past the longest string: as V8, for anything as long as the sample.
+        if (input !== undefined && input.length >= bytes.length) {
+            whole++;
+            throw new RangeError("Invalid string length");
+        }
+        if (input !== undefined && Buffer.from(input.buffer, input.byteOffset, input.length).includes("TOO LONG")) {
+            throw new RangeError("Invalid string length");
+        }
+        return decode.call(this, input, ...rest);
+    };
+    try {
+        const outcomes = {};
+        for (const mode of [undefined, "ts"]) {
+            outcomes[mode ?? "wasm"] = await inMode(mode, async () => {
+                const input = await inputOf("go", [{ name: "Cards", samples: [bytes], jsonLines: true }]);
+                return { result: await run(input, "go"), inside: inside(input) };
+            });
+        }
+        assert.equal(whole, 0, "the sample was decoded whole");
+        assert.deepEqual(outcomes.wasm, outcomes.ts);
+        assert.ok(outcomes.ts.inside.strings.includes("x\u{fffd}y"));
+
+        // A value that the decoder cannot make a string of (with a stray
+        // byte, so that the engine leaves the sample to the JSON Lines reader).
+        const tooLong = utf8('{"a": 1}\n{"b": "TOO LONG ~"}\n');
+        tooLong[tooLong.lastIndexOf(0x7e)] = 0xff;
+        for (const mode of [undefined, "ts"]) {
+            const failed = await inMode(mode, () =>
+                outcome(() => qt.jsonInputForTargetLanguage("go").addSource({ name: "Cards", samples: [tooLong], jsonLines: true })),
+            );
+            assert.deepEqual(failed.error, {
+                class: "QuickTypeError",
+                message: "Syntax error in input JSON Cards: line 2: the value is too long to be one JavaScript string (19 bytes): Invalid string length",
+                messageName: "MiscJSONParseError",
+                properties: { description: "input", address: "Cards", message: "line 2: the value is too long to be one JavaScript string (19 bytes): Invalid string length" },
+            }, mode ?? "the engine");
+        }
+    } finally {
+        TextDecoder.prototype.decode = decode;
+    }
+
+    // Without the fake, the text the decoder gives, read as JSON Lines.
+    const expected = await inMode("ts", async () => {
+        const input = await inputOf("go", [{ name: "Cards", samples: [new TextDecoder().decode(bytes)], jsonLines: true }]);
+        return { result: await run(input, "go"), inside: inside(input) };
+    });
+    const actual = await inputOf("go", [{ name: "Cards", samples: [bytes], jsonLines: true }]);
+    assert.deepEqual({ result: await run(actual, "go"), inside: inside(actual) }, expected);
+});
+
+// The scanner is written twice, for strings and for bytes: the two find
+// the same values, on the same lines, in text that is JSON Lines and in
+// text that is not (the playground's quicktype side takes the ranges too).
+test("the scanner finds the same values in a string and in its bytes", () => {
+    let seed = 12345;
+    const random = (n) => (seed = (seed * 1103515245 + 12345) % 2147483648) % n;
+    const pieces = ["{", "}", "[", "]", '"', "\\", ",", ":", " ", "\t", "\r", "\n", "\n", "a", "1", "-2.5e3", "true", "null", "é", "😀", "\u{feff}", '"x"', '{"k": [1, "v"]}'];
+    const texts = [lines, array, ...invalid.map(([text]) => text), "", "\u{feff}", "\u{feff}\u{feff}1\n2", '"a\\"b"\n"c"'];
+    for (let i = 0; i < 2000; i++) texts.push(Array.from({ length: random(40) }, () => pieces[random(pieces.length)]).join(""));
+    const ranges = (source, text) => {
+        const found = [];
+        scanJSONLines(source, (start, end, ownLine) => found.push([text(start, end), ownLine]));
+        return found;
+    };
+    for (const text of texts) {
+        const bytes = utf8(text);
+        // The bytes are the text the decoder gives (without its byte order mark).
+        const decoded = new TextDecoder().decode(bytes);
+        const inBytes = ranges(bytes, (start, end) => new TextDecoder("utf-8", { ignoreBOM: true }).decode(bytes.subarray(start, end)));
+        assert.deepEqual(inBytes, ranges(decoded, (start, end) => decoded.slice(start, end)), JSON.stringify(text));
+    }
+});
+
 test("a byte order mark, CRLF, blank lines, values over several lines, no values", async () => {
     const pretty = records.map((r) => JSON.stringify(JSON.parse(r), undefined, 2)).join("\n");
     const same = {
@@ -258,22 +348,26 @@ test("a byte order mark, CRLF, blank lines, values over several lines, no values
 
 /** JSON Lines that are not, the line named in their error, and the error's message after `line N: `. */
 const invalid = [
-    ['{"a": 1}\n{"a": 2} {"a": 3}\n', 2, "Unexpected non-whitespace character after JSON at position 9"],
+    // A second value on a line: no position, as in the CLI's error.
+    ['{"a": 1}\n{"a": 2} {"a": 3}\n', 2, "Unexpected non-whitespace character after JSON"],
+    ['{\n  "a": 1\n} {}', 3, "Unexpected non-whitespace character after JSON"],
     ['{"a": 1}\n\n{"a": }\n', 3, `Unexpected token '}', "{"a": }" is not valid JSON`],
     ["[1,\n", 1, "Unexpected end of JSON input"],
     ['{"a": 1}\r\n{"a":\r\n', 2, "Unexpected end of JSON input"],
-    ["1\r2\n", 1, "Unexpected non-whitespace character after JSON at position 2"],
-    ["1\n2\n3 4\n5\n", 3, "Unexpected non-whitespace character after JSON at position 2"],
+    ["1\r2\n", 1, "Unexpected non-whitespace character after JSON"],
+    ["1\n2\n3 4\n5\n", 3, "Unexpected non-whitespace character after JSON"],
     ['\u{feff}{}\n{]\n', 2, "Expected property name or '}' in JSON at position 1"],
     // A byte order mark only once (as bytes, the decoder's and then the text's).
     ['\u{feff}\u{feff}\u{feff}{}\n', 1, /^Unexpected token/],
     ['{"a": 1}\n{\n  "b": [1,\n  2,,\n]}\n', 2, /^Unexpected token ','/],
     ['{"a": "x}\n{"b": 1}\n', 1, "Bad control character in string literal in JSON at position 9"],
-    ['{"a": 1}\n{"a": 2}x\n', 2, "Unexpected non-whitespace character after JSON at position 8"],
+    ['{"a": 1}\n{"a": 2}x\n', 2, "Unexpected non-whitespace character after JSON"],
+    // But one token that is not JSON is JSON.parse's error for it.
+    ["1\n2x\n", 2, "Unexpected non-whitespace character after JSON at position 1"],
     ["{}\n]\n", 2, /^Unexpected token '\]'/],
     ["true\nTrue\n", 2, /^Unexpected token 'T'/],
     ["1\n01\n", 2, /^Unexpected number in JSON at position 1|^Unexpected token/],
-    ["{}{}\n", 1, "Unexpected non-whitespace character after JSON at position 2"],
+    ["{}{}\n", 1, "Unexpected non-whitespace character after JSON"],
     ["x".repeat(100), 1, /^Unexpected token 'x'/],
 ];
 
@@ -421,25 +515,120 @@ test("JSON Lines read by an instance that failed are read again by TypeScript", 
     }
 });
 
-test("JSON Lines are read by a CompressedJSONFromString only", async () => {
-    // A subclass: read by TypeScript, with its own methods.
-    class Mine extends CompressedJSONFromString {}
+test("JSON Lines are read by a CompressedJSONFromString whose parse and parseSync are its own", async () => {
+    // A subclass: read by TypeScript, with its own methods, which JSON
+    // Lines go through: process once per value, inside the array's context.
+    const calls = [];
+    class Mine extends CompressedJSONFromString {
+        process(json) {
+            if (this._contextStack.length === 0) calls.push(json);
+            return super.process(json);
+        }
+    }
     const mine = new qt.JSONInput(new Mine(new DefaultDateTimeRecognizer(), false));
     await mine.addSource({ name: "Cards", samples: [lines], jsonLines: true });
+    assert.deepEqual(calls, records.map((r) => JSON.parse(r)));
+    calls.length = 0;
     const theirs = new qt.JSONInput(new Mine(new DefaultDateTimeRecognizer(), false));
     await theirs.addSource({ name: "Cards", samples: [array] });
     assert.deepEqual(await run(mine, "typescript"), await run(theirs, "typescript"));
     assert.deepEqual(inside(mine), inside(theirs));
 
-    // Any other CompressedJSON cannot read them.
+    // One whose parse or parseSync is overridden (by a subclass or on the
+    // instance), which JSON Lines do not go through, and any other
+    // CompressedJSON, cannot read them: addSource and addSourceSync throw
+    // an Error that says so, not quicktype's "Syntax error" around what a
+    // sample's text is, and before reading any sample.
+    class Parsed extends CompressedJSONFromString {
+        parseSync(input) {
+            return super.parseSync(input);
+        }
+    }
     class Other extends CompressedJSON {
         async parse() {
             return this.parseSync();
         }
     }
-    const other = new qt.JSONInput(new Other(new DefaultDateTimeRecognizer(), false));
-    const failed = await outcome(() => other.addSource({ name: "Cards", samples: [lines], jsonLines: true }));
-    assert.match(failed.error.message, /^Syntax error in input JSON Cards: quickertype-core: JSON Lines samples are read by a CompressedJSONFromString only$/);
+    const replaced = new CompressedJSONFromString(new DefaultDateTimeRecognizer(), false);
+    replaced.parse = async (input) => replaced.parseSync(input);
+    for (const cjson of [new Parsed(new DefaultDateTimeRecognizer(), false), new Other(new DefaultDateTimeRecognizer(), false), replaced]) {
+        for (const sync of [false, true]) {
+            const input = new qt.JSONInput(cjson);
+            const add = { name: "Cards", samples: [lines, "not read"], jsonLines: true };
+            const failed = await outcome(async () => (sync ? input.addSourceSync(add) : input.addSource(add)));
+            assert.deepEqual(failed.error, {
+                class: "Error",
+                message:
+                    "quickertype-core: JSON Lines samples (jsonLines: true) are read by a CompressedJSONFromString whose parse and parseSync are not overridden; this input's CompressedJSON is not one",
+                messageName: undefined,
+                properties: undefined,
+            }, `${cjson.constructor.name} ${sync}`);
+            assert.deepEqual(input._topLevels.size, 0);
+        }
+    }
+
+    // Their JSON samples are read as before.
+    const parsed = new qt.JSONInput(new Parsed(new DefaultDateTimeRecognizer(), false));
+    await parsed.addSource({ name: "Cards", samples: [array] });
+    assert.deepEqual(await run(parsed, "typescript"), await run(theirs, "typescript"));
+});
+
+// A line that fails leaves the tables as they were before the sample (what
+// the values before it added goes), and the values are handed to process
+// one by one as they are parsed, never all held at once.
+test("JSON Lines read value by value, and a failed sample leaves the tables as they were", async () => {
+    const good = '{"a": [1, {"b": "x"}]}\n{"c": "2020-01-01"}';
+    const bad = '{"new": ["strings", {"deep": "here"}]}\n{"more": 1}\n{"bad": }\n';
+    const after = '{"d": [true]}\n{"d": []}';
+    // Without the failed sample.
+    const reference = (withAfter) =>
+        inMode("ts", async () => {
+            const input = qt.jsonInputForTargetLanguage("typescript");
+            await input.addSource({ name: "Good", samples: [good], jsonLines: true });
+            if (withAfter) await input.addSource({ name: "After", samples: [after], jsonLines: true });
+            return { result: await run(input, "typescript"), inside: inside(input) };
+        });
+    const [expectedBefore, expectedAfter] = [await reference(false), await reference(true)];
+    // TypeScript reads the bad sample (and rolls back), the engine finds
+    // it is not JSON Lines (and TypeScript only looks for its line), or
+    // TypeScript reads it after the engine's tables were filled.
+    for (const [mode, fill] of [["ts", false], [undefined, false], [undefined, true]]) {
+        const what = `${mode ?? "the engine"}${fill ? ", the tables filled first" : ""}`;
+        const before = { ...engineStats };
+        const input = await inMode(mode, async () => {
+            const input = qt.jsonInputForTargetLanguage("typescript");
+            await input.addSource({ name: "Good", samples: [good], jsonLines: true });
+            if (fill) void input._compressedJSON._strings;
+            const failed = await outcome(() => input.addSource({ name: "Bad", samples: [bad], jsonLines: true }));
+            assert.equal(failed.error?.message, `Syntax error in input JSON Bad: line 3: Unexpected token '}', "{"bad": }" is not valid JSON`, what);
+            return input;
+        });
+        if (mode === undefined && !fill) assert.equal(engineStats.tablesFilled, before.tablesFilled, `${what}: the tables were not filled`);
+        assert.deepEqual({ result: await run(input, "typescript"), inside: inside(input) }, expectedBefore, what);
+        await inMode(mode, () => input.addSource({ name: "After", samples: [after], jsonLines: true }));
+        assert.deepEqual({ result: await run(input, "typescript"), inside: inside(input) }, expectedAfter, what);
+    }
+
+    // Parsed and processed in turn: JSON.parse of the second value comes
+    // after the first was processed.
+    const events = [];
+    class Watched extends CompressedJSONFromString {
+        process(json) {
+            if (this._contextStack.length === 0) events.push("process");
+            return super.process(json);
+        }
+    }
+    const parse = JSON.parse;
+    JSON.parse = (text, ...rest) => {
+        events.push("parse");
+        return parse(text, ...rest);
+    };
+    try {
+        new qt.JSONInput(new Watched(new DefaultDateTimeRecognizer(), false)).addSourceSync({ name: "T", samples: ["1\n[2]\n{}"], jsonLines: true });
+    } finally {
+        JSON.parse = parse;
+    }
+    assert.deepEqual(events, ["parse", "process", "parse", "process", "parse", "process"]);
 });
 
 test("addSource settles after as many ticks on both engines", async () => {
@@ -494,6 +683,6 @@ test("large JSON Lines through bytes", { timeout: 300_000 }, async () => {
         assert.equal(failed.error?.message, `Syntax error in input JSON Cards: line ${count + 1}: Expected double-quoted property name in JSON at position 18`);
         const middle = Buffer.from(`${linesText.split("\n").slice(0, 1000).join("\n")}\n{"x": 1} {"y": 2}\n${linesText}`);
         const failedMiddle = await outcome(() => qt.jsonInputForTargetLanguage("typescript").addSource({ name: "Cards", samples: [middle], jsonLines: true }));
-        assert.equal(failedMiddle.error?.message, "Syntax error in input JSON Cards: line 1001: Unexpected non-whitespace character after JSON at position 9");
+        assert.equal(failedMiddle.error?.message, "Syntax error in input JSON Cards: line 1001: Unexpected non-whitespace character after JSON");
     }
 });

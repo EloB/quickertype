@@ -11,7 +11,7 @@ import { descriptionTypeAttributeKind } from "../attributes/Description.js";
 import { makeNamesTypeAttributes } from "../attributes/TypeNames.js";
 import { languageNamed } from "../language/All.js";
 import { messageError } from "../Messages.js";
-import { parseJSONLines, parseJSONLinesSync } from "../native/lines.js";
+import { jsonLinesReader } from "../native/lines.js";
 import type { RunContext } from "../Run.js";
 import { defined, errorMessage, panic } from "../support/Support.js";
 import type { TargetLanguage } from "../TargetLanguage.js";
@@ -131,13 +131,15 @@ export class JSONInput<T> implements Input<JSONSourceData<T>> {
             return messageError("DriverNoSamplesForTopLevel", { name });
         }
 
+        const lines =
+            jsonLines === true ? jsonLinesReader(this._compressedJSON) : undefined;
         try {
             const values = await arrayMapSync(
                 samples,
                 async (s) =>
-                    await (jsonLines === true
-                        ? parseJSONLines(this._compressedJSON, s)
-                        : this._compressedJSON.parse(s)),
+                    await (lines === undefined
+                        ? this._compressedJSON.parse(s)
+                        : lines.parse(s)),
             );
             this.addSamples(name, values, description);
         } catch (e) {
@@ -151,11 +153,13 @@ export class JSONInput<T> implements Input<JSONSourceData<T>> {
             return messageError("DriverNoSamplesForTopLevel", { name });
         }
 
+        const lines =
+            jsonLines === true ? jsonLinesReader(this._compressedJSON) : undefined;
         try {
             const values = samples.map((s) =>
-                jsonLines === true
-                    ? parseJSONLinesSync(this._compressedJSON, s)
-                    : this._compressedJSON.parseSync(s),
+                lines === undefined
+                    ? this._compressedJSON.parseSync(s)
+                    : lines.parseSync(s),
             );
             this.addSamples(name, values, description);
         } catch (e) {

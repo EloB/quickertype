@@ -93,15 +93,27 @@ const { lines } = await quicktype({ inputData, lang: "typescript" });
   for that value, whose positions count from the value's start (V8's
   `(line L column C)` is left out): `Syntax error in input JSON Cards:
   line 3: Expected ',' or '}' after property value in JSON at position
-  9`. The CLI names the same line; its message after it is quicktype's
-  CLI's, which reads files with another parser.
+  9`. A second value on a line is `line N: Unexpected non-whitespace
+  character after JSON`, without a position, as the CLI's error has none.
+  The CLI names the same lines; its messages after them are quicktype's
+  CLI's, which reads files with another parser. A sample that fails adds
+  nothing to the input: the tables are as before it.
 - The engine reads JSON Lines as fast as the same values as an array, and
-  bytes as they are. On the TypeScript engine, each value is decoded and
-  parsed by itself, so bytes too large to be one string can be read
-  there too.
-- Only a `CompressedJSONFromString` (what `jsonInputForTargetLanguage`
-  makes, or a subclass of it) reads JSON Lines; with another
-  `CompressedJSON`, `addSource` fails.
+  bytes as they are. Where it does not read them (the TypeScript engine,
+  bytes that are not UTF-8, see below), each value is decoded and parsed
+  by itself and handed to the input as soon as it is parsed, so that
+  neither the text of a large sample nor all its values are ever held at
+  once, and bytes too large to be one string can be read too. A value
+  too long to be one string is that error (`line N: the value is too long
+  to be one JavaScript string …`), not a syntax error.
+- JSON Lines are read by a `CompressedJSONFromString` (what
+  `jsonInputForTargetLanguage` makes, or a subclass of it) whose `parse`
+  and `parseSync` are its own: JSON Lines do not go through them, but
+  through `pushArrayContext`, `process` (once per value), `finishArray`
+  and `finish`, which a subclass may override. With any other
+  `CompressedJSON`, or a subclass that overrides `parse` or `parseSync`,
+  `addSource` throws a plain `Error` that says so, before reading any
+  sample (not quicktype's "Syntax error" about a sample's text).
 
 `require("quickertype-core")` works too. The package matches `quicktype-core`
 24.0.0 at quicktype commit
@@ -235,16 +247,21 @@ which fills them.
 reads the text with `CompressedJson::read_string_lines_sample` into the
 same compressed form, as the array of its values, exactly as the JSON text
 of that array would be read, and returns the array's root `Value`.
-Everything here holds for it as for a JSON sample. What the engine does
-not read, the JSON Lines reader reads: it finds where each value ends
-(after its closing bracket or quote, or at the whitespace after a number
-or a literal), parses the value with `JSON.parse` (the bytes of each value
-decoded by themselves, which gives the text decoding them all would), and
-hands the array of the values to `process`, as `parseSync` hands it the
-value of `JSON.parse`. A sample that is not JSON Lines is not read by the
-engine (it reports so, without changing anything); the JSON Lines reader
-then throws the error of its line, so the error is the same on both
-engines.
+Everything here holds for it as for a JSON sample, but for bytes that are
+not UTF-8, which the engine leaves to the JSON Lines reader (nothing is
+decoded whole). What the engine does not read, the JSON Lines reader
+reads: `scanJSONLines` finds where each value ends (after its closing
+bracket or quote, or at the whitespace after a number or a literal; one
+scanner for strings and one for bytes, each specialized), and each value
+is parsed with `JSON.parse` (the bytes of each decoded by themselves,
+which gives the text decoding them all would) and handed to `process` as
+soon as it is parsed, inside one array context (`pushArrayContext`, then
+`finishArray` and `finish`: what `process` of the array does). Should a
+line fail, what the values before it added to the tables and the context
+is taken back. A sample that is not JSON Lines is not read by the engine
+(it reports so, without changing anything); the JSON Lines reader then
+only looks for the bad line, without touching the tables, and throws its
+error, so the error is the same on both engines.
 
 **When the engine reads samples.** Only once it is compiled: in browsers
 the module compiles in the background from the start, and samples added

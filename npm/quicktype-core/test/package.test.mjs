@@ -175,6 +175,14 @@ const jsonLinesField =
     "    jsonLines?: boolean;\n";
 
 /**
+ * The reader of a source's JSON Lines samples, before `addSource`'s
+ * `try`: what cannot read them throws outside quicktype's "Syntax error".
+ */
+const readerOfLines =
+    "        const lines =\n" +
+    "            jsonLines === true ? jsonLinesReader(this._compressedJSON) : undefined;\n";
+
+/**
  * What src/ changes in two upstream files besides Run.ts, as [ours,
  * upstream] pairs: the hook of the JSON samples reader, samples given as
  * bytes (README, "JSON samples as bytes"), typed and decoded, and JSON
@@ -196,21 +204,23 @@ const modifiedParts = {
         ["public parseSync(input: string | Uint8Array): Value {", "public parseSync(input: string): Value {"],
     ],
     "input/Inputs.ts": [
-        ['import { parseJSONLines, parseJSONLinesSync } from "../native/lines.js";\n', ""],
+        ['import { jsonLinesReader } from "../native/lines.js";\n', ""],
         [jsonLinesField, ""],
         ["const { name, samples, description, jsonLines } = source;", "const { name, samples, description } = source;"],
+        [readerOfLines, ""],
         [
             "                async (s) =>\n" +
-                "                    await (jsonLines === true\n" +
-                "                        ? parseJSONLines(this._compressedJSON, s)\n" +
-                "                        : this._compressedJSON.parse(s)),\n",
+                "                    await (lines === undefined\n" +
+                "                        ? this._compressedJSON.parse(s)\n" +
+                "                        : lines.parse(s)),\n",
             "                async (s) => await this._compressedJSON.parse(s),\n",
         ],
         ["const { name, samples, description, jsonLines } = source;", "const { name, samples, description } = source;"],
+        [readerOfLines, ""],
         [
-            "                jsonLines === true\n" +
-                "                    ? parseJSONLinesSync(this._compressedJSON, s)\n" +
-                "                    : this._compressedJSON.parseSync(s),\n",
+            "                lines === undefined\n" +
+                "                    ? this._compressedJSON.parseSync(s)\n" +
+                "                    : lines.parseSync(s),\n",
             "                this._compressedJSON.parseSync(s),\n",
         ],
         ["): JSONInput<string | Uint8Array> {", "): JSONInput<string> {"],
