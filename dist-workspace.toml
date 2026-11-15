@@ -47,7 +47,7 @@ github-custom-job-permissions = { "check-release" = { contents = "read" }, "publ
 # six targets and the MSI take about 13 minutes. For a full release build
 # without releasing, a branch can set "upload" and run `dist generate`
 # (docs/RELEASING.md, "Dry runs").
-pr-run-mode = "plan"
+pr-run-mode = "upload"
 # Build with `cargo build --package quickertype` instead of `--workspace`:
 # the same build as `cargo build --release -p quickertype` (no WASM
 # bindings or xtask, no features unified from other members)
