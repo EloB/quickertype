@@ -28,6 +28,7 @@ bug cjson-map-parsed-twice (link pending)
 bug cjson-pattern-regcomp (link pending)
 bug cjson-top-level-map-values (link pending)
 bug cjson-top-level-null-marker (link pending)
+bug ruby-union-forward-declaration (link pending)
 
 # Golden cases (tests/golden).
 cjson-default/json/priority/nbl-stats.json/b2d393358b cjson-enum-getter-strcmp cjson-map-parsed-twice
@@ -157,12 +158,18 @@ schema-cjson/schema/pattern.schema/a6e72d9b15 cjson-pattern-regcomp
 schema-cjson/schema/renaming-bug.schema/82d2a673ea cjson-enum-getter-strcmp cjson-pattern-regcomp
 schema-cjson/schema/unicode-codepoint-length.schema/3f5184cf89 cjson-pattern-regcomp
 schema-cjson/schema/vega-lite.schema/9a2eed59ba cjson-enum-getter-strcmp cjson-map-parsed-twice
+schema-ruby/schema/mutually-recursive.schema/8da8cae144 ruby-union-forward-declaration
+schema-ruby/schema/recursive-union-flattening.schema/639f372e69 ruby-union-forward-declaration
+schema-ruby/schema/rust-cycle-breaker-union.schema/7c289d1279 ruby-union-forward-declaration
+schema-ruby/schema/union-list.schema/0be2993f84 ruby-union-forward-declaration
+schema-ruby/schema/vega-lite.schema/c7ed6bc3b1 ruby-union-forward-declaration
 
 # Render scenarios (crates/quicktype-core/tests/fixtures/core-rendering/
 # scenarios): render_scenarios.rs reads <id>.<render>.<file>.intended.
 render-scenarios/cjson-enum-values cjson-enum-getter-strcmp
 render-scenarios/cjson-shapes cjson-enum-getter-strcmp cjson-map-parsed-twice cjson-pattern-regcomp
 render-scenarios/cjson-top-levels cjson-enum-getter-strcmp cjson-top-level-map-values cjson-top-level-null-marker
+render-scenarios/ruby-shapes ruby-union-forward-declaration
 render-scenarios/vitest-cjson-enum-default cjson-enum-getter-strcmp
 
 # npm differential suite scenarios (npm/quicktype-core/test/differential) that
@@ -291,3 +298,8 @@ npm/inputs/cjson/schema/renaming-bug.schema cjson-enum-getter-strcmp cjson-patte
 npm/inputs/cjson/schema/top-level-enum.schema cjson-enum-getter-strcmp
 npm/inputs/cjson/schema/unicode-codepoint-length.schema cjson-pattern-regcomp
 npm/inputs/cjson/schema/vega-lite.schema cjson-enum-getter-strcmp cjson-map-parsed-twice
+npm/inputs/ruby/schema/mutually-recursive.schema ruby-union-forward-declaration
+npm/inputs/ruby/schema/recursive-union-flattening.schema ruby-union-forward-declaration
+npm/inputs/ruby/schema/rust-cycle-breaker-union.schema ruby-union-forward-declaration
+npm/inputs/ruby/schema/union-list.schema ruby-union-forward-declaration
+npm/inputs/ruby/schema/vega-lite.schema ruby-union-forward-declaration

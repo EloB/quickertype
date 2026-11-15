@@ -1,0 +1,75 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -23,6 +23,37 @@
+ # (forward declaration)
+ class Node < Dry::Struct; end
+ 
++# (forward declaration)
++class Next < Dry::Struct; end
++
++class Node < Dry::Struct
++  attribute :node_next, Types.Instance(Next).optional
++  attribute :value,     Types::String
++
++  def self.from_dynamic!(d)
++    d = Types::Hash[d]
++    new(
++      node_next: d["next"] ? Next.from_dynamic!(d["next"]) : nil,
++      value:     d.fetch("value"),
++    )
++  end
++
++  def self.from_json!(json)
++    from_dynamic!(JSON.parse(json))
++  end
++
++  def to_dynamic
++    {
++      "next"  => node_next&.to_dynamic,
++      "value" => value,
++    }
++  end
++
++  def to_json(options = nil)
++    JSON.generate(to_dynamic, options)
++  end
++end
++
+ class Next < Dry::Struct
+   attribute :node,   Node.optional
+   attribute :null,   Types::Nil.optional
+@@ -64,34 +95,6 @@
+   end
+ end
+ 
+-class Node < Dry::Struct
+-  attribute :node_next, Types.Instance(Next).optional
+-  attribute :value,     Types::String
+-
+-  def self.from_dynamic!(d)
+-    d = Types::Hash[d]
+-    new(
+-      node_next: d["next"] ? Next.from_dynamic!(d["next"]) : nil,
+-      value:     d.fetch("value"),
+-    )
+-  end
+-
+-  def self.from_json!(json)
+-    from_dynamic!(JSON.parse(json))
+-  end
+-
+-  def to_dynamic
+-    {
+-      "next"  => node_next&.to_dynamic,
+-      "value" => value,
+-    }
+-  end
+-
+-  def to_json(options = nil)
+-    JSON.generate(to_dynamic, options)
+-  end
+-end
+-
+ class TopLevel < Dry::Struct
+   attribute :top_level_next, Types.Instance(Next).optional
+   attribute :value,          Types::String

@@ -1,0 +1,69 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -22,6 +22,34 @@
+ # (forward declaration)
+ class UnionListClass < Dry::Struct; end
+ 
++# (forward declaration)
++class UnionList < Dry::Struct; end
++
++class UnionListClass < Dry::Struct
++  attribute :union_list_next, Types.Instance(UnionList)
++
++  def self.from_dynamic!(d)
++    d = Types::Hash[d]
++    new(
++      union_list_next: UnionList.from_dynamic!(d.fetch("next")),
++    )
++  end
++
++  def self.from_json!(json)
++    from_dynamic!(JSON.parse(json))
++  end
++
++  def to_dynamic
++    {
++      "next" => union_list_next.to_dynamic,
++    }
++  end
++
++  def to_json(options = nil)
++    JSON.generate(to_dynamic, options)
++  end
++end
++
+ class UnionList < Dry::Struct
+   attribute :double,           Types::Double.optional
+   attribute :union_list_class, UnionListClass.optional
+@@ -57,31 +85,6 @@
+   end
+ end
+ 
+-class UnionListClass < Dry::Struct
+-  attribute :union_list_next, Types.Instance(UnionList)
+-
+-  def self.from_dynamic!(d)
+-    d = Types::Hash[d]
+-    new(
+-      union_list_next: UnionList.from_dynamic!(d.fetch("next")),
+-    )
+-  end
+-
+-  def self.from_json!(json)
+-    from_dynamic!(JSON.parse(json))
+-  end
+-
+-  def to_dynamic
+-    {
+-      "next" => union_list_next.to_dynamic,
+-    }
+-  end
+-
+-  def to_json(options = nil)
+-    JSON.generate(to_dynamic, options)
+-  end
+-end
+-
+ class TopLevel < Dry::Struct
+   attribute :list, Types.Instance(UnionList)
+ 

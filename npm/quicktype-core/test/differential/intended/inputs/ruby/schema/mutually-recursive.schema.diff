@@ -1,0 +1,12 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -19,6 +19,9 @@
+ end
+ 
+ # (forward declaration)
++class Foo < Dry::Struct; end
++
++# (forward declaration)
+ class Bar < Dry::Struct; end
+ 
+ # (forward declaration)

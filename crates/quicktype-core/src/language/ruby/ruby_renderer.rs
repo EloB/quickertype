@@ -941,8 +941,15 @@ impl<'a> ConvenienceRenderer<'a> for RubyRenderer<'a> {
         true
     }
 
+    /// Classes, and the unions emitted as classes (`emit_union`), which
+    /// quicktype leaves out (a fix of ours, docs/PARITY.md, "Bugs fixed in
+    /// quickertype"): a class can refer to a union class declared after it.
     fn can_be_forward_declared(&self, t: TypeRef) -> Result<bool> {
-        Ok(self.type_graph().kind(t)? == TypeKind::Class)
+        Ok(match self.type_graph().kind(t)? {
+            TypeKind::Class => true,
+            TypeKind::Union => self.union_needs_name(t)?,
+            _ => false,
+        })
     }
 
     fn forbidden_names_for_global_namespace(&mut self) -> Result<Vec<String>> {

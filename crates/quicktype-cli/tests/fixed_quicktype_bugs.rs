@@ -372,3 +372,72 @@ fn cjson_maps_of_classes_parse_each_value_once() {
     assert_eq!(run_cjson(&dir, &sample.to_string()), Some(sample));
     assert_eq!(run_cjson(&dir, r#"{"m": {"a": {"n": "x"}}}"#), None);
 }
+
+// ---- Ruby ---------------------------------------------------------------
+
+/// tests/inputs, quicktype's test inputs.
+fn inputs() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/inputs")
+}
+
+/// `ruby` with `args`, through `bundle exec` when `BUNDLE_GEMFILE` is set.
+fn ruby(args: &[&str], dir: &Path) -> Command {
+    let mut command = if std::env::var_os("BUNDLE_GEMFILE").is_some() {
+        let mut c = Command::new("bundle");
+        c.args(["exec", "ruby"]);
+        c
+    } else {
+        Command::new("ruby")
+    };
+    command.args(args).current_dir(dir);
+    command
+}
+
+/// recursive-union-flattening.schema: class `X` names the union class
+/// `XElement` before it is defined, and quicktype forward-declares only
+/// classes, so loading the file fails with `NameError`.
+#[test]
+fn ruby_union_classes_are_forward_declared() {
+    const TEST: &str = "ruby-union-forward-declaration";
+    let dir = work_dir(TEST);
+    let has_gems = ruby(&["-e", "require 'dry-types'; require 'dry-struct'"], &dir)
+        .output()
+        .is_ok_and(|o| o.status.success());
+    if !has_gems {
+        skipped(TEST, "no ruby with the dry-types and dry-struct gems");
+        return;
+    }
+    let schema = inputs().join("schema/recursive-union-flattening.schema");
+    generate(
+        &dir,
+        &[
+            "--src-lang",
+            "schema",
+            "--lang",
+            "ruby",
+            "--top-level",
+            "TopLevel",
+            "--src",
+            schema.to_str().unwrap(),
+            "--out",
+            "top_level.rb",
+        ],
+    );
+    let sample = inputs().join("schema/recursive-union-flattening.1.json");
+    let output = ruby(
+        &[
+            "-e",
+            "require './top_level.rb'; puts TopLevel.from_json!(File.read(ARGV[0])).to_json",
+            sample.to_str().unwrap(),
+        ],
+        &dir,
+    )
+    .output()
+    .unwrap();
+    assert!(output.status.success(), "{}", text(&output));
+    let expected: Value = serde_json::from_str(&fs::read_to_string(&sample).unwrap()).unwrap();
+    assert_eq!(
+        serde_json::from_slice::<Value>(&output.stdout).unwrap(),
+        expected
+    );
+}
