@@ -90,6 +90,35 @@ section are absolute.
   about 9.5 MB).
 - The MSI installs quickertype's `LICENSE` and `NOTICE` in
   `C:\Program Files\quickertype`.
+- **The playground reads large files on several workers:** a JSON array
+  or JSON Lines file of 16 MiB or more is read in parts by up to eight
+  Web Workers at once, each with an engine instance of its own, by the
+  rules of the CLI's reader on several threads, and the parts' tallies
+  are appended in order in quickertype's worker. The output is what
+  reading the file in one go gives, byte for byte; where the parts do not
+  read (the file is broken, the engine declines a value, bytes that are
+  not UTF-8) or the CLI would read in one go, the file is read in one go,
+  with its errors. In headless Chrome on 8 workers, warm, reading and
+  running: the 100k records (27 MB) in 19 ms instead of 43, 100 MB of
+  cards in 116 ms instead of 412, and Scryfall cards (real data, 656 MB)
+  in 0.57 s instead of 2.8 s, the engine's WebAssembly memory 45 MiB
+  instead of 1.7 GiB, with 280 MiB in the part workers
+  ([BENCHMARKS.md](https://github.com/EloB/quickertype/blob/main/docs/BENCHMARKS.md#reading-on-several-workers)). quickertype
+  now opens files of up to 2 GiB in the playground: JSON past the longest
+  string a browser holds (512 MiB) when it reads in parts, JSON Lines in
+  any case; quicktype, and broken JSON that large, still say the file is
+  too large for the browser. The status under a file read so says
+  "reading it on N workers".
+- **Reading in parts in quickertype-core (internal, not public API):**
+  `src/native/parallel.ts` reads one sample of a fresh JSON input in parts
+  on several engine instances (bindings in `crates/quicktype-wasm`'s
+  `parts.rs`, the rules in quickertype-core's `input/parts.rs`); the input
+  then holds the sample as `addSource` would add it, its runs use the
+  tallies, and should anything read the `CompressedJSON`'s tables, they are
+  filled by reading the sample again with TypeScript. In Rust,
+  `JsonInput::from_tallies` and the portable trees' bytes
+  (`PortableTree::to_bytes`/`from_bytes`); the CLI's parallel reader
+  shares its plan and split helpers.
 
 ### Changed
 

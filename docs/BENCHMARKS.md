@@ -1848,23 +1848,11 @@ process, under a load spike: 6.2 s (read 3,192, run 3,040).
 - The engine's phases at 1.2–1.8× native, which is what WebAssembly
   costs.
 
-**Reading on several workers** (the parallel-read branch's approach in
-the browser, not built). On the 100k records, reading (record + commit,
-38 ms of the 48) would split across workers, each reading its part of
-the bytes into tallies. Natively the branch reads them 3× faster on 12
-threads (31 → 10 ms) and 2.3× on 4. In the browser each worker needs its
-own engine instance: about 1 ms to instantiate from the shared module,
-and a first run of some 30 ms while V8 compiles what it uses, paid once
-per worker. Each worker also needs its part of the bytes (a transfer, or
-a `SharedArrayBuffer` in a cross-origin isolated page), and the tallies
-have to be merged. With 4 workers, the records' run would take about
-20–25 ms instead of 48. On the 656 MB cards, the branch's CLI takes 1.0 s
-on 12 threads against 5 s on one. Reading into tallies directly, without
-the compressed form and its walk, would also keep each worker's memory
-small, against 2.5 GiB in one instance now. But the JavaScript API must
-still be able to give the `CompressedJSON`'s tables, which tallies alone
-cannot. A browser run at about 1.5× native would then take 1.5–2 s
-instead of 6.4 s.
+**Reading on several workers**, the parallel-read branch's approach in
+the browser, was estimated here at 1.5–2 s for the 656 MB cards against
+6.4 s. It is built now: the 656 MB cards read and run in 0.57 s in the
+playground, warm, and the engine holds 45 MiB instead of 1.7 GiB; see
+[Reading on several workers](#reading-on-several-workers), below.
 
 To reproduce:
 
@@ -2765,6 +2753,127 @@ take 8 bytes and the form about 68 MiB instead of 90 at 100 MB, but the
 public `get_object_for_value` and `get_array_for_value` return slices of
 values, which would have to become iterators. The URIs' text must stay:
 the JavaScript tables hold it.
+
+### Reading on several workers
+
+The playground reads a JSON array or JSON Lines file of 16 MiB or more in
+parts, on up to eight Web Workers at once, each with an engine instance
+of its own, by the rules of the CLI's reader on several threads
+([STREAMING-INFERENCE.md](STREAMING-INFERENCE.md#in-the-browser) has the
+design and why it is exact; [SITE.md](SITE.md#large-files-in-the-playground)
+the playground's side):
+
+- **Where the split happens.** The plan is the CLI's (`input/parts.rs`,
+  ranges of 4 MiB). Each part worker reads its block of consecutive
+  ranges from the File (`file.slice`; no `SharedArrayBuffer` on GitHub
+  Pages) and summarizes them; quickertype's worker resolves the states
+  from all the summaries; each part worker finds its ranges' first splits
+  (the engine's own split search, `json_split.rs`, exported as
+  `splitSummarize`, `splitResolve`, `splitFind`); quickertype's worker
+  forms the parts, reads the first 64 KiB of them itself to measure their
+  trees, and decides as the CLI does.
+- **What crosses workers.** Numbers (15 a range's summary, 4 its state,
+  1 its split, 3 a part), and at the end each part worker's tallies of
+  the parts that start in its ranges, as bytes (`PortableTree::to_bytes`,
+  keys and cases by text: each instance has a hash seed of its own),
+  transferred. quickertype's worker appends them in order
+  (`Tallies::import`, `Tallies::merge`).
+- **Where the merge happens.** In quickertype's worker, on the engine
+  instance its runs use, which keeps the tallies for every run on the
+  file: a language or option that reads samples the same way does not
+  read it again.
+- **The API.** Not public: quickertype-core's internal
+  `src/native/parallel.ts` (`readJSONInputInParts`) and the bindings of
+  `crates/quicktype-wasm/src/parts.rs`. The JSON input then holds the
+  sample as `addSource` would have added it, with the root value
+  TypeScript gives it, but the engine keeps tallies, not the compressed
+  form. quicktype's API is kept: should anything read the
+  `CompressedJSON`'s tables (a run that goes to the TypeScript engine),
+  they are filled by reading the sample again (`FileReaderSync` in the
+  playground) with TypeScript, as `addSource` would have filled them.
+- **Errors.** Where the parts do not read (the file is broken, the
+  engine declines a value, bytes are not UTF-8), the whole file is read
+  in one go: its errors are reading in one go's, V8's message for JSON and
+  the line for JSON Lines.
+
+**Time and memory.** Headless Chrome 157 on the M2 Max (12 cores),
+`node site/test/parts-bench.mjs`: each input opened in a fresh page (its
+file chooser), read and run to TypeScript with the page's defaults, on
+quickertype's worker in one go (as main reads every file, through bytes)
+and in parts on 8 part workers (the default here). "First" is the
+request's whole time as the page sees it, starting the part workers and
+reading the file included; "warm" the median of 5 runs that each read the
+file again, after one; "memory" the WebAssembly memory of quickertype's
+engine and of the part workers' together, which never shrinks, so it is
+the most each held. Load average 6 to 11; the output's SHA-256 is the same
+for both ways and for main's build:
+
+| Input | In one go: first, warm | In parts: first, warm | Warm × | Memory: in one go | In parts: engine + part workers |
+|---|---:|---:|---:|---:|---:|
+| 100k records (rulings, 26.8 MB) | 72 ms, 43 ms | 45 ms, 19 ms | 2.3× | 72 MiB | 32 + 171 MiB |
+| generated cards, 101 MB | 582 ms, 412 ms | 153 ms, 116 ms | 3.6× | 280 MiB | 32 + 245 MiB |
+| generated cards, 453 MB | 2,546 ms, 2,155 ms | 426 ms, 376 ms | 5.7× | 1,367 MiB | 41 + 359 MiB |
+| Scryfall cards (real data), 656 MB | 3,449 ms, 2,832 ms | 762 ms, 566 ms | 5.0× | 1,710 MiB | 45 + 280 MiB |
+| Scryfall cards (real data), JSON Lines, 656 MB | 3,360 ms, 2,839 ms | 785 ms, 526 ms | 5.4× | 1,710 MiB | 45 + 261 MiB |
+
+Main's build (`73361a510`, before this change), the same pages, in one
+go: the records 69 ms first and 44 ms warm, 101 MB 520 and 432 ms, 453 MB
+2,716 and 2,129 ms; its playground does not open the 656 MB files (past
+the longest string, 512 MiB), which quickertype now opens. The engine of
+quickertype's worker holds the tallies alone: 32 to 45 MiB, against the
+compressed form's 1.7 GiB. A part worker's instance starts at 17 MiB, 16
+of them the stack the module reserves for runs nested deep
+(`-zstack-size`, mostly never touched), and grows by about a part's
+text, its reader's tape and the tallies of its ranges: 21 to 45 MiB each.
+Besides its WebAssembly memory, each part worker holds its block of the
+file's bytes in JavaScript while it reads (an eighth of the file each),
+as quickertype's worker held the whole file to read it in one go. The
+first run of a part worker compiles nothing (the module is the one
+quickertype's worker compiled); starting eight takes about 20 ms, paid on
+the first large file and again after a minute without one.
+
+**From what size.** The same records cut to 2–32 MB, in one go and in
+parts with the threshold lifted (8 workers, at most as many as get four
+ranges each; load average 13 to 24), first and warm, ms:
+
+| Size | In one go | In parts |
+|---|---:|---:|
+| 2 MB | 9, 4 | 23, 4 (3 workers) |
+| 4 MB | 16, 8 | 26, 6 (4 workers) |
+| 8 MB | 22, 13 | 29, 8 |
+| 16 MB | 42, 26 | 38, 13 |
+| 32 MB | 78, 51 | 45, 22 |
+
+Warm, the parts pay from 4 MB on; a file's first read, which starts the
+part workers, from about 16 MB. So files of 16 MiB or more are read in
+parts.
+
+**How many workers.** Warm medians of 5 (load average 13 to 14), ms:
+
+| Part workers | 2 | 4 | 6 | 8 | 12 |
+|---|---:|---:|---:|---:|---:|
+| generated cards, 101 MB | 225 | 158 | 127 | 117 | 111 |
+| Scryfall cards (real data), 656 MB | 1,246 | 757 | 574 | 536 | 496 |
+| WebAssembly memory, 656 MB (engine + part workers) | 122 MiB | 198 MiB | 301 MiB | 325 MiB | 466 MiB |
+
+Past 8 (the machine has 8 performance cores and 4 efficiency cores),
+more workers save 5–8% for 40% more memory: at most 8 read, or as many as
+the machine runs at once if that is fewer. Natively the CLI reads the
+656 MB JSON Lines on 12 threads in 293 ms ([JSON Lines on several
+threads](#json-lines-on-several-threads)); the browser takes 1.8–1.9
+times that.
+
+To reproduce (after `node site/build.mjs`; the generated inputs are
+`generateRulings` and `generateCards` of
+`npm/quicktype-core/test/bench/generate.mjs`):
+
+```sh
+node site/test/parts-bench.mjs --generate <dir>
+node site/test/parts-bench.mjs --rounds 5 <dir>/rulings-100k.json <dir>/cards-100mb.json <dir>/cards-450mb.json
+node site/test/parts-bench.mjs --modes parts --workers 4 <files>       # a number of part workers
+node site/test/parts-bench.mjs --modes parts --parts-from 0 <files>    # every file in parts
+node site/test/parts-bench.mjs --baseline --modes one --site <main's site/dist> <files>
+```
 
 ## Reproducing
 
