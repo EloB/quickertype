@@ -51,11 +51,13 @@
 // input kind picked) are quickertype's, not quicktype's: the WebAssembly
 // worker reads them as quickertype-core does, `addSource({ jsonLines:
 // true })`, the array of their values; the TypeScript worker, which is
-// quicktype, gets that array as JSON (json-lines.js, made from the bytes
-// of a file, then decoded once), so that the outputs compare. Making the
-// array is part of reading the input, not of the timed runs.
+// quicktype, gets that array as JSON (json-lines.js), so that the outputs
+// compare. A file's array is made in the buffer its bytes are read into,
+// and decoded once: the worker holds the bytes and the text, never a copy
+// of either. Making the array is part of reading the input, not of the
+// timed runs.
 
-import { jsonLinesToArray } from "./json-lines.js";
+import { jsonLinesToArray, jsonLinesToArrayInPlace, readForArray } from "./json-lines.js";
 import { maxTextBytes, tooLarge, unreadable } from "./input-file.js";
 import { boot } from "./worker-boot.js";
 
@@ -212,7 +214,9 @@ async function inputSample({ kind, text, file }) {
     settleLastRead(undefined, undefined, false);
     let read;
     try {
-        read = form === "text" ? await file.text() : new Uint8Array(await file.arrayBuffer());
+        if (form === "text") read = await file.text();
+        else if (form === "bytes") read = new Uint8Array(await file.arrayBuffer());
+        else read = await readForArray(file);
     } catch (e) {
         throw unreadable(file.name, e);
     }
@@ -220,9 +224,13 @@ async function inputSample({ kind, text, file }) {
     // Browsers have been seen to read what they cannot hold as "".
     if (read.length === 0 && file.size > 0) throw unreadable(file.name, new Error(`the browser returned no ${form === "text" ? "text" : "bytes"}`));
     if (form === "array") {
-        // The array, from the bytes; then its text, which is what quicktype's API takes.
-        const array = jsonLinesToArray(read);
-        if (array.length > maxTextBytes) throw tooLarge(file.name, array.length);
+        // The array, in the bytes' buffer; then its text, which is what
+        // quicktype's API takes. The text is decoded from the array, at most
+        // two bytes longer than the file.
+        const length = jsonLinesToArrayInPlace(read);
+        if (length > maxTextBytes) throw tooLarge(file.name, file.size, length);
+        const array = read.subarray(0, length);
+        read = undefined;
         read = new TextDecoder().decode(array);
     }
 

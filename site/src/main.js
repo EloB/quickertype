@@ -26,8 +26,7 @@ import { EngineClient, Lane, engineKinds } from "./engine-client.js";
 import { hashKeys, hashVersion } from "./hash.js";
 import { highlight } from "./highlight.js";
 import { escapeHtml } from "./html.js";
-import { formatBytes, tooLarge, unreadable } from "./input-file.js";
-import { isJsonLinesName } from "./json-lines.js";
+import { formatBytes, isJsonLinesName, tooLarge, unreadable } from "./input-file.js";
 import { openAtLoad, panelKey, roomBesideQuery } from "./panel.js";
 
 const languages = __LANGUAGES__;

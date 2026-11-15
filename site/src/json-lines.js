@@ -1,95 +1,110 @@
 // JSON Lines for quicktype, which has none: the worker of quicktype's own
 // engine runs a JSON Lines input as the JSON array of its values, which is
 // what quickertype reads JSON Lines as (`addSource({ jsonLines: true })`),
-// so that the two engines' outputs can be compared byte for byte.
+// so that the two engines' outputs can be compared byte for byte. Where the
+// values are is quickertype-core's own scan (`scanJSONLines`, not public),
+// so that the rules of JSON Lines (line breaks, a byte order mark, values
+// over several lines) are those quickertype reads them by: the array is the
+// values' text, joined by commas, in brackets.
+//
+// Text that is not JSON Lines, which quickertype rejects, gives an array
+// that is not JSON either, so that quicktype fails on it too. A value that
+// is not JSON stays as it is, which no array makes JSON again, but for two
+// cases the array would turn into elements: a second value on a line (`"a"
+// ,1`) and a number or literal with a comma in it (`1,2`). There the
+// array's first character for that value is `#`, which JSON has nowhere.
 
-/** Whether a file is JSON Lines by its name, as for the CLI: `*.jsonl` or `*.ndjson`, in any case. */
-export const isJsonLinesName = (name) => /\.(jsonl|ndjson)$/i.test(name);
+import { scanJSONLines } from "../../npm/quicktype-core/dist/esm/native/lines.js";
 
-const lineFeed = 0x0a;
-const carriageReturn = 0x0d;
-const space = 0x20;
-const tab = 0x09;
-const quote = 0x22;
-const backslash = 0x5c;
 const comma = 0x2c;
+const quote = 0x22;
+const leftBracket = 0x5b;
+const leftBrace = 0x7b;
+const notJson = 0x23;
 
 /**
- * The JSON text `[V1,…,Vn]` of the JSON Lines `source` (a string, or its
- * UTF-8 bytes; the same form back): its lines joined by commas inside
- * brackets, without blank lines and a leading byte order mark (as bytes,
- * the decoder's and then the text's, as quickertype-core drops them). A
- * value that spans lines (a line break inside an object or an array) keeps
- * its line breaks, and gets no comma. Never longer than `source` and the
- * two brackets: each comma or line break kept stands for a line feed left
- * out. For text that is not JSON Lines, the array is not JSON either, and
- * quicktype says so.
+ * Whether the value at `[start, end)` of `code` (an accessor) is not one
+ * JSON value in a way the array would hide: not an object, an array or a
+ * string, and with a comma in it.
  */
-export function jsonLinesToArray(source) {
-    const bytes = typeof source !== "string";
-    const length = source.length;
-    const code = bytes ? (i) => source[i] : (i) => source.charCodeAt(i);
-    let at = 0;
-    if (bytes) {
-        for (let marks = 0; marks < 2 && source[at] === 0xef && source[at + 1] === 0xbb && source[at + 2] === 0xbf; marks++) at += 3;
-    } else if (source.charCodeAt(0) === 0xfeff) {
-        at = 1;
+function hasHiddenComma(code, start, end) {
+    const first = code(start);
+    if (first === quote || first === leftBracket || first === leftBrace) return false;
+    for (let at = start; at < end; at++) if (code(at) === comma) return true;
+    return false;
+}
+
+/**
+ * The JSON text `[V1,…,Vn]` of the JSON Lines `text` (typed in the editor,
+ * or a sample): the text of its values, as `scanJSONLines` finds them.
+ */
+export function jsonLinesToArray(text) {
+    const code = (at) => text.charCodeAt(at);
+    const parts = ["["];
+    let previous;
+    scanJSONLines(text, (start, end, ownLine) => {
+        const first = previous === undefined || ownLine;
+        const from = first ? start : previous;
+        if (previous !== undefined && ownLine) parts.push(",");
+        // On the line of the one before: as it is there, the whitespace between them too.
+        const value = text.slice(from, end);
+        parts.push(!first || hasHiddenComma(code, start, end) ? `#${value.slice(1)}` : value);
+        previous = end;
+    });
+    parts.push("]");
+    return parts.join("");
+}
+
+/** How much of a file `readForArray` reads at a time: 8 MiB. */
+const slice = 1 << 23;
+
+/**
+ * The bytes of `file` into one buffer with a byte to spare at each end
+ * (`jsonLinesToArrayInPlace`), read a slice at a time: no copy of the
+ * whole file besides the buffer is ever made (in Chrome, on a 101 MB
+ * file, the buffer and the text decoded from it peak at about 217 MiB, as
+ * with a reader that reads into the buffer; reading `file.stream()`'s own
+ * chunks peaked at 280 MiB). Throws what reading it throws; a file whose
+ * size changed while it was read is an error too.
+ */
+export async function readForArray(file) {
+    const size = file.size;
+    const buffer = new Uint8Array(size + 2);
+    for (let at = 0; at < size; at += slice) {
+        const bytes = new Uint8Array(await file.slice(at, Math.min(size, at + slice)).arrayBuffer());
+        if (bytes.length !== Math.min(slice, size - at)) throw new Error("the file changed while it was read");
+        buffer.set(bytes, 1 + at);
     }
 
-    const out = bytes ? new Uint8Array(length - at + 2) : undefined;
-    let written = 0;
-    const parts = [];
-    const put = (byte, text) => {
-        if (bytes) out[written++] = byte;
-        else parts.push(text);
-    };
-    const copy = (start, end) => {
-        if (bytes) {
-            out.set(source.subarray(start, end), written);
-            written += end - start;
-        } else {
-            parts.push(source.slice(start, end));
-        }
-    };
+    return buffer;
+}
 
-    put(0x5b, "[");
-    let depth = 0;
-    let values = 0;
-    while (at < length) {
-        let end = bytes ? source.indexOf(lineFeed, at) : source.indexOf("\n", at);
-        if (end < 0) end = length;
-        // What the line holds, and the nesting after it (a string ends with its line).
-        let content = false;
-        let nesting = depth;
-        let inString = false;
-        for (let i = at; i < end; i++) {
-            const c = code(i);
-            if (inString) {
-                if (c === backslash) i++;
-                else if (c === quote) inString = false;
-                continue;
-            }
-
-            if (c === quote) inString = true;
-            else if (c === 0x7b || c === 0x5b) nesting++;
-            else if ((c === 0x7d || c === 0x5d) && nesting > 0) nesting--;
-            else if (c === space || c === tab || c === carriageReturn) continue;
-            content = true;
-        }
-
-        if (depth > 0) {
-            // The value of the lines before goes on.
-            put(lineFeed, "\n");
-            copy(at, end);
-        } else if (content) {
-            if (values++ > 0) put(comma, ",");
-            copy(at, end);
-        }
-
-        depth = nesting;
-        at = end + 1;
-    }
-
-    put(0x5d, "]");
-    return bytes ? out.subarray(0, written) : parts.join("");
+/**
+ * `jsonLinesToArray` of the JSON Lines in `buffer` (from `readForArray`:
+ * the bytes between its first and last byte), made in the same buffer: the
+ * array's UTF-8 bytes from its start, whose length is returned. Never
+ * longer than the buffer: the array is the values, a comma for each line
+ * break before one, and the brackets. Each value is copied to where it goes
+ * after it was found, and it never goes past where it was, so nothing is
+ * overwritten before it is scanned.
+ */
+export function jsonLinesToArrayInPlace(buffer) {
+    const bytes = buffer.subarray(1, buffer.length - 1);
+    const code = (at) => bytes[at];
+    buffer[0] = leftBracket;
+    let written = 1;
+    let previous;
+    scanJSONLines(bytes, (start, end, ownLine) => {
+        const first = previous === undefined || ownLine;
+        const from = first ? start : previous;
+        // Looked at before it is copied, which may overwrite it.
+        const hidden = !first || hasHiddenComma(code, start, end);
+        if (previous !== undefined && ownLine) buffer[written++] = comma;
+        buffer.copyWithin(written, 1 + from, 1 + end);
+        if (hidden) buffer[written] = notJson;
+        written += end - from;
+        previous = end;
+    });
+    buffer[written++] = 0x5d;
+    return written;
 }

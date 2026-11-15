@@ -158,7 +158,9 @@ import {
 import { fuzzFacts, landingLinks, readQuicktype, workflowFacts } from "../landing.mjs";
 import { chartProblems, chartUrl, readmeFile, readmeRows } from "../readme-charts.mjs";
 import { quicktypeReference } from "../reference.mjs";
-import { isJsonLinesName, jsonLinesToArray } from "../src/json-lines.js";
+import { eachJSONLinesValue } from "../../npm/quicktype-core/dist/esm/native/lines.js";
+import { formatBytes, isJsonLinesName, maxTextBytes, tooLarge } from "../src/input-file.js";
+import { jsonLinesToArray, jsonLinesToArrayInPlace } from "../src/json-lines.js";
 import { serve } from "./serve.mjs";
 
 const siteRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -2492,18 +2494,69 @@ try {
     // the values (made in its worker); the two are identical. A file of
     // another kind than its name says shows --src-lang, and an error names
     // its line, as the CLI's does.
-    for (const [text, what] of [
-        [cardLines(40), "LF"],
-        [cardLines(40, { eol: "\r\n", bom: true, blank: true }), "a byte order mark, CRLF and blank lines"],
-        ['{"a": [1,\n 2]}\n\n{"b": "x\\"}"}\n', "a value over two lines"],
-    ]) {
-        const array = jsonLinesToArray(text);
-        const values = text.replace(/^\u{feff}/u, "").split(/\r?\n/).filter((l) => l.trim() !== "");
-        const expected = what === "a value over two lines" ? [{ a: [1, 2] }, { b: 'x"}' }] : values.map((l) => JSON.parse(l));
-        assert.deepEqual(JSON.parse(array), expected, `the JSON array of JSON Lines (${what})`);
-        assert.equal(new TextDecoder().decode(jsonLinesToArray(new TextEncoder().encode(text))), array, `the JSON array of JSON Lines as bytes (${what})`);
+    // quicktype's side (site/src/json-lines.js, on quickertype-core's own
+    // scan): for text quickertype reads as JSON Lines, the JSON array of
+    // the very values it reads, typed (a string) and from a file's bytes
+    // (made in place); for text it rejects, an array that is not JSON
+    // either, so that quicktype fails too. On JSON Lines, values over
+    // several lines, a byte order mark (as bytes, the decoder's and the
+    // text's), what is not JSON Lines, and seeded random text.
+    {
+        let seed = 99;
+        const random = (n) => (seed = (seed * 1103515245 + 12345) % 2147483648) % n;
+        const pieces = ["{", "}", "[", "]", '"', "\\", ",", ":", " ", "\t", "\r", "\n", "\n", "a", "1", "-2.5e3", "true", "null", "é", "😀", "\u{feff}", '"x"', '{"k": [1, "v"]}', ",1", "1,2"];
+        const corpus = [
+            cardLines(40),
+            cardLines(40, { eol: "\r\n", bom: true, blank: true }),
+            '{"a": [1,\n 2]}\n\n{"b": "x\\"}"}\n',
+            "",
+            "\u{feff}\u{feff}1\n2",
+            ...['{"a": 1}\n{"a": 2} {"a": 3}\n', '{\n  "a": 1\n} {}', '{"a": 1}\n\n{"a": }\n', "[1,\n", '{"a": 1}\r\n{"a":\r\n', "1\r2\n", "1\n2\n3 4\n5\n"],
+            ...['\u{feff}{}\n{]\n', '\u{feff}\u{feff}\u{feff}{}\n', '{"a": 1}\n{\n  "b": [1,\n  2,,\n]}\n', '{"a": "x}\n{"b": 1}\n', '{"a": 1}\n{"a": 2}x\n', "1\n2x\n", "{}\n]\n"],
+            ...["true\nTrue\n", "1\n01\n", "{}{}\n", "x".repeat(100), '"a",1\n', "1,2\n", '{"a": 1} ,{"b": 2}\n'],
+        ];
+        for (let i = 0; i < 1500; i++) corpus.push(Array.from({ length: random(30) }, () => pieces[random(pieces.length)]).join(""));
+        const valuesOf = (source) => {
+            const values = [];
+            try {
+                eachJSONLinesValue(source, (value) => values.push(value));
+            } catch {
+                return undefined;
+            }
+
+            return values;
+        };
+        let rejected = 0;
+        for (const text of corpus) {
+            const bytes = new TextEncoder().encode(text);
+            const buffer = new Uint8Array(bytes.length + 2);
+            buffer.set(bytes, 1);
+            const fromBytes = new TextDecoder().decode(buffer.subarray(0, jsonLinesToArrayInPlace(buffer)));
+            for (const [array, values, form] of [
+                [jsonLinesToArray(text), valuesOf(text), "typed"],
+                [fromBytes, valuesOf(bytes), "bytes"],
+            ]) {
+                const what = `the JSON array of the JSON Lines ${JSON.stringify(text)} (${form})`;
+                if (values === undefined) {
+                    rejected++;
+                    assert.throws(() => JSON.parse(array), SyntaxError, `${what}: quicktype reads ${JSON.stringify(array)}`);
+                } else {
+                    assert.deepEqual(JSON.parse(array), values, what);
+                }
+            }
+        }
+
+        assert.ok(rejected > 500, `${rejected} readings of text that is not JSON Lines`);
+        console.log(`ok: quicktype's JSON array of JSON Lines is the values quickertype reads, on ${corpus.length} texts each typed and as bytes (made in place), and not JSON in the ${rejected} of those ${corpus.length * 2} readings that are not JSON Lines`);
     }
     assert.deepEqual(["a.jsonl", "B.JSONL", "c.NdJson", "d.json", "jsonl", "e.jsonl.json"].map(isJsonLinesName), [true, true, true, false, false, false]);
+    // A file at the limit whose array is past it: its own size, and the array's.
+    assert.equal(tooLarge("big.jsonl", maxTextBytes), undefined);
+    assert.deepEqual(tooLarge("big.jsonl", maxTextBytes - 1, maxTextBytes + 1), {
+        title: "big.jsonl is too large for the browser",
+        message: `This file is ${formatBytes(maxTextBytes - 1)}. Made into the JSON array that quicktype reads, it is ${(maxTextBytes + 1).toLocaleString("en-US")} bytes. Browsers can't hold text this large in one piece; use the quickertype CLI, which handles multi-GB files.`,
+        link: { href: "https://github.com/EloB/quickertype#install", text: "the quickertype CLI" },
+    });
     const kindNow = () => page.evaluate("document.querySelector('input[name=kind]:checked').value");
     const cardsFile = chosen("cards.jsonl", cardLines(60));
     await openFile(cardsFile);
