@@ -716,7 +716,16 @@ fn combine_values(
                 values,
             )),
         ))),
-        K::EnumValues | K::Transformation => {
+        // quicktype cannot combine enum values either (a fix of ours, as
+        // for accessor names).
+        K::EnumValues => Some(V::EnumValues(Rc::new(
+            accessor_names::combine_accessor_names(&refs_of::<EnumValuesTypeAttributeKind>(values)),
+        ))),
+        // Never combined: a transformation is in its type's identity, so a
+        // type found by its identity does not get it again, and it is only
+        // made by the last rewrite, `makeTransformations`, after unions are
+        // built.
+        K::Transformation => {
             return panic(format!("Cannot combine type attribute {}", kind.name()));
         }
         K::UnionIdentifier => Some(V::UnionIdentifier(Rc::new(
@@ -1065,15 +1074,6 @@ mod tests {
 
     #[test]
     fn panicking_kinds_return_errors() {
-        let a = EnumValuesTypeAttributeKind.make_attributes(AccessorNames::default());
-        assert_eq!(
-            combine_type_attributes(CombinationKind::Union, &[&a, &a])
-                .unwrap_err()
-                .user_message(),
-            "Internal error: Cannot combine type attribute enumValues"
-        );
-        // A single value is used as is, without calling combine.
-        assert!(combine_type_attributes(CombinationKind::Union, &[&a]).is_ok());
         let m = UnionMemberNamesTypeAttributeKind.make_attributes(IndexMap::default());
         assert_eq!(
             make_type_attributes_inferred(&m)
@@ -1113,6 +1113,27 @@ mod tests {
                 AccessorNamesTypeAttributeKind.try_get_in_attributes(&e)
             );
         }
+        // Enum values (`qt-enum-values`) combine the same way.
+        let values = |entries: &[(&str, &str)]| {
+            EnumValuesTypeAttributeKind.make_attributes(
+                entries
+                    .iter()
+                    .map(|&(k, v)| (k.to_owned(), AccessorEntry::Name(v.to_owned())))
+                    .collect(),
+            )
+        };
+        let combined = combine_type_attributes(
+            CombinationKind::Union,
+            &[
+                &values(&[("a", "0"), ("b", "1")]),
+                &values(&[("a", "0"), ("b", "2")]),
+            ],
+        )
+        .unwrap();
+        let combined = EnumValuesTypeAttributeKind
+            .try_get_in_attributes(&combined)
+            .unwrap();
+        assert_eq!(combined.keys().collect::<Vec<_>>(), ["a"]);
     }
 
     #[test]
