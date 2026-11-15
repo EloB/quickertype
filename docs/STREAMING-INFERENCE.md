@@ -471,7 +471,9 @@ it in memory), standard input on Windows (a console or a pipe is not
 told from a file as surely there), text samples (`JSON.parse`
 semantics, JSON Lines' too), samples in memory (`JsonSample::Stream` and
 `StreamLines`), streams the Rust API hands in (`SampleReader::new`) and
-the WebAssembly engine; and if the system will not start the threads. (A date/time recognizer decides from the
+the WebAssembly engine, which has no threads (but see [In the
+browser](#in-the-browser), below); and if the system will not start the
+threads. (A date/time recognizer decides from the
 string alone and is `Send + Sync`: the threads share the sample's.)
 
 ### Why it is exact
@@ -597,6 +599,85 @@ ranges, budget and fallbacks, but split between its lines:
   constants (`run_lines::<_, OPEN, BOM>`), so the whole sample's instance
   is the loop it was, and the first part's is the same instance.
 
+### In the browser
+
+The WebAssembly engine has no threads, but a page can run several engine
+instances on Web Workers, and the playground reads a large file (16 MiB
+or more) on up to eight of them at once. The steps are the ones above,
+each a call on some instance (`input/parts.rs`; the bindings in
+`crates/quicktype-wasm/src/parts.rs`, driven by quickertype-core's
+internal `src/native/parallel.ts`):
+
+1. The plan is the CLI's (`parts::Plan`, which `parallel_read` uses
+   too). Each part worker gets a block of consecutive ranges, reads their
+   bytes from the File once (`file.slice`: GitHub Pages sends no COOP/COEP
+   headers, so there is no `SharedArrayBuffer`), keeps them for the
+   reading, and summarizes each range. The instance that runs on the
+   sample (the WebAssembly worker's) resolves the states from all the
+   summaries in order; each worker finds its ranges' first splits; the
+   parts are formed between them.
+2. That instance reads the first parts itself, as the reading thread
+   does, to measure their trees, and decides as the CLI decides (no
+   split, JSON Lines without one in their first MiB, a part too long to
+   read beside others, trees more than eight times their text).
+3. Each worker reads the parts that start in its ranges, one after the
+   other, appending each to its own tree (merging trees in order is
+   reading on, however they are grouped), and hands the tree over as
+   bytes (`PortableTree::to_bytes`: keys and cases by text, every map in
+   its order, so nothing depends on an instance's hash seed). The
+   instance appends the workers' trees in order (`Tallies::import`,
+   `Tallies::merge`) and keeps the tallies for the runs on the sample
+   (`JsonInput::from_tallies`).
+
+What differs is the reader. The engine reads samples with `JSON.parse`
+semantics (the JavaScript API's), within its limits (nesting, lone
+surrogates), so each part is read by that reader (`from_string`), as
+`[` + part + `]`, or as JSON Lines. That reader is a state machine too:
+after `[` it is where it is after a comma between elements, but for an
+empty array, and at a line feed outside every value it is between two
+values; so the argument above holds as it is. Reading the whole sample in
+one go would give the same events, and so the same tree; and the root
+value TypeScript gives the sample (the JavaScript API keeps it) is its
+array's, whose index is the number of arrays in the sample but one,
+which the parts count.
+
+Where the CLI reads the rest in one go after the parts that read, the
+engine reads the whole sample in one go: a syntax error's message is
+V8's, from `JSON.parse` of the whole text (the facade's), which only
+reading it whole gives, and a value the engine declines is read by
+TypeScript, as it would be in one go. Bytes that are not UTF-8 are one
+part that does not read (a sample split between ASCII bytes is UTF-8
+exactly when each part is), and so are read in one go too, as
+`TextDecoder` decodes them. So whatever the parts give, the result is
+reading in one go's, errors included.
+
+The input holds the sample as `addSource` would have added it, but the
+engine keeps tallies for it, not a compressed form: a fraction of the
+memory (for the 656 MB cards, 45 MiB in the instance that runs, against
+1.7 GiB in one go). quicktype's API still gives the `CompressedJSON`'s
+tables if anything reads them (a run that goes to the TypeScript engine):
+they are filled by reading the sample again (the playground hands
+quickertype-core a `FileReaderSync` read of the File) with TypeScript, as
+`addSource` would have filled them, JSON Lines value by value. That is
+read into a `CompressedJSON` of its own, and only once it succeeded does
+the input take its tables: if reading again fails (the text is longer
+than one string, say), the input is as it was, its tallies kept for runs
+on the engine, and the use of its tables throws an error that says they
+cannot be had; every later use throws it at once, without reading the
+sample again (the playground lets such an input go, and reads the file
+afresh for the next run).
+
+Why a sample is read in one go comes with whether it is the sample's own
+whatever the plan (`always`: not an array, no split, not JSON in a part,
+trees far larger than their text, which the probe measures on the same
+first parts under every plan), which a caller may remember for the
+sample; or only this reading's, so that the next reading may try again:
+the plan's (a part too long for the budget, JSON Lines with no split in
+the ranges that start in their first MiB, tallies too large for the
+budget: other threads and ranges may read it in parts), or the moment's
+(a worker that failed, an input or engine that cannot). The engine's
+rules say which of theirs is which (`InOneGo::always`).
+
 ### Testing it
 
 - Unit tests (`input/json_split.rs`): the masks for every byte value at
@@ -661,6 +742,32 @@ ranges, budget and fallbacks, but split between its lines:
 - `tests/json_lines.rs` (JSON Lines against the arrays of their values,
   through every language) gives a part of its readers as files read on
   several threads, with ranges of 1 to 500 bytes.
+- In the browser's way ([In the browser](#in-the-browser)): unit tests
+  (`input/parts.rs`) read random arrays and JSON Lines, intact and broken
+  (a byte left out or put in, a byte order mark anywhere, cut, garbage
+  after), in parts on 2, 3 and 5 sets of tallies with ranges of 1 to 200
+  bytes, the summaries through numbers as through JavaScript and some
+  trees through bytes: whenever the parts read, the sample reads in one
+  go into the same tree and root index (a part that reads where one go
+  does not fails the test), and nine in ten intact samples read in parts;
+  whole runs on the tallies give the code of the engine's one-go path;
+  broken tree bytes give an error or a tree, and a count anywhere in them
+  of more than the bytes left hold (2^31, 2^63) an error before anything
+  is made room for (and what is made room for ahead is at most 4,096
+  entries: what is allocated follows the entries read). The fuzz target
+  `parts_bytes` corrupts real tree bytes (bytes changed, huge counts) and
+  appends them: 1,274,931 runs in 4 minutes, no crash. quickertype-core's
+  `test/parallel.test.mjs` reads records, text-heavy and URI-heavy arrays
+  and cards, and their JSON Lines, on 2 to 5 engine instances of their
+  own: every file of every run in six configurations, and the tables, are
+  reading in one go's; broken inputs give its errors; why each is read in
+  one go, and whether that is the sample's own; tables that cannot be had
+  leave the input as it was. It runs on the shipped engine and again, from
+  `test/parallel.hooks.test.mjs`, on the tests' engine, which also checks
+  that no part's tallies or lease is left (`__partsCount`, a test hook
+  behind quicktype-wasm's `test-hooks` feature). The playground's smoke test reads 20 MB of
+  cards and their JSON Lines on its part workers (the CLI's output,
+  reading in one go's, quicktype's), and part workers that do not start.
 - The fuzz target `json_split` reads arbitrary bytes both ways, as a JSON
   sample or as JSON Lines (bit 2 of its flags), and compares the source's
   error or the type graph. The differential fuzzer's `jsonl` mode has our

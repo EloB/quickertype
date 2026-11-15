@@ -65,6 +65,24 @@ export const glueExports = [
     "jsonExport",
     "jsonAcquire",
     "jsonRelease",
+    "splitPlan",
+    "splitSummarize",
+    "splitResolve",
+    "splitFind",
+    "splitArrayStart",
+    "splitParts",
+    "splitDecide",
+    "partsCreate",
+    "partsRead",
+    "partsReadMeasured",
+    "partsBytes",
+    "partsExport",
+    "partsAppend",
+    "partsRootIndex",
+    "partsFinish",
+    "partsDrop",
+    "partsAcquire",
+    "partsRelease",
     "engineVersion",
 ];
 
@@ -83,6 +101,7 @@ export const testHookExports = [
     "__memoryGrowths",
     "__memoryPages",
     "__hashForTests",
+    "__partsCount",
 ];
 
 /** Exports that only builds with a cargo feature have, by feature. */

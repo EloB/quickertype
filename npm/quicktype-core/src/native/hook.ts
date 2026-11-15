@@ -43,14 +43,19 @@ let decoder: Utf8Decoder | undefined;
  * The text of `bytes` as `new TextDecoder().decode(bytes)` gives it (UTF-8,
  * without a leading byte order mark, U+FFFD for what is not UTF-8). Throws
  * what the decoder throws: a `RangeError` for a text longer than the
- * longest string.
+ * longest string (Node.js). Chrome's decoder gives "" for such a text
+ * instead, without an error, which only no bytes or a byte order mark alone
+ * decode to: that is a `RangeError` here too, never a text `JSON.parse`
+ * would call the end of the input.
  */
 export function decodeUtf8(bytes: Uint8Array): string {
     // biome-ignore lint/suspicious/noExplicitAny: a host global the es lib does not declare
     if (decoder === undefined) decoder = new (globalThis as any).TextDecoder() as Utf8Decoder;
     // The decoder takes no view of shared memory (of any realm).
     const shared = Object.prototype.toString.call(bytes.buffer) === "[object SharedArrayBuffer]";
-    return decoder.decode(shared ? new Uint8Array(bytes) : bytes);
+    const text = decoder.decode(shared ? new Uint8Array(bytes) : bytes);
+    if (text.length === 0 && bytes.length > 3) throw new RangeError("Invalid string length");
+    return text;
 }
 
 /**

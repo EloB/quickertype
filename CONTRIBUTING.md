@@ -59,7 +59,9 @@ cargo +nightly fuzz run pipeline -s none -- -max_len=16384 -timeout=30 -dict=fuz
 
 The targets: `json_stream` and `json_parse` (the two JSON readers),
 `json_split` (a large top-level array, or JSON Lines, read on several
-threads, against reading it in one go),
+threads, against reading it in one go), `parts_bytes` (the tallies of
+parts read on another WebAssembly instance, as bytes, corrupted and
+appended),
 `json_schema` (with `$ref`s between in-memory documents), `graphql_parse`,
 `graphql_input`, `postman`, `yaml`, `uri`, `number`, `cli_args` (the
 CLI's option parsing) and `pipeline` (JSON to every language with

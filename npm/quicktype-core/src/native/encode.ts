@@ -30,7 +30,7 @@ import { SwiftDateTimeRecognizer } from "../language/Swift/utils.js";
 import type { TargetLanguage } from "../TargetLanguage.js";
 
 import { currentEngine } from "./engine.js";
-import { leaseSamples, releaseLeases } from "./samples.js";
+import { type Lease, leaseSamples, releaseLeases } from "./samples.js";
 import type { WasmGlue } from "./wasm/glue.js";
 
 // biome-ignore-all lint/suspicious/noExplicitAny: the bridge reads private fields of the facade's objects
@@ -46,11 +46,11 @@ export interface EncodedRun {
      */
     sharedGlue?: WasmGlue;
     /**
-     * The leases of `jsonShared` inputs on their samples in `sharedGlue`:
-     * the run takes them over when it starts there; otherwise they must
-     * be released (`releaseLeases`).
+     * The leases of `jsonShared` (and `jsonTallies`) inputs on their
+     * samples in `sharedGlue`: the run takes them over when it starts
+     * there; otherwise they must be released (`releaseLeases`).
      */
-    leases: number[];
+    leases: Lease[];
     /**
      * The `CompressedJSON`s of those inputs, whose forms the run may
      * change (`afterRun`).
@@ -431,7 +431,8 @@ function encodeJSONInput(input: any, encoded: EncodedRun): Record<string, unknow
         encoded.sharedGlue = glue;
         encoded.leases.push(lease);
         encoded.shared.push(cjson);
-        return { kind: "jsonShared", lease, ...topLevels };
+        // A sample read in parts: its tallies (crates/quicktype-wasm/src/parts.rs).
+        return { kind: lease.tallies ? "jsonTallies" : "jsonShared", lease: lease.lease, ...topLevels };
     }
 
     const strings: string[] = cjson._strings;

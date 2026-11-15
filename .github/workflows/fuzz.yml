@@ -28,6 +28,7 @@ jobs:
           - { target: json_stream, max_len: 16384, timeout: 10, dict: json }
           - { target: json_parse, max_len: 16384, timeout: 10, dict: json }
           - { target: json_split, max_len: 16384, timeout: 30, dict: json }
+          - { target: parts_bytes, max_len: 16384, timeout: 10, dict: json }
           - { target: json_schema, max_len: 16384, timeout: 30, dict: json_schema }
           - { target: graphql_parse, max_len: 16384, timeout: 10, dict: graphql }
           - { target: graphql_input, max_len: 16384, timeout: 30, dict: graphql }

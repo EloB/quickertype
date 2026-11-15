@@ -47,13 +47,14 @@
 // The README ("JSON samples") has the argument for why this cannot be told
 // apart from TypeScript reading the samples.
 
-import { CompressedJSONFromString, Tag, valueTag } from "../input/CompressedJSON.js";
+import { CompressedJSONFromString, Tag, makeValue, valueTag } from "../input/CompressedJSON.js";
 
 import { engineFailed, engineStats } from "./bridge.js";
 import { dateTimeKind, hasOnlyBuiltinFields, isWellFormed } from "./encode.js";
 import { engineIfCompiled, engineMode, engineSync, isDiscarded } from "./engine.js";
 import { decodeUtf8, installSampleReader, isBytes, passDecoded, sampleText } from "./hook.js";
-import { eachJSONLinesValue } from "./lines.js";
+import { processLines } from "./lines.js";
+import type { Reading } from "./parts.js";
 import type { ExportedTables, WasmGlue } from "./wasm/glue.js";
 
 // biome-ignore-all lint/suspicious/noExplicitAny: the samples reader reads private fields of the facade's objects
@@ -118,6 +119,28 @@ interface NativeSamples {
      * then drops instead of exporting its tables.
      */
     readonly owner: { deref(): object | undefined } | undefined;
+    /**
+     * Set for a sample read in parts on several workers (parallel.ts): `id`
+     * is then that of its tallies in the engine (`partsCreate`), not of a
+     * compressed form. They are not counted toward `heldLimit` (they hold
+     * no tables, which could not be exported), and `materialize` fills the
+     * tables by reading the sample again (`reread`) with TypeScript.
+     */
+    readonly tallies?: Tallied;
+}
+
+/** A sample read in parts (see `NativeSamples.tallies`). */
+interface Tallied {
+    /** Whether it is JSON Lines. */
+    lines: boolean;
+    /** The sample again, for the tables, if they are asked for. */
+    reread: (() => string | Uint8Array) | undefined;
+    /**
+     * Why the tables could not be had, once they could not
+     * (`materializeTallied`): every later use of them throws this at once,
+     * without reading the sample again.
+     */
+    failure?: Error;
 }
 
 /**
@@ -233,7 +256,7 @@ export function releaseJSONInput(input: any): void {
     }
 
     if (state.exported === undefined) {
-        drop(state.glue, state.id);
+        drop(state);
         engineStats.dropped++;
     }
 }
@@ -271,13 +294,16 @@ const registry: any = (() => {
 /** Frees `state`'s form in the engine: its `CompressedJSON` is gone. */
 function forget(state: NativeSamples): void {
     recent.delete(state);
-    drop(state.glue, state.id);
+    drop(state);
 }
 
-function drop(glue: WasmGlue, id: number): void {
+/** Frees `state`'s form (or tallies) in the engine. */
+function drop(state: NativeSamples): void {
+    const { glue, id } = state;
     if (isDiscarded(glue)) return;
     try {
-        glue.jsonDrop(id);
+        if (state.tallies !== undefined) glue.partsDrop(id);
+        else glue.jsonDrop(id);
     } catch (e) {
         engineFailed(glue, e);
     }
@@ -506,18 +532,8 @@ function engineForSample(sample: string | Uint8Array): WasmGlue | undefined {
  * checked here holds for the later samples as long as `readsAsStarted`.
  */
 function start(cjson: any, text: string | Uint8Array): NativeSamples | undefined {
-    if (
-        Object.getPrototypeOf(cjson) !== CompressedJSONFromString.prototype ||
-        !hasOnlyBuiltinFields(cjson) ||
-        !prototypesAsLoaded() ||
-        typeof cjson.internArray !== "function" ||
-        Function.prototype.toString.call(cjson.internArray) !== internArraySource
-    ) {
-        return undefined;
-    }
-
-    const config = configOf(cjson);
-    if (config === undefined || !isFresh(cjson)) return undefined;
+    const config = freshConfig(cjson);
+    if (config === undefined) return undefined;
     const glue = engineForSample(text);
     if (glue === undefined) return undefined;
     let id: number | undefined;
@@ -533,17 +549,50 @@ function start(cjson: any, text: string | Uint8Array): NativeSamples | undefined
 
     // As many inputs at once as the engine takes: TypeScript reads this one.
     if (id === undefined) return undefined;
+    const state = install(cjson, glue, id, config, bytes, undefined);
+    touch(state);
+    return state;
+}
+
+/**
+ * What `cjson` reads samples with, if it is exactly a fresh
+ * `CompressedJSONFromString` (see the top) with its original methods, and
+ * a configuration the engine models.
+ */
+function freshConfig(cjson: any): Config | undefined {
+    if (
+        Object.getPrototypeOf(cjson) !== CompressedJSONFromString.prototype ||
+        !hasOnlyBuiltinFields(cjson) ||
+        !prototypesAsLoaded() ||
+        typeof cjson.internArray !== "function" ||
+        Function.prototype.toString.call(cjson.internArray) !== internArraySource
+    ) {
+        return undefined;
+    }
+
+    const config = configOf(cjson);
+    if (config === undefined || !isFresh(cjson)) return undefined;
+    return config;
+}
+
+/**
+ * `cjson`'s samples are in the engine from now on, in form (or tallies)
+ * `id` of `glue`: its table fields become accessors that fill them on
+ * first use, and its state is kept until then (or until it is collected).
+ */
+function install(cjson: any, glue: WasmGlue, id: number, config: Config, bytes: number, tallies: Tallied | undefined): NativeSamples {
     const fields: Array<[string, PropertyDescriptor]> = [];
     const state: NativeSamples = {
         glue,
         id,
         config,
         ownProperties: ownProperties(cjson),
-        texts: [],
+        texts: tallies === undefined ? [] : undefined,
         textLength: 0,
         bytes,
         fields,
         owner: WeakRefClass === undefined ? undefined : new WeakRefClass(cjson),
+        tallies,
     };
     internArrays.set(cjson, cjson.internArray);
     for (const name of tableFields) {
@@ -565,8 +614,70 @@ function start(cjson: any, text: string | Uint8Array): NativeSamples | undefined
 
     states.set(cjson, state);
     registry.register(cjson, state, state);
-    touch(state);
     return state;
+}
+
+/**
+ * Not public (parallel.ts): how the samples of `input`, a fresh JSON input
+ * of `jsonInputForTargetLanguage` (one no sample was added to), are read,
+ * if the engine models it; `undefined` otherwise (or without
+ * `FinalizationRegistry`).
+ */
+export function freshReading(input: any): Reading | undefined {
+    const cjson = input?._compressedJSON;
+    if (registry === undefined || cjson === undefined || cjson === null) return undefined;
+    if (!(input._topLevels instanceof Map) || input._topLevels.size !== 0) return undefined;
+    if (engineMode() === "ts" || states.has(cjson)) return undefined;
+    const config = freshConfig(cjson);
+    if (config === undefined) return undefined;
+    return { dateTime: config.dateTime, handleRefs: !!config.handleRefs, min: config.range?.min, max: config.range?.max };
+}
+
+/**
+ * Not public (parallel.ts): `input.addSource({ name, samples: [sample],
+ * description, jsonLines })` for a sample that was read in parts into
+ * tallies `id` of `glue` (kept for runs: `partsFinish`), with
+ * `freshReading(input)`, as reading it in one go would have read it:
+ * `rootIndex` is the index TypeScript gives its root array. Runs on the
+ * engine use the tallies (`leaseSamples`); if anything reads the
+ * `CompressedJSON`'s tables, they are filled as TypeScript fills them by
+ * reading `reread()` (the sample again), and the tallies are dropped.
+ * Returns whether it did: not if `input` is no longer as it was, or the
+ * root's value does not fit (then the caller drops the tallies, and reads
+ * the sample in one go).
+ */
+export function addTalliedSample(
+    input: any,
+    name: string,
+    description: string | undefined,
+    lines: boolean,
+    glue: WasmGlue,
+    id: number,
+    rootIndex: number,
+    reread: (() => string | Uint8Array) | undefined,
+): boolean {
+    const cjson = input._compressedJSON;
+    if (freshReading(input) === undefined || isDiscarded(glue)) return false;
+    const value = makeValue(Tag.Array, rootIndex);
+    if (!(rootIndex >= 0 && rootIndex < 2 ** 27 && isSharedRoot(value))) return false;
+    const config = freshConfig(cjson) as Config;
+    let bytes = 0;
+    try {
+        bytes = glue.partsBytes(id) ?? 0;
+    } catch (e) {
+        engineFailed(glue, e);
+        return false;
+    }
+
+    install(cjson, glue, id, config, bytes, { lines, reread });
+    // The fields TypeScript's `process` would have created, and the sample
+    // as `addSource` adds it.
+    cjson._ctx = undefined;
+    cjson._rootValue = undefined;
+    input._topLevels.set(name, { samples: [value], description });
+    engineStats.samplesRead++;
+    engineStats.readInParts++;
+    return true;
 }
 
 /**
@@ -610,7 +721,7 @@ function evict(current: NativeSamples[], held: number): void {
             rest -= state.bytes;
             recent.delete(state);
             registry.unregister(state);
-            drop(glue, state.id);
+            drop(state);
             engineStats.dropped++;
         }
 
@@ -630,7 +741,7 @@ function evict(current: NativeSamples[], held: number): void {
             state.texts = undefined;
             recent.delete(state);
             registry.unregister(state);
-            drop(glue, state.id);
+            drop(state);
             engineStats.evicted++;
         }
     } catch (e) {
@@ -656,6 +767,11 @@ function evict(current: NativeSamples[], held: number): void {
 export function materialize(cjson: any): void {
     const state = states.get(cjson);
     if (state === undefined) return;
+    if (state.tallies !== undefined) {
+        materializeTallied(cjson, state, state.tallies);
+        return;
+    }
+
     states.delete(cjson);
     recent.delete(state);
     registry.unregister(state);
@@ -686,8 +802,63 @@ export function materialize(cjson: any): void {
         // Only tables that were filled.
         engineStats.tablesFilled++;
     } finally {
-        if (exported === undefined) drop(glue, state.id);
+        if (exported === undefined) drop(state);
     }
+}
+
+/**
+ * Not public (the playground's workers use it): whether `input`'s tables
+ * were asked for and could not be had (a sample read in parts that could
+ * not be read again). Its samples are still in the engine, for runs there;
+ * its tables never will be, so the playground lets such an input go.
+ */
+export function tablesFailed(input: any): boolean {
+    const cjson = input?._compressedJSON;
+    if (cjson === undefined || cjson === null) return false;
+    return states.get(cjson)?.tallies?.failure !== undefined;
+}
+
+/**
+ * `materialize` for a sample read in parts: the tallies cannot be turned
+ * into tables, so the sample is read again (`reread`) and TypeScript reads
+ * it into a `CompressedJSON` of its own, as it would have when the sample
+ * was added; only once that succeeded does `cjson` take those tables (and
+ * its tallies go). If it fails (no `reread`, reading again fails, the text
+ * is too long for one string), the tallies stay for runs on the engine, and
+ * this throws an error that says the tables cannot be had, whose `cause` is
+ * why; so does every later use of the tables, at once, without reading the
+ * sample again (`Tallied.failure`): an input read afresh is another input.
+ */
+function materializeTallied(cjson: any, state: NativeSamples, tallied: Tallied): void {
+    if (tallied.failure !== undefined) throw tallied.failure;
+    const { config } = state;
+    let read: any;
+    try {
+        if (tallied.reread === undefined) throw new Error("the sample was read in parts, and cannot be read again");
+        const sample = tallied.reread();
+        read = new CompressedJSONFromString(config.recognizer as any, !!config.handleRefs, config.range as any);
+        if (tallied.lines) {
+            processLines(read, sample);
+        } else {
+            read.process(JSON.parse(sampleText(sample) as string));
+            read.finish();
+        }
+    } catch (e) {
+        const error = new Error(`quicktype-core: the tables cannot be had for this input: ${String((e as any)?.message ?? e)}`);
+        (error as any).cause = e;
+        tallied.failure = error;
+        throw error;
+    }
+
+    states.delete(cjson);
+    registry.unregister(state);
+    for (const [name, descriptor] of state.fields) {
+        Object.defineProperty(cjson, name, descriptor);
+    }
+
+    for (const name of tableFields) cjson[name] = read[name];
+    engineStats.tablesFilled++;
+    drop(state);
 }
 
 /** The engine's tables of `state`, or `undefined` if they cannot be had. */
@@ -753,15 +924,12 @@ function replay(cjson: any, config: Config, texts: KeptSample[]): void {
         cjson.supportedIntegerRange = config.range;
         for (const { text, lines } of texts) {
             if (lines) {
-                // The array of its values (a kept sample is small).
-                const values: unknown[] = [];
-                eachJSONLinesValue(text, (value) => values.push(value));
-                cjson.process(values);
+                // Value by value, as the JSON Lines reader reads them (it finishes the sample).
+                processLines(cjson, text);
             } else {
                 cjson.process(JSON.parse(sampleText(text) as string));
+                cjson.finish();
             }
-
-            cjson.finish();
         }
     } finally {
         cjson.dateTimeRecognizer = current.dateTimeRecognizer;
@@ -802,7 +970,7 @@ function isSharedRoot(value: number): boolean {
  * since, or a root value is not one the engine returned. A run that does
  * not start lets go of its leases (`releaseLeases`).
  */
-export function leaseSamples(cjson: any, glue: WasmGlue | undefined, roots: number[]): number | undefined {
+export function leaseSamples(cjson: any, glue: WasmGlue | undefined, roots: number[]): Lease | undefined {
     const state = states.get(cjson);
     if (state === undefined) return undefined;
     if (
@@ -817,16 +985,30 @@ export function leaseSamples(cjson: any, glue: WasmGlue | undefined, roots: numb
         return undefined;
     }
 
-    touch(state);
+    const tallies = state.tallies !== undefined;
+    if (!tallies) touch(state);
     let lease: number | undefined;
     try {
-        lease = glue.jsonAcquire(state.id);
+        lease = tallies ? glue.partsAcquire(state.id) : glue.jsonAcquire(state.id);
     } catch (e) {
         engineFailed(glue, e);
     }
 
-    if (lease === undefined) materialize(cjson);
-    return lease;
+    if (lease === undefined) {
+        materialize(cjson);
+        return undefined;
+    }
+
+    return { lease, tallies };
+}
+
+/**
+ * A run's hold on the samples of a `CompressedJSON` (`leaseSamples`): on
+ * its compressed form, or on the tallies of a sample read in parts.
+ */
+export interface Lease {
+    lease: number;
+    tallies: boolean;
 }
 
 /**
@@ -845,7 +1027,7 @@ export function afterRun(glue: WasmGlue, cjsons: object[]): void {
     try {
         for (const cjson of cjsons) {
             const state = states.get(cjson);
-            if (state === undefined || state.glue !== glue || state.exported !== undefined || used.includes(state)) continue;
+            if (state === undefined || state.glue !== glue || state.exported !== undefined || state.tallies !== undefined || used.includes(state)) continue;
             const bytes = glue.jsonBytes(state.id);
             if (bytes === undefined) continue;
             state.bytes = bytes;
@@ -862,11 +1044,12 @@ export function afterRun(glue: WasmGlue, cjsons: object[]): void {
  * Lets go of the leases of a run that is not going to `glue` after all,
  * or that started there (a lease the run took over is gone already).
  */
-export function releaseLeases(glue: WasmGlue, leases: number[]): void {
-    for (const lease of leases.splice(0)) {
+export function releaseLeases(glue: WasmGlue, leases: Lease[]): void {
+    for (const { lease, tallies } of leases.splice(0)) {
         if (isDiscarded(glue)) return;
         try {
-            glue.jsonRelease(lease);
+            if (tallies) glue.partsRelease(lease);
+            else glue.jsonRelease(lease);
         } catch (e) {
             engineFailed(glue, e);
         }
@@ -924,6 +1107,7 @@ function readSample(cjson: any, sample: unknown, lines: boolean): number | undef
         if (state === undefined) return undefined;
     } else if (
         state.exported !== undefined ||
+        state.tallies !== undefined ||
         isDiscarded(state.glue) ||
         !readsAsStarted(cjson, state) ||
         (typeof text === "string" && !isWellFormed(text))

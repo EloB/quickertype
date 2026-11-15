@@ -44,6 +44,13 @@ doc = false
 bench = false
 
 [[bin]]
+name = "parts_bytes"
+path = "fuzz_targets/parts_bytes.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "json_parse"
 path = "fuzz_targets/json_parse.rs"
 test = false

@@ -51,6 +51,29 @@ export interface WasmGlue {
     jsonExport(id: number): ExportedTables | undefined;
     jsonAcquire(id: number): number | undefined;
     jsonRelease(lease: number): void;
+    // Reading a sample in parts (crates/quicktype-wasm/src/parts.rs; src/native/parallel.ts).
+    /** `undefined` for a sample read in one go. */
+    splitPlan(size: number, workers: number, minLength: number, range: number): SplitPlan | undefined;
+    splitSummarize(before: Uint8Array, atStart: boolean, range: Uint8Array): Float64Array;
+    splitResolve(summaries: Float64Array, lines: boolean): Float64Array | undefined;
+    splitFind(range: Uint8Array, escaped: boolean, inString: boolean, depth: number, lines: boolean): number;
+    splitArrayStart(head: Uint8Array): number;
+    /** The parts, or why the sample is read in one go and whether that holds whatever the plan. */
+    splitParts(plan: Float64Array, first: number, splits: Float64Array, lines: boolean): { parts: Float64Array } | { inOneGo: string; always: boolean };
+    splitDecide(plan: Float64Array, parts: Float64Array, probed: number, text: number, trees: number, smallest: number): { inOneGo: string; always: boolean } | undefined;
+    partsCreate(dateTime: string, handleRefs: boolean, min: string | undefined, max: string | undefined): number | undefined;
+    /** 1 if the part was read; -1 to -4 why not; -5 for an id that is not being read. */
+    partsRead(id: number, bytes: Uint8Array, lines: boolean, first: boolean, last: boolean): number;
+    /** The bytes of the part's tree, or (negative) why it was not read. */
+    partsReadMeasured(id: number, bytes: Uint8Array, lines: boolean, first: boolean, last: boolean): number;
+    partsBytes(id: number): number | undefined;
+    partsExport(id: number): Uint8Array | undefined;
+    partsAppend(id: number, bytes: Uint8Array): boolean;
+    partsRootIndex(id: number): number | undefined;
+    partsFinish(id: number): boolean;
+    partsDrop(id: number): void;
+    partsAcquire(id: number): number | undefined;
+    partsRelease(lease: number): void;
     engineVersion(): string;
     /** Only in engines built with `--heap-stats`, for measurements. */
     __heapBytes?(): number;
@@ -69,6 +92,22 @@ export interface WasmGlue {
     __panicForTests?(): void;
     __pendingRuns?(): number;
     __hashForTests?(key: string): string;
+    /** [parts' tallies, leases on them]. */
+    __partsCount?(): Uint32Array;
+}
+
+/**
+ * How a sample is read in parts (`splitPlan`): `plan` to pass back as it
+ * is, the workers that read, how much text the first parts measured hold,
+ * the bytes the parts' trees may take, and each range's start, then the
+ * sample's length.
+ */
+export interface SplitPlan {
+    plan: Float64Array;
+    threads: number;
+    probe: number;
+    budget: number;
+    starts: Float64Array;
 }
 
 /** A fresh, uninitialized copy of the glue. */

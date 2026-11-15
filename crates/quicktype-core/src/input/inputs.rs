@@ -32,6 +32,7 @@ use super::compressed_json_from_stream::parse_stream_reader_into;
 use super::inference::TypeInference;
 #[cfg(not(target_family = "wasm"))]
 use super::parallel_read;
+use super::parts::SharedTallies;
 use super::tallies::{
     FormTallies, KeptTallies, NodeId, RunningTallies, Tallies, TallyBuilder, tally_compressed,
 };
@@ -443,8 +444,9 @@ pub struct JsonInput {
     compressed_json: Rc<CompressedJson>,
     top_levels: IndexMap<String, JsonTopLevel>,
     /// The running tallies; `None` to keep the samples in the compressed
-    /// form.
-    tallies: Option<RunningTallies>,
+    /// form. Shared only by inputs made with
+    /// [`from_tallies`](Self::from_tallies), which take no samples.
+    tallies: Option<Rc<RunningTallies>>,
     /// Without running tallies: whether the types are inferred from
     /// tallies of the compressed form, made when they are inferred, rather
     /// than from its values one by one (see
@@ -478,7 +480,8 @@ impl JsonInput {
         JsonInput {
             compressed_json: Rc::new(compressed_json),
             top_levels: IndexMap::default(),
-            tallies: (!compressed_json_inference_requested()).then(RunningTallies::new),
+            tallies: (!compressed_json_inference_requested())
+                .then(|| Rc::new(RunningTallies::new())),
             tally_compressed: false,
             keep_tallies: false,
             inferred_from: None,
@@ -544,6 +547,41 @@ impl JsonInput {
         Ok(input)
     }
 
+    /// A JSON input over the tallies of a sample read already, in parts,
+    /// into tallies that other inputs may share: the WebAssembly engine
+    /// reads a large file's top-level array (or JSON Lines) on several Web
+    /// Workers and appends the parts' tallies in one instance
+    /// ([`PartTallies`](crate::input::parts::PartTallies)), which keeps
+    /// them for every run on that sample. `compressed_json` is how they
+    /// were read (its date/time recognizer, `$ref` handling and integer
+    /// range; it holds no samples); the sample is the one top-level `name`'s.
+    /// The input infers from those tallies, as from running tallies, and
+    /// takes no more samples.
+    pub fn from_tallies(
+        compressed_json: CompressedJson,
+        name: String,
+        description: Option<String>,
+        tallies: &SharedTallies,
+    ) -> Self {
+        let mut top_levels = IndexMap::default();
+        top_levels.insert(
+            name,
+            JsonTopLevel {
+                description,
+                samples: Rc::default(),
+                tally: Some(tallies.root),
+            },
+        );
+        JsonInput {
+            compressed_json: Rc::new(compressed_json),
+            top_levels,
+            tallies: Some(Rc::clone(&tallies.tallies)),
+            tally_compressed: false,
+            keep_tallies: false,
+            inferred_from: None,
+        }
+    }
+
     /// Whether types are inferred from running tallies (`true`, the
     /// default) or, as quicktype does, from the compressed form of every
     /// sample (`false`): the reference the tallies are tested against,
@@ -555,7 +593,7 @@ impl JsonInput {
             return panic("The inference source must be chosen before sources are added");
         }
         if tallies != self.tallies.is_some() {
-            self.tallies = tallies.then(RunningTallies::new);
+            self.tallies = tallies.then(|| Rc::new(RunningTallies::new()));
         }
         Ok(())
     }
@@ -739,6 +777,9 @@ impl JsonInput {
             }
             self.add_samples(&name, values, description.as_deref());
             return Ok(());
+        };
+        let Some(tallies) = Rc::get_mut(tallies) else {
+            return panic("Samples cannot be added to a JSON input whose samples are shared");
         };
 
         // As in TypeScript, a source is added whole or not at all: each

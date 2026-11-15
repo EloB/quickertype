@@ -57,6 +57,11 @@ export const engineStats = {
     /** JSON samples the engine read as they were added (samples.ts). */
     samplesRead: 0,
     /**
+     * Of those, the samples read in parts on several workers
+     * (parallel.ts), into tallies instead of a compressed form.
+     */
+    readInParts: 0,
+    /**
      * Compressed forms the engine let go of to stay within its limit
      * (samples.ts, `evict`), their tables exported to JavaScript.
      */

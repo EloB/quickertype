@@ -23,6 +23,83 @@ prints both hashes, and the smoke test runs both pages under such a policy.
 Apart from that script, the landing page has no JavaScript: the example's
 language tabs are radio buttons styled with CSS.
 
+## Large files in the playground
+
+A file larger than the editor shows is posted to the workers as a `File`,
+unread: the page's main thread never holds its text. quicktype's worker
+reads it as text, as quicktype's API takes it; quickertype's reads its
+bytes, and a JSON or JSON Lines file of 16 MiB or more (`partsFrom` in
+`site/src/input-file.js`) in parts, on several workers at once:
+
+- **Part workers.** quickertype's worker starts as many part workers as
+  the machine runs at once, at most eight (`site/src/part-pool.js`), on the
+  first such file, and keeps them a minute for the next one. Each
+  (`site/src/part-worker.js`, a bundle of the engine's glue and
+  quickertype-core's `src/native/parts.ts`, 22 KiB) instantiates the
+  engine from the module quickertype's worker compiled, so it compiles
+  nothing. GitHub Pages sends no COOP/COEP headers, so there is no
+  `SharedArrayBuffer`: each part worker reads its ranges of the file itself
+  (`file.slice`), and the workers exchange numbers and, at the end, each
+  one's tallies as bytes, transferred.
+- **The rules are the engine's** (quickertype-core's internal
+  `src/native/parallel.ts`; [STREAMING-INFERENCE.md](STREAMING-INFERENCE.md#in-the-browser)
+  has the argument): the output is what reading the file in one go gives,
+  byte for byte, and wherever the parts do not read (the file is not
+  JSON there) or the CLI would read in one go (not an array, no split,
+  trees far larger than their text), the file is read in one go, with
+  its errors. The worker remembers that for the file where the reason is
+  the file's own, whatever the workers (no split, not JSON there, trees
+  far larger than their text: the engine's rules say which are). Any
+  other reason (part workers that did not start, which the pool
+  replaces; a part too long for this many workers' memory) is tried again
+  once: the next reading tries parts again, and if it fails again so, the
+  file is read in one go for as long as the worker keeps it. Once it reads
+  in parts, the bytes it was read in one go with are let go. The status
+  under the file's name says "reading it on N workers" when it did.
+- **Memory.** quickertype's engine then keeps the tallies, not a
+  compressed form: for the 656 MB cards, 45 MiB instead of 1.7 GiB, and
+  the part workers' instances about 35 MiB each
+  ([BENCHMARKS.md](BENCHMARKS.md#reading-on-several-workers)). A run that
+  goes to the TypeScript engine (the engine failed) reads the file again
+  with `FileReaderSync` for the tables it needs, as far as one string holds
+  it; past that, or if reading it again fails, the run fails saying the
+  tables cannot be had, the input is left as it was (quickertype-core
+  fills the tables only once reading them again succeeded), and the worker
+  lets it go, so the next run reads the file again.
+- **Sizes.** The page opens a file of up to 2 GiB (`maxFileBytes`).
+  quicktype takes one whose text has up to 2^29 − 24 UTF-16 units
+  (`maxTextBytes`, V8's longest string): a file with more bytes than that
+  may still have that few units (UTF-8 takes one to three bytes a unit, or
+  four for two), so one size check (`checkText`) refuses before reading
+  only a file of more than three bytes a unit past the limit, and counts
+  the rest once read: JSON's bytes in the units `TextDecoder` decodes them
+  to, bytes that are not UTF-8 included (`utf16Length`), a text once
+  decoded, and JSON Lines for quicktype once made their JSON array. Only a
+  text that does not fit is refused: the file is too large for the
+  browser, and the CLI is named; so is one larger than the browser can
+  read at once (a `RangeError`), never "could not read". Chrome decodes a
+  text too long for one string to "" without an error; the workers (and
+  quickertype-core's own decoding) take that as too large too, so quicktype
+  is never given an empty text. quickertype reads larger files in parts;
+  where it must read one in one go, JSON only if its text fits one string,
+  and JSON Lines (whose errors are read value by value) up to 1.25 GiB
+  (`linesInOneGo`: its engine holds the bytes and their compressed form in
+  4 GiB, measured in
+  [BENCHMARKS.md](BENCHMARKS.md#reading-on-several-workers)); past those,
+  it says the file is too large to read in one go, and why it could not be
+  read in parts.
+
+The smoke test checks all of this with test hooks the workers take in a
+request (`partsFrom`, `partWorkers`, `textLimit`, `linesInOneGo`,
+`partModule`, a WebAssembly module the test compiles that new part workers
+start with instead of the engine, one that does not link, and
+`typescript` for one run on the TypeScript engine, after which the
+worker's engine is as it was), and the part worker and the pool in Node;
+`{ kind: "stats" }` gives the engines' WebAssembly memory, for
+`site/test/parts-bench.mjs`, which measures it, and, for the smoke test,
+the engine the worker's runs are on and the bytes a file read in parts
+keeps.
+
 ## Where the landing page's numbers come from
 
 Nothing on the landing page is typed by hand. `site/landing.mjs` reads every

@@ -15,15 +15,16 @@ use std::collections::VecDeque;
 use std::mem::size_of;
 use std::rc::Rc;
 
-use crate::support::fast_hash::{IndexMap, index_map_with_capacity};
+use crate::support::fast_hash::{IndexMap, IndexSet, index_map_with_capacity};
 
-use super::{KeyTally, KindOrder, Node, NodeId, ObjectTally, Tallies, alloc, map_size};
+use super::{KINDS, KeyTally, KindOrder, Node, NodeId, ObjectTally, Tallies, alloc, map_size};
 use crate::attributes::string_types::StringTypes;
 use crate::attributes::type_attributes::{TypeAttributeValue, TypeAttributes};
 use crate::attributes::uri_attributes::UriAttributes;
 use crate::input::compressed_json::{Strings, vec_size};
 use crate::messages::Result;
 use crate::support::support::{defined, panic};
+use crate::ty::transformed_string_type::TRANSFORMED_STRING_TYPE_KINDS;
 
 /// A tree of tallies that can move to another thread: see the module.
 pub(crate) struct PortableTree {
@@ -142,17 +143,7 @@ impl PortableTree {
                 object,
             };
         }
-        let bytes = strings.heap_size()
-            + vec_size(&nodes)
-            + nodes
-                .iter()
-                .map(|n| {
-                    n.strings.as_ref().map_or(0, |s| map_size(&s.cases))
-                        + n.object.as_ref().map_or(0, |o| {
-                            size_of::<ObjectTally>() + map_size(&o.keys) + vec_size(&o.proto_runs)
-                        })
-                })
-                .sum::<usize>();
+        let bytes = tree_size(&strings, &nodes);
         Ok(PortableTree {
             strings,
             nodes,
@@ -164,6 +155,407 @@ impl PortableTree {
     /// sets of each place's strings).
     pub(crate) fn heap_size(&self) -> usize {
         self.bytes
+    }
+
+    /// The tree as bytes, which [`from_bytes`](Self::from_bytes) reads back:
+    /// for the WebAssembly engine, whose instances (one per Web Worker)
+    /// share no memory. Everything in it is in its order (the string
+    /// table, the nodes, each map's entries), so nothing depends on how an
+    /// instance hashes.
+    pub(crate) fn to_bytes(&self) -> Vec<u8> {
+        let mut out = Writer(Vec::with_capacity(self.bytes / 2 + 64));
+        out.0.extend_from_slice(MAGIC);
+        out.len(self.strings.len());
+        for i in 0..self.strings.len() {
+            out.text(self.strings.get(i).unwrap_or_default());
+        }
+        out.len(self.nodes.len());
+        for node in &self.nodes {
+            out.number(u64::from(node.kinds.0));
+            let flags = u8::from(node.items.is_some())
+                | u8::from(node.strings.is_some()) << 1
+                | u8::from(node.object.is_some()) << 2;
+            out.0.push(flags);
+            if let Some(items) = node.items {
+                out.number(u64::from(items));
+            }
+            if let Some(s) = &node.strings {
+                out.len(s.cases.len());
+                for (&id, &count) in &s.cases {
+                    out.number(u64::from(id));
+                    out.number(count);
+                }
+                out.attributes(s.with_enums.as_ref());
+                out.attributes(s.without_enums.as_ref());
+                out.0.push(u8::from(s.not_interned));
+                out.number(u64::from(s.absorbed[0]));
+                out.number(u64::from(s.absorbed[1]));
+            }
+            if let Some(o) = &node.object {
+                out.number(o.count);
+                out.len(o.keys.len());
+                for (&id, key) in &o.keys {
+                    out.number(u64::from(id));
+                    out.number(key.count);
+                    out.number(u64::from(key.node));
+                }
+                out.len(o.proto_runs.len());
+                for &(position, count) in &o.proto_runs {
+                    out.number(u64::from(position));
+                    out.number(count);
+                }
+                out.number(o.proto.map_or(0, |p| u64::from(p) + 1));
+            }
+        }
+        out.0
+    }
+
+    /// The tree [`to_bytes`](Self::to_bytes) made `bytes` of; an error for
+    /// bytes it did not make. What is read is checked as far as using the
+    /// tree needs: a tree (each node but the root the child of one node
+    /// before it), kinds that are kinds, string ids in its table and texts
+    /// that are UTF-8; so bytes made otherwise give an error or some tree,
+    /// never a panic or a cycle.
+    pub(crate) fn from_bytes(bytes: &[u8]) -> Result<Self> {
+        let Some(rest) = bytes.strip_prefix(MAGIC) else {
+            return panic("Not the bytes of a tree of tallies");
+        };
+        let mut read = Reader(rest);
+        let mut strings = Strings::new();
+        let texts = read.count(MIN_TEXT)?;
+        for i in 0..texts {
+            // A part's table has each text once ("__proto__" too: keys
+            // and cases are interned by their text).
+            if strings.intern_text(read.text()?) as usize != i {
+                return panic("A tree of tallies with a text twice");
+            }
+        }
+        let count = read.count(MIN_NODE)?;
+        let mut nodes: Vec<PortableNode> = Vec::with_capacity(room(count));
+        // Whether each node is some node's child yet.
+        let mut reached = vec![false; count];
+        let mut child = |parent: usize, index: u64| -> Result<u32> {
+            let index = usize::try_from(index).unwrap_or(usize::MAX);
+            match reached.get_mut(index) {
+                Some(seen) if index > parent && !*seen => {
+                    *seen = true;
+                    Ok(index as u32)
+                }
+                _ => panic("A tree of tallies that is not a tree"),
+            }
+        };
+        let id = |id: u64| match u32::try_from(id) {
+            Ok(id) if (id as usize) < texts => Ok(id),
+            _ => panic("A tree of tallies with a text it does not have"),
+        };
+        for at in 0..count {
+            let kinds = kind_order(read.number()?)?;
+            let flags = read.byte()?;
+            if flags & !7 != 0 {
+                return panic("A tree of tallies with a node it does not know");
+            }
+            let items = if flags & 1 != 0 {
+                Some(child(at, read.number()?)?)
+            } else {
+                None
+            };
+            let strings = if flags & 2 != 0 {
+                let n = read.count(2 * MIN_NUMBER)?;
+                let mut cases = index_map_with_capacity(room(n));
+                for _ in 0..n {
+                    let key = id(read.number()?)?;
+                    if cases.insert(key, read.number()?).is_some() {
+                        return panic("A tree of tallies with a case twice");
+                    }
+                }
+                Some(PortableStrings {
+                    cases,
+                    with_enums: read.attributes()?,
+                    without_enums: read.attributes()?,
+                    not_interned: read.flag()?,
+                    absorbed: [read.number32()?, read.number32()?],
+                })
+            } else {
+                None
+            };
+            let object = if flags & 4 != 0 {
+                let mut object = Box::<ObjectTally>::default();
+                object.count = read.number()?;
+                let n = read.count(3 * MIN_NUMBER)?;
+                object.keys.reserve(room(n));
+                for _ in 0..n {
+                    let key = id(read.number()?)?;
+                    let tally = KeyTally {
+                        count: read.number()?,
+                        node: child(at, read.number()?)?,
+                    };
+                    if object.keys.insert(key, tally).is_some() {
+                        return panic("A tree of tallies with a key twice");
+                    }
+                }
+                let runs = read.count(2 * MIN_NUMBER)?;
+                object.proto_runs.reserve(room(runs));
+                for _ in 0..runs {
+                    object.proto_runs.push((read.number32()?, read.number()?));
+                }
+                object.proto = match read.number()? {
+                    0 => None,
+                    p => Some(child(at, p - 1)?),
+                };
+                Some(object)
+            } else {
+                None
+            };
+            nodes.push(PortableNode {
+                kinds,
+                items,
+                strings,
+                object,
+            });
+        }
+        if nodes.is_empty() || !read.0.is_empty() {
+            return panic("Not the bytes of a tree of tallies");
+        }
+        let bytes = tree_size(&strings, &nodes);
+        Ok(PortableTree {
+            strings,
+            nodes,
+            bytes,
+        })
+    }
+}
+
+/// About how many bytes a tree of `nodes` with `strings` holds.
+fn tree_size(strings: &Strings, nodes: &Vec<PortableNode>) -> usize {
+    strings.heap_size()
+        + vec_size(nodes)
+        + nodes
+            .iter()
+            .map(|n| {
+                n.strings.as_ref().map_or(0, |s| map_size(&s.cases))
+                    + n.object.as_ref().map_or(0, |o| {
+                        size_of::<ObjectTally>() + map_size(&o.keys) + vec_size(&o.proto_runs)
+                    })
+            })
+            .sum::<usize>()
+}
+
+/// What the bytes of a tree start with (and the version of their format).
+const MAGIC: &[u8] = b"qtTallies1\n";
+
+/// The fewest bytes [`Writer`] writes for a number (a varint), a text (its
+/// length, then its bytes), a node (its kinds and its flags) and a string
+/// attribute (its tag, and two flags or counts): what [`Reader::count`]
+/// bounds counts by.
+const MIN_NUMBER: usize = 1;
+const MIN_TEXT: usize = 1;
+const MIN_NODE: usize = 2;
+const MIN_ATTRIBUTE: usize = 3;
+
+/// The room made ahead for `n` entries a count announces: at most 4,096,
+/// so that what is allocated follows the entries actually read (each
+/// takes bytes of its own), not a count, which bytes that are not a tree's
+/// can make as large as the bytes left allow.
+fn room(n: usize) -> usize {
+    n.min(1 << 12)
+}
+
+/// The [`KindOrder`] with these bits, if they are one: kinds' codes, four
+/// bits each, none twice, and nothing after the first empty one.
+fn kind_order(bits: u64) -> Result<KindOrder> {
+    let Ok(bits) = u32::try_from(bits) else {
+        return panic("A tree of tallies with kinds that are not kinds");
+    };
+    let mut order = KindOrder::default();
+    let mut rest = bits;
+    while rest != 0 {
+        let code = rest & 0xF;
+        let Some(&kind) = code.checked_sub(1).and_then(|c| KINDS.get(c as usize)) else {
+            return panic("A tree of tallies with kinds that are not kinds");
+        };
+        order.add(kind);
+        rest >>= 4;
+    }
+    // A kind twice was added once: the bits differ.
+    if order.0 != bits {
+        return panic("A tree of tallies with kinds that are not kinds");
+    }
+    Ok(order)
+}
+
+/// Writes the parts of a tree's bytes.
+struct Writer(Vec<u8>);
+
+impl Writer {
+    /// LEB128.
+    fn number(&mut self, mut n: u64) {
+        while n >= 0x80 {
+            self.0.push((n as u8) | 0x80);
+            n >>= 7;
+        }
+        self.0.push(n as u8);
+    }
+
+    fn len(&mut self, n: usize) {
+        self.number(n as u64);
+    }
+
+    fn text(&mut self, s: &str) {
+        self.len(s.len());
+        self.0.extend_from_slice(s.as_bytes());
+    }
+
+    fn texts<'s>(&mut self, texts: impl ExactSizeIterator<Item = &'s String>) {
+        self.len(texts.len());
+        for text in texts {
+            self.text(text);
+        }
+    }
+
+    fn attributes(&mut self, attributes: Option<&PortableAttributes>) {
+        let Some(PortableAttributes(values)) = attributes else {
+            self.0.push(0);
+            return;
+        };
+        self.0.push(1);
+        self.len(values.len());
+        for value in values {
+            match value {
+                PortableAttribute::StringTypes(st) => {
+                    self.0.push(0);
+                    match &st.cases {
+                        None => self.0.push(0),
+                        Some(cases) => {
+                            self.0.push(1);
+                            self.len(cases.len());
+                            for (case, &count) in cases {
+                                self.text(case);
+                                self.number(count);
+                            }
+                        }
+                    }
+                    self.len(st.transformations.len());
+                    for kind in &st.transformations {
+                        let code = TRANSFORMED_STRING_TYPE_KINDS
+                            .iter()
+                            .position(|k| k == kind)
+                            .map_or(u8::MAX, |i| i as u8);
+                        self.0.push(code);
+                    }
+                }
+                PortableAttribute::Uri((protocols, extensions)) => {
+                    self.0.push(1);
+                    self.texts(protocols.iter());
+                    self.texts(extensions.iter());
+                }
+            }
+        }
+    }
+}
+
+/// Reads what [`Writer`] wrote.
+struct Reader<'b>(&'b [u8]);
+
+impl<'b> Reader<'b> {
+    fn byte(&mut self) -> Result<u8> {
+        let Some((&b, rest)) = self.0.split_first() else {
+            return panic("The bytes of a tree of tallies end early");
+        };
+        self.0 = rest;
+        Ok(b)
+    }
+
+    fn flag(&mut self) -> Result<bool> {
+        match self.byte()? {
+            0 => Ok(false),
+            1 => Ok(true),
+            _ => panic("A tree of tallies with a flag that is not one"),
+        }
+    }
+
+    fn number(&mut self) -> Result<u64> {
+        let mut n = 0u64;
+        for shift in (0..64).step_by(7) {
+            let b = self.byte()?;
+            n |= u64::from(b & 0x7F) << shift;
+            if b & 0x80 == 0 {
+                return Ok(n);
+            }
+        }
+        panic("A tree of tallies with a number too large")
+    }
+
+    fn number32(&mut self) -> Result<u32> {
+        match u32::try_from(self.number()?) {
+            Ok(n) => Ok(n),
+            Err(_) => panic("A tree of tallies with a number too large"),
+        }
+    }
+
+    /// A count of what follows, each of which takes `each` bytes at least
+    /// ([`Writer`] writes no shorter): at most what the bytes left can
+    /// hold, so that nothing is made room for that the bytes do not have.
+    fn count(&mut self, each: usize) -> Result<usize> {
+        match usize::try_from(self.number()?) {
+            Ok(n) if n.saturating_mul(each) <= self.0.len() => Ok(n),
+            _ => panic("The bytes of a tree of tallies end early"),
+        }
+    }
+
+    fn text(&mut self) -> Result<&'b str> {
+        let n = self.count(1)?;
+        let (text, rest) = self.0.split_at(n);
+        self.0 = rest;
+        match std::str::from_utf8(text) {
+            Ok(text) => Ok(text),
+            Err(_) => panic("A tree of tallies with a text that is not UTF-8"),
+        }
+    }
+
+    fn texts(&mut self) -> Result<IndexSet<String>> {
+        let n = self.count(MIN_TEXT)?;
+        let mut texts = IndexSet::default();
+        for _ in 0..n {
+            texts.insert(self.text()?.to_owned());
+        }
+        Ok(texts)
+    }
+
+    fn attributes(&mut self) -> Result<Option<PortableAttributes>> {
+        if !self.flag()? {
+            return Ok(None);
+        }
+        let n = self.count(MIN_ATTRIBUTE)?;
+        let mut values = Vec::with_capacity(room(n));
+        for _ in 0..n {
+            values.push(match self.byte()? {
+                0 => {
+                    let cases = if self.flag()? {
+                        let n = self.count(MIN_TEXT + MIN_NUMBER)?;
+                        let mut cases = IndexMap::default();
+                        for _ in 0..n {
+                            let case = self.text()?.to_owned();
+                            cases.insert(case, self.number()?);
+                        }
+                        Some(cases)
+                    } else {
+                        None
+                    };
+                    let n = self.count(1)?;
+                    let mut transformations = IndexSet::default();
+                    for _ in 0..n {
+                        match TRANSFORMED_STRING_TYPE_KINDS.get(usize::from(self.byte()?)) {
+                            Some(&kind) => transformations.insert(kind),
+                            None => return panic("A tree of tallies with a kind it does not know"),
+                        };
+                    }
+                    PortableAttribute::StringTypes(StringTypes::new(cases, transformations)?)
+                }
+                1 => PortableAttribute::Uri((self.texts()?, self.texts()?)),
+                _ => return panic("A tree of tallies with an attribute it does not know"),
+            });
+        }
+        Ok(Some(PortableAttributes(values)))
     }
 }
 
@@ -369,6 +761,121 @@ mod tests {
         )
         .unwrap();
         assert_eq!(into.dump(root), read.dump(tree));
+    }
+
+    /// A tree as bytes, read back, is the same tree: imported, it is the
+    /// tree read, in tallies that know other texts already (and the
+    /// absorbing samples' trees, whose places drop their cases).
+    #[test]
+    fn trees_as_bytes_are_the_trees_read() {
+        for handle_refs in [false, true] {
+            let config = config(handle_refs);
+            let all = format!("[{}]", ABSORBING.join(","));
+            for sample in SAMPLES.iter().copied().chain([all.as_str()]) {
+                let mut read = RunningTallies::new();
+                let tree = parse_stream_into(
+                    &mut TallyBuilder::new(&mut read, &config),
+                    sample.as_bytes(),
+                    Framing::Value,
+                )
+                .unwrap();
+                let expected = read.dump(tree);
+                let bytes = portable(&config, sample).to_bytes();
+                let back = PortableTree::from_bytes(&bytes).unwrap();
+                assert_eq!(back.to_bytes(), bytes);
+                let mut into = RunningTallies::new();
+                parse_stream_into(
+                    &mut TallyBuilder::new(&mut into, &config),
+                    br#"{"zz":["q","x","c","__proto__"],"x":1}"#,
+                    Framing::Value,
+                )
+                .unwrap();
+                let root = into.tallies.import(&mut into.strings, back).unwrap();
+                assert_eq!(into.dump(root), expected, "{sample}");
+            }
+        }
+    }
+
+    /// Bytes that are not a tree's, cut or changed anywhere, give an error
+    /// or some tree, which imports and merges without a panic.
+    #[test]
+    fn broken_bytes_are_an_error_or_a_tree() {
+        let config = config(true);
+        let bytes = portable(&config, &format!("[{}]", SAMPLES.join(","))).to_bytes();
+        let mut rng = crate::input::json_split::tests::Rng(99);
+        let (mut errors, mut trees) = (0, 0);
+        for round in 0..20_000 {
+            let mut broken = bytes.clone();
+            match round % 3 {
+                0 => broken.truncate(rng.below(bytes.len())),
+                1 => {
+                    let at = rng.below(bytes.len());
+                    broken[at] = rng.next() as u8;
+                }
+                _ => {
+                    for _ in 0..1 + rng.below(4) {
+                        let at = rng.below(broken.len());
+                        broken[at] ^= 1 << rng.below(8);
+                    }
+                }
+            }
+            match PortableTree::from_bytes(&broken) {
+                Err(_) => errors += 1,
+                Ok(tree) => {
+                    trees += 1;
+                    let mut into = RunningTallies::new();
+                    let first = into
+                        .tallies
+                        .import(&mut into.strings, portable(&config, SAMPLES[0]));
+                    if let Ok(root) = into.tallies.import(&mut into.strings, tree) {
+                        let _ = into.tallies.merge(first.unwrap(), root);
+                    }
+                }
+            }
+        }
+        assert!(
+            errors > 1_000 && trees > 1_000,
+            "{errors} errors, {trees} trees"
+        );
+    }
+
+    /// A length or count that says far more follows than the bytes hold,
+    /// at any place (a text's length, the texts', the nodes', a place's
+    /// cases, keys, `__proto__` runs, attributes), is an error before
+    /// anything is made room for: a count of 2^31 or 2^63 nodes, cases or
+    /// keys would otherwise allocate gigabytes, or fail to.
+    #[test]
+    fn counts_past_the_bytes_are_errors() {
+        let config = config(true);
+        let samples: Vec<&str> = SAMPLES.iter().chain(&ABSORBING).copied().collect();
+        let bytes = portable(&config, &format!("[{}]", samples.join(","))).to_bytes();
+        // 2^31, 2^63, and the bytes' own length a thousand times over.
+        let huge: [&[u8]; 3] = [
+            &[0x80, 0x80, 0x80, 0x80, 0x08],
+            &[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00],
+            &[0xC0, 0x84, 0x3D],
+        ];
+        let mut errors = 0;
+        for at in MAGIC.len()..bytes.len() {
+            for number in huge {
+                // The number in place of the byte at `at` (a varint's
+                // first byte, or any other).
+                let mut broken = bytes[..at].to_vec();
+                broken.extend_from_slice(number);
+                broken.extend_from_slice(&bytes[at + 1..]);
+                if PortableTree::from_bytes(&broken).is_err() {
+                    errors += 1;
+                }
+            }
+        }
+        let places = bytes.len() - MAGIC.len();
+        assert!(errors > places * 2, "{errors} errors of {}", 3 * places);
+        // A count is at most what the bytes left hold.
+        assert_eq!(Reader(&[0x05, 1, 2, 3, 4, 5]).count(1).unwrap(), 5);
+        assert!(Reader(&[0x06, 1, 2, 3, 4, 5]).count(1).is_err());
+        assert!(Reader(&[0x02, 1, 2, 3, 4, 5]).count(3).is_err());
+        let largest = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01];
+        assert!(Reader(&largest).count(1).is_err());
     }
 
     /// A tree made portable and imported into other tallies is the same

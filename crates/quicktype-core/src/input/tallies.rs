@@ -61,10 +61,9 @@ use crate::messages::Result;
 use crate::support::support::{defined, panic};
 use crate::ty::transformed_string_type::{TypeKind, transformed_string_type_attributes_producer};
 
-/// Trees that move between threads, for reading a sample on several.
-#[cfg(not(target_family = "wasm"))]
+/// Trees that move between threads, for reading a sample on several (and,
+/// as bytes, between the WebAssembly engine's instances).
 mod portable;
-#[cfg(not(target_family = "wasm"))]
 pub(crate) use portable::PortableTree;
 
 /// A node's index in [`Tallies`].
@@ -713,6 +712,14 @@ impl RunningTallies {
     #[cfg(test)]
     pub(crate) fn dump(&self, node: NodeId) -> String {
         self.tallies.dump(&self.strings, node)
+    }
+
+    /// Drops what only reading more samples needs (see [`Tallies::trim`],
+    /// and the `JSON.parse` reader's spare tape), for tallies that are kept
+    /// as they are.
+    pub(crate) fn trim(&mut self) {
+        self.tallies.trim();
+        self.string_reader = StringReaderState::default();
     }
 }
 
@@ -1739,6 +1746,9 @@ pub(crate) struct TallyBuilder<'a> {
     /// `finish` returns it.
     root: Option<NodeId>,
     frames: Vec<Frame>,
+    /// The arrays read (`pushArrayContext` calls), for the root value
+    /// TypeScript would give a sample read in parts (`input/parts.rs`).
+    arrays: u64,
 }
 
 impl<'a> TallyBuilder<'a> {
@@ -1756,7 +1766,14 @@ impl<'a> TallyBuilder<'a> {
             config,
             root: None,
             frames: Vec::new(),
+            arrays: 0,
         }
+    }
+
+    /// How many arrays this builder read (`pushArrayContext` calls), those
+    /// of samples that failed included.
+    pub(crate) fn arrays(&self) -> u64 {
+        self.arrays
     }
 
     /// A builder that goes on reading the sample whose tree is `root`, in
@@ -1970,6 +1987,7 @@ impl JsonSink for TallyBuilder<'_> {
         let node = self.destination()?;
         let items = self.tallies.add_array(node)?;
         self.frames.push(Frame::Array { items });
+        self.arrays += 1;
         Ok(())
     }
 
