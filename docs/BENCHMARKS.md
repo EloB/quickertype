@@ -2328,11 +2328,12 @@ whatever the seed. `EqualityMap`'s results are the original's whatever
 its index's seed. Every run takes new seeds, and all of these passed:
 `cargo xtask parity -j 6` three times (11,177 of 11,177 cases each), the
 workspace's tests (782) and core's and js-compat's with `siphash` (584),
-`npm test` in npm/quicktype-core twice (80 tests, one skipped because
-every renderer is ported), the differential suite (`npm run
+`npm test` in npm/quicktype-core twice (90 tests on the shipped and the
+test-hooks engines, one skipped because every renderer is ported), the differential suite (`npm run
 test:differential`: 20,604 scenarios, 20,471 of them on WebAssembly,
 none different; one known gap, as before), `npm run test:browser` and
-the playground's smoke test, all after the second review's fixes. Before
+the playground's smoke test, all after the last review's fixes (parity
+once, there), and `npm test` on a `build.mjs --trace` dist. Before
 them, these passed in each earlier round too, the differential suite
 four times and parity nine.
 
@@ -2381,8 +2382,8 @@ agent's builds and tests running beside:
   the timer's step and the noise. Before the review's fixes, against
   `b65fa2212` (load 5.7 falling to 3.3), generating the 20 MB input was
   2–3% faster in each of three runs (32.6 to 31.9 ms, the medians).
-- The engine is 5,472,777 bytes, 4,348 smaller than main's (5,477,125),
-  without its test hooks.
+- The engine is 5,478,565 bytes, 1,440 (0.03%) larger than main's
+  (5,477,125), without its test hooks.
 
 ### Hashing strings in WebAssembly
 
