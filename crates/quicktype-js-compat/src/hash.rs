@@ -75,18 +75,18 @@ pub fn index_map_with_capacity<K, V>(n: usize) -> IndexMap<K, V> {
 #[derive(Clone, Debug, Default)]
 pub struct SeededState(Inner);
 
-#[cfg(not(all(feature = "siphash", not(target_arch = "wasm32"))))]
+#[cfg(seeded_foldhash)]
 type Inner = seeded::RandomState;
 
 /// With `siphash`, natively: `std`'s SipHash-1-3, keyed from the operating
 /// system's random source.
-#[cfg(all(feature = "siphash", not(target_arch = "wasm32")))]
+#[cfg(not(seeded_foldhash))]
 type Inner = std::hash::RandomState;
 
-#[cfg(not(all(feature = "siphash", not(target_arch = "wasm32"))))]
+#[cfg(seeded_foldhash)]
 type InnerHasher = foldhash::fast::FoldHasher<'static>;
 
-#[cfg(all(feature = "siphash", not(target_arch = "wasm32")))]
+#[cfg(not(seeded_foldhash))]
 type InnerHasher = std::hash::DefaultHasher;
 
 impl BuildHasher for SeededState {
@@ -138,9 +138,9 @@ fn hash_whole_str(state: &impl BuildHasher, s: &str) -> u64 {
 /// with what it threw). The `quicktype-wasm` bindings fail the module's
 /// start with it. Elsewhere it does not fail.
 pub fn init() -> Result<(), String> {
-    #[cfg(not(all(feature = "siphash", not(target_arch = "wasm32"))))]
+    #[cfg(seeded_foldhash)]
     return seeded::try_seeds().map(|_| ());
-    #[cfg(all(feature = "siphash", not(target_arch = "wasm32")))]
+    #[cfg(not(seeded_foldhash))]
     Ok(())
 }
 
@@ -166,10 +166,7 @@ pub fn seed(entropy: [u64; 2]) {
 /// foldhash with seeds from the host's randomness: [`SeededState`]'s
 /// hasher, but natively with the `siphash` feature (built there too, for
 /// its tests).
-#[cfg_attr(
-    any(not(target_arch = "wasm32"), feature = "siphash"),
-    allow(dead_code)
-)]
+#[cfg_attr(not(seeded_foldhash), allow(dead_code))]
 mod seeded {
     use std::sync::OnceLock;
     use std::sync::atomic::{AtomicU64, Ordering};
@@ -206,7 +203,8 @@ mod seeded {
         Ok(SEEDS.get_or_init(|| Seeds::new(entropy)))
     }
 
-    /// [`super::seed`].
+    /// [`super::seed`], which only WebAssembly takes.
+    #[cfg(any(target_arch = "wasm32", test))]
     pub(super) fn seed(entropy: [u64; 2]) {
         if SEEDS.set(Seeds::new(entropy)).is_err() {
             panic!(

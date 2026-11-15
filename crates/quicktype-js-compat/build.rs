@@ -15,6 +15,15 @@ include!("src/pluralize/rules.rs");
 include!("src/pluralize/translate.rs");
 
 fn main() {
+    // `seeded_foldhash`: `hash::SeededState` is foldhash with the seeds of
+    // `hash::seeded`, on every target but native builds with `siphash`
+    // (std's SipHash). One predicate for the module's every `cfg`.
+    println!("cargo::rustc-check-cfg=cfg(seeded_foldhash)");
+    let siphash = env::var_os("CARGO_FEATURE_SIPHASH").is_some();
+    let wasm32 = env::var("CARGO_CFG_TARGET_ARCH").as_deref() == Ok("wasm32");
+    if !siphash || wasm32 {
+        println!("cargo::rustc-cfg=seeded_foldhash");
+    }
     println!("cargo::rerun-if-changed=src/pluralize/rules.rs");
     println!("cargo::rerun-if-changed=src/pluralize/translate.rs");
     let out = PathBuf::from(env::var_os("OUT_DIR").expect("OUT_DIR"));
