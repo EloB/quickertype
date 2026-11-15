@@ -425,7 +425,9 @@ pub fn take_trace() -> String {
 /// `IndexMap<String, ClassProperty>` that inference fills with names from
 /// the input), in hex, for the facade's test that each instance seeds its
 /// maps from `crypto.getRandomValues` (`test/seed.test.mjs`): two fresh
-/// instances that do the same give different hashes.
+/// instances that do the same give different hashes. Only with the
+/// `test-hooks` feature, which the shipped engine is built without.
+#[cfg(feature = "test-hooks")]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __hashForTests)]
 pub fn hash_for_tests(key: &str) -> String {

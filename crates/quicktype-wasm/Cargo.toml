@@ -39,6 +39,11 @@ heap-stats = []
 # (`node npm/quicktype-core/script/build.mjs --trace`); see
 # docs/BENCHMARKS.md.
 trace = ["quickertype-core/trace"]
+# Exports for npm/quicktype-core's tests that the shipped engine must not
+# have (`__hashForTests`). Only the tests' own build turns it on
+# (`test/hooks-engine.mjs`); `script/build.mjs` never does, and the package
+# test checks that the shipped module lacks them.
+test-hooks = []
 
 [lints]
 workspace = true

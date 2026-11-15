@@ -65,8 +65,6 @@ export interface WasmGlue {
     engineVersion(): string;
     __pow(x: number, y: number): number;
     __panicForTests(): void;
-    /** The hash of `key` in a new map of class properties, in hex (test/seed.test.mjs). */
-    __hashForTests(key: string): string;
     __pendingRuns(): number;
 }
 

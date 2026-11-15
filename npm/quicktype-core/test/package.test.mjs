@@ -30,6 +30,21 @@ function walk(directory, keep) {
     return files.sort();
 }
 
+test("the shipped engine has no test hooks", () => {
+    // `__hashForTests` is only in the test-hooks engine (quicktype-wasm's
+    // `test-hooks` feature, test/hooks-engine.mjs): neither the module nor
+    // the glue that ships may export it.
+    const hooks = ["__hashForTests"];
+    const wasm = path.join(dist, "native", "wasm", "quicktype_wasm_bg.wasm");
+    const exported = WebAssembly.Module.exports(new WebAssembly.Module(fs.readFileSync(wasm))).map((e) => e.name);
+    for (const hook of hooks) {
+        assert.ok(!exported.includes(hook), `the module exports ${hook}`);
+        for (const glue of [path.join(dist, "native", "wasm", "glue.js"), path.join(dist, "esm", "native", "wasm", "glue.js")]) {
+            assert.ok(!fs.readFileSync(glue, "utf8").includes(hook), `${path.relative(packageRoot, glue)} has ${hook}`);
+        }
+    }
+});
+
 test("does not write to stdout when imported", () => {
     for (const args of [
         ["-e", `require(${JSON.stringify(packageRoot)});`],

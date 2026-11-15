@@ -14,6 +14,8 @@ import * as path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { hooksEngine } from "./hooks-engine.mjs";
+
 const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
@@ -105,27 +107,38 @@ test("each instance takes 16 bytes of crypto.getRandomValues as it starts, and o
 
 test("each instance hashes the keys of the maps inference fills differently", () => {
     // `__hashForTests` hashes a key in a new map of class properties (an
-    // IndexMap whose keys are property names from the input). Two fresh
-    // processes that do the same make that map at the same point of their
-    // maps' sequence, so with a fixed seed (as wasm32's `std` RandomState
-    // was) they would give the same hash.
-    const body = `const glue = engine.engineSync();
-        run();
-        return [glue.__hashForTests("name"), glue.__hashForTests("name")];`;
-    const [first, second] = inFreshNode("", body);
-    const [other] = inFreshNode("", body);
+    // IndexMap whose keys are property names from the input). It is only
+    // in the test-hooks engine (test/hooks-engine.mjs), not the shipped one
+    // (package.test.mjs checks). Two fresh instances that do the same make
+    // that map at the same point of their maps' sequence, so with a fixed
+    // seed (as wasm32's `std` RandomState was) they would give the same
+    // hash. A fresh `require` of the Node.js glue is a fresh instance.
+    const glue = hooksEngine();
+    const hashes = JSON.parse(
+        execFileSync(
+            process.execPath,
+            [
+                "-e",
+                `const load = () => { delete require.cache[${JSON.stringify(glue)}]; return require(${JSON.stringify(glue)}); };
+                 const first = load();
+                 const a = first.__hashForTests("name");
+                 const b = first.__hashForTests("name");
+                 const c = load().__hashForTests("name");
+                 console.log(JSON.stringify([a, b, c]));`,
+            ],
+            { encoding: "utf8" },
+        ),
+    );
+    const [first, second, sameProcess] = hashes;
+    const [otherProcess] = JSON.parse(
+        execFileSync(process.execPath, ["-e", `console.log(JSON.stringify([require(${JSON.stringify(glue)}).__hashForTests("name")]))`], {
+            encoding: "utf8",
+        }),
+    );
     assert.match(first, /^[0-9a-f]{16}$/);
-    assert.notEqual(first, other);
+    // Another process, and another instance in the same process.
+    assert.notEqual(first, otherProcess);
+    assert.notEqual(first, sameProcess);
     // Each map has its own seed too.
     assert.notEqual(first, second);
-
-    // And a fresh instance in the same process, after a trap, takes a new seed.
-    const [before, after] = inFreshNode(
-        "",
-        `const glue = engine.engineSync();
-         const before = glue.__hashForTests("name");
-         try { glue.__panicForTests(); } catch { engine.discardEngine(glue); }
-         return [before, engine.engineSync().__hashForTests("name")];`,
-    );
-    assert.notEqual(before, after);
 });
