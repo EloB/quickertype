@@ -83,7 +83,6 @@ export const glueExports = [
     "partsDrop",
     "partsAcquire",
     "partsRelease",
-    "__partsCount",
     "engineVersion",
 ];
 
@@ -102,6 +101,7 @@ export const testHookExports = [
     "__memoryGrowths",
     "__memoryPages",
     "__hashForTests",
+    "__partsCount",
 ];
 
 /** Exports that only builds with a cargo feature have, by feature. */

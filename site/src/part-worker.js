@@ -16,6 +16,8 @@ import { createGlue } from "../../npm/quicktype-core/dist/esm/native/wasm/glue.j
 import { PartReader } from "../../npm/quicktype-core/dist/esm/native/parts.js";
 
 let glue;
+/** Its instance's WebAssembly memory (the module's own export). */
+let memory;
 /** The reading under way: its File and the jobs' state. */
 let file;
 let reader;
@@ -29,9 +31,10 @@ async function handle(job, args) {
             // compile, link or instantiate, or is not this engine (no
             // engineVersion), leaves none, and the pool replaces this worker.
             const started = createGlue();
-            started.initSync({ module: args.module });
+            const exports = started.initSync({ module: args.module });
             started.engineVersion();
             glue = started;
+            memory = exports.memory;
             return [true, []];
         }
         case "summarize": {
@@ -56,7 +59,7 @@ async function handle(job, args) {
             return [true, []];
         case "memory":
             // The instance's memory, which never shrinks: the most it held (for measurements).
-            return [glue === undefined ? 0 : glue.__memoryPages() * 65536, []];
+            return [glue === undefined ? 0 : memory.buffer.byteLength, []];
         default:
             throw new Error(`no job ${job}`);
     }

@@ -74,8 +74,6 @@ export interface WasmGlue {
     partsDrop(id: number): void;
     partsAcquire(id: number): number | undefined;
     partsRelease(lease: number): void;
-    /** [parts' tallies, leases on them]. */
-    __partsCount(): Uint32Array;
     engineVersion(): string;
     /** Only in engines built with `--heap-stats`, for measurements. */
     __heapBytes?(): number;
@@ -94,6 +92,8 @@ export interface WasmGlue {
     __panicForTests?(): void;
     __pendingRuns?(): number;
     __hashForTests?(key: string): string;
+    /** [parts' tallies, leases on them]. */
+    __partsCount?(): Uint32Array;
 }
 
 /**

@@ -8,30 +8,41 @@
 // read in one go, they are not read in parts at all, and the caller reads
 // the sample in one go, with its errors.
 //
-//   node --test test/parallel.test.mjs   (after `npm run build`)
+//   node --test test/parallel.test.mjs test/parallel.hooks.test.mjs   (after `npm run build`
+//   and `node script/test-hooks.mjs`; npm test runs both)
+//
+// Every test runs on both packages (test/hooks.mjs): on the shipped one, and
+// from parallel.hooks.test.mjs on the test-hooks one, where they also check
+// that no tallies or leases are left (`__partsCount`, which the shipped
+// engine does not export).
 
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
 import { createRequire } from "node:module";
 import * as path from "node:path";
 import { test } from "node:test";
-import { fileURLToPath } from "node:url";
 
 import { generateCards, generateRulings } from "./bench/generate.mjs";
+import { runPackage } from "./hooks.mjs";
 
 const require = createRequire(import.meta.url);
-const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const qt = require(packageRoot);
-const { engineStats } = require(path.join(packageRoot, "dist", "native", "bridge.js"));
-const engine = require(path.join(packageRoot, "dist", "native", "engine.js"));
-const { releaseJSONInput, tablesFailed } = require(path.join(packageRoot, "dist", "native", "samples.js"));
-const { CompressedJSONFromString } = require(path.join(packageRoot, "dist", "input", "CompressedJSON.js"));
-const { PartReader, readJSONInputInParts } = require(path.join(packageRoot, "dist", "native", "parallel.js"));
-const { createGlue } = require(path.join(packageRoot, "dist", "native", "wasm", "glue.js"));
+const { qt, engineStats, engine, nativeSamples, hasHooks, dist } = runPackage();
+const { releaseJSONInput, tablesFailed } = nativeSamples;
+const { CompressedJSONFromString } = require(path.join(dist, "input", "CompressedJSON.js"));
+const { PartReader, readJSONInputInParts } = require(path.join(dist, "native", "parallel.js"));
+const { createGlue } = require(path.join(dist, "native", "wasm", "glue.js"));
 
 const engineKey = Symbol.for("quicktype-core.engine");
 const main = engine.engineSync();
-const wasmModule = new WebAssembly.Module(fs.readFileSync(path.join(packageRoot, "dist", "native", "wasm", "quicktype_wasm_bg.wasm")));
+const wasmModule = new WebAssembly.Module(fs.readFileSync(path.join(dist, "native", "wasm", "quicktype_wasm_bg.wasm")));
+
+/**
+ * That `glue` keeps `expected` [parts' tallies, leases on them]: checked on
+ * the test-hooks engine, which counts them (`__partsCount`).
+ */
+function partsCount(glue, expected, message) {
+    if (hasHooks) assert.deepEqual([...glue.__partsCount()], expected, message);
+}
 
 /** An engine instance of its own, as a worker has. */
 function instance() {
@@ -114,7 +125,7 @@ function linesOf(array) {
 
 /** No parts' tallies or leases are left on the workers' instances. */
 function workersClean(what) {
-    for (const glue of instances) assert.deepEqual([...glue.__partsCount()], [0, 0], `${what}: a worker kept tallies`);
+    for (const glue of instances) partsCount(glue, [0, 0], `${what}: a worker kept tallies`);
 }
 
 const rulings = generateRulings(3_000);
@@ -190,7 +201,7 @@ test("parts read on several instances give what reading in one go gives: every f
     }
 
     assert.equal(engineStats.readInParts - before, readInParts + inputs.length * 2);
-    assert.deepEqual([...main.__partsCount()], [0, 0], "the tallies of every input released");
+    partsCount(main, [0, 0], "the tallies of every input released");
 });
 
 test("a run on the TypeScript engine fills the tables by reading the sample again, and gives what it gives", async () => {
@@ -212,7 +223,7 @@ test("a run on the TypeScript engine fills the tables by reading the sample agai
     assert.deepEqual(onTypeScript, expected);
     // The tables are TypeScript's now: runs on the engine send them.
     assert.deepEqual(await run(parts.input, "go"), expected);
-    assert.deepEqual([...main.__partsCount()], [0, 0]);
+    partsCount(main, [0, 0]);
     // Without a way to read the sample again, the tables cannot be had;
     // the tallies stay, for runs on the engine.
     const lost = await inParts("go", bytes, false, { range: 4096, reread: false });
@@ -222,7 +233,7 @@ test("a run on the TypeScript engine fills the tables by reading the sample agai
     assert.equal(tablesFailed(lost.input), true);
     assert.deepEqual(await run(lost.input, "go"), expected);
     releaseJSONInput(lost.input);
-    assert.deepEqual([...main.__partsCount()], [0, 0]);
+    partsCount(main, [0, 0]);
 });
 
 test("tables that cannot be had leave the input as it was: a failed run on TypeScript, then runs on the engine; later uses fail at once", async () => {
@@ -267,7 +278,7 @@ test("tables that cannot be had leave the input as it was: a failed run on TypeS
             assert.equal(rereads, 1);
             // As it was: its tallies, for runs on the engine; and the tables
             // fail at once, with the same error, without reading again.
-            assert.deepEqual([...main.__partsCount()], [1, 0]);
+            partsCount(main, [1, 0]);
             let again;
             try {
                 void input._compressedJSON._strings;
@@ -283,7 +294,7 @@ test("tables that cannot be had leave the input as it was: a failed run on TypeS
             assert.equal(tablesFailed(input), false);
         }
 
-        assert.deepEqual([...main.__partsCount()], [0, 0]);
+        partsCount(main, [0, 0]);
         releaseJSONInput(one.input);
     }
 });
@@ -320,7 +331,7 @@ test("another sample added after one read in parts: TypeScript reads both, as ad
     await parts.input.addSource({ name: "Things", samples: ['{"extra": 1}'] });
     assert.deepEqual(await run(parts.input, "typescript"), await run(one.input, "typescript"));
     assert.deepEqual(inside(parts.input), inside(one.input));
-    assert.deepEqual([...main.__partsCount()], [0, 0]);
+    partsCount(main, [0, 0]);
 });
 
 /**
@@ -393,7 +404,7 @@ test("what does not read in parts is read in one go, and fails or declines as it
     }
 
     workersClean("the broken inputs");
-    assert.deepEqual([...main.__partsCount()], [0, 0]);
+    partsCount(main, [0, 0]);
 });
 
 test("the CLI's rules: small samples, one element, trees far larger than their text, JSON Lines without an early split", async () => {
@@ -476,7 +487,7 @@ test("a worker that fails, or a sample that changes, makes it read in one go", a
     workers[1].tally = async () => ({ bytes: new Uint8Array([1, 2, 3]) });
     assert.deepEqual(await readJSONInputInParts(qt.jsonInputForTargetLanguage("typescript"), source, workers, { minLength: 0, range: 4096 }), { inOneGo: "a worker's tallies could not be appended", always: false });
     workersClean("the failures");
-    assert.deepEqual([...main.__partsCount()], [0, 0]);
+    partsCount(main, [0, 0]);
 });
 
 test("bytes whose text a browser decodes to nothing (too long for one string, in Chrome) are an error, never an empty text", async () => {
@@ -500,6 +511,12 @@ test("bytes whose text a browser decodes to nothing (too long for one string, in
         const read = await outcome(() => qt.jsonInputForTargetLanguage("typescript").addSource({ name: "X", samples: [empty] }));
         assert.match(read.error?.message ?? "", /end of JSON input/);
     }
+});
+
+test("the engine's WebAssembly memory, for the playground's measurements, from the module's own export (no test hook)", () => {
+    const bytes = engine.engineMemoryBytes();
+    assert.ok(bytes >= 1 << 20 && bytes % 65536 === 0, String(bytes));
+    if (hasHooks) assert.equal(bytes, main.__memoryPages() * 65536);
 });
 
 test("the split search's bindings: a plan, summaries, states, splits, parts", async () => {

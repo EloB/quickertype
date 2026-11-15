@@ -117,7 +117,7 @@ import {
     quicktypeMultiFile,
 } from "../../npm/quicktype-core/dist/esm/index.js";
 import { engineStats } from "../../npm/quicktype-core/dist/esm/native/bridge.js";
-import { currentEngine } from "../../npm/quicktype-core/dist/esm/native/engine.js";
+import { engineMemoryBytes } from "../../npm/quicktype-core/dist/esm/native/engine.js";
 // Not quickertype-core's public API, but its internals the playground
 // uses: should they move, the site's build fails (esbuild: no such file or
 // export), and the smoke test's checks of eviction would too.
@@ -461,7 +461,7 @@ async function handle(request) {
     if (request.kind === "stats") {
         // For measurements: the WebAssembly memory of this worker's engine
         // and of each part worker's (it never shrinks: the most each held).
-        const memory = (currentEngine()?.__memoryPages() ?? 0) * 65536;
+        const memory = engineMemoryBytes() ?? 0;
         // For the smoke test too: the engine runs are on (`ts` for the
         // TypeScript worker, for good), and the bytes the file read in parts
         // keeps (those it was read in one go with, if it was).

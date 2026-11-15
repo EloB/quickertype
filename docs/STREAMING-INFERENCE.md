@@ -762,7 +762,10 @@ rules say which of theirs is which (`InOneGo::always`).
   own: every file of every run in six configurations, and the tables, are
   reading in one go's; broken inputs give its errors; why each is read in
   one go, and whether that is the sample's own; tables that cannot be had
-  leave the input as it was. The playground's smoke test reads 20 MB of
+  leave the input as it was. It runs on the shipped engine and again, from
+  `test/parallel.hooks.test.mjs`, on the tests' engine, which also checks
+  that no part's tallies or lease is left (`__partsCount`, a test hook
+  behind quicktype-wasm's `test-hooks` feature). The playground's smoke test reads 20 MB of
   cards and their JSON Lines on its part workers (the CLI's output,
   reading in one go's, quicktype's), and part workers that do not start.
 - The fuzz target `json_split` reads arbitrary bytes both ways, as a JSON

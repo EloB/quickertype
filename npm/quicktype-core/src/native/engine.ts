@@ -152,11 +152,12 @@ function instantiate(): WasmGlue | undefined {
     instantiations++;
     try {
         const glue = createGlue();
-        glue.initSync({ module: compiledModule });
+        const exports = glue.initSync({ module: compiledModule }) as { memory?: { buffer: ArrayBuffer } } | undefined;
         // A module that instantiates but is not this engine (it lacks the
         // exports) fails here, once, rather than in every run.
         glue.engineVersion();
         current = glue;
+        if (exports?.memory !== undefined) memories.set(glue, exports.memory);
         return glue;
     } catch (e) {
         loadError = e;
@@ -198,6 +199,19 @@ export function engineIfCompiled(): WasmGlue | undefined {
 /** The engine instance runs use now, if there is one; loads nothing. */
 export function currentEngine(): WasmGlue | undefined {
     return current;
+}
+
+/** Each instance's WebAssembly memory, the module's own export (`initSync`'s). */
+const memories = new WeakMap<WasmGlue, { buffer: ArrayBuffer }>();
+
+/**
+ * Not public (the playground's measurements use it): the bytes of the
+ * WebAssembly memory of the instance runs use now, which never shrinks
+ * (the most it held); `undefined` if there is none. Read from the module's
+ * memory, not a test hook, so the shipped engine has it.
+ */
+export function engineMemoryBytes(): number | undefined {
+    return current === undefined ? undefined : memories.get(current)?.buffer.byteLength;
 }
 
 /** Why the engine could not be loaded, if it could not. */

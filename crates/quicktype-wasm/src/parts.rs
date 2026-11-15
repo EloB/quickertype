@@ -499,7 +499,9 @@ pub fn take_lease(lease: f64) -> Option<(SharedTallies, Reading)> {
 }
 
 /// How many parts' tallies are kept, and how many leases are held (for
-/// the facade's tests).
+/// the facade's tests; only with the `test-hooks` feature, which the
+/// shipped engine is built without, and in this crate's own tests).
+#[cfg(any(test, feature = "test-hooks"))]
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __partsCount)]
 pub fn parts_count() -> Vec<u32> {
