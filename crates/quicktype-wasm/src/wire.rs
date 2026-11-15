@@ -14,6 +14,7 @@ use std::rc::Rc;
 
 use quicktype_core::date_time::{DateTimeRecognizer, DefaultDateTimeRecognizer};
 use quicktype_core::input::compressed_json::CompressedJson;
+use quicktype_core::input::parts::SharedTallies;
 use quicktype_core::internal::{CompressedJsonTables, CompressedTopLevel};
 use quicktype_core::{
     Comment, CommentOptions, DebugOptions, InferenceFlags, JsonSchema, OptionValue,
@@ -78,6 +79,19 @@ pub enum InputRequest {
         compressed_json: Rc<CompressedJson>,
         /// `_topLevels`, in insertion order (no sample is a string).
         top_levels: Vec<CompressedTopLevel>,
+    },
+    /// A `JSONInput` whose one sample the engine read in parts, on several
+    /// workers, into tallies it keeps for every run on it
+    /// ([`crate::parts`]).
+    JsonTallies {
+        /// The tallies.
+        tallies: SharedTallies,
+        /// How they were read.
+        reading: crate::parts::Reading,
+        /// The top-level's name.
+        name: String,
+        /// Its description, if any.
+        description: Option<String>,
     },
     /// A `JSONSchemaInput`. Its store, the schemas given as text and URI
     /// normalization stay in JavaScript.

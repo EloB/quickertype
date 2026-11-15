@@ -51,6 +51,7 @@
 mod allocator;
 pub mod assemble;
 pub mod js;
+pub mod parts;
 pub mod samples;
 pub mod slots;
 pub mod wire;

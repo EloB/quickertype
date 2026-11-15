@@ -72,6 +72,19 @@ pub fn assemble(request: Request, host: Rc<dyn RunHost>) -> Result<Options<'stat
             } => {
                 input_data.add_input(JsonInput::from_shared(compressed_json, top_levels)?);
             }
+            InputRequest::JsonTallies {
+                tallies,
+                reading,
+                name,
+                description,
+            } => {
+                input_data.add_input(JsonInput::from_tallies(
+                    reading.config()?,
+                    name,
+                    description,
+                    &tallies,
+                ));
+            }
             InputRequest::Schema {
                 store_id,
                 sources,

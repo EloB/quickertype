@@ -312,6 +312,25 @@ fn decode_input(input: &InputObject) -> Result<InputRequest> {
                 top_levels: decode_top_levels(input)?,
             })
         }
+        "jsonTallies" => {
+            let (tallies, reading) = crate::parts::take_lease(input.lease())
+                .ok_or_else(|| wire(WireError::new("unknown JSON tallies lease")))?;
+            // One top-level of one sample: the sample read in parts.
+            let mut top_levels = decode_top_levels(input)?;
+            match (top_levels.pop(), top_levels.is_empty()) {
+                (Some(top_level), true) if top_level.samples.len() == 1 => {
+                    Ok(InputRequest::JsonTallies {
+                        tallies,
+                        reading,
+                        name: top_level.name,
+                        description: top_level.description,
+                    })
+                }
+                _ => Err(wire(WireError::new(
+                    "JSON tallies for other than one top-level of one sample",
+                ))),
+            }
+        }
         "schema" => {
             let uris = input.source_uris();
             let names = input.source_names();

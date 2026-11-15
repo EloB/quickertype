@@ -66,7 +66,7 @@ use crate::wire::DateTimeKind;
 /// as it does.
 pub const MAX_DEPTH: usize = 256;
 
-const LIMITS: StringSampleLimits = StringSampleLimits {
+pub(crate) const LIMITS: StringSampleLimits = StringSampleLimits {
     max_depth: Some(MAX_DEPTH),
     lone_surrogates: false,
 };
