@@ -48,9 +48,13 @@ bytes, and a JSON or JSON Lines file of 16 MiB or more (`partsFrom` in
   JSON there) or the CLI would read in one go (not an array, no split,
   trees far larger than their text), the file is read in one go, with
   its errors. The worker remembers that for the file where the reason is
-  the file's own (no split, not JSON there, trees far larger than their
-  text), and only then: after part workers that did not start, say, the
-  next reading tries again (and the pool has replaced them). The status
+  the file's own, whatever the workers (no split, not JSON there, trees
+  far larger than their text: the engine's rules say which are). Any
+  other reason (part workers that did not start, which the pool
+  replaces; a part too long for this many workers' memory) is tried again
+  once: the next reading tries parts again, and if it fails again so, the
+  file is read in one go for as long as the worker keeps it. Once it reads
+  in parts, the bytes it was read in one go with are let go. The status
   under the file's name says "reading it on N workers" when it did.
 - **Memory.** quickertype's engine then keeps the tallies, not a
   compressed form: for the 656 MB cards, 45 MiB instead of 1.7 GiB, and
@@ -66,10 +70,15 @@ bytes, and a JSON or JSON Lines file of 16 MiB or more (`partsFrom` in
   quicktype takes one whose text has up to 2^29 − 24 UTF-16 units
   (`maxTextBytes`, V8's longest string): a file with more bytes than that
   may still have that few units (UTF-8 takes one to three bytes a unit, or
-  four for two), so its bytes are counted (`utf16Length`) before they are
-  decoded, and only a text that does not fit is refused: the file is too
-  large for the browser, and the CLI is named. Chrome decodes a text too
-  long for one string to "" without an error; the workers (and
+  four for two), so one size check (`checkText`) refuses before reading
+  only a file of more than three bytes a unit past the limit, and counts
+  the rest once read: JSON's bytes in the units `TextDecoder` decodes them
+  to, bytes that are not UTF-8 included (`utf16Length`), a text once
+  decoded, and JSON Lines for quicktype once made their JSON array. Only a
+  text that does not fit is refused: the file is too large for the
+  browser, and the CLI is named; so is one larger than the browser can
+  read at once (a `RangeError`), never "could not read". Chrome decodes a
+  text too long for one string to "" without an error; the workers (and
   quickertype-core's own decoding) take that as too large too, so quicktype
   is never given an empty text. quickertype reads larger files in parts;
   where it must read one in one go, JSON only if its text fits one string,
@@ -82,10 +91,14 @@ bytes, and a JSON or JSON Lines file of 16 MiB or more (`partsFrom` in
 
 The smoke test checks all of this with test hooks the workers take in a
 request (`partsFrom`, `partWorkers`, `textLimit`, `linesInOneGo`,
-`partModule` for part workers that cannot start, `typescript` for one run
-on the TypeScript engine), and the part worker and the pool in Node;
+`partModule`, a WebAssembly module the test compiles that new part workers
+start with instead of the engine, one that does not link, and
+`typescript` for one run on the TypeScript engine, after which the
+worker's engine is as it was), and the part worker and the pool in Node;
 `{ kind: "stats" }` gives the engines' WebAssembly memory, for
-`site/test/parts-bench.mjs`, which measures it.
+`site/test/parts-bench.mjs`, which measures it, and, for the smoke test,
+the engine the worker's runs are on and the bytes a file read in parts
+keeps.
 
 ## Where the landing page's numbers come from
 

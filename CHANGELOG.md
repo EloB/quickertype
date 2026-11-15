@@ -113,9 +113,11 @@ section are absolute.
   UTF-16 units, does not fit one string (its bytes may be more: a 537 MB
   slice of the cards fits), and never with an empty text, which Chrome
   decodes such a text to without an error. Why a file was read in one go is
-  remembered for it only where that is the file's own (no split, not JSON
-  there); part workers that fail are replaced, and the next reading tries
-  again. The status under a file read so says "reading it on N workers".
+  remembered for it where that is the file's own whatever the workers (no
+  split, not JSON there, trees far larger than their text); any other
+  reason (part workers that fail, which are replaced; a part too long for
+  this many workers' memory) is tried again once before it is remembered
+  too. The status under a file read so says "reading it on N workers".
 - **Reading in parts in quickertype-core (internal, not public API):**
   `src/native/parallel.ts` reads one sample of a fresh JSON input in parts
   on several engine instances (bindings in `crates/quicktype-wasm`'s

@@ -663,13 +663,20 @@ read into a `CompressedJSON` of its own, and only once it succeeded does
 the input take its tables: if reading again fails (the text is longer
 than one string, say), the input is as it was, its tallies kept for runs
 on the engine, and the use of its tables throws an error that says they
-cannot be had (and tries again next time).
+cannot be had; every later use throws it at once, without reading the
+sample again (the playground lets such an input go, and reads the file
+afresh for the next run).
 
 Why a sample is read in one go comes with whether it is the sample's own
-(`always`: not an array, no split, not JSON in a part, trees far larger
-than their text), which a caller may remember for the sample, or only
-this reading's (a worker that failed, an input or engine that cannot), so
-that the next reading tries again.
+whatever the plan (`always`: not an array, no split, not JSON in a part,
+trees far larger than their text, which the probe measures on the same
+first parts under every plan), which a caller may remember for the
+sample; or only this reading's, so that the next reading may try again:
+the plan's (a part too long for the budget, JSON Lines with no split in
+the ranges that start in their first MiB, tallies too large for the
+budget: other threads and ranges may read it in parts), or the moment's
+(a worker that failed, an input or engine that cannot). The engine's
+rules say which of theirs is which (`InOneGo::always`).
 
 ### Testing it
 
