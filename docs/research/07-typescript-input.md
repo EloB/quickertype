@@ -328,19 +328,28 @@ crates/quicktype-typescript-input/
 
 ## 8. Locating and provisioning tsc; behavior when it is absent
 
-* **Lookup order** (no new CLI flags, so the help text stays identical):
-  1. env `QUICKTYPE_TSC=<path to tsc>`;
-  2. `node_modules/@typescript/typescript-<os>-<arch>/lib/tsc`, searched upward from the cwd and then next to the
-     quicktype executable. This covers npm installs of quicktype, which can declare the platform package
-     `@typescript/typescript-<os>-<arch>@7.0.2` as an optional dependency (a 24 MB binary plus 3.9 MB of
-     `lib.*.d.ts`);
-  3. `tsgo`/`tsc` on `PATH`, accepted only if `--version` prints exactly `Version 7.0.2`.
+* **Lookup order** (no new CLI flags, so the help text stays identical), as built
+  (`crates/quicktype-typescript-input/src/tsc/locate.rs`):
+  1. env `QUICKTYPE_TSC=<path to tsc>`, and nothing else when it is set (npm's JavaScript launcher or `tsc.cmd`
+     shim resolves to the package's native binary);
+  2. the compiler a release bundles: the platform package `@typescript/typescript-<os>-<arch>@7.0.2`, unmodified
+     (a 24 MB binary plus 3.9 MB of `lib.*.d.ts`), in `typescript/` next to the executable's real path (the
+     release archives, the MSI, the npm package, which unpacks the archive) or in `../share/quickertype/typescript`
+     (Homebrew). It is used only if `lib/tsc` is executable (but on Windows), its `package.json` names this
+     platform's package at 7.0.2 and the release's `pins.json` is beside it, and is not run with `--version` (the
+     release checked its hash; docs/RELEASING.md, "The bundled TypeScript compiler");
+  3. `node_modules/@typescript/typescript-<os>-<arch>/lib/tsc`, searched upward from the cwd;
+  4. `tsgo`/`tsc` on `PATH`.
+
+  Steps 1, 3 and 4 accept a compiler only if `--version` prints exactly `Version 7.0.2`. `cargo install`, a build
+  from source and dist's shell and PowerShell installers install the binary alone, so they need step 1, 3 or 4.
 * **Pinning.** Accept only the exact pinned version. The protocol is unversioned, and enum values change between
   releases. Bumping the pin is a deliberate change: regenerate the tables and re-run parity.
-* **Absent or wrong version.** Exit 1 with one line in the reference's error style, for example: `Error: TypeScript
-  input requires the TypeScript 7.0.2 compiler (tsc); install it with "npm install -g typescript@7.0.2" or set
-  QUICKTYPE_TSC.` This is the one deliberate divergence. The reference cannot hit it, so no golden case covers it. If
-  tsc dies mid-session, the error should say so and quote its stderr.
+* **Absent or wrong version.** Exit 1 with one line in the reference's error style, naming the package for the
+  platform: `Error: TypeScript input requires the TypeScript 7.0.2 compiler (tsc), but it was not found. Install it
+  with "npm install -g typescript@7.0.2" (for this platform, that installs @typescript/typescript-darwin-arm64@7.0.2),
+  or set QUICKTYPE_TSC to its path.` This is the one deliberate divergence. The reference cannot hit it, so no
+  golden case covers it. If tsc dies mid-session, the error should say so and quote its stderr.
 * **Optional.** For full lib parity, embed TS 5.9.3's `lib.*.d.ts` files (2.1 MB for the files these options load, and
   they compress well) and serve them via `readFile` for paths under the tsc lib dir. Not needed on today's corpus, so
   defer.

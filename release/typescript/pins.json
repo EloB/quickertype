@@ -1,0 +1,52 @@
+{
+    "$comment": "quickertype's release archives and installers bundle the TypeScript compiler in this directory, next to quickertype: the npm platform package for their target, unmodified, as pinned here (npm's tarball URL and dist.integrity for each package, and the release targets that ship it). In the quickertype repository, release/bundle-typescript.mjs downloads and verifies it, and docs/RELEASING.md says how to bump it; the version must equal TSC_VERSION in crates/quicktype-typescript-input/src/tsc/generated.rs.",
+    "version": "7.0.2",
+    "packages": {
+        "darwin-arm64": {
+            "name": "@typescript/typescript-darwin-arm64",
+            "targets": [
+                "aarch64-apple-darwin"
+            ],
+            "tarball": "https://registry.npmjs.org/@typescript/typescript-darwin-arm64/-/typescript-darwin-arm64-7.0.2.tgz",
+            "integrity": "sha512-gowzar9MwS/aRWp6f3a4KUqzRjAZjOsmGNCM6LcTgXum+dBfgsBVMN+AgvOCCbguXyick6LJhpBszxMebJ8syA==",
+            "tscSha256": "a82f731365ad69d5c4c15f5e18fba4584bf3b7b839960172a76c3462b5114bf2"
+        },
+        "darwin-x64": {
+            "name": "@typescript/typescript-darwin-x64",
+            "targets": [
+                "x86_64-apple-darwin"
+            ],
+            "tarball": "https://registry.npmjs.org/@typescript/typescript-darwin-x64/-/typescript-darwin-x64-7.0.2.tgz",
+            "integrity": "sha512-SZ9xZInqApNlNGc9s0W1VSsktYSOe9cFqNOIqmN1Gs8SmkjKZYFt017G4VwPxASInODuAdbTW7sXiFUf893RgA==",
+            "tscSha256": "76e4987d060ef8207875a53a73619ce665ff16fb2800c0d57a452e21c829bd7b"
+        },
+        "linux-arm64": {
+            "name": "@typescript/typescript-linux-arm64",
+            "targets": [
+                "aarch64-unknown-linux-gnu"
+            ],
+            "tarball": "https://registry.npmjs.org/@typescript/typescript-linux-arm64/-/typescript-linux-arm64-7.0.2.tgz",
+            "integrity": "sha512-Qh4eU4/y3yDjnfjjyPYihMj5/ODIlmt+Bzu17OI+fiSRDW57QmU5SiN63exPRNJPKUzcc1INa1NXdrJ+MqHjUQ==",
+            "tscSha256": "f86e8070c267b12d6c119bf567cb82d8b245e9d93da1864bc7c603cea10a8b2f"
+        },
+        "linux-x64": {
+            "name": "@typescript/typescript-linux-x64",
+            "targets": [
+                "x86_64-unknown-linux-gnu",
+                "x86_64-unknown-linux-musl"
+            ],
+            "tarball": "https://registry.npmjs.org/@typescript/typescript-linux-x64/-/typescript-linux-x64-7.0.2.tgz",
+            "integrity": "sha512-EYdf2cNg7rgCWJnxCdJ+F3V39O8ihb37eHAu1LK8oAFizgTQbPOK7zHHXbPt8rX24COqODXeI3sIf0fCXG7H/A==",
+            "tscSha256": "4f2de678286401759b3fb4475bafe35b8f32b4b3a07d92642bbf37eadc9b34a4"
+        },
+        "win32-x64": {
+            "name": "@typescript/typescript-win32-x64",
+            "targets": [
+                "x86_64-pc-windows-msvc"
+            ],
+            "tarball": "https://registry.npmjs.org/@typescript/typescript-win32-x64/-/typescript-win32-x64-7.0.2.tgz",
+            "integrity": "sha512-0BQ3HkAHHlKLSp1qRvf3SUhGpGsDuhB/jgFw75guyqbxJqEaS0Cw/VFO8i2nHglJUzQCRtMMR/IBAKE3ETMC4g==",
+            "tscSha256": "f9ecfbdc93753d2c972d66a8d0d75f5bd737fd4a5f88b422d9091ea282bcb2c7"
+        }
+    }
+}

@@ -1,0 +1,9 @@
+# Steps that release.yml runs in every build-local-artifacts job, before
+# `dist build` (`github-build-setup` in dist-workspace.toml; run
+# `dist generate` after changing them). The action stages the TypeScript
+# compiler for the job's target in release/typescript, for the archives and
+# the MSI (docs/RELEASING.md); CI's release-bundle job uses the same action.
+- name: Stage the TypeScript compiler
+  uses: ./.github/actions/stage-typescript
+  with:
+    targets: ${{ join(matrix.targets, ' ') }}

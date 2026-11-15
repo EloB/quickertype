@@ -65,6 +65,32 @@ section are absolute.
   hashes untrusted input on a server. It is slower and changes no output;
   it has no effect on wasm32.
 
+- **TypeScript input works out of the box:** the release archives, and
+  with them the Homebrew formula, the `quickertype` npm package and the
+  MSI, include the TypeScript 7.0.2 compiler that TypeScript input needs:
+  Microsoft's, unmodified (the npm package
+  `@typescript/typescript-<os>-<arch>` for the platform, with its license
+  and notices), in a `typescript` directory next to `quickertype`
+  (Homebrew: `share/quickertype/typescript`). quickertype looks for it
+  after `QUICKTYPE_TSC` and before `node_modules` and `PATH`, from its
+  executable's real path, so links to the binary work, and uses it only
+  when it is executable with the release's `package.json` and `pins.json`
+  beside it, without starting it to ask its version. A compiler the
+  system refuses to start gives an error with its path and the fix. `cargo install` and the shell and
+  PowerShell installers still give the binary alone; without a compiler,
+  the error now names the platform's package (`npm install -g
+  typescript@7.0.2`, which installs
+  `@typescript/typescript-darwin-arm64@7.0.2` on Apple Silicon Macs) and
+  no longer ends in two periods. The release downloads each package from
+  the npm registry, checks it against the sha512 and compiler hash pinned
+  in
+  [`release/typescript/pins.json`](https://github.com/EloB/quickertype/blob/main/release/typescript/pins.json),
+  runs it on its build runner, and publishes nothing unless every archive
+  and the MSI have it. An archive grows by about 7 MB (the Windows zip by
+  about 9.5 MB).
+- The MSI installs quickertype's `LICENSE` and `NOTICE` in
+  `C:\Program Files\quickertype`.
+
 ### Changed
 
 - **Breaking for the Rust API:** every `IndexMap`, `IndexSet`, `HashMap`

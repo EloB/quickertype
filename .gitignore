@@ -6,3 +6,9 @@ node_modules/
 .DS_Store
 /npm/*/build/
 /site/dist/
+# The TypeScript compiler a release bundles (release/bundle-typescript.mjs):
+# only its pins are in the repository
+/release/typescript/*
+!/release/typescript/pins.json
+/release/.typescript.tmp/
+/crates/quicktype-cli/wix/bundled.wxs
