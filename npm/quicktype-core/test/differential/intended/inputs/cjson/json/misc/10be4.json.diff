@@ -1,6 +1,30 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -179,7 +179,7 @@
+@@ -127,18 +127,23 @@
+ };
+ 
+ enum Scheme cJSON_GetSchemeValue(const cJSON * j);
++bool cJSON_IsSchemeValue(const cJSON * j);
+ cJSON * cJSON_CreateScheme(const enum Scheme x);
+ 
+ enum Keyword cJSON_GetKeywordValue(const cJSON * j);
++bool cJSON_IsKeywordValue(const cJSON * j);
+ cJSON * cJSON_CreateKeyword(const enum Keyword x);
+ 
+ enum Note cJSON_GetNoteValue(const cJSON * j);
++bool cJSON_IsNoteValue(const cJSON * j);
+ cJSON * cJSON_CreateNote(const enum Note x);
+ 
+ enum MediaType cJSON_GetMediaTypeValue(const cJSON * j);
++bool cJSON_IsMediaTypeValue(const cJSON * j);
+ cJSON * cJSON_CreateMediaType(const enum MediaType x);
+ 
+ enum Title cJSON_GetTitleValue(const cJSON * j);
++bool cJSON_IsTitleValue(const cJSON * j);
+ cJSON * cJSON_CreateTitle(const enum Title x);
+ 
+ struct Identifier * cJSON_ParseIdentifier(const char * s);
+@@ -179,7 +184,7 @@
  
  enum Scheme cJSON_GetSchemeValue(const cJSON * j) {
      enum Scheme x = 0;
@@ -9,7 +33,23 @@
          if (!strcmp(cJSON_GetStringValue(j), "SPDX")) x = SCHEME_SPDX;
          else if (!strcmp(cJSON_GetStringValue(j), "Trove")) x = SCHEME_TROVE;
          else if (!strcmp(cJSON_GetStringValue(j), "DEP5")) x = SCHEME_DEP5;
-@@ -199,7 +199,7 @@
+@@ -187,6 +192,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsSchemeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "SPDX")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Trove")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "DEP5")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateScheme(const enum Scheme x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -199,7 +213,7 @@
  
  enum Keyword cJSON_GetKeywordValue(const cJSON * j) {
      enum Keyword x = 0;
@@ -18,7 +58,32 @@
          if (!strcmp(cJSON_GetStringValue(j), "osi-approved")) x = KEYWORD_OSI_APPROVED;
          else if (!strcmp(cJSON_GetStringValue(j), "discouraged")) x = KEYWORD_DISCOURAGED;
          else if (!strcmp(cJSON_GetStringValue(j), "redundant")) x = KEYWORD_REDUNDANT;
-@@ -237,7 +237,7 @@
+@@ -214,6 +228,24 @@
+         else if (!strcmp(cJSON_GetStringValue(j), "international")) x = KEYWORD_INTERNATIONAL;
+     }
+     return x;
++}
++
++bool cJSON_IsKeywordValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "osi-approved")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "discouraged")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "redundant")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "miscellaneous")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "non-reusable")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "obsolete")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "popular")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "permissive")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "retired")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "special-purpose")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "copyleft")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "international")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateKeyword(const enum Keyword x) {
+@@ -237,7 +269,7 @@
  
  enum Note cJSON_GetNoteValue(const cJSON * j) {
      enum Note x = 0;
@@ -27,7 +92,26 @@
          if (!strcmp(cJSON_GetStringValue(j), "OSI Page")) x = NOTE_OSI_PAGE;
          else if (!strcmp(cJSON_GetStringValue(j), "tl;dr legal")) x = NOTE_TL_DR_LEGAL;
          else if (!strcmp(cJSON_GetStringValue(j), "Wikipedia page")) x = NOTE_WIKIPEDIA_PAGE;
-@@ -263,7 +263,7 @@
+@@ -248,6 +280,18 @@
+     return x;
+ }
+ 
++bool cJSON_IsNoteValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "OSI Page")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "tl;dr legal")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Wikipedia page")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Wikipedia Page")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Mozilla Page")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "OSET Foundation Page")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateNote(const enum Note x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -263,7 +307,7 @@
  
  enum MediaType cJSON_GetMediaTypeValue(const cJSON * j) {
      enum MediaType x = 0;
@@ -36,7 +120,23 @@
          if (!strcmp(cJSON_GetStringValue(j), "text/html")) x = MEDIATYPE_TEXT_HTML;
          else if (!strcmp(cJSON_GetStringValue(j), "text/plain")) x = MEDIATYPE_TEXT_PLAIN;
          else if (!strcmp(cJSON_GetStringValue(j), "application/pdf")) x = MEDIATYPE_APPLICATION_PDF;
-@@ -283,7 +283,7 @@
+@@ -271,6 +315,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsMediaTypeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "text/html")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "text/plain")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "application/pdf")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateMediaType(const enum MediaType x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -283,12 +336,21 @@
  
  enum Title cJSON_GetTitleValue(const cJSON * j) {
      enum Title x = 0;
@@ -45,3 +145,62 @@
          if (!strcmp(cJSON_GetStringValue(j), "HTML")) x = TITLE_HTML;
          else if (!strcmp(cJSON_GetStringValue(j), "Plain Text")) x = TITLE_PLAIN_TEXT;
          else if (!strcmp(cJSON_GetStringValue(j), "PDF")) x = TITLE_PDF;
+     }
+     return x;
++}
++
++bool cJSON_IsTitleValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "HTML")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Plain Text")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "PDF")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateTitle(const enum Title x) {
+@@ -330,8 +392,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "scheme")) { cJSON_DeleteIdentifier(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "scheme")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "scheme")) || 0 == cJSON_GetSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
++                if (!cJSON_IsSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
+                 x->scheme = cJSON_GetSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"));
+             }
+         }
+@@ -395,8 +456,7 @@
+             memset(x, 0, sizeof(struct Link));
+             if (!cJSON_HasObjectItem(j, "note")) { cJSON_DeleteLink(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "note")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "note"))) { cJSON_DeleteLink(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "note")) || 0 == cJSON_GetNoteValue(cJSON_GetObjectItemCaseSensitive(j, "note"))) { cJSON_DeleteLink(x); return NULL; }
++                if (!cJSON_IsNoteValue(cJSON_GetObjectItemCaseSensitive(j, "note"))) { cJSON_DeleteLink(x); return NULL; }
+                 x->note = cJSON_GetNoteValue(cJSON_GetObjectItemCaseSensitive(j, "note"));
+             }
+             if (!cJSON_HasObjectItem(j, "url")) { cJSON_DeleteLink(x); return NULL; }
+@@ -552,14 +612,12 @@
+             memset(x, 0, sizeof(struct Text));
+             if (!cJSON_HasObjectItem(j, "media_type")) { cJSON_DeleteText(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "media_type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "media_type"))) { cJSON_DeleteText(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "media_type")) || 0 == cJSON_GetMediaTypeValue(cJSON_GetObjectItemCaseSensitive(j, "media_type"))) { cJSON_DeleteText(x); return NULL; }
++                if (!cJSON_IsMediaTypeValue(cJSON_GetObjectItemCaseSensitive(j, "media_type"))) { cJSON_DeleteText(x); return NULL; }
+                 x->media_type = cJSON_GetMediaTypeValue(cJSON_GetObjectItemCaseSensitive(j, "media_type"));
+             }
+             if (!cJSON_HasObjectItem(j, "title")) { cJSON_DeleteText(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "title")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteText(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "title")) || 0 == cJSON_GetTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteText(x); return NULL; }
++                if (!cJSON_IsTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteText(x); return NULL; }
+                 x->title = cJSON_GetTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"));
+             }
+             if (!cJSON_HasObjectItem(j, "url")) { cJSON_DeleteText(x); return NULL; }
+@@ -722,6 +780,7 @@
+                     cJSON * e1 = NULL;
+                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "keywords");
+                     cJSON_ArrayForEach(e1, j1) {
++                        if (!cJSON_IsKeywordValue(e1)) { x->keywords = x1; cJSON_DeleteTopLevelElement(x); return NULL; }
+                         enum Keyword * tmp = cJSON_malloc(sizeof(enum Keyword));
+                         if (NULL != tmp) {
+                             * tmp = cJSON_GetKeywordValue(e1);

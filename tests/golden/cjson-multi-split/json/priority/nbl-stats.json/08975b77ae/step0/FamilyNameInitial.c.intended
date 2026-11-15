@@ -26,6 +26,26 @@ enum FamilyNameInitial cJSON_GetFamilyNameInitialValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsFamilyNameInitialValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "R")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "M")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "s")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "C")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "O")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "W")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "A")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "P")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "V")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "I")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "J")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "S")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "H")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "B")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateFamilyNameInitial(const enum FamilyNameInitial x) {
     cJSON * j = NULL;
     switch (x) {

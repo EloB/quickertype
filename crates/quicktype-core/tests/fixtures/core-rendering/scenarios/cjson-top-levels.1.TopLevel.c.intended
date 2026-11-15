@@ -14,6 +14,14 @@ enum TopArrEnumElement cJSON_GetTopArrEnumElementValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsTopArrEnumElementValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "one")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "two")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateTopArrEnumElement(const enum TopArrEnumElement x) {
     cJSON * j = NULL;
     switch (x) {
@@ -30,6 +38,14 @@ enum TopEnum cJSON_GetTopEnumValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "b")) x = TOPENUM_B;
     }
     return x;
+}
+
+bool cJSON_IsTopEnumValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "a")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "b")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateTopEnum(const enum TopEnum x) {
@@ -443,7 +459,9 @@ struct TopArrInt * cJSON_GetTopArrIntValue(const cJSON * j) {
                 cJSON_ArrayForEach(e, j) {
                     if (!quicktype_cJSON_IsInteger(e)) { cJSON_DeleteTopArrInt(x); return NULL; }
                     int64_t * item = cJSON_malloc(sizeof(*item));
-                    if (NULL != item) { *item = cJSON_GetNumberValue(e); list_add_tail(x->value, item, sizeof(*item)); }
+                    if (NULL == item) { cJSON_DeleteTopArrInt(x); return NULL; }
+                    *item = cJSON_GetNumberValue(e);
+                    list_add_tail(x->value, item, sizeof(*item));
                 }
             }
         }
@@ -517,7 +535,9 @@ struct TopArrBool * cJSON_GetTopArrBoolValue(const cJSON * j) {
                 cJSON_ArrayForEach(e, j) {
                     if (!cJSON_IsBool(e)) { cJSON_DeleteTopArrBool(x); return NULL; }
                     bool * item = cJSON_malloc(sizeof(*item));
-                    if (NULL != item) { *item = cJSON_IsTrue(e); list_add_tail(x->value, item, sizeof(*item)); }
+                    if (NULL == item) { cJSON_DeleteTopArrBool(x); return NULL; }
+                    *item = cJSON_IsTrue(e);
+                    list_add_tail(x->value, item, sizeof(*item));
                 }
             }
         }
@@ -591,7 +611,9 @@ struct TopArrDouble * cJSON_GetTopArrDoubleValue(const cJSON * j) {
                 cJSON_ArrayForEach(e, j) {
                     if (!cJSON_IsNumber(e)) { cJSON_DeleteTopArrDouble(x); return NULL; }
                     double * item = cJSON_malloc(sizeof(*item));
-                    if (NULL != item) { *item = cJSON_GetNumberValue(e); list_add_tail(x->value, item, sizeof(*item)); }
+                    if (NULL == item) { cJSON_DeleteTopArrDouble(x); return NULL; }
+                    *item = cJSON_GetNumberValue(e);
+                    list_add_tail(x->value, item, sizeof(*item));
                 }
             }
         }
@@ -665,7 +687,9 @@ struct TopArrNullInt * cJSON_GetTopArrNullIntValue(const cJSON * j) {
                 cJSON_ArrayForEach(e, j) {
                     if (!cJSON_IsNull(e)) {
                         int64_t * item = cJSON_malloc(sizeof(*item));
-                        if (NULL != item) { *item = cJSON_GetNumberValue(e); list_add_tail(x->value, item, sizeof(*item)); }
+                        if (NULL == item) { cJSON_DeleteTopArrNullInt(x); return NULL; }
+                        *item = cJSON_GetNumberValue(e);
+                        list_add_tail(x->value, item, sizeof(*item));
                     }
                     else {
                         list_add_tail(x->value, (void *)0xDEADBEEF, sizeof(void *));
@@ -1030,7 +1054,6 @@ void cJSON_DeleteTopArrArr(struct TopArrArr * x) {
         if (NULL != x->value) {
             list_t * x1 = list_get_head(x->value);
             while (NULL != x1) {
-                list_release(x1);
                 x1 = list_get_next(x->value);
             }
             list_release(x->value);
@@ -1101,7 +1124,6 @@ void cJSON_DeleteTopArrMap(struct TopArrMap * x) {
         if (NULL != x->value) {
             hashtable_t * x1 = list_get_head(x->value);
             while (NULL != x1) {
-                hashtable_release(x1);
                 x1 = list_get_next(x->value);
             }
             list_release(x->value);
@@ -1348,9 +1370,11 @@ struct TopArrEnum * cJSON_GetTopArrEnumValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
-                    if (!cJSON_IsString(e)) { cJSON_DeleteTopArrEnum(x); return NULL; }
+                    if (!cJSON_IsTopArrEnumElementValue(e)) { cJSON_DeleteTopArrEnum(x); return NULL; }
                     enum TopArrEnumElement * item = cJSON_malloc(sizeof(*item));
-                    if (NULL != item) { *item = cJSON_GetTopArrEnumElementValue(e); list_add_tail(x->value, item, sizeof(*item)); }
+                    if (NULL == item) { cJSON_DeleteTopArrEnum(x); return NULL; }
+                    *item = cJSON_GetTopArrEnumElementValue(e);
+                    list_add_tail(x->value, item, sizeof(*item));
                 }
             }
         }
@@ -1422,6 +1446,7 @@ struct TopMapStr * cJSON_GetTopMapStrValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
+                    if (!cJSON_IsString(e)) { cJSON_DeleteTopMapStr(x); return NULL; }
                     hashtable_add(x->value, e->string, strdup(cJSON_GetStringValue(e)), sizeof(char *));
                 }
             }
@@ -1504,8 +1529,11 @@ struct TopMapInt * cJSON_GetTopMapIntValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
+                    if (!quicktype_cJSON_IsInteger(e)) { cJSON_DeleteTopMapInt(x); return NULL; }
                     int64_t * item = cJSON_malloc(sizeof(*item));
-                    if (NULL != item) { *item = cJSON_GetNumberValue(e); hashtable_add(x->value, e->string, item, sizeof(*item)); }
+                    if (NULL == item) { cJSON_DeleteTopMapInt(x); return NULL; }
+                    *item = cJSON_GetNumberValue(e);
+                    hashtable_add(x->value, e->string, item, sizeof(*item));
                 }
             }
         }
@@ -1587,6 +1615,7 @@ struct TopMapObj * cJSON_GetTopMapObjValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
+                    if (!cJSON_IsObject(e)) { cJSON_DeleteTopMapObj(x); return NULL; }
                     hashtable_add(x->value, e->string, cJSON_GetTopMapObjValueValue(e), sizeof(struct TopMapObjValue *));
                 }
             }
@@ -1669,6 +1698,7 @@ struct TopMapNullStr * cJSON_GetTopMapNullStrValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
+                    if (!cJSON_IsNull(e) && !cJSON_IsString(e)) { cJSON_DeleteTopMapNullStr(x); return NULL; }
                     if (!cJSON_IsNull(e)) {
                         hashtable_add(x->value, e->string, strdup(cJSON_GetStringValue(e)), sizeof(char *));
                     }
@@ -1729,7 +1759,7 @@ void cJSON_DeleteTopMapNullStr(struct TopMapNullStr * x) {
                 for (size_t index = 0; index < count; index++) {
                     char *x2 = hashtable_lookup(x->value, keys[index]);
                     if (NULL != x2) {
-                        if ((char *)0xDEADBEEF != x2) {
+                        if ((void *)0xDEADBEEF != x2) {
                             cJSON_free(x2);
                         }
                     }
@@ -1763,9 +1793,12 @@ struct TopMapNullInt * cJSON_GetTopMapNullIntValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
+                    if (!cJSON_IsNull(e) && !quicktype_cJSON_IsInteger(e)) { cJSON_DeleteTopMapNullInt(x); return NULL; }
                     if (!cJSON_IsNull(e)) {
                         int64_t * item = cJSON_malloc(sizeof(*item));
-                        if (NULL != item) { *item = cJSON_GetNumberValue(e); hashtable_add(x->value, e->string, item, sizeof(*item)); }
+                        if (NULL == item) { cJSON_DeleteTopMapNullInt(x); return NULL; }
+                        *item = cJSON_GetNumberValue(e);
+                        hashtable_add(x->value, e->string, item, sizeof(*item));
                     }
                     else {
                         hashtable_add(x->value, e->string, (void *)0xDEADBEEF, sizeof(void *));
@@ -1824,7 +1857,7 @@ void cJSON_DeleteTopMapNullInt(struct TopMapNullInt * x) {
                 for (size_t index = 0; index < count; index++) {
                     int64_t *x2 = hashtable_lookup(x->value, keys[index]);
                     if (NULL != x2) {
-                        if ((int64_t *)0xDEADBEEF != x2) {
+                        if ((void *)0xDEADBEEF != x2) {
                             cJSON_free(x2);
                         }
                     }
@@ -1858,6 +1891,7 @@ struct TopMapNull * cJSON_GetTopMapNullValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
+                    if (!cJSON_IsNull(e)) { cJSON_DeleteTopMapNull(x); return NULL; }
                     hashtable_add(x->value, e->string, (void *)0xDEADBEEF, sizeof(void *));
                 }
             }
@@ -1939,6 +1973,7 @@ struct TopMapArr * cJSON_GetTopMapArrValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
+                    if (!cJSON_IsArray(e)) { cJSON_DeleteTopMapArr(x); return NULL; }
                 }
             }
         }
@@ -1987,7 +2022,6 @@ void cJSON_DeleteTopMapArr(struct TopMapArr * x) {
                 for (size_t index = 0; index < count; index++) {
                     list_t *x2 = hashtable_lookup(x->value, keys[index]);
                     if (NULL != x2) {
-                        list_release(x2);
                     }
                 }
                 cJSON_free(keys);
@@ -2019,6 +2053,7 @@ struct TopMapMap * cJSON_GetTopMapMapValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
+                    if (!cJSON_IsObject(e)) { cJSON_DeleteTopMapMap(x); return NULL; }
                 }
             }
         }
@@ -2067,7 +2102,6 @@ void cJSON_DeleteTopMapMap(struct TopMapMap * x) {
                 for (size_t index = 0; index < count; index++) {
                     hashtable_t *x2 = hashtable_lookup(x->value, keys[index]);
                     if (NULL != x2) {
-                        hashtable_release(x2);
                     }
                 }
                 cJSON_free(keys);
@@ -2181,6 +2215,7 @@ struct TopMapUnion * cJSON_GetTopMapUnionValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
+                    if (!cJSON_IsTopMapUnionValue(e)) { cJSON_DeleteTopMapUnion(x); return NULL; }
                     hashtable_add(x->value, e->string, cJSON_GetTopMapUnionValueValue(e), sizeof(struct TopMapUnionValue *));
                 }
             }

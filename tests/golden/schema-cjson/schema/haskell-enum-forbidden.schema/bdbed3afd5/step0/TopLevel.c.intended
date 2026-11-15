@@ -14,6 +14,14 @@ enum Health cJSON_GetHealthValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsHealthValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "ok")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "error")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateHealth(const enum Health x) {
     cJSON * j = NULL;
     switch (x) {
@@ -42,8 +50,7 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
             memset(x, 0, sizeof(struct TopLevel));
             if (!cJSON_HasObjectItem(j, "health")) { cJSON_DeleteTopLevel(x); return NULL; }
             if (cJSON_HasObjectItem(j, "health")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "health"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "health")) || 0 == cJSON_GetHealthValue(cJSON_GetObjectItemCaseSensitive(j, "health"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsHealthValue(cJSON_GetObjectItemCaseSensitive(j, "health"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 x->health = cJSON_GetHealthValue(cJSON_GetObjectItemCaseSensitive(j, "health"));
             }
         }

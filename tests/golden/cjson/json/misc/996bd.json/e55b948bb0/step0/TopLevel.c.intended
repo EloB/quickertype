@@ -15,6 +15,15 @@ enum Scheme cJSON_GetSchemeValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsSchemeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "DEP5")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "SPDX")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Trove")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateScheme(const enum Scheme x) {
     cJSON * j = NULL;
     switch (x) {
@@ -34,6 +43,16 @@ enum Keyword cJSON_GetKeywordValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "international")) x = KEYWORD_INTERNATIONAL;
     }
     return x;
+}
+
+bool cJSON_IsKeywordValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "osi-approved")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "popular")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "copyleft")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "international")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateKeyword(const enum Keyword x) {
@@ -56,6 +75,14 @@ enum MediaType cJSON_GetMediaTypeValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsMediaTypeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "text/plain")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "text/html")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateMediaType(const enum MediaType x) {
     cJSON * j = NULL;
     switch (x) {
@@ -72,6 +99,14 @@ enum Title cJSON_GetTitleValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "HTML")) x = TITLE_HTML;
     }
     return x;
+}
+
+bool cJSON_IsTitleValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Plain Text")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "HTML")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateTitle(const enum Title x) {
@@ -112,8 +147,7 @@ struct Identifier * cJSON_GetIdentifierValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "scheme")) { cJSON_DeleteIdentifier(x); return NULL; }
             if (cJSON_HasObjectItem(j, "scheme")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "scheme")) || 0 == cJSON_GetSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
+                if (!cJSON_IsSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"))) { cJSON_DeleteIdentifier(x); return NULL; }
                 x->scheme = cJSON_GetSchemeValue(cJSON_GetObjectItemCaseSensitive(j, "scheme"));
             }
         }
@@ -264,14 +298,12 @@ struct Text * cJSON_GetTextValue(const cJSON * j) {
             memset(x, 0, sizeof(struct Text));
             if (!cJSON_HasObjectItem(j, "media_type")) { cJSON_DeleteText(x); return NULL; }
             if (cJSON_HasObjectItem(j, "media_type")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "media_type"))) { cJSON_DeleteText(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "media_type")) || 0 == cJSON_GetMediaTypeValue(cJSON_GetObjectItemCaseSensitive(j, "media_type"))) { cJSON_DeleteText(x); return NULL; }
+                if (!cJSON_IsMediaTypeValue(cJSON_GetObjectItemCaseSensitive(j, "media_type"))) { cJSON_DeleteText(x); return NULL; }
                 x->media_type = cJSON_GetMediaTypeValue(cJSON_GetObjectItemCaseSensitive(j, "media_type"));
             }
             if (!cJSON_HasObjectItem(j, "title")) { cJSON_DeleteText(x); return NULL; }
             if (cJSON_HasObjectItem(j, "title")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteText(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "title")) || 0 == cJSON_GetTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteText(x); return NULL; }
+                if (!cJSON_IsTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteText(x); return NULL; }
                 x->title = cJSON_GetTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"));
             }
             if (!cJSON_HasObjectItem(j, "url")) { cJSON_DeleteText(x); return NULL; }
@@ -381,6 +413,7 @@ struct TopLevelElement * cJSON_GetTopLevelElementValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "keywords");
                     cJSON_ArrayForEach(e1, j1) {
+                        if (!cJSON_IsKeywordValue(e1)) { x->keywords = x1; cJSON_DeleteTopLevelElement(x); return NULL; }
                         enum Keyword * tmp = cJSON_malloc(sizeof(enum Keyword));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetKeywordValue(e1);

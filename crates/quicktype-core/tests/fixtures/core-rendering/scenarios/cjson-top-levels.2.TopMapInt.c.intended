@@ -26,8 +26,11 @@ struct TopMapInt * cJSON_GetTopMapIntValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
+                    if (!quicktype_cJSON_IsInteger(e)) { cJSON_DeleteTopMapInt(x); return NULL; }
                     int64_t * item = cJSON_malloc(sizeof(*item));
-                    if (NULL != item) { *item = cJSON_GetNumberValue(e); hashtable_add(x->value, e->string, item, sizeof(*item)); }
+                    if (NULL == item) { cJSON_DeleteTopMapInt(x); return NULL; }
+                    *item = cJSON_GetNumberValue(e);
+                    hashtable_add(x->value, e->string, item, sizeof(*item));
                 }
             }
         }

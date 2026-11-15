@@ -1,6 +1,235 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -7109,7 +7109,7 @@
+@@ -6333,121 +6333,157 @@
+ };
+ 
+ enum Contains cJSON_GetContainsValue(const cJSON * j);
++bool cJSON_IsContainsValue(const cJSON * j);
+ cJSON * cJSON_CreateContains(const enum Contains x);
+ 
+ enum AutosizeType cJSON_GetAutosizeTypeValue(const cJSON * j);
++bool cJSON_IsAutosizeTypeValue(const cJSON * j);
+ cJSON * cJSON_CreateAutosizeType(const enum AutosizeType x);
+ 
+ enum HorizontalAlign cJSON_GetHorizontalAlignValue(const cJSON * j);
++bool cJSON_IsHorizontalAlignValue(const cJSON * j);
+ cJSON * cJSON_CreateHorizontalAlign(const enum HorizontalAlign x);
+ 
+ enum VerticalAlign cJSON_GetVerticalAlignValue(const cJSON * j);
++bool cJSON_IsVerticalAlignValue(const cJSON * j);
+ cJSON * cJSON_CreateVerticalAlign(const enum VerticalAlign x);
+ 
+ enum Cursor cJSON_GetCursorValue(const cJSON * j);
++bool cJSON_IsCursorValue(const cJSON * j);
+ cJSON * cJSON_CreateCursor(const enum Cursor x);
+ 
+ enum FontStyle cJSON_GetFontStyleValue(const cJSON * j);
++bool cJSON_IsFontStyleValue(const cJSON * j);
+ cJSON * cJSON_CreateFontStyle(const enum FontStyle x);
+ 
+ enum FontWeight cJSON_GetFontWeightValue(const cJSON * j);
++bool cJSON_IsFontWeightValue(const cJSON * j);
+ cJSON * cJSON_CreateFontWeight(const enum FontWeight x);
+ 
+ enum Interpolate cJSON_GetInterpolateValue(const cJSON * j);
++bool cJSON_IsInterpolateValue(const cJSON * j);
+ cJSON * cJSON_CreateInterpolate(const enum Interpolate x);
+ 
+ enum Orient cJSON_GetOrientValue(const cJSON * j);
++bool cJSON_IsOrientValue(const cJSON * j);
+ cJSON * cJSON_CreateOrient(const enum Orient x);
+ 
+ enum LabelOverlapEnum cJSON_GetLabelOverlapEnumValue(const cJSON * j);
++bool cJSON_IsLabelOverlapEnumValue(const cJSON * j);
+ cJSON * cJSON_CreateLabelOverlapEnum(const enum LabelOverlapEnum x);
+ 
+ enum FieldTitle cJSON_GetFieldTitleValue(const cJSON * j);
++bool cJSON_IsFieldTitleValue(const cJSON * j);
+ cJSON * cJSON_CreateFieldTitle(const enum FieldTitle x);
+ 
+ enum InvalidValues cJSON_GetInvalidValuesValue(const cJSON * j);
++bool cJSON_IsInvalidValuesValue(const cJSON * j);
+ cJSON * cJSON_CreateInvalidValues(const enum InvalidValues x);
+ 
+ enum LegendOrient cJSON_GetLegendOrientValue(const cJSON * j);
++bool cJSON_IsLegendOrientValue(const cJSON * j);
+ cJSON * cJSON_CreateLegendOrient(const enum LegendOrient x);
+ 
+ enum VgProjectionType cJSON_GetVgProjectionTypeValue(const cJSON * j);
++bool cJSON_IsVgProjectionTypeValue(const cJSON * j);
+ cJSON * cJSON_CreateVgProjectionType(const enum VgProjectionType x);
+ 
+ enum BindEnum cJSON_GetBindEnumValue(const cJSON * j);
++bool cJSON_IsBindEnumValue(const cJSON * j);
+ cJSON * cJSON_CreateBindEnum(const enum BindEnum x);
+ 
+ enum Empty cJSON_GetEmptyValue(const cJSON * j);
++bool cJSON_IsEmptyValue(const cJSON * j);
+ cJSON * cJSON_CreateEmpty(const enum Empty x);
+ 
+ enum SingleDefChannel cJSON_GetSingleDefChannelValue(const cJSON * j);
++bool cJSON_IsSingleDefChannelValue(const cJSON * j);
+ cJSON * cJSON_CreateSingleDefChannel(const enum SingleDefChannel x);
+ 
+ enum SelectionResolution cJSON_GetSelectionResolutionValue(const cJSON * j);
++bool cJSON_IsSelectionResolutionValue(const cJSON * j);
+ cJSON * cJSON_CreateSelectionResolution(const enum SelectionResolution x);
+ 
+ enum StackOffset cJSON_GetStackOffsetValue(const cJSON * j);
++bool cJSON_IsStackOffsetValue(const cJSON * j);
+ cJSON * cJSON_CreateStackOffset(const enum StackOffset x);
+ 
+ enum Anchor cJSON_GetAnchorValue(const cJSON * j);
++bool cJSON_IsAnchorValue(const cJSON * j);
+ cJSON * cJSON_CreateAnchor(const enum Anchor x);
+ 
+ enum TitleOrient cJSON_GetTitleOrientValue(const cJSON * j);
++bool cJSON_IsTitleOrientValue(const cJSON * j);
+ cJSON * cJSON_CreateTitleOrient(const enum TitleOrient x);
+ 
+ enum ParseEnum cJSON_GetParseEnumValue(const cJSON * j);
++bool cJSON_IsParseEnumValue(const cJSON * j);
+ cJSON * cJSON_CreateParseEnum(const enum ParseEnum x);
+ 
+ enum DataFormatType cJSON_GetDataFormatTypeValue(const cJSON * j);
++bool cJSON_IsDataFormatTypeValue(const cJSON * j);
+ cJSON * cJSON_CreateDataFormatType(const enum DataFormatType x);
+ 
+ enum AggregateOp cJSON_GetAggregateOpValue(const cJSON * j);
++bool cJSON_IsAggregateOpValue(const cJSON * j);
+ cJSON * cJSON_CreateAggregateOp(const enum AggregateOp x);
+ 
+ enum TimeUnit cJSON_GetTimeUnitValue(const cJSON * j);
++bool cJSON_IsTimeUnitValue(const cJSON * j);
+ cJSON * cJSON_CreateTimeUnit(const enum TimeUnit x);
+ 
+ enum RepeatEnum cJSON_GetRepeatEnumValue(const cJSON * j);
++bool cJSON_IsRepeatEnumValue(const cJSON * j);
+ cJSON * cJSON_CreateRepeatEnum(const enum RepeatEnum x);
+ 
+ enum LegendType cJSON_GetLegendTypeValue(const cJSON * j);
++bool cJSON_IsLegendTypeValue(const cJSON * j);
+ cJSON * cJSON_CreateLegendType(const enum LegendType x);
+ 
+ enum Domain cJSON_GetDomainValue(const cJSON * j);
++bool cJSON_IsDomainValue(const cJSON * j);
+ cJSON * cJSON_CreateDomain(const enum Domain x);
+ 
+ enum InterpolateParamsType cJSON_GetInterpolateParamsTypeValue(const cJSON * j);
++bool cJSON_IsInterpolateParamsTypeValue(const cJSON * j);
+ cJSON * cJSON_CreateInterpolateParamsType(const enum InterpolateParamsType x);
+ 
+ enum NiceTime cJSON_GetNiceTimeValue(const cJSON * j);
++bool cJSON_IsNiceTimeValue(const cJSON * j);
+ cJSON * cJSON_CreateNiceTime(const enum NiceTime x);
+ 
+ enum ScaleType cJSON_GetScaleTypeValue(const cJSON * j);
++bool cJSON_IsScaleTypeValue(const cJSON * j);
+ cJSON * cJSON_CreateScaleType(const enum ScaleType x);
+ 
+ enum SortEnum cJSON_GetSortEnumValue(const cJSON * j);
++bool cJSON_IsSortEnumValue(const cJSON * j);
+ cJSON * cJSON_CreateSortEnum(const enum SortEnum x);
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j);
++bool cJSON_IsTypeValue(const cJSON * j);
+ cJSON * cJSON_CreateType(const enum Type x);
+ 
+ enum Mark cJSON_GetMarkValue(const cJSON * j);
++bool cJSON_IsMarkValue(const cJSON * j);
+ cJSON * cJSON_CreateMark(const enum Mark x);
+ 
+ enum ResolveMode cJSON_GetResolveModeValue(const cJSON * j);
++bool cJSON_IsResolveModeValue(const cJSON * j);
+ cJSON * cJSON_CreateResolveMode(const enum ResolveMode x);
+ 
+ enum SelectionDefType cJSON_GetSelectionDefTypeValue(const cJSON * j);
++bool cJSON_IsSelectionDefTypeValue(const cJSON * j);
+ cJSON * cJSON_CreateSelectionDefType(const enum SelectionDefType x);
+ 
+-#define cJSON_IsAutosize(j) (cJSON_IsObject(j) || cJSON_IsString(j))
++#define cJSON_IsAutosize(j) (cJSON_IsObject(j) || cJSON_IsAutosizeTypeValue(j))
+ struct Autosize * cJSON_GetAutosizeValue(const cJSON * j);
+ cJSON * cJSON_CreateAutosize(const struct Autosize * x);
+ void cJSON_DeleteAutosize(struct Autosize * x);
+ struct Autosize * cJSON_ParseAutosize(const char * s);
+ char * cJSON_PrintAutosize(const struct Autosize * x);
+ 
+-#define cJSON_IsFontWeightUnion(j) (cJSON_IsNumber(j) || cJSON_IsString(j))
++#define cJSON_IsFontWeightUnion(j) (cJSON_IsNumber(j) || cJSON_IsFontWeightValue(j))
+ struct FontWeightUnion * cJSON_GetFontWeightUnionValue(const cJSON * j);
+ cJSON * cJSON_CreateFontWeightUnion(const struct FontWeightUnion * x);
+ void cJSON_DeleteFontWeightUnion(struct FontWeightUnion * x);
+@@ -6461,7 +6497,7 @@
+ struct Label * cJSON_ParseLabel(const char * s);
+ char * cJSON_PrintLabel(const struct Label * x);
+ 
+-#define cJSON_IsLabelOverlapUnion(j) (cJSON_IsBool(j) || cJSON_IsString(j))
++#define cJSON_IsLabelOverlapUnion(j) (cJSON_IsBool(j) || cJSON_IsLabelOverlapEnumValue(j))
+ struct LabelOverlapUnion * cJSON_GetLabelOverlapUnionValue(const cJSON * j);
+ cJSON * cJSON_CreateLabelOverlapUnion(const struct LabelOverlapUnion * x);
+ void cJSON_DeleteLabelOverlapUnion(struct LabelOverlapUnion * x);
+@@ -6496,7 +6532,7 @@
+ struct Translate * cJSON_ParseTranslate(const char * s);
+ char * cJSON_PrintTranslate(const struct Translate * x);
+ 
+-#define cJSON_IsParseUnion(j) (cJSON_IsObject(j) || cJSON_IsString(j))
++#define cJSON_IsParseUnion(j) (cJSON_IsObject(j) || cJSON_IsParseEnumValue(j))
+ struct ParseUnion * cJSON_GetParseUnionValue(const cJSON * j);
+ cJSON * cJSON_CreateParseUnion(const struct ParseUnion * x);
+ void cJSON_DeleteParseUnion(struct ParseUnion * x);
+@@ -6587,21 +6623,21 @@
+ struct LegendValue * cJSON_ParseLegendValue(const char * s);
+ char * cJSON_PrintLegendValue(const struct LegendValue * x);
+ 
+-#define cJSON_IsDomainUnion(j) (cJSON_IsArray(j) || cJSON_IsObject(j) || cJSON_IsString(j))
++#define cJSON_IsDomainUnion(j) (cJSON_IsArray(j) || cJSON_IsObject(j) || cJSON_IsDomainValue(j))
+ struct DomainUnion * cJSON_GetDomainUnionValue(const cJSON * j);
+ cJSON * cJSON_CreateDomainUnion(const struct DomainUnion * x);
+ void cJSON_DeleteDomainUnion(struct DomainUnion * x);
+ struct DomainUnion * cJSON_ParseDomainUnion(const char * s);
+ char * cJSON_PrintDomainUnion(const struct DomainUnion * x);
+ 
+-#define cJSON_IsInterpolateUnion(j) (cJSON_IsObject(j) || cJSON_IsString(j))
++#define cJSON_IsInterpolateUnion(j) (cJSON_IsObject(j) || cJSON_IsInterpolateValue(j))
+ struct InterpolateUnion * cJSON_GetInterpolateUnionValue(const cJSON * j);
+ cJSON * cJSON_CreateInterpolateUnion(const struct InterpolateUnion * x);
+ void cJSON_DeleteInterpolateUnion(struct InterpolateUnion * x);
+ struct InterpolateUnion * cJSON_ParseInterpolateUnion(const char * s);
+ char * cJSON_PrintInterpolateUnion(const struct InterpolateUnion * x);
+ 
+-#define cJSON_IsNiceUnion(j) (cJSON_IsBool(j) || cJSON_IsNumber(j) || cJSON_IsObject(j) || cJSON_IsString(j))
++#define cJSON_IsNiceUnion(j) (cJSON_IsBool(j) || cJSON_IsNumber(j) || cJSON_IsObject(j) || cJSON_IsNiceTimeValue(j))
+ struct NiceUnion * cJSON_GetNiceUnionValue(const cJSON * j);
+ cJSON * cJSON_CreateNiceUnion(const struct NiceUnion * x);
+ void cJSON_DeleteNiceUnion(struct NiceUnion * x);
+@@ -6622,7 +6658,7 @@
+ struct Scheme * cJSON_ParseScheme(const char * s);
+ char * cJSON_PrintScheme(const struct Scheme * x);
+ 
+-#define cJSON_IsSortUnion(j) (cJSON_IsNull(j) || cJSON_IsObject(j) || cJSON_IsString(j))
++#define cJSON_IsSortUnion(j) (cJSON_IsNull(j) || cJSON_IsObject(j) || cJSON_IsSortEnumValue(j))
+ struct SortUnion * cJSON_GetSortUnionValue(const cJSON * j);
+ cJSON * cJSON_CreateSortUnion(const struct SortUnion * x);
+ void cJSON_DeleteSortUnion(struct SortUnion * x);
+@@ -6678,14 +6714,14 @@
+ struct Style * cJSON_ParseStyle(const char * s);
+ char * cJSON_PrintStyle(const struct Style * x);
+ 
+-#define cJSON_IsAnyMark(j) (cJSON_IsObject(j) || cJSON_IsString(j))
++#define cJSON_IsAnyMark(j) (cJSON_IsObject(j) || cJSON_IsMarkValue(j))
+ struct AnyMark * cJSON_GetAnyMarkValue(const cJSON * j);
+ cJSON * cJSON_CreateAnyMark(const struct AnyMark * x);
+ void cJSON_DeleteAnyMark(struct AnyMark * x);
+ struct AnyMark * cJSON_ParseAnyMark(const char * s);
+ char * cJSON_PrintAnyMark(const struct AnyMark * x);
+ 
+-#define cJSON_IsBindUnion(j) (cJSON_IsObject(j) || cJSON_IsString(j))
++#define cJSON_IsBindUnion(j) (cJSON_IsObject(j) || cJSON_IsBindEnumValue(j))
+ struct BindUnion * cJSON_GetBindUnionValue(const cJSON * j);
+ cJSON * cJSON_CreateBindUnion(const struct BindUnion * x);
+ void cJSON_DeleteBindUnion(struct BindUnion * x);
+@@ -7109,11 +7145,19 @@
  
  enum Contains cJSON_GetContainsValue(const cJSON * j) {
      enum Contains x = 0;
@@ -9,7 +238,19 @@
          if (!strcmp(cJSON_GetStringValue(j), "content")) x = CONTAINS_CONTENT;
          else if (!strcmp(cJSON_GetStringValue(j), "padding")) x = CONTAINS_PADDING;
      }
-@@ -7127,7 +7127,7 @@
+     return x;
++}
++
++bool cJSON_IsContainsValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "content")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "padding")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateContains(const enum Contains x) {
+@@ -7127,7 +7171,7 @@
  
  enum AutosizeType cJSON_GetAutosizeTypeValue(const cJSON * j) {
      enum AutosizeType x = 0;
@@ -18,7 +259,23 @@
          if (!strcmp(cJSON_GetStringValue(j), "pad")) x = AUTOSIZETYPE_PAD;
          else if (!strcmp(cJSON_GetStringValue(j), "fit")) x = AUTOSIZETYPE_FIT;
          else if (!strcmp(cJSON_GetStringValue(j), "none")) x = AUTOSIZETYPE_NONE;
-@@ -7147,7 +7147,7 @@
+@@ -7135,6 +7179,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsAutosizeTypeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "pad")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "fit")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "none")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateAutosizeType(const enum AutosizeType x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7147,7 +7200,7 @@
  
  enum HorizontalAlign cJSON_GetHorizontalAlignValue(const cJSON * j) {
      enum HorizontalAlign x = 0;
@@ -27,7 +284,23 @@
          if (!strcmp(cJSON_GetStringValue(j), "left")) x = HORIZONTALALIGN_LEFT;
          else if (!strcmp(cJSON_GetStringValue(j), "right")) x = HORIZONTALALIGN_RIGHT;
          else if (!strcmp(cJSON_GetStringValue(j), "center")) x = HORIZONTALALIGN_CENTER;
-@@ -7167,7 +7167,7 @@
+@@ -7155,6 +7208,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsHorizontalAlignValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "left")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "right")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "center")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateHorizontalAlign(const enum HorizontalAlign x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7167,7 +7229,7 @@
  
  enum VerticalAlign cJSON_GetVerticalAlignValue(const cJSON * j) {
      enum VerticalAlign x = 0;
@@ -36,7 +309,23 @@
          if (!strcmp(cJSON_GetStringValue(j), "top")) x = VERTICALALIGN_TOP;
          else if (!strcmp(cJSON_GetStringValue(j), "middle")) x = VERTICALALIGN_MIDDLE;
          else if (!strcmp(cJSON_GetStringValue(j), "bottom")) x = VERTICALALIGN_BOTTOM;
-@@ -7187,7 +7187,7 @@
+@@ -7175,6 +7237,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsVerticalAlignValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "top")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "middle")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "bottom")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateVerticalAlign(const enum VerticalAlign x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7187,7 +7258,7 @@
  
  enum Cursor cJSON_GetCursorValue(const cJSON * j) {
      enum Cursor x = 0;
@@ -45,7 +334,56 @@
          if (!strcmp(cJSON_GetStringValue(j), "auto")) x = CURSOR_AUTO;
          else if (!strcmp(cJSON_GetStringValue(j), "default")) x = CURSOR_DEFAULT;
          else if (!strcmp(cJSON_GetStringValue(j), "none")) x = CURSOR_NONE;
-@@ -7273,7 +7273,7 @@
+@@ -7226,6 +7297,48 @@
+         else if (!strcmp(cJSON_GetStringValue(j), "grabbing")) x = CURSOR_GRABBING;
+     }
+     return x;
++}
++
++bool cJSON_IsCursorValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "auto")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "default")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "none")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "context-menu")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "help")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "pointer")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "progress")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "wait")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "cell")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "crosshair")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "text")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "vertical-text")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "alias")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "copy")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "move")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "no-drop")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "not-allowed")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "e-resize")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "n-resize")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "ne-resize")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "nw-resize")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "s-resize")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "se-resize")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "sw-resize")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "w-resize")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "ew-resize")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "ns-resize")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "nesw-resize")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "nwse-resize")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "col-resize")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "row-resize")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "all-scroll")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "zoom-in")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "zoom-out")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "grab")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "grabbing")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateCursor(const enum Cursor x) {
+@@ -7273,13 +7386,21 @@
  
  enum FontStyle cJSON_GetFontStyleValue(const cJSON * j) {
      enum FontStyle x = 0;
@@ -54,7 +392,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "normal")) x = FONTSTYLE_NORMAL;
          else if (!strcmp(cJSON_GetStringValue(j), "italic")) x = FONTSTYLE_ITALIC;
      }
-@@ -7291,7 +7291,7 @@
+     return x;
+ }
+ 
++bool cJSON_IsFontStyleValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "normal")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "italic")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateFontStyle(const enum FontStyle x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7291,13 +7412,21 @@
  
  enum FontWeight cJSON_GetFontWeightValue(const cJSON * j) {
      enum FontWeight x = 0;
@@ -63,7 +415,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "normal")) x = FONTWEIGHT_NORMAL;
          else if (!strcmp(cJSON_GetStringValue(j), "bold")) x = FONTWEIGHT_BOLD;
      }
-@@ -7309,7 +7309,7 @@
+     return x;
+ }
+ 
++bool cJSON_IsFontWeightValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "normal")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "bold")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateFontWeight(const enum FontWeight x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7309,7 +7438,7 @@
  
  enum Interpolate cJSON_GetInterpolateValue(const cJSON * j) {
      enum Interpolate x = 0;
@@ -72,7 +438,33 @@
          if (!strcmp(cJSON_GetStringValue(j), "linear")) x = INTERPOLATE_LINEAR;
          else if (!strcmp(cJSON_GetStringValue(j), "linear-closed")) x = INTERPOLATE_LINEAR_CLOSED;
          else if (!strcmp(cJSON_GetStringValue(j), "step")) x = INTERPOLATE_STEP;
-@@ -7349,7 +7349,7 @@
+@@ -7327,6 +7456,25 @@
+     return x;
+ }
+ 
++bool cJSON_IsInterpolateValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "linear")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "linear-closed")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "step")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "step-before")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "step-after")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "basis")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "basis-open")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "basis-closed")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "cardinal")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "cardinal-open")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "cardinal-closed")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "bundle")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "monotone")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateInterpolate(const enum Interpolate x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7349,13 +7497,21 @@
  
  enum Orient cJSON_GetOrientValue(const cJSON * j) {
      enum Orient x = 0;
@@ -81,7 +473,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "horizontal")) x = ORIENT_HORIZONTAL;
          else if (!strcmp(cJSON_GetStringValue(j), "vertical")) x = ORIENT_VERTICAL;
      }
-@@ -7367,7 +7367,7 @@
+     return x;
+ }
+ 
++bool cJSON_IsOrientValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "horizontal")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "vertical")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateOrient(const enum Orient x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7367,13 +7523,21 @@
  
  enum LabelOverlapEnum cJSON_GetLabelOverlapEnumValue(const cJSON * j) {
      enum LabelOverlapEnum x = 0;
@@ -90,7 +496,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "parity")) x = LABELOVERLAPENUM_PARITY;
          else if (!strcmp(cJSON_GetStringValue(j), "greedy")) x = LABELOVERLAPENUM_GREEDY;
      }
-@@ -7385,7 +7385,7 @@
+     return x;
+ }
+ 
++bool cJSON_IsLabelOverlapEnumValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "parity")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "greedy")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateLabelOverlapEnum(const enum LabelOverlapEnum x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7385,7 +7549,7 @@
  
  enum FieldTitle cJSON_GetFieldTitleValue(const cJSON * j) {
      enum FieldTitle x = 0;
@@ -99,7 +519,23 @@
          if (!strcmp(cJSON_GetStringValue(j), "verbal")) x = FIELDTITLE_VERBAL;
          else if (!strcmp(cJSON_GetStringValue(j), "functional")) x = FIELDTITLE_FUNCTIONAL;
          else if (!strcmp(cJSON_GetStringValue(j), "plain")) x = FIELDTITLE_PLAIN;
-@@ -7405,7 +7405,7 @@
+@@ -7393,6 +7557,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsFieldTitleValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "verbal")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "functional")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "plain")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateFieldTitle(const enum FieldTitle x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7405,12 +7578,19 @@
  
  enum InvalidValues cJSON_GetInvalidValuesValue(const cJSON * j) {
      enum InvalidValues x = 0;
@@ -108,7 +544,19 @@
          if (!strcmp(cJSON_GetStringValue(j), "filter")) x = INVALIDVALUES_FILTER;
      }
      return x;
-@@ -7421,7 +7421,7 @@
+ }
+ 
++bool cJSON_IsInvalidValuesValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "filter")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateInvalidValues(const enum InvalidValues x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7421,7 +7601,7 @@
  
  enum LegendOrient cJSON_GetLegendOrientValue(const cJSON * j) {
      enum LegendOrient x = 0;
@@ -117,7 +565,27 @@
          if (!strcmp(cJSON_GetStringValue(j), "left")) x = LEGENDORIENT_LEFT;
          else if (!strcmp(cJSON_GetStringValue(j), "right")) x = LEGENDORIENT_RIGHT;
          else if (!strcmp(cJSON_GetStringValue(j), "top-left")) x = LEGENDORIENT_TOP_LEFT;
-@@ -7449,7 +7449,7 @@
+@@ -7433,6 +7613,19 @@
+     return x;
+ }
+ 
++bool cJSON_IsLegendOrientValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "left")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "right")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "top-left")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "top-right")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "bottom-left")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "bottom-right")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "none")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateLegendOrient(const enum LegendOrient x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7449,7 +7642,7 @@
  
  enum VgProjectionType cJSON_GetVgProjectionTypeValue(const cJSON * j) {
      enum VgProjectionType x = 0;
@@ -126,7 +594,33 @@
          if (!strcmp(cJSON_GetStringValue(j), "albers")) x = VGPROJECTIONTYPE_ALBERS;
          else if (!strcmp(cJSON_GetStringValue(j), "albersUsa")) x = VGPROJECTIONTYPE_ALBERS_USA;
          else if (!strcmp(cJSON_GetStringValue(j), "azimuthalEqualArea")) x = VGPROJECTIONTYPE_AZIMUTHAL_EQUAL_AREA;
-@@ -7489,7 +7489,7 @@
+@@ -7467,6 +7660,25 @@
+     return x;
+ }
+ 
++bool cJSON_IsVgProjectionTypeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "albers")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "albersUsa")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "azimuthalEqualArea")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "azimuthalEquidistant")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "conicConformal")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "conicEqualArea")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "conicEquidistant")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "equirectangular")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "gnomonic")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "mercator")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "orthographic")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "stereographic")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "transverseMercator")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateVgProjectionType(const enum VgProjectionType x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7489,12 +7701,19 @@
  
  enum BindEnum cJSON_GetBindEnumValue(const cJSON * j) {
      enum BindEnum x = 0;
@@ -135,7 +629,19 @@
          if (!strcmp(cJSON_GetStringValue(j), "scales")) x = BINDENUM_SCALES;
      }
      return x;
-@@ -7505,7 +7505,7 @@
+ }
+ 
++bool cJSON_IsBindEnumValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "scales")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateBindEnum(const enum BindEnum x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7505,13 +7724,21 @@
  
  enum Empty cJSON_GetEmptyValue(const cJSON * j) {
      enum Empty x = 0;
@@ -144,7 +650,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "all")) x = EMPTY_ALL;
          else if (!strcmp(cJSON_GetStringValue(j), "none")) x = EMPTY_NONE;
      }
-@@ -7523,7 +7523,7 @@
+     return x;
+ }
+ 
++bool cJSON_IsEmptyValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "all")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "none")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateEmpty(const enum Empty x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7523,7 +7750,7 @@
  
  enum SingleDefChannel cJSON_GetSingleDefChannelValue(const cJSON * j) {
      enum SingleDefChannel x = 0;
@@ -153,7 +673,33 @@
          if (!strcmp(cJSON_GetStringValue(j), "x")) x = SINGLEDEFCHANNEL_X;
          else if (!strcmp(cJSON_GetStringValue(j), "y")) x = SINGLEDEFCHANNEL_Y;
          else if (!strcmp(cJSON_GetStringValue(j), "x2")) x = SINGLEDEFCHANNEL_X2;
-@@ -7563,7 +7563,7 @@
+@@ -7541,6 +7768,25 @@
+     return x;
+ }
+ 
++bool cJSON_IsSingleDefChannelValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "x")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "y")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "x2")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "y2")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "row")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "column")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "size")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "shape")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "color")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "opacity")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "text")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "tooltip")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "href")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateSingleDefChannel(const enum SingleDefChannel x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7563,12 +7809,21 @@
  
  enum SelectionResolution cJSON_GetSelectionResolutionValue(const cJSON * j) {
      enum SelectionResolution x = 0;
@@ -162,7 +708,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "global")) x = SELECTIONRESOLUTION_GLOBAL;
          else if (!strcmp(cJSON_GetStringValue(j), "union")) x = SELECTIONRESOLUTION_UNION;
          else if (!strcmp(cJSON_GetStringValue(j), "intersect")) x = SELECTIONRESOLUTION_INTERSECT;
-@@ -7583,7 +7583,7 @@
+     }
+     return x;
++}
++
++bool cJSON_IsSelectionResolutionValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "global")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "union")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "intersect")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateSelectionResolution(const enum SelectionResolution x) {
+@@ -7583,7 +7838,7 @@
  
  enum StackOffset cJSON_GetStackOffsetValue(const cJSON * j) {
      enum StackOffset x = 0;
@@ -171,7 +731,23 @@
          if (!strcmp(cJSON_GetStringValue(j), "zero")) x = STACKOFFSET_ZERO;
          else if (!strcmp(cJSON_GetStringValue(j), "center")) x = STACKOFFSET_CENTER;
          else if (!strcmp(cJSON_GetStringValue(j), "normalize")) x = STACKOFFSET_NORMALIZE;
-@@ -7603,7 +7603,7 @@
+@@ -7591,6 +7846,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsStackOffsetValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "zero")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "center")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "normalize")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateStackOffset(const enum StackOffset x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7603,7 +7867,7 @@
  
  enum Anchor cJSON_GetAnchorValue(const cJSON * j) {
      enum Anchor x = 0;
@@ -180,7 +756,23 @@
          if (!strcmp(cJSON_GetStringValue(j), "start")) x = ANCHOR_START;
          else if (!strcmp(cJSON_GetStringValue(j), "middle")) x = ANCHOR_MIDDLE;
          else if (!strcmp(cJSON_GetStringValue(j), "end")) x = ANCHOR_END;
-@@ -7623,7 +7623,7 @@
+@@ -7611,6 +7875,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsAnchorValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "start")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "middle")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "end")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateAnchor(const enum Anchor x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7623,7 +7896,7 @@
  
  enum TitleOrient cJSON_GetTitleOrientValue(const cJSON * j) {
      enum TitleOrient x = 0;
@@ -189,7 +781,24 @@
          if (!strcmp(cJSON_GetStringValue(j), "top")) x = TITLEORIENT_TOP;
          else if (!strcmp(cJSON_GetStringValue(j), "bottom")) x = TITLEORIENT_BOTTOM;
          else if (!strcmp(cJSON_GetStringValue(j), "left")) x = TITLEORIENT_LEFT;
-@@ -7645,7 +7645,7 @@
+@@ -7632,6 +7905,16 @@
+     return x;
+ }
+ 
++bool cJSON_IsTitleOrientValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "top")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "bottom")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "left")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "right")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateTitleOrient(const enum TitleOrient x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7645,12 +7928,19 @@
  
  enum ParseEnum cJSON_GetParseEnumValue(const cJSON * j) {
      enum ParseEnum x = 0;
@@ -198,7 +807,19 @@
          if (!strcmp(cJSON_GetStringValue(j), "auto")) x = PARSEENUM_AUTO;
      }
      return x;
-@@ -7661,7 +7661,7 @@
+ }
+ 
++bool cJSON_IsParseEnumValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "auto")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateParseEnum(const enum ParseEnum x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7661,7 +7951,7 @@
  
  enum DataFormatType cJSON_GetDataFormatTypeValue(const cJSON * j) {
      enum DataFormatType x = 0;
@@ -207,7 +828,24 @@
          if (!strcmp(cJSON_GetStringValue(j), "csv")) x = DATAFORMATTYPE_CSV;
          else if (!strcmp(cJSON_GetStringValue(j), "tsv")) x = DATAFORMATTYPE_TSV;
          else if (!strcmp(cJSON_GetStringValue(j), "json")) x = DATAFORMATTYPE_JSON;
-@@ -7683,7 +7683,7 @@
+@@ -7670,6 +7960,16 @@
+     return x;
+ }
+ 
++bool cJSON_IsDataFormatTypeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "csv")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "tsv")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "json")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "topojson")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateDataFormatType(const enum DataFormatType x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7683,7 +7983,7 @@
  
  enum AggregateOp cJSON_GetAggregateOpValue(const cJSON * j) {
      enum AggregateOp x = 0;
@@ -216,7 +854,41 @@
          if (!strcmp(cJSON_GetStringValue(j), "argmax")) x = AGGREGATEOP_ARGMAX;
          else if (!strcmp(cJSON_GetStringValue(j), "argmin")) x = AGGREGATEOP_ARGMIN;
          else if (!strcmp(cJSON_GetStringValue(j), "average")) x = AGGREGATEOP_AVERAGE;
-@@ -7739,7 +7739,7 @@
+@@ -7707,6 +8007,33 @@
+         else if (!strcmp(cJSON_GetStringValue(j), "variancep")) x = AGGREGATEOP_VARIANCEP;
+     }
+     return x;
++}
++
++bool cJSON_IsAggregateOpValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "argmax")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "argmin")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "average")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "count")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "distinct")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "max")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "mean")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "median")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "min")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "missing")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "q1")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "q3")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "ci0")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "ci1")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "stdev")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "stdevp")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "sum")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "valid")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "values")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "variance")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "variancep")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateAggregateOp(const enum AggregateOp x) {
+@@ -7739,7 +8066,7 @@
  
  enum TimeUnit cJSON_GetTimeUnitValue(const cJSON * j) {
      enum TimeUnit x = 0;
@@ -225,7 +897,64 @@
          if (!strcmp(cJSON_GetStringValue(j), "year")) x = TIMEUNIT_YEAR;
          else if (!strcmp(cJSON_GetStringValue(j), "quarter")) x = TIMEUNIT_QUARTER;
          else if (!strcmp(cJSON_GetStringValue(j), "month")) x = TIMEUNIT_MONTH;
-@@ -7841,7 +7841,7 @@
+@@ -7788,6 +8115,56 @@
+     return x;
+ }
+ 
++bool cJSON_IsTimeUnitValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "year")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "quarter")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "month")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "day")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "date")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "hours")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "minutes")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "seconds")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "milliseconds")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcyear")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcquarter")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcmonth")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcday")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcdate")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utchours")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcminutes")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcseconds")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcmilliseconds")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "yearquarter")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "yearquartermonth")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "yearmonth")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "yearmonthdate")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "yearmonthdatehours")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "yearmonthdatehoursminutes")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "yearmonthdatehoursminutesseconds")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "quartermonth")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "monthdate")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "hoursminutes")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "hoursminutesseconds")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "minutesseconds")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "secondsmilliseconds")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcyearquarter")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcyearquartermonth")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcyearmonth")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcyearmonthdate")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcyearmonthdatehours")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcyearmonthdatehoursminutes")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcyearmonthdatehoursminutesseconds")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcquartermonth")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcmonthdate")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utchoursminutes")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utchoursminutesseconds")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcminutesseconds")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utcsecondsmilliseconds")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateTimeUnit(const enum TimeUnit x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7841,13 +8218,21 @@
  
  enum RepeatEnum cJSON_GetRepeatEnumValue(const cJSON * j) {
      enum RepeatEnum x = 0;
@@ -234,7 +963,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "row")) x = REPEATENUM_ROW;
          else if (!strcmp(cJSON_GetStringValue(j), "column")) x = REPEATENUM_COLUMN;
      }
-@@ -7859,7 +7859,7 @@
+     return x;
+ }
+ 
++bool cJSON_IsRepeatEnumValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "row")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "column")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateRepeatEnum(const enum RepeatEnum x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7859,13 +8244,21 @@
  
  enum LegendType cJSON_GetLegendTypeValue(const cJSON * j) {
      enum LegendType x = 0;
@@ -243,7 +986,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "symbol")) x = LEGENDTYPE_SYMBOL;
          else if (!strcmp(cJSON_GetStringValue(j), "gradient")) x = LEGENDTYPE_GRADIENT;
      }
-@@ -7877,7 +7877,7 @@
+     return x;
+ }
+ 
++bool cJSON_IsLegendTypeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "symbol")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "gradient")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateLegendType(const enum LegendType x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7877,12 +8270,19 @@
  
  enum Domain cJSON_GetDomainValue(const cJSON * j) {
      enum Domain x = 0;
@@ -252,7 +1009,19 @@
          if (!strcmp(cJSON_GetStringValue(j), "unaggregated")) x = DOMAIN_UNAGGREGATED;
      }
      return x;
-@@ -7893,7 +7893,7 @@
+ }
+ 
++bool cJSON_IsDomainValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "unaggregated")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateDomain(const enum Domain x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7893,7 +8293,7 @@
  
  enum InterpolateParamsType cJSON_GetInterpolateParamsTypeValue(const cJSON * j) {
      enum InterpolateParamsType x = 0;
@@ -261,7 +1030,23 @@
          if (!strcmp(cJSON_GetStringValue(j), "rgb")) x = INTERPOLATEPARAMSTYPE_RGB;
          else if (!strcmp(cJSON_GetStringValue(j), "cubehelix")) x = INTERPOLATEPARAMSTYPE_CUBEHELIX;
          else if (!strcmp(cJSON_GetStringValue(j), "cubehelix-long")) x = INTERPOLATEPARAMSTYPE_CUBEHELIX_LONG;
-@@ -7913,7 +7913,7 @@
+@@ -7901,6 +8301,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsInterpolateParamsTypeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "rgb")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "cubehelix")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "cubehelix-long")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateInterpolateParamsType(const enum InterpolateParamsType x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7913,7 +8322,7 @@
  
  enum NiceTime cJSON_GetNiceTimeValue(const cJSON * j) {
      enum NiceTime x = 0;
@@ -270,7 +1055,27 @@
          if (!strcmp(cJSON_GetStringValue(j), "second")) x = NICETIME_SECOND;
          else if (!strcmp(cJSON_GetStringValue(j), "minute")) x = NICETIME_MINUTE;
          else if (!strcmp(cJSON_GetStringValue(j), "hour")) x = NICETIME_HOUR;
-@@ -7941,7 +7941,7 @@
+@@ -7925,6 +8334,19 @@
+     return x;
+ }
+ 
++bool cJSON_IsNiceTimeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "second")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "minute")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "hour")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "day")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "week")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "month")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "year")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateNiceTime(const enum NiceTime x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7941,7 +8363,7 @@
  
  enum ScaleType cJSON_GetScaleTypeValue(const cJSON * j) {
      enum ScaleType x = 0;
@@ -279,7 +1084,32 @@
          if (!strcmp(cJSON_GetStringValue(j), "linear")) x = SCALETYPE_LINEAR;
          else if (!strcmp(cJSON_GetStringValue(j), "bin-linear")) x = SCALETYPE_BIN_LINEAR;
          else if (!strcmp(cJSON_GetStringValue(j), "log")) x = SCALETYPE_LOG;
-@@ -7979,7 +7979,7 @@
+@@ -7958,6 +8380,24 @@
+     return x;
+ }
+ 
++bool cJSON_IsScaleTypeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "linear")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "bin-linear")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "log")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "pow")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "sqrt")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "time")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "utc")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "sequential")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "ordinal")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "bin-ordinal")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "point")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "band")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateScaleType(const enum ScaleType x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7979,13 +8419,21 @@
  
  enum SortEnum cJSON_GetSortEnumValue(const cJSON * j) {
      enum SortEnum x = 0;
@@ -288,7 +1118,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "ascending")) x = SORTENUM_ASCENDING;
          else if (!strcmp(cJSON_GetStringValue(j), "descending")) x = SORTENUM_DESCENDING;
      }
-@@ -7997,7 +7997,7 @@
+     return x;
+ }
+ 
++bool cJSON_IsSortEnumValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "ascending")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "descending")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateSortEnum(const enum SortEnum x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -7997,7 +8445,7 @@
  
  enum Type cJSON_GetTypeValue(const cJSON * j) {
      enum Type x = 0;
@@ -297,7 +1141,27 @@
          if (!strcmp(cJSON_GetStringValue(j), "quantitative")) x = TYPE_QUANTITATIVE;
          else if (!strcmp(cJSON_GetStringValue(j), "ordinal")) x = TYPE_ORDINAL;
          else if (!strcmp(cJSON_GetStringValue(j), "temporal")) x = TYPE_TEMPORAL;
-@@ -8025,7 +8025,7 @@
+@@ -8009,6 +8457,19 @@
+     return x;
+ }
+ 
++bool cJSON_IsTypeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "quantitative")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "ordinal")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "temporal")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "nominal")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "latitude")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "longitude")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "geojson")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateType(const enum Type x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -8025,7 +8486,7 @@
  
  enum Mark cJSON_GetMarkValue(const cJSON * j) {
      enum Mark x = 0;
@@ -306,7 +1170,31 @@
          if (!strcmp(cJSON_GetStringValue(j), "area")) x = MARK_AREA;
          else if (!strcmp(cJSON_GetStringValue(j), "bar")) x = MARK_BAR;
          else if (!strcmp(cJSON_GetStringValue(j), "line")) x = MARK_LINE;
-@@ -8061,7 +8061,7 @@
+@@ -8039,6 +8500,23 @@
+         else if (!strcmp(cJSON_GetStringValue(j), "geoshape")) x = MARK_GEOSHAPE;
+     }
+     return x;
++}
++
++bool cJSON_IsMarkValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "area")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "bar")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "line")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "point")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "text")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "tick")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "rect")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "rule")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "circle")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "square")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "geoshape")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateMark(const enum Mark x) {
+@@ -8061,13 +8539,21 @@
  
  enum ResolveMode cJSON_GetResolveModeValue(const cJSON * j) {
      enum ResolveMode x = 0;
@@ -315,7 +1203,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "independent")) x = RESOLVEMODE_INDEPENDENT;
          else if (!strcmp(cJSON_GetStringValue(j), "shared")) x = RESOLVEMODE_SHARED;
      }
-@@ -8079,7 +8079,7 @@
+     return x;
+ }
+ 
++bool cJSON_IsResolveModeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "independent")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "shared")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateResolveMode(const enum ResolveMode x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -8079,7 +8565,7 @@
  
  enum SelectionDefType cJSON_GetSelectionDefTypeValue(const cJSON * j) {
      enum SelectionDefType x = 0;
@@ -324,7 +1226,263 @@
          if (!strcmp(cJSON_GetStringValue(j), "single")) x = SELECTIONDEFTYPE_SINGLE;
          else if (!strcmp(cJSON_GetStringValue(j), "multi")) x = SELECTIONDEFTYPE_MULTI;
          else if (!strcmp(cJSON_GetStringValue(j), "interval")) x = SELECTIONDEFTYPE_INTERVAL;
-@@ -12900,8 +12900,7 @@
+@@ -8087,6 +8573,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsSelectionDefTypeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "single")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "multi")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "interval")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateSelectionDefType(const enum SelectionDefType x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -8106,7 +8601,7 @@
+             x->value.auto_size_params = cJSON_GetAutoSizeParamsValue(j);
+             if (NULL == x->value.auto_size_params) x->type = 0;
+         }
+-        else if (cJSON_IsString(j)) {
++        else if (cJSON_IsAutosizeTypeValue(j)) {
+             x->type = cJSON_Enum;
+             x->value.purple_enum = cJSON_GetAutosizeTypeValue(j);
+         }
+@@ -8149,7 +8644,7 @@
+             x->type = cJSON_Number;
+             x->value.number = cJSON_GetNumberValue(j);
+         }
+-        else if (cJSON_IsString(j)) {
++        else if (cJSON_IsFontWeightValue(j)) {
+             x->type = cJSON_Enum;
+             x->value.purple_enum = cJSON_GetFontWeightValue(j);
+         }
+@@ -8233,7 +8728,7 @@
+             x->type = cJSON_Bool;
+             x->value.boolean = cJSON_IsTrue(j);
+         }
+-        else if (cJSON_IsString(j)) {
++        else if (cJSON_IsLabelOverlapEnumValue(j)) {
+             x->type = cJSON_Enum;
+             x->value.purple_enum = cJSON_GetLabelOverlapEnumValue(j);
+         }
+@@ -8479,7 +8974,7 @@
+                 x->value.anything_map = x1;
+             }
+         }
+-        else if (cJSON_IsString(j)) {
++        else if (cJSON_IsParseEnumValue(j)) {
+             x->type = cJSON_Enum;
+             x->value.purple_enum = cJSON_GetParseEnumValue(j);
+         }
+@@ -9245,7 +9740,7 @@
+             x->value.domain_class = cJSON_GetDomainClassValue(j);
+             if (NULL == x->value.domain_class) x->type = 0;
+         }
+-        else if (cJSON_IsString(j)) {
++        else if (cJSON_IsDomainValue(j)) {
+             x->type = cJSON_Enum;
+             x->value.purple_enum = cJSON_GetDomainValue(j);
+         }
+@@ -9310,7 +9805,7 @@
+             x->value.interpolate_params = cJSON_GetInterpolateParamsValue(j);
+             if (NULL == x->value.interpolate_params) x->type = 0;
+         }
+-        else if (cJSON_IsString(j)) {
++        else if (cJSON_IsInterpolateValue(j)) {
+             x->type = cJSON_Enum;
+             x->value.purple_enum = cJSON_GetInterpolateValue(j);
+         }
+@@ -9362,7 +9857,7 @@
+             x->value.nice_class = cJSON_GetNiceClassValue(j);
+             if (NULL == x->value.nice_class) x->type = 0;
+         }
+-        else if (cJSON_IsString(j)) {
++        else if (cJSON_IsNiceTimeValue(j)) {
+             x->type = cJSON_Enum;
+             x->value.purple_enum = cJSON_GetNiceTimeValue(j);
+         }
+@@ -9530,7 +10025,7 @@
+             x->value.sort_field = cJSON_GetSortFieldValue(j);
+             if (NULL == x->value.sort_field) x->type = 0;
+         }
+-        else if (cJSON_IsString(j)) {
++        else if (cJSON_IsSortEnumValue(j)) {
+             x->type = cJSON_Enum;
+             x->value.purple_enum = cJSON_GetSortEnumValue(j);
+         }
+@@ -10022,7 +10517,7 @@
+             x->value.mark_def = cJSON_GetMarkDefValue(j);
+             if (NULL == x->value.mark_def) x->type = 0;
+         }
+-        else if (cJSON_IsString(j)) {
++        else if (cJSON_IsMarkValue(j)) {
+             x->type = cJSON_Enum;
+             x->value.purple_enum = cJSON_GetMarkValue(j);
+         }
+@@ -10072,7 +10567,7 @@
+                 x->value.vg_binding_map = x1;
+             }
+         }
+-        else if (cJSON_IsString(j)) {
++        else if (cJSON_IsBindEnumValue(j)) {
+             x->type = cJSON_Enum;
+             x->value.purple_enum = cJSON_GetBindEnumValue(j);
+         }
+@@ -10195,8 +10690,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct AutoSizeParams)))) {
+             memset(x, 0, sizeof(struct AutoSizeParams));
+             if (cJSON_HasObjectItem(j, "contains")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "contains"))) { cJSON_DeleteAutoSizeParams(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "contains")) || 0 == cJSON_GetContainsValue(cJSON_GetObjectItemCaseSensitive(j, "contains"))) { cJSON_DeleteAutoSizeParams(x); return NULL; }
++                if (!cJSON_IsContainsValue(cJSON_GetObjectItemCaseSensitive(j, "contains"))) { cJSON_DeleteAutoSizeParams(x); return NULL; }
+                 if (NULL != (x->contains = cJSON_malloc(sizeof(enum Contains)))) {
+                     *x->contains = cJSON_GetContainsValue(cJSON_GetObjectItemCaseSensitive(j, "contains"));
+                 }
+@@ -10208,8 +10702,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteAutoSizeParams(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetAutosizeTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteAutoSizeParams(x); return NULL; }
++                if (!cJSON_IsAutosizeTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteAutoSizeParams(x); return NULL; }
+                 if (NULL != (x->type = cJSON_malloc(sizeof(enum AutosizeType)))) {
+                     *x->type = cJSON_GetAutosizeTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+                 }
+@@ -10282,8 +10775,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct MarkConfig)))) {
+             memset(x, 0, sizeof(struct MarkConfig));
+             if (cJSON_HasObjectItem(j, "align")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteMarkConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "align")) || 0 == cJSON_GetHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteMarkConfig(x); return NULL; }
++                if (!cJSON_IsHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteMarkConfig(x); return NULL; }
+                 if (NULL != (x->align = cJSON_malloc(sizeof(enum HorizontalAlign)))) {
+                     *x->align = cJSON_GetHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"));
+                 }
+@@ -10297,8 +10789,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "baseline")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteMarkConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "baseline")) || 0 == cJSON_GetVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteMarkConfig(x); return NULL; }
++                if (!cJSON_IsVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteMarkConfig(x); return NULL; }
+                 if (NULL != (x->baseline = cJSON_malloc(sizeof(enum VerticalAlign)))) {
+                     *x->baseline = cJSON_GetVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"));
+                 }
+@@ -10308,8 +10799,7 @@
+                 x->color = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "color")));
+             }
+             if (cJSON_HasObjectItem(j, "cursor")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteMarkConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "cursor")) || 0 == cJSON_GetCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteMarkConfig(x); return NULL; }
++                if (!cJSON_IsCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteMarkConfig(x); return NULL; }
+                 if (NULL != (x->cursor = cJSON_malloc(sizeof(enum Cursor)))) {
+                     *x->cursor = cJSON_GetCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"));
+                 }
+@@ -10356,8 +10846,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "fontStyle")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteMarkConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fontStyle")) || 0 == cJSON_GetFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteMarkConfig(x); return NULL; }
++                if (!cJSON_IsFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteMarkConfig(x); return NULL; }
+                 if (NULL != (x->font_style = cJSON_malloc(sizeof(enum FontStyle)))) {
+                     *x->font_style = cJSON_GetFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"));
+                 }
+@@ -10372,8 +10861,7 @@
+                 x->href = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "href")));
+             }
+             if (cJSON_HasObjectItem(j, "interpolate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteMarkConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "interpolate")) || 0 == cJSON_GetInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteMarkConfig(x); return NULL; }
++                if (!cJSON_IsInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteMarkConfig(x); return NULL; }
+                 if (NULL != (x->interpolate = cJSON_malloc(sizeof(enum Interpolate)))) {
+                     *x->interpolate = cJSON_GetInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"));
+                 }
+@@ -10393,8 +10881,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "orient")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteMarkConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient")) || 0 == cJSON_GetOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteMarkConfig(x); return NULL; }
++                if (!cJSON_IsOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteMarkConfig(x); return NULL; }
+                 if (NULL != (x->orient = cJSON_malloc(sizeof(enum Orient)))) {
+                     *x->orient = cJSON_GetOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"));
+                 }
+@@ -11758,8 +12245,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct BarConfig)))) {
+             memset(x, 0, sizeof(struct BarConfig));
+             if (cJSON_HasObjectItem(j, "align")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteBarConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "align")) || 0 == cJSON_GetHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteBarConfig(x); return NULL; }
++                if (!cJSON_IsHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteBarConfig(x); return NULL; }
+                 if (NULL != (x->align = cJSON_malloc(sizeof(enum HorizontalAlign)))) {
+                     *x->align = cJSON_GetHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"));
+                 }
+@@ -11773,8 +12259,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "baseline")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteBarConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "baseline")) || 0 == cJSON_GetVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteBarConfig(x); return NULL; }
++                if (!cJSON_IsVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteBarConfig(x); return NULL; }
+                 if (NULL != (x->baseline = cJSON_malloc(sizeof(enum VerticalAlign)))) {
+                     *x->baseline = cJSON_GetVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"));
+                 }
+@@ -11798,8 +12283,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "cursor")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteBarConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "cursor")) || 0 == cJSON_GetCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteBarConfig(x); return NULL; }
++                if (!cJSON_IsCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteBarConfig(x); return NULL; }
+                 if (NULL != (x->cursor = cJSON_malloc(sizeof(enum Cursor)))) {
+                     *x->cursor = cJSON_GetCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"));
+                 }
+@@ -11853,8 +12337,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "fontStyle")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteBarConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fontStyle")) || 0 == cJSON_GetFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteBarConfig(x); return NULL; }
++                if (!cJSON_IsFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteBarConfig(x); return NULL; }
+                 if (NULL != (x->font_style = cJSON_malloc(sizeof(enum FontStyle)))) {
+                     *x->font_style = cJSON_GetFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"));
+                 }
+@@ -11869,8 +12352,7 @@
+                 x->href = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "href")));
+             }
+             if (cJSON_HasObjectItem(j, "interpolate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteBarConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "interpolate")) || 0 == cJSON_GetInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteBarConfig(x); return NULL; }
++                if (!cJSON_IsInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteBarConfig(x); return NULL; }
+                 if (NULL != (x->interpolate = cJSON_malloc(sizeof(enum Interpolate)))) {
+                     *x->interpolate = cJSON_GetInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"));
+                 }
+@@ -11890,8 +12372,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "orient")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteBarConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient")) || 0 == cJSON_GetOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteBarConfig(x); return NULL; }
++                if (!cJSON_IsOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteBarConfig(x); return NULL; }
+                 if (NULL != (x->orient = cJSON_malloc(sizeof(enum Orient)))) {
+                     *x->orient = cJSON_GetOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"));
+                 }
+@@ -12332,8 +12813,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "orient")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteLegendConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient")) || 0 == cJSON_GetLegendOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteLegendConfig(x); return NULL; }
++                if (!cJSON_IsLegendOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteLegendConfig(x); return NULL; }
+                 if (NULL != (x->orient = cJSON_malloc(sizeof(enum LegendOrient)))) {
+                     *x->orient = cJSON_GetLegendOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"));
+                 }
+@@ -12900,8 +13380,7 @@
                              cJSON_DeleteProjectionConfig(x);
                              return NULL;
                          }
@@ -334,7 +1492,81 @@
                      }
                      x->precision = x1;
                  }
-@@ -14257,8 +14256,7 @@
+@@ -12947,8 +13426,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteProjectionConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetVgProjectionTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteProjectionConfig(x); return NULL; }
++                if (!cJSON_IsVgProjectionTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteProjectionConfig(x); return NULL; }
+                 if (NULL != (x->type = cJSON_malloc(sizeof(enum VgProjectionType)))) {
+                     *x->type = cJSON_GetVgProjectionTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+                 }
+@@ -13733,15 +14211,13 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct IntervalSelectionConfig)))) {
+             memset(x, 0, sizeof(struct IntervalSelectionConfig));
+             if (cJSON_HasObjectItem(j, "bind")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "bind"))) { cJSON_DeleteIntervalSelectionConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "bind")) || 0 == cJSON_GetBindEnumValue(cJSON_GetObjectItemCaseSensitive(j, "bind"))) { cJSON_DeleteIntervalSelectionConfig(x); return NULL; }
++                if (!cJSON_IsBindEnumValue(cJSON_GetObjectItemCaseSensitive(j, "bind"))) { cJSON_DeleteIntervalSelectionConfig(x); return NULL; }
+                 if (NULL != (x->bind = cJSON_malloc(sizeof(enum BindEnum)))) {
+                     *x->bind = cJSON_GetBindEnumValue(cJSON_GetObjectItemCaseSensitive(j, "bind"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "empty")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "empty"))) { cJSON_DeleteIntervalSelectionConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "empty")) || 0 == cJSON_GetEmptyValue(cJSON_GetObjectItemCaseSensitive(j, "empty"))) { cJSON_DeleteIntervalSelectionConfig(x); return NULL; }
++                if (!cJSON_IsEmptyValue(cJSON_GetObjectItemCaseSensitive(j, "empty"))) { cJSON_DeleteIntervalSelectionConfig(x); return NULL; }
+                 if (NULL != (x->empty = cJSON_malloc(sizeof(enum Empty)))) {
+                     *x->empty = cJSON_GetEmptyValue(cJSON_GetObjectItemCaseSensitive(j, "empty"));
+                 }
+@@ -13753,6 +14229,7 @@
+                     cJSON * e1 = NULL;
+                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "encodings");
+                     cJSON_ArrayForEach(e1, j1) {
++                        if (!cJSON_IsSingleDefChannelValue(e1)) { x->encodings = x1; cJSON_DeleteIntervalSelectionConfig(x); return NULL; }
+                         enum SingleDefChannel * tmp = cJSON_malloc(sizeof(enum SingleDefChannel));
+                         if (NULL != tmp) {
+                             * tmp = cJSON_GetSingleDefChannelValue(e1);
+@@ -13784,8 +14261,7 @@
+                 if (NULL == x->on) { cJSON_DeleteIntervalSelectionConfig(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "resolve")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "resolve"))) { cJSON_DeleteIntervalSelectionConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "resolve")) || 0 == cJSON_GetSelectionResolutionValue(cJSON_GetObjectItemCaseSensitive(j, "resolve"))) { cJSON_DeleteIntervalSelectionConfig(x); return NULL; }
++                if (!cJSON_IsSelectionResolutionValue(cJSON_GetObjectItemCaseSensitive(j, "resolve"))) { cJSON_DeleteIntervalSelectionConfig(x); return NULL; }
+                 if (NULL != (x->resolve = cJSON_malloc(sizeof(enum SelectionResolution)))) {
+                     *x->resolve = cJSON_GetSelectionResolutionValue(cJSON_GetObjectItemCaseSensitive(j, "resolve"));
+                 }
+@@ -13928,8 +14404,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct MultiSelectionConfig)))) {
+             memset(x, 0, sizeof(struct MultiSelectionConfig));
+             if (cJSON_HasObjectItem(j, "empty")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "empty"))) { cJSON_DeleteMultiSelectionConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "empty")) || 0 == cJSON_GetEmptyValue(cJSON_GetObjectItemCaseSensitive(j, "empty"))) { cJSON_DeleteMultiSelectionConfig(x); return NULL; }
++                if (!cJSON_IsEmptyValue(cJSON_GetObjectItemCaseSensitive(j, "empty"))) { cJSON_DeleteMultiSelectionConfig(x); return NULL; }
+                 if (NULL != (x->empty = cJSON_malloc(sizeof(enum Empty)))) {
+                     *x->empty = cJSON_GetEmptyValue(cJSON_GetObjectItemCaseSensitive(j, "empty"));
+                 }
+@@ -13941,6 +14416,7 @@
+                     cJSON * e1 = NULL;
+                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "encodings");
+                     cJSON_ArrayForEach(e1, j1) {
++                        if (!cJSON_IsSingleDefChannelValue(e1)) { x->encodings = x1; cJSON_DeleteMultiSelectionConfig(x); return NULL; }
+                         enum SingleDefChannel * tmp = cJSON_malloc(sizeof(enum SingleDefChannel));
+                         if (NULL != tmp) {
+                             * tmp = cJSON_GetSingleDefChannelValue(e1);
+@@ -13973,8 +14449,7 @@
+                 if (NULL == x->on) { cJSON_DeleteMultiSelectionConfig(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "resolve")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "resolve"))) { cJSON_DeleteMultiSelectionConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "resolve")) || 0 == cJSON_GetSelectionResolutionValue(cJSON_GetObjectItemCaseSensitive(j, "resolve"))) { cJSON_DeleteMultiSelectionConfig(x); return NULL; }
++                if (!cJSON_IsSelectionResolutionValue(cJSON_GetObjectItemCaseSensitive(j, "resolve"))) { cJSON_DeleteMultiSelectionConfig(x); return NULL; }
+                 if (NULL != (x->resolve = cJSON_malloc(sizeof(enum SelectionResolution)))) {
+                     *x->resolve = cJSON_GetSelectionResolutionValue(cJSON_GetObjectItemCaseSensitive(j, "resolve"));
+                 }
+@@ -14257,15 +14732,13 @@
                              cJSON_DeleteSingleSelectionConfig(x);
                              return NULL;
                          }
@@ -344,7 +1576,261 @@
                      }
                      x->bind = x1;
                  }
-@@ -16350,8 +16348,7 @@
+             }
+             if (cJSON_HasObjectItem(j, "empty")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "empty"))) { cJSON_DeleteSingleSelectionConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "empty")) || 0 == cJSON_GetEmptyValue(cJSON_GetObjectItemCaseSensitive(j, "empty"))) { cJSON_DeleteSingleSelectionConfig(x); return NULL; }
++                if (!cJSON_IsEmptyValue(cJSON_GetObjectItemCaseSensitive(j, "empty"))) { cJSON_DeleteSingleSelectionConfig(x); return NULL; }
+                 if (NULL != (x->empty = cJSON_malloc(sizeof(enum Empty)))) {
+                     *x->empty = cJSON_GetEmptyValue(cJSON_GetObjectItemCaseSensitive(j, "empty"));
+                 }
+@@ -14277,6 +14750,7 @@
+                     cJSON * e1 = NULL;
+                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "encodings");
+                     cJSON_ArrayForEach(e1, j1) {
++                        if (!cJSON_IsSingleDefChannelValue(e1)) { x->encodings = x1; cJSON_DeleteSingleSelectionConfig(x); return NULL; }
+                         enum SingleDefChannel * tmp = cJSON_malloc(sizeof(enum SingleDefChannel));
+                         if (NULL != tmp) {
+                             * tmp = cJSON_GetSingleDefChannelValue(e1);
+@@ -14309,8 +14783,7 @@
+                 if (NULL == x->on) { cJSON_DeleteSingleSelectionConfig(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "resolve")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "resolve"))) { cJSON_DeleteSingleSelectionConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "resolve")) || 0 == cJSON_GetSelectionResolutionValue(cJSON_GetObjectItemCaseSensitive(j, "resolve"))) { cJSON_DeleteSingleSelectionConfig(x); return NULL; }
++                if (!cJSON_IsSelectionResolutionValue(cJSON_GetObjectItemCaseSensitive(j, "resolve"))) { cJSON_DeleteSingleSelectionConfig(x); return NULL; }
+                 if (NULL != (x->resolve = cJSON_malloc(sizeof(enum SelectionResolution)))) {
+                     *x->resolve = cJSON_GetSelectionResolutionValue(cJSON_GetObjectItemCaseSensitive(j, "resolve"));
+                 }
+@@ -14536,8 +15009,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct VgMarkConfig)))) {
+             memset(x, 0, sizeof(struct VgMarkConfig));
+             if (cJSON_HasObjectItem(j, "align")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "align")) || 0 == cJSON_GetHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
++                if (!cJSON_IsHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
+                 if (NULL != (x->align = cJSON_malloc(sizeof(enum HorizontalAlign)))) {
+                     *x->align = cJSON_GetHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"));
+                 }
+@@ -14551,15 +15023,13 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "baseline")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "baseline")) || 0 == cJSON_GetVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
++                if (!cJSON_IsVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
+                 if (NULL != (x->baseline = cJSON_malloc(sizeof(enum VerticalAlign)))) {
+                     *x->baseline = cJSON_GetVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "cursor")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "cursor")) || 0 == cJSON_GetCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
++                if (!cJSON_IsCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
+                 if (NULL != (x->cursor = cJSON_malloc(sizeof(enum Cursor)))) {
+                     *x->cursor = cJSON_GetCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"));
+                 }
+@@ -14600,8 +15070,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "fontStyle")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fontStyle")) || 0 == cJSON_GetFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
++                if (!cJSON_IsFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
+                 if (NULL != (x->font_style = cJSON_malloc(sizeof(enum FontStyle)))) {
+                     *x->font_style = cJSON_GetFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"));
+                 }
+@@ -14616,8 +15085,7 @@
+                 x->href = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "href")));
+             }
+             if (cJSON_HasObjectItem(j, "interpolate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "interpolate")) || 0 == cJSON_GetInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
++                if (!cJSON_IsInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
+                 if (NULL != (x->interpolate = cJSON_malloc(sizeof(enum Interpolate)))) {
+                     *x->interpolate = cJSON_GetInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"));
+                 }
+@@ -14637,8 +15105,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "orient")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient")) || 0 == cJSON_GetOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
++                if (!cJSON_IsOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteVgMarkConfig(x); return NULL; }
+                 if (NULL != (x->orient = cJSON_malloc(sizeof(enum Orient)))) {
+                     *x->orient = cJSON_GetOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"));
+                 }
+@@ -14950,8 +15417,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct TextConfig)))) {
+             memset(x, 0, sizeof(struct TextConfig));
+             if (cJSON_HasObjectItem(j, "align")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteTextConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "align")) || 0 == cJSON_GetHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteTextConfig(x); return NULL; }
++                if (!cJSON_IsHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteTextConfig(x); return NULL; }
+                 if (NULL != (x->align = cJSON_malloc(sizeof(enum HorizontalAlign)))) {
+                     *x->align = cJSON_GetHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"));
+                 }
+@@ -14965,8 +15431,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "baseline")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteTextConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "baseline")) || 0 == cJSON_GetVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteTextConfig(x); return NULL; }
++                if (!cJSON_IsVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteTextConfig(x); return NULL; }
+                 if (NULL != (x->baseline = cJSON_malloc(sizeof(enum VerticalAlign)))) {
+                     *x->baseline = cJSON_GetVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"));
+                 }
+@@ -14976,8 +15441,7 @@
+                 x->color = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "color")));
+             }
+             if (cJSON_HasObjectItem(j, "cursor")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteTextConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "cursor")) || 0 == cJSON_GetCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteTextConfig(x); return NULL; }
++                if (!cJSON_IsCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteTextConfig(x); return NULL; }
+                 if (NULL != (x->cursor = cJSON_malloc(sizeof(enum Cursor)))) {
+                     *x->cursor = cJSON_GetCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"));
+                 }
+@@ -15024,8 +15488,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "fontStyle")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteTextConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fontStyle")) || 0 == cJSON_GetFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteTextConfig(x); return NULL; }
++                if (!cJSON_IsFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteTextConfig(x); return NULL; }
+                 if (NULL != (x->font_style = cJSON_malloc(sizeof(enum FontStyle)))) {
+                     *x->font_style = cJSON_GetFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"));
+                 }
+@@ -15040,8 +15503,7 @@
+                 x->href = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "href")));
+             }
+             if (cJSON_HasObjectItem(j, "interpolate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteTextConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "interpolate")) || 0 == cJSON_GetInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteTextConfig(x); return NULL; }
++                if (!cJSON_IsInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteTextConfig(x); return NULL; }
+                 if (NULL != (x->interpolate = cJSON_malloc(sizeof(enum Interpolate)))) {
+                     *x->interpolate = cJSON_GetInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"));
+                 }
+@@ -15061,8 +15523,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "orient")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteTextConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient")) || 0 == cJSON_GetOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteTextConfig(x); return NULL; }
++                if (!cJSON_IsOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteTextConfig(x); return NULL; }
+                 if (NULL != (x->orient = cJSON_malloc(sizeof(enum Orient)))) {
+                     *x->orient = cJSON_GetOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"));
+                 }
+@@ -15398,8 +15859,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct TickConfig)))) {
+             memset(x, 0, sizeof(struct TickConfig));
+             if (cJSON_HasObjectItem(j, "align")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteTickConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "align")) || 0 == cJSON_GetHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteTickConfig(x); return NULL; }
++                if (!cJSON_IsHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteTickConfig(x); return NULL; }
+                 if (NULL != (x->align = cJSON_malloc(sizeof(enum HorizontalAlign)))) {
+                     *x->align = cJSON_GetHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"));
+                 }
+@@ -15420,8 +15880,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "baseline")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteTickConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "baseline")) || 0 == cJSON_GetVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteTickConfig(x); return NULL; }
++                if (!cJSON_IsVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteTickConfig(x); return NULL; }
+                 if (NULL != (x->baseline = cJSON_malloc(sizeof(enum VerticalAlign)))) {
+                     *x->baseline = cJSON_GetVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"));
+                 }
+@@ -15431,8 +15890,7 @@
+                 x->color = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "color")));
+             }
+             if (cJSON_HasObjectItem(j, "cursor")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteTickConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "cursor")) || 0 == cJSON_GetCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteTickConfig(x); return NULL; }
++                if (!cJSON_IsCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteTickConfig(x); return NULL; }
+                 if (NULL != (x->cursor = cJSON_malloc(sizeof(enum Cursor)))) {
+                     *x->cursor = cJSON_GetCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"));
+                 }
+@@ -15479,8 +15937,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "fontStyle")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteTickConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fontStyle")) || 0 == cJSON_GetFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteTickConfig(x); return NULL; }
++                if (!cJSON_IsFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteTickConfig(x); return NULL; }
+                 if (NULL != (x->font_style = cJSON_malloc(sizeof(enum FontStyle)))) {
+                     *x->font_style = cJSON_GetFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"));
+                 }
+@@ -15495,8 +15952,7 @@
+                 x->href = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "href")));
+             }
+             if (cJSON_HasObjectItem(j, "interpolate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteTickConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "interpolate")) || 0 == cJSON_GetInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteTickConfig(x); return NULL; }
++                if (!cJSON_IsInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteTickConfig(x); return NULL; }
+                 if (NULL != (x->interpolate = cJSON_malloc(sizeof(enum Interpolate)))) {
+                     *x->interpolate = cJSON_GetInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"));
+                 }
+@@ -15516,8 +15972,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "orient")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteTickConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient")) || 0 == cJSON_GetOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteTickConfig(x); return NULL; }
++                if (!cJSON_IsOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteTickConfig(x); return NULL; }
+                 if (NULL != (x->orient = cJSON_malloc(sizeof(enum Orient)))) {
+                     *x->orient = cJSON_GetOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"));
+                 }
+@@ -15860,8 +16315,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct VgTitleConfig)))) {
+             memset(x, 0, sizeof(struct VgTitleConfig));
+             if (cJSON_HasObjectItem(j, "anchor")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "anchor"))) { cJSON_DeleteVgTitleConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "anchor")) || 0 == cJSON_GetAnchorValue(cJSON_GetObjectItemCaseSensitive(j, "anchor"))) { cJSON_DeleteVgTitleConfig(x); return NULL; }
++                if (!cJSON_IsAnchorValue(cJSON_GetObjectItemCaseSensitive(j, "anchor"))) { cJSON_DeleteVgTitleConfig(x); return NULL; }
+                 if (NULL != (x->anchor = cJSON_malloc(sizeof(enum Anchor)))) {
+                     *x->anchor = cJSON_GetAnchorValue(cJSON_GetObjectItemCaseSensitive(j, "anchor"));
+                 }
+@@ -15873,8 +16327,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "baseline")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteVgTitleConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "baseline")) || 0 == cJSON_GetVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteVgTitleConfig(x); return NULL; }
++                if (!cJSON_IsVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteVgTitleConfig(x); return NULL; }
+                 if (NULL != (x->baseline = cJSON_malloc(sizeof(enum VerticalAlign)))) {
+                     *x->baseline = cJSON_GetVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"));
+                 }
+@@ -15913,8 +16366,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "orient")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteVgTitleConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient")) || 0 == cJSON_GetTitleOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteVgTitleConfig(x); return NULL; }
++                if (!cJSON_IsTitleOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteVgTitleConfig(x); return NULL; }
+                 if (NULL != (x->orient = cJSON_malloc(sizeof(enum TitleOrient)))) {
+                     *x->orient = cJSON_GetTitleOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"));
+                 }
+@@ -16284,8 +16736,7 @@
+                 x->count_title = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "countTitle")));
+             }
+             if (cJSON_HasObjectItem(j, "fieldTitle")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fieldTitle"))) { cJSON_DeleteConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fieldTitle")) || 0 == cJSON_GetFieldTitleValue(cJSON_GetObjectItemCaseSensitive(j, "fieldTitle"))) { cJSON_DeleteConfig(x); return NULL; }
++                if (!cJSON_IsFieldTitleValue(cJSON_GetObjectItemCaseSensitive(j, "fieldTitle"))) { cJSON_DeleteConfig(x); return NULL; }
+                 if (NULL != (x->field_title = cJSON_malloc(sizeof(enum FieldTitle)))) {
+                     *x->field_title = cJSON_GetFieldTitleValue(cJSON_GetObjectItemCaseSensitive(j, "fieldTitle"));
+                 }
+@@ -16296,8 +16747,7 @@
+                 if (NULL == x->geoshape) { cJSON_DeleteConfig(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "invalidValues")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "invalidValues"))) { cJSON_DeleteConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "invalidValues")) || 0 == cJSON_GetInvalidValuesValue(cJSON_GetObjectItemCaseSensitive(j, "invalidValues"))) { cJSON_DeleteConfig(x); return NULL; }
++                if (!cJSON_IsInvalidValuesValue(cJSON_GetObjectItemCaseSensitive(j, "invalidValues"))) { cJSON_DeleteConfig(x); return NULL; }
+                 if (NULL != (x->invalid_values = cJSON_malloc(sizeof(enum InvalidValues)))) {
+                     *x->invalid_values = cJSON_GetInvalidValuesValue(cJSON_GetObjectItemCaseSensitive(j, "invalidValues"));
+                 }
+@@ -16350,8 +16800,7 @@
                              cJSON_DeleteConfig(x);
                              return NULL;
                          }
@@ -354,7 +1840,17 @@
                      }
                      x->range = x1;
                  }
-@@ -16402,8 +16399,7 @@
+@@ -16382,8 +16831,7 @@
+                 if (NULL == x->square) { cJSON_DeleteConfig(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "stack")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "stack"))) { cJSON_DeleteConfig(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "stack")) || 0 == cJSON_GetStackOffsetValue(cJSON_GetObjectItemCaseSensitive(j, "stack"))) { cJSON_DeleteConfig(x); return NULL; }
++                if (!cJSON_IsStackOffsetValue(cJSON_GetObjectItemCaseSensitive(j, "stack"))) { cJSON_DeleteConfig(x); return NULL; }
+                 if (NULL != (x->stack = cJSON_malloc(sizeof(enum StackOffset)))) {
+                     *x->stack = cJSON_GetStackOffsetValue(cJSON_GetObjectItemCaseSensitive(j, "stack"));
+                 }
+@@ -16402,8 +16850,7 @@
                              cJSON_DeleteConfig(x);
                              return NULL;
                          }
@@ -364,7 +1860,508 @@
                      }
                      x->style = x1;
                  }
-@@ -21691,8 +21687,7 @@
+@@ -16755,8 +17202,7 @@
+                 if (NULL == x->parse) { cJSON_DeleteDataFormat(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteDataFormat(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetDataFormatTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteDataFormat(x); return NULL; }
++                if (!cJSON_IsDataFormatTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteDataFormat(x); return NULL; }
+                 if (NULL != (x->type = cJSON_malloc(sizeof(enum DataFormatType)))) {
+                     *x->type = cJSON_GetDataFormatTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+                 }
+@@ -17505,8 +17951,7 @@
+                 x->field = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "field")));
+             }
+             if (cJSON_HasObjectItem(j, "timeUnit")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeletePredicate(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit")) || 0 == cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeletePredicate(x); return NULL; }
++                if (!cJSON_IsTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeletePredicate(x); return NULL; }
+                 if (NULL != (x->time_unit = cJSON_malloc(sizeof(enum TimeUnit)))) {
+                     *x->time_unit = cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"));
+                 }
+@@ -17780,8 +18225,7 @@
+             memset(x, 0, sizeof(struct RepeatRef));
+             if (!cJSON_HasObjectItem(j, "repeat")) { cJSON_DeleteRepeatRef(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "repeat")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "repeat"))) { cJSON_DeleteRepeatRef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "repeat")) || 0 == cJSON_GetRepeatEnumValue(cJSON_GetObjectItemCaseSensitive(j, "repeat"))) { cJSON_DeleteRepeatRef(x); return NULL; }
++                if (!cJSON_IsRepeatEnumValue(cJSON_GetObjectItemCaseSensitive(j, "repeat"))) { cJSON_DeleteRepeatRef(x); return NULL; }
+                 x->repeat = cJSON_GetRepeatEnumValue(cJSON_GetObjectItemCaseSensitive(j, "repeat"));
+             }
+         }
+@@ -17851,8 +18295,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "orient")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteLegend(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient")) || 0 == cJSON_GetLegendOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteLegend(x); return NULL; }
++                if (!cJSON_IsLegendOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteLegend(x); return NULL; }
+                 if (NULL != (x->orient = cJSON_malloc(sizeof(enum LegendOrient)))) {
+                     *x->orient = cJSON_GetLegendOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"));
+                 }
+@@ -17874,8 +18317,7 @@
+                 x->title = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "title")));
+             }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteLegend(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetLegendTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteLegend(x); return NULL; }
++                if (!cJSON_IsLegendTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteLegend(x); return NULL; }
+                 if (NULL != (x->type = cJSON_malloc(sizeof(enum LegendType)))) {
+                     *x->type = cJSON_GetLegendTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+                 }
+@@ -18121,8 +18563,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteInterpolateParams(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteInterpolateParams(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetInterpolateParamsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteInterpolateParams(x); return NULL; }
++                if (!cJSON_IsInterpolateParamsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteInterpolateParams(x); return NULL; }
+                 x->type = cJSON_GetInterpolateParamsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+             }
+         }
+@@ -18436,8 +18877,7 @@
+                 if (NULL == x->scheme) { cJSON_DeleteScale(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteScale(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetScaleTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteScale(x); return NULL; }
++                if (!cJSON_IsScaleTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteScale(x); return NULL; }
+                 if (NULL != (x->type = cJSON_malloc(sizeof(enum ScaleType)))) {
+                     *x->type = cJSON_GetScaleTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+                 }
+@@ -18597,13 +19037,11 @@
+             }
+             if (!cJSON_HasObjectItem(j, "op")) { cJSON_DeleteSortField(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "op")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "op"))) { cJSON_DeleteSortField(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "op")) || 0 == cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "op"))) { cJSON_DeleteSortField(x); return NULL; }
++                if (!cJSON_IsAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "op"))) { cJSON_DeleteSortField(x); return NULL; }
+                 x->op = cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "op"));
+             }
+             if ((cJSON_HasObjectItem(j, "order")) && (!cJSON_IsNull(cJSON_GetObjectItemCaseSensitive(j, "order")))) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "order"))) { cJSON_DeleteSortField(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "order")) || 0 == cJSON_GetSortEnumValue(cJSON_GetObjectItemCaseSensitive(j, "order"))) { cJSON_DeleteSortField(x); return NULL; }
++                if (!cJSON_IsSortEnumValue(cJSON_GetObjectItemCaseSensitive(j, "order"))) { cJSON_DeleteSortField(x); return NULL; }
+                 if (NULL != (x->order = cJSON_malloc(sizeof(enum SortEnum)))) {
+                     *x->order = cJSON_GetSortEnumValue(cJSON_GetObjectItemCaseSensitive(j, "order"));
+                 }
+@@ -18689,8 +19127,7 @@
+                 if (NULL == x->selection) { cJSON_DeleteConditionalPredicateMarkPropFieldDefClass(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "aggregate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteConditionalPredicateMarkPropFieldDefClass(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate")) || 0 == cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteConditionalPredicateMarkPropFieldDefClass(x); return NULL; }
++                if (!cJSON_IsAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteConditionalPredicateMarkPropFieldDefClass(x); return NULL; }
+                 if (NULL != (x->aggregate = cJSON_malloc(sizeof(enum AggregateOp)))) {
+                     *x->aggregate = cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"));
+                 }
+@@ -18721,15 +19158,13 @@
+                 if (NULL == x->sort) { cJSON_DeleteConditionalPredicateMarkPropFieldDefClass(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "timeUnit")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteConditionalPredicateMarkPropFieldDefClass(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit")) || 0 == cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteConditionalPredicateMarkPropFieldDefClass(x); return NULL; }
++                if (!cJSON_IsTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteConditionalPredicateMarkPropFieldDefClass(x); return NULL; }
+                 if (NULL != (x->time_unit = cJSON_malloc(sizeof(enum TimeUnit)))) {
+                     *x->time_unit = cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteConditionalPredicateMarkPropFieldDefClass(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteConditionalPredicateMarkPropFieldDefClass(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteConditionalPredicateMarkPropFieldDefClass(x); return NULL; }
+                 if (NULL != (x->type = cJSON_malloc(sizeof(enum Type)))) {
+                     *x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+                 }
+@@ -18853,8 +19288,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct MarkPropDefWithCondition)))) {
+             memset(x, 0, sizeof(struct MarkPropDefWithCondition));
+             if (cJSON_HasObjectItem(j, "aggregate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteMarkPropDefWithCondition(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate")) || 0 == cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteMarkPropDefWithCondition(x); return NULL; }
++                if (!cJSON_IsAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteMarkPropDefWithCondition(x); return NULL; }
+                 if (NULL != (x->aggregate = cJSON_malloc(sizeof(enum AggregateOp)))) {
+                     *x->aggregate = cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"));
+                 }
+@@ -18890,15 +19324,13 @@
+                 if (NULL == x->sort) { cJSON_DeleteMarkPropDefWithCondition(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "timeUnit")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteMarkPropDefWithCondition(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit")) || 0 == cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteMarkPropDefWithCondition(x); return NULL; }
++                if (!cJSON_IsTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteMarkPropDefWithCondition(x); return NULL; }
+                 if (NULL != (x->time_unit = cJSON_malloc(sizeof(enum TimeUnit)))) {
+                     *x->time_unit = cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteMarkPropDefWithCondition(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteMarkPropDefWithCondition(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteMarkPropDefWithCondition(x); return NULL; }
+                 if (NULL != (x->type = cJSON_malloc(sizeof(enum Type)))) {
+                     *x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+                 }
+@@ -19107,8 +19539,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct FacetFieldDef)))) {
+             memset(x, 0, sizeof(struct FacetFieldDef));
+             if (cJSON_HasObjectItem(j, "aggregate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteFacetFieldDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate")) || 0 == cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteFacetFieldDef(x); return NULL; }
++                if (!cJSON_IsAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteFacetFieldDef(x); return NULL; }
+                 if (NULL != (x->aggregate = cJSON_malloc(sizeof(enum AggregateOp)))) {
+                     *x->aggregate = cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"));
+                 }
+@@ -19129,23 +19560,20 @@
+                 if (NULL == x->header) { cJSON_DeleteFacetFieldDef(x); return NULL; }
+             }
+             if ((cJSON_HasObjectItem(j, "sort")) && (!cJSON_IsNull(cJSON_GetObjectItemCaseSensitive(j, "sort")))) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "sort"))) { cJSON_DeleteFacetFieldDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "sort")) || 0 == cJSON_GetSortEnumValue(cJSON_GetObjectItemCaseSensitive(j, "sort"))) { cJSON_DeleteFacetFieldDef(x); return NULL; }
++                if (!cJSON_IsSortEnumValue(cJSON_GetObjectItemCaseSensitive(j, "sort"))) { cJSON_DeleteFacetFieldDef(x); return NULL; }
+                 if (NULL != (x->sort = cJSON_malloc(sizeof(enum SortEnum)))) {
+                     *x->sort = cJSON_GetSortEnumValue(cJSON_GetObjectItemCaseSensitive(j, "sort"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "timeUnit")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteFacetFieldDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit")) || 0 == cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteFacetFieldDef(x); return NULL; }
++                if (!cJSON_IsTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteFacetFieldDef(x); return NULL; }
+                 if (NULL != (x->time_unit = cJSON_malloc(sizeof(enum TimeUnit)))) {
+                     *x->time_unit = cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"));
+                 }
+             }
+             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteFacetFieldDef(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFacetFieldDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFacetFieldDef(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFacetFieldDef(x); return NULL; }
+                 x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+             }
+         }
+@@ -19238,8 +19666,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct FieldDef)))) {
+             memset(x, 0, sizeof(struct FieldDef));
+             if (cJSON_HasObjectItem(j, "aggregate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteFieldDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate")) || 0 == cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteFieldDef(x); return NULL; }
++                if (!cJSON_IsAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteFieldDef(x); return NULL; }
+                 if (NULL != (x->aggregate = cJSON_malloc(sizeof(enum AggregateOp)))) {
+                     *x->aggregate = cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"));
+                 }
+@@ -19255,16 +19682,14 @@
+                 if (NULL == x->field) { cJSON_DeleteFieldDef(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "timeUnit")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteFieldDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit")) || 0 == cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteFieldDef(x); return NULL; }
++                if (!cJSON_IsTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteFieldDef(x); return NULL; }
+                 if (NULL != (x->time_unit = cJSON_malloc(sizeof(enum TimeUnit)))) {
+                     *x->time_unit = cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"));
+                 }
+             }
+             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteFieldDef(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFieldDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFieldDef(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFieldDef(x); return NULL; }
+                 x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+             }
+         }
+@@ -19357,8 +19782,7 @@
+                 if (NULL == x->selection) { cJSON_DeleteConditionalPredicateFieldDefClass(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "aggregate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteConditionalPredicateFieldDefClass(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate")) || 0 == cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteConditionalPredicateFieldDefClass(x); return NULL; }
++                if (!cJSON_IsAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteConditionalPredicateFieldDefClass(x); return NULL; }
+                 if (NULL != (x->aggregate = cJSON_malloc(sizeof(enum AggregateOp)))) {
+                     *x->aggregate = cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"));
+                 }
+@@ -19374,15 +19798,13 @@
+                 if (NULL == x->field) { cJSON_DeleteConditionalPredicateFieldDefClass(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "timeUnit")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteConditionalPredicateFieldDefClass(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit")) || 0 == cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteConditionalPredicateFieldDefClass(x); return NULL; }
++                if (!cJSON_IsTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteConditionalPredicateFieldDefClass(x); return NULL; }
+                 if (NULL != (x->time_unit = cJSON_malloc(sizeof(enum TimeUnit)))) {
+                     *x->time_unit = cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteConditionalPredicateFieldDefClass(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteConditionalPredicateFieldDefClass(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteConditionalPredicateFieldDefClass(x); return NULL; }
+                 if (NULL != (x->type = cJSON_malloc(sizeof(enum Type)))) {
+                     *x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+                 }
+@@ -19485,8 +19907,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct DefWithCondition)))) {
+             memset(x, 0, sizeof(struct DefWithCondition));
+             if (cJSON_HasObjectItem(j, "aggregate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteDefWithCondition(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate")) || 0 == cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteDefWithCondition(x); return NULL; }
++                if (!cJSON_IsAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteDefWithCondition(x); return NULL; }
+                 if (NULL != (x->aggregate = cJSON_malloc(sizeof(enum AggregateOp)))) {
+                     *x->aggregate = cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"));
+                 }
+@@ -19507,15 +19928,13 @@
+                 if (NULL == x->field) { cJSON_DeleteDefWithCondition(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "timeUnit")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteDefWithCondition(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit")) || 0 == cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteDefWithCondition(x); return NULL; }
++                if (!cJSON_IsTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteDefWithCondition(x); return NULL; }
+                 if (NULL != (x->time_unit = cJSON_malloc(sizeof(enum TimeUnit)))) {
+                     *x->time_unit = cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteDefWithCondition(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteDefWithCondition(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteDefWithCondition(x); return NULL; }
+                 if (NULL != (x->type = cJSON_malloc(sizeof(enum Type)))) {
+                     *x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+                 }
+@@ -19617,8 +20036,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct OrderFieldDef)))) {
+             memset(x, 0, sizeof(struct OrderFieldDef));
+             if (cJSON_HasObjectItem(j, "aggregate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteOrderFieldDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate")) || 0 == cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteOrderFieldDef(x); return NULL; }
++                if (!cJSON_IsAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteOrderFieldDef(x); return NULL; }
+                 if (NULL != (x->aggregate = cJSON_malloc(sizeof(enum AggregateOp)))) {
+                     *x->aggregate = cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"));
+                 }
+@@ -19634,23 +20052,20 @@
+                 if (NULL == x->field) { cJSON_DeleteOrderFieldDef(x); return NULL; }
+             }
+             if ((cJSON_HasObjectItem(j, "sort")) && (!cJSON_IsNull(cJSON_GetObjectItemCaseSensitive(j, "sort")))) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "sort"))) { cJSON_DeleteOrderFieldDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "sort")) || 0 == cJSON_GetSortEnumValue(cJSON_GetObjectItemCaseSensitive(j, "sort"))) { cJSON_DeleteOrderFieldDef(x); return NULL; }
++                if (!cJSON_IsSortEnumValue(cJSON_GetObjectItemCaseSensitive(j, "sort"))) { cJSON_DeleteOrderFieldDef(x); return NULL; }
+                 if (NULL != (x->sort = cJSON_malloc(sizeof(enum SortEnum)))) {
+                     *x->sort = cJSON_GetSortEnumValue(cJSON_GetObjectItemCaseSensitive(j, "sort"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "timeUnit")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteOrderFieldDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit")) || 0 == cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteOrderFieldDef(x); return NULL; }
++                if (!cJSON_IsTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteOrderFieldDef(x); return NULL; }
+                 if (NULL != (x->time_unit = cJSON_malloc(sizeof(enum TimeUnit)))) {
+                     *x->time_unit = cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"));
+                 }
+             }
+             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteOrderFieldDef(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteOrderFieldDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteOrderFieldDef(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteOrderFieldDef(x); return NULL; }
+                 x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+             }
+         }
+@@ -19752,8 +20167,7 @@
+                 if (NULL == x->selection) { cJSON_DeleteConditionalPredicateTextFieldDefClass(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "aggregate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteConditionalPredicateTextFieldDefClass(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate")) || 0 == cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteConditionalPredicateTextFieldDefClass(x); return NULL; }
++                if (!cJSON_IsAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteConditionalPredicateTextFieldDefClass(x); return NULL; }
+                 if (NULL != (x->aggregate = cJSON_malloc(sizeof(enum AggregateOp)))) {
+                     *x->aggregate = cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"));
+                 }
+@@ -19773,15 +20187,13 @@
+                 x->format = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "format")));
+             }
+             if (cJSON_HasObjectItem(j, "timeUnit")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteConditionalPredicateTextFieldDefClass(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit")) || 0 == cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteConditionalPredicateTextFieldDefClass(x); return NULL; }
++                if (!cJSON_IsTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteConditionalPredicateTextFieldDefClass(x); return NULL; }
+                 if (NULL != (x->time_unit = cJSON_malloc(sizeof(enum TimeUnit)))) {
+                     *x->time_unit = cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteConditionalPredicateTextFieldDefClass(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteConditionalPredicateTextFieldDefClass(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteConditionalPredicateTextFieldDefClass(x); return NULL; }
+                 if (NULL != (x->type = cJSON_malloc(sizeof(enum Type)))) {
+                     *x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+                 }
+@@ -19890,8 +20302,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct TextDefWithCondition)))) {
+             memset(x, 0, sizeof(struct TextDefWithCondition));
+             if (cJSON_HasObjectItem(j, "aggregate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteTextDefWithCondition(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate")) || 0 == cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteTextDefWithCondition(x); return NULL; }
++                if (!cJSON_IsAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteTextDefWithCondition(x); return NULL; }
+                 if (NULL != (x->aggregate = cJSON_malloc(sizeof(enum AggregateOp)))) {
+                     *x->aggregate = cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"));
+                 }
+@@ -19916,15 +20327,13 @@
+                 x->format = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "format")));
+             }
+             if (cJSON_HasObjectItem(j, "timeUnit")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteTextDefWithCondition(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit")) || 0 == cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteTextDefWithCondition(x); return NULL; }
++                if (!cJSON_IsTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteTextDefWithCondition(x); return NULL; }
+                 if (NULL != (x->time_unit = cJSON_malloc(sizeof(enum TimeUnit)))) {
+                     *x->time_unit = cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteTextDefWithCondition(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteTextDefWithCondition(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteTextDefWithCondition(x); return NULL; }
+                 if (NULL != (x->type = cJSON_malloc(sizeof(enum Type)))) {
+                     *x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+                 }
+@@ -20101,8 +20510,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "orient")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteAxis(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient")) || 0 == cJSON_GetTitleOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteAxis(x); return NULL; }
++                if (!cJSON_IsTitleOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteAxis(x); return NULL; }
+                 if (NULL != (x->orient = cJSON_malloc(sizeof(enum TitleOrient)))) {
+                     *x->orient = cJSON_GetTitleOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"));
+                 }
+@@ -20366,8 +20774,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct XClass)))) {
+             memset(x, 0, sizeof(struct XClass));
+             if (cJSON_HasObjectItem(j, "aggregate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteXClass(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate")) || 0 == cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteXClass(x); return NULL; }
++                if (!cJSON_IsAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteXClass(x); return NULL; }
+                 if (NULL != (x->aggregate = cJSON_malloc(sizeof(enum AggregateOp)))) {
+                     *x->aggregate = cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"));
+                 }
+@@ -20398,22 +20805,19 @@
+                 if (NULL == x->sort) { cJSON_DeleteXClass(x); return NULL; }
+             }
+             if ((cJSON_HasObjectItem(j, "stack")) && (!cJSON_IsNull(cJSON_GetObjectItemCaseSensitive(j, "stack")))) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "stack"))) { cJSON_DeleteXClass(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "stack")) || 0 == cJSON_GetStackOffsetValue(cJSON_GetObjectItemCaseSensitive(j, "stack"))) { cJSON_DeleteXClass(x); return NULL; }
++                if (!cJSON_IsStackOffsetValue(cJSON_GetObjectItemCaseSensitive(j, "stack"))) { cJSON_DeleteXClass(x); return NULL; }
+                 if (NULL != (x->stack = cJSON_malloc(sizeof(enum StackOffset)))) {
+                     *x->stack = cJSON_GetStackOffsetValue(cJSON_GetObjectItemCaseSensitive(j, "stack"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "timeUnit")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteXClass(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit")) || 0 == cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteXClass(x); return NULL; }
++                if (!cJSON_IsTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteXClass(x); return NULL; }
+                 if (NULL != (x->time_unit = cJSON_malloc(sizeof(enum TimeUnit)))) {
+                     *x->time_unit = cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteXClass(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteXClass(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteXClass(x); return NULL; }
+                 if (NULL != (x->type = cJSON_malloc(sizeof(enum Type)))) {
+                     *x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+                 }
+@@ -20539,8 +20943,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct X2Class)))) {
+             memset(x, 0, sizeof(struct X2Class));
+             if (cJSON_HasObjectItem(j, "aggregate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteX2Class(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "aggregate")) || 0 == cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteX2Class(x); return NULL; }
++                if (!cJSON_IsAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"))) { cJSON_DeleteX2Class(x); return NULL; }
+                 if (NULL != (x->aggregate = cJSON_malloc(sizeof(enum AggregateOp)))) {
+                     *x->aggregate = cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "aggregate"));
+                 }
+@@ -20556,15 +20959,13 @@
+                 if (NULL == x->field) { cJSON_DeleteX2Class(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "timeUnit")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteX2Class(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit")) || 0 == cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteX2Class(x); return NULL; }
++                if (!cJSON_IsTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteX2Class(x); return NULL; }
+                 if (NULL != (x->time_unit = cJSON_malloc(sizeof(enum TimeUnit)))) {
+                     *x->time_unit = cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteX2Class(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteX2Class(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteX2Class(x); return NULL; }
+                 if (NULL != (x->type = cJSON_malloc(sizeof(enum Type)))) {
+                     *x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+                 }
+@@ -21137,8 +21538,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct MarkDef)))) {
+             memset(x, 0, sizeof(struct MarkDef));
+             if (cJSON_HasObjectItem(j, "align")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteMarkDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "align")) || 0 == cJSON_GetHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteMarkDef(x); return NULL; }
++                if (!cJSON_IsHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"))) { cJSON_DeleteMarkDef(x); return NULL; }
+                 if (NULL != (x->align = cJSON_malloc(sizeof(enum HorizontalAlign)))) {
+                     *x->align = cJSON_GetHorizontalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "align"));
+                 }
+@@ -21152,8 +21552,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "baseline")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteMarkDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "baseline")) || 0 == cJSON_GetVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteMarkDef(x); return NULL; }
++                if (!cJSON_IsVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"))) { cJSON_DeleteMarkDef(x); return NULL; }
+                 if (NULL != (x->baseline = cJSON_malloc(sizeof(enum VerticalAlign)))) {
+                     *x->baseline = cJSON_GetVerticalAlignValue(cJSON_GetObjectItemCaseSensitive(j, "baseline"));
+                 }
+@@ -21169,8 +21568,7 @@
+                 x->color = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "color")));
+             }
+             if (cJSON_HasObjectItem(j, "cursor")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteMarkDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "cursor")) || 0 == cJSON_GetCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteMarkDef(x); return NULL; }
++                if (!cJSON_IsCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"))) { cJSON_DeleteMarkDef(x); return NULL; }
+                 if (NULL != (x->cursor = cJSON_malloc(sizeof(enum Cursor)))) {
+                     *x->cursor = cJSON_GetCursorValue(cJSON_GetObjectItemCaseSensitive(j, "cursor"));
+                 }
+@@ -21217,8 +21615,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "fontStyle")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteMarkDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "fontStyle")) || 0 == cJSON_GetFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteMarkDef(x); return NULL; }
++                if (!cJSON_IsFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"))) { cJSON_DeleteMarkDef(x); return NULL; }
+                 if (NULL != (x->font_style = cJSON_malloc(sizeof(enum FontStyle)))) {
+                     *x->font_style = cJSON_GetFontStyleValue(cJSON_GetObjectItemCaseSensitive(j, "fontStyle"));
+                 }
+@@ -21233,8 +21630,7 @@
+                 x->href = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "href")));
+             }
+             if (cJSON_HasObjectItem(j, "interpolate")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteMarkDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "interpolate")) || 0 == cJSON_GetInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteMarkDef(x); return NULL; }
++                if (!cJSON_IsInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"))) { cJSON_DeleteMarkDef(x); return NULL; }
+                 if (NULL != (x->interpolate = cJSON_malloc(sizeof(enum Interpolate)))) {
+                     *x->interpolate = cJSON_GetInterpolateValue(cJSON_GetObjectItemCaseSensitive(j, "interpolate"));
+                 }
+@@ -21254,8 +21650,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "orient")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteMarkDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient")) || 0 == cJSON_GetOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteMarkDef(x); return NULL; }
++                if (!cJSON_IsOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteMarkDef(x); return NULL; }
+                 if (NULL != (x->orient = cJSON_malloc(sizeof(enum Orient)))) {
+                     *x->orient = cJSON_GetOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"));
+                 }
+@@ -21344,8 +21739,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteMarkDef(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteMarkDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetMarkValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteMarkDef(x); return NULL; }
++                if (!cJSON_IsMarkValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteMarkDef(x); return NULL; }
+                 x->type = cJSON_GetMarkValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+             }
+         }
+@@ -21691,8 +22085,7 @@
                              cJSON_DeleteProjection(x);
                              return NULL;
                          }
@@ -374,7 +2371,196 @@
                      }
                      x->precision = x1;
                  }
-@@ -23185,8 +23180,7 @@
+@@ -21738,8 +22131,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteProjection(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetVgProjectionTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteProjection(x); return NULL; }
++                if (!cJSON_IsVgProjectionTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteProjection(x); return NULL; }
+                 if (NULL != (x->type = cJSON_malloc(sizeof(enum VgProjectionType)))) {
+                     *x->type = cJSON_GetVgProjectionTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+                 }
+@@ -21956,15 +22348,13 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct AxisResolveMap)))) {
+             memset(x, 0, sizeof(struct AxisResolveMap));
+             if (cJSON_HasObjectItem(j, "x")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "x"))) { cJSON_DeleteAxisResolveMap(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "x")) || 0 == cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "x"))) { cJSON_DeleteAxisResolveMap(x); return NULL; }
++                if (!cJSON_IsResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "x"))) { cJSON_DeleteAxisResolveMap(x); return NULL; }
+                 if (NULL != (x->x = cJSON_malloc(sizeof(enum ResolveMode)))) {
+                     *x->x = cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "x"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "y")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "y"))) { cJSON_DeleteAxisResolveMap(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "y")) || 0 == cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "y"))) { cJSON_DeleteAxisResolveMap(x); return NULL; }
++                if (!cJSON_IsResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "y"))) { cJSON_DeleteAxisResolveMap(x); return NULL; }
+                 if (NULL != (x->y = cJSON_malloc(sizeof(enum ResolveMode)))) {
+                     *x->y = cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "y"));
+                 }
+@@ -22031,29 +22421,25 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct LegendResolveMap)))) {
+             memset(x, 0, sizeof(struct LegendResolveMap));
+             if (cJSON_HasObjectItem(j, "color")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "color"))) { cJSON_DeleteLegendResolveMap(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "color")) || 0 == cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "color"))) { cJSON_DeleteLegendResolveMap(x); return NULL; }
++                if (!cJSON_IsResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "color"))) { cJSON_DeleteLegendResolveMap(x); return NULL; }
+                 if (NULL != (x->color = cJSON_malloc(sizeof(enum ResolveMode)))) {
+                     *x->color = cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "color"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "opacity")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "opacity"))) { cJSON_DeleteLegendResolveMap(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "opacity")) || 0 == cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "opacity"))) { cJSON_DeleteLegendResolveMap(x); return NULL; }
++                if (!cJSON_IsResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "opacity"))) { cJSON_DeleteLegendResolveMap(x); return NULL; }
+                 if (NULL != (x->opacity = cJSON_malloc(sizeof(enum ResolveMode)))) {
+                     *x->opacity = cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "opacity"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "shape")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "shape"))) { cJSON_DeleteLegendResolveMap(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "shape")) || 0 == cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "shape"))) { cJSON_DeleteLegendResolveMap(x); return NULL; }
++                if (!cJSON_IsResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "shape"))) { cJSON_DeleteLegendResolveMap(x); return NULL; }
+                 if (NULL != (x->shape = cJSON_malloc(sizeof(enum ResolveMode)))) {
+                     *x->shape = cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "shape"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "size")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "size"))) { cJSON_DeleteLegendResolveMap(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "size")) || 0 == cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "size"))) { cJSON_DeleteLegendResolveMap(x); return NULL; }
++                if (!cJSON_IsResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "size"))) { cJSON_DeleteLegendResolveMap(x); return NULL; }
+                 if (NULL != (x->size = cJSON_malloc(sizeof(enum ResolveMode)))) {
+                     *x->size = cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "size"));
+                 }
+@@ -22132,43 +22518,37 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct ScaleResolveMap)))) {
+             memset(x, 0, sizeof(struct ScaleResolveMap));
+             if (cJSON_HasObjectItem(j, "color")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "color"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "color")) || 0 == cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "color"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
++                if (!cJSON_IsResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "color"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
+                 if (NULL != (x->color = cJSON_malloc(sizeof(enum ResolveMode)))) {
+                     *x->color = cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "color"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "opacity")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "opacity"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "opacity")) || 0 == cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "opacity"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
++                if (!cJSON_IsResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "opacity"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
+                 if (NULL != (x->opacity = cJSON_malloc(sizeof(enum ResolveMode)))) {
+                     *x->opacity = cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "opacity"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "shape")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "shape"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "shape")) || 0 == cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "shape"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
++                if (!cJSON_IsResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "shape"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
+                 if (NULL != (x->shape = cJSON_malloc(sizeof(enum ResolveMode)))) {
+                     *x->shape = cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "shape"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "size")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "size"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "size")) || 0 == cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "size"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
++                if (!cJSON_IsResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "size"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
+                 if (NULL != (x->size = cJSON_malloc(sizeof(enum ResolveMode)))) {
+                     *x->size = cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "size"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "x")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "x"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "x")) || 0 == cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "x"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
++                if (!cJSON_IsResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "x"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
+                 if (NULL != (x->x = cJSON_malloc(sizeof(enum ResolveMode)))) {
+                     *x->x = cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "x"));
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "y")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "y"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "y")) || 0 == cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "y"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
++                if (!cJSON_IsResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "y"))) { cJSON_DeleteScaleResolveMap(x); return NULL; }
+                 if (NULL != (x->y = cJSON_malloc(sizeof(enum ResolveMode)))) {
+                     *x->y = cJSON_GetResolveModeValue(cJSON_GetObjectItemCaseSensitive(j, "y"));
+                 }
+@@ -22346,8 +22726,7 @@
+                 if (NULL == x->bind) { cJSON_DeleteSelectionDef(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "empty")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "empty"))) { cJSON_DeleteSelectionDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "empty")) || 0 == cJSON_GetEmptyValue(cJSON_GetObjectItemCaseSensitive(j, "empty"))) { cJSON_DeleteSelectionDef(x); return NULL; }
++                if (!cJSON_IsEmptyValue(cJSON_GetObjectItemCaseSensitive(j, "empty"))) { cJSON_DeleteSelectionDef(x); return NULL; }
+                 if (NULL != (x->empty = cJSON_malloc(sizeof(enum Empty)))) {
+                     *x->empty = cJSON_GetEmptyValue(cJSON_GetObjectItemCaseSensitive(j, "empty"));
+                 }
+@@ -22359,6 +22738,7 @@
+                     cJSON * e1 = NULL;
+                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "encodings");
+                     cJSON_ArrayForEach(e1, j1) {
++                        if (!cJSON_IsSingleDefChannelValue(e1)) { x->encodings = x1; cJSON_DeleteSelectionDef(x); return NULL; }
+                         enum SingleDefChannel * tmp = cJSON_malloc(sizeof(enum SingleDefChannel));
+                         if (NULL != tmp) {
+                             * tmp = cJSON_GetSingleDefChannelValue(e1);
+@@ -22391,16 +22771,14 @@
+                 if (NULL == x->on) { cJSON_DeleteSelectionDef(x); return NULL; }
+             }
+             if (cJSON_HasObjectItem(j, "resolve")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "resolve"))) { cJSON_DeleteSelectionDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "resolve")) || 0 == cJSON_GetSelectionResolutionValue(cJSON_GetObjectItemCaseSensitive(j, "resolve"))) { cJSON_DeleteSelectionDef(x); return NULL; }
++                if (!cJSON_IsSelectionResolutionValue(cJSON_GetObjectItemCaseSensitive(j, "resolve"))) { cJSON_DeleteSelectionDef(x); return NULL; }
+                 if (NULL != (x->resolve = cJSON_malloc(sizeof(enum SelectionResolution)))) {
+                     *x->resolve = cJSON_GetSelectionResolutionValue(cJSON_GetObjectItemCaseSensitive(j, "resolve"));
+                 }
+             }
+             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteSelectionDef(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteSelectionDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetSelectionDefTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteSelectionDef(x); return NULL; }
++                if (!cJSON_IsSelectionDefTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteSelectionDef(x); return NULL; }
+                 x->type = cJSON_GetSelectionDefTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+             }
+             if (cJSON_HasObjectItem(j, "toggle")) {
+@@ -22564,8 +22942,7 @@
+         if (NULL != (x = cJSON_malloc(sizeof(struct TitleParams)))) {
+             memset(x, 0, sizeof(struct TitleParams));
+             if (cJSON_HasObjectItem(j, "anchor")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "anchor"))) { cJSON_DeleteTitleParams(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "anchor")) || 0 == cJSON_GetAnchorValue(cJSON_GetObjectItemCaseSensitive(j, "anchor"))) { cJSON_DeleteTitleParams(x); return NULL; }
++                if (!cJSON_IsAnchorValue(cJSON_GetObjectItemCaseSensitive(j, "anchor"))) { cJSON_DeleteTitleParams(x); return NULL; }
+                 if (NULL != (x->anchor = cJSON_malloc(sizeof(enum Anchor)))) {
+                     *x->anchor = cJSON_GetAnchorValue(cJSON_GetObjectItemCaseSensitive(j, "anchor"));
+                 }
+@@ -22577,8 +22954,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "orient")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteTitleParams(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orient")) || 0 == cJSON_GetTitleOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteTitleParams(x); return NULL; }
++                if (!cJSON_IsTitleOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"))) { cJSON_DeleteTitleParams(x); return NULL; }
+                 if (NULL != (x->orient = cJSON_malloc(sizeof(enum TitleOrient)))) {
+                     *x->orient = cJSON_GetTitleOrientValue(cJSON_GetObjectItemCaseSensitive(j, "orient"));
+                 }
+@@ -22702,8 +23078,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "op")) { cJSON_DeleteAggregatedFieldDef(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "op")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "op"))) { cJSON_DeleteAggregatedFieldDef(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "op")) || 0 == cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "op"))) { cJSON_DeleteAggregatedFieldDef(x); return NULL; }
++                if (!cJSON_IsAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "op"))) { cJSON_DeleteAggregatedFieldDef(x); return NULL; }
+                 x->op = cJSON_GetAggregateOpValue(cJSON_GetObjectItemCaseSensitive(j, "op"));
+             }
+         }
+@@ -22919,8 +23294,7 @@
+                 x->field = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "field")));
+             }
+             if (cJSON_HasObjectItem(j, "timeUnit")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteTransform(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "timeUnit")) || 0 == cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteTransform(x); return NULL; }
++                if (!cJSON_IsTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"))) { cJSON_DeleteTransform(x); return NULL; }
+                 if (NULL != (x->time_unit = cJSON_malloc(sizeof(enum TimeUnit)))) {
+                     *x->time_unit = cJSON_GetTimeUnitValue(cJSON_GetObjectItemCaseSensitive(j, "timeUnit"));
+                 }
+@@ -23185,8 +23559,7 @@
                              cJSON_DeleteLayerSpec(x);
                              return NULL;
                          }
@@ -384,7 +2570,7 @@
                      }
                      x->selection = x1;
                  }
-@@ -23568,8 +23562,7 @@
+@@ -23568,8 +23941,7 @@
                              cJSON_DeleteSpec(x);
                              return NULL;
                          }
@@ -394,7 +2580,7 @@
                      }
                      x->selection = x1;
                  }
-@@ -23918,8 +23911,7 @@
+@@ -23918,8 +24290,7 @@
                              cJSON_DeleteTopLevel(x);
                              return NULL;
                          }

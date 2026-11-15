@@ -1,6 +1,14 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -265,7 +265,7 @@
+@@ -176,6 +176,7 @@
+ };
+ 
+ enum TypeName cJSON_GetTypeNameValue(const cJSON * j);
++bool cJSON_IsTypeNameValue(const cJSON * j);
+ cJSON * cJSON_CreateTypeName(const enum TypeName x);
+ 
+ #define cJSON_IsDatum(j) (quicktype_cJSON_IsInteger(j) || cJSON_IsNull(j) || cJSON_IsString(j))
+@@ -265,12 +266,21 @@
  
  enum TypeName cJSON_GetTypeNameValue(const cJSON * j) {
      enum TypeName x = 0;
@@ -9,3 +17,37 @@
          if (!strcmp(cJSON_GetStringValue(j), "meta_data")) x = TYPENAME_META_DATA;
          else if (!strcmp(cJSON_GetStringValue(j), "number")) x = TYPENAME_NUMBER;
          else if (!strcmp(cJSON_GetStringValue(j), "text")) x = TYPENAME_TEXT;
+     }
+     return x;
++}
++
++bool cJSON_IsTypeNameValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "meta_data")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "number")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "text")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateTypeName(const enum TypeName x) {
+@@ -645,8 +655,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "dataTypeName")) { cJSON_DeleteColumn(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "dataTypeName")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName")) || 0 == cJSON_GetTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
++                if (!cJSON_IsTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
+                 x->data_type_name = cJSON_GetTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "dataTypeName"));
+             }
+             if (!cJSON_HasObjectItem(j, "fieldName")) { cJSON_DeleteColumn(x); return NULL; }
+@@ -666,8 +675,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "renderTypeName")) { cJSON_DeleteColumn(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "renderTypeName")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName")) || 0 == cJSON_GetTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
++                if (!cJSON_IsTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName"))) { cJSON_DeleteColumn(x); return NULL; }
+                 x->render_type_name = cJSON_GetTypeNameValue(cJSON_GetObjectItemCaseSensitive(j, "renderTypeName"));
+             }
+             if (!cJSON_HasObjectItem(j, "format")) { cJSON_DeleteColumn(x); return NULL; }

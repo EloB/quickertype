@@ -90,9 +90,12 @@ struct top_map_null_int * cJSON_Gettop_map_null_intValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
+                    if (!cJSON_IsNull(e) && !quicktype_cJSON_IsInteger(e)) { cJSON_Deletetop_map_null_int(x); return NULL; }
                     if (!cJSON_IsNull(e)) {
                         int64_t * item = cJSON_malloc(sizeof(*item));
-                        if (NULL != item) { *item = cJSON_GetNumberValue(e); hashtable_add(x->value, e->string, item, sizeof(*item)); }
+                        if (NULL == item) { cJSON_Deletetop_map_null_int(x); return NULL; }
+                        *item = cJSON_GetNumberValue(e);
+                        hashtable_add(x->value, e->string, item, sizeof(*item));
                     }
                     else {
                         hashtable_add(x->value, e->string, (void *)0xDEADBEEF, sizeof(void *));
@@ -151,7 +154,7 @@ void cJSON_Deletetop_map_null_int(struct top_map_null_int * x) {
                 for (size_t index = 0; index < count; index++) {
                     int64_t *x2 = hashtable_lookup(x->value, keys[index]);
                     if (NULL != x2) {
-                        if ((int64_t *)0xDEADBEEF != x2) {
+                        if ((void *)0xDEADBEEF != x2) {
                             cJSON_free(x2);
                         }
                     }

@@ -15,6 +15,15 @@ enum Booster cJSON_GetBoosterValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsBoosterValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "rare")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "uncommon")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "common")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateBooster(const enum Booster x) {
     cJSON * j = NULL;
     switch (x) {
@@ -35,6 +44,17 @@ enum ColorIdentity cJSON_GetColorIdentityValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "R")) x = COLORIDENTITY_R;
     }
     return x;
+}
+
+bool cJSON_IsColorIdentityValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "U")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "B")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "W")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "G")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "R")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateColorIdentity(const enum ColorIdentity x) {
@@ -61,6 +81,17 @@ enum Color cJSON_GetColorValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsColorValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Blue")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Black")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "White")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Green")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Red")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateColor(const enum Color x) {
     cJSON * j = NULL;
     switch (x) {
@@ -79,6 +110,13 @@ enum Layout cJSON_GetLayoutValue(const cJSON * j) {
         if (!strcmp(cJSON_GetStringValue(j), "normal")) x = LAYOUT_NORMAL;
     }
     return x;
+}
+
+bool cJSON_IsLayoutValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "normal")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateLayout(const enum Layout x) {
@@ -124,6 +162,42 @@ enum Format cJSON_GetFormatValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "Zendikar Block")) x = FORMAT_ZENDIKAR_BLOCK;
     }
     return x;
+}
+
+bool cJSON_IsFormatValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Commander")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Legacy")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Modern")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Vintage")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Time Spiral Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Ravnica Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Ice Age Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Tempest Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Onslaught Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Masques Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Mirage Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Urza Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Scars of Mirrodin Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Mirrodin Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Amonkhet Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Battle for Zendikar Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Innistrad Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Invasion Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Kaladesh Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Kamigawa Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Khans of Tarkir Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Lorwyn-Shadowmoor Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Odyssey Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Return to Ravnica Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Shadows over Innistrad Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Shards of Alara Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Standard")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Theros Block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Un-Sets")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Zendikar Block")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateFormat(const enum Format x) {
@@ -173,6 +247,15 @@ enum LegalityEnum cJSON_GetLegalityEnumValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsLegalityEnumValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Legal")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Banned")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Restricted")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateLegalityEnum(const enum LegalityEnum x) {
     cJSON * j = NULL;
     switch (x) {
@@ -194,6 +277,16 @@ enum Rarity cJSON_GetRarityValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsRarityValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Uncommon")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Rare")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Common")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Basic Land")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateRarity(const enum Rarity x) {
     cJSON * j = NULL;
     switch (x) {
@@ -211,6 +304,13 @@ enum Supertype cJSON_GetSupertypeValue(const cJSON * j) {
         if (!strcmp(cJSON_GetStringValue(j), "Basic")) x = SUPERTYPE_BASIC;
     }
     return x;
+}
+
+bool cJSON_IsSupertypeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Basic")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateSupertype(const enum Supertype x) {
@@ -232,6 +332,18 @@ enum Type cJSON_GetTypeValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "Land")) x = TYPE_LAND;
     }
     return x;
+}
+
+bool cJSON_IsTypeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Creature")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Instant")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Enchantment")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Artifact")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Sorcery")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Land")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateType(const enum Type x) {
@@ -266,14 +378,12 @@ struct LegalityElement * cJSON_GetLegalityElementValue(const cJSON * j) {
             memset(x, 0, sizeof(struct LegalityElement));
             if (!cJSON_HasObjectItem(j, "format")) { cJSON_DeleteLegalityElement(x); return NULL; }
             if (cJSON_HasObjectItem(j, "format")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "format"))) { cJSON_DeleteLegalityElement(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "format")) || 0 == cJSON_GetFormatValue(cJSON_GetObjectItemCaseSensitive(j, "format"))) { cJSON_DeleteLegalityElement(x); return NULL; }
+                if (!cJSON_IsFormatValue(cJSON_GetObjectItemCaseSensitive(j, "format"))) { cJSON_DeleteLegalityElement(x); return NULL; }
                 x->format = cJSON_GetFormatValue(cJSON_GetObjectItemCaseSensitive(j, "format"));
             }
             if (!cJSON_HasObjectItem(j, "legality")) { cJSON_DeleteLegalityElement(x); return NULL; }
             if (cJSON_HasObjectItem(j, "legality")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "legality"))) { cJSON_DeleteLegalityElement(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "legality")) || 0 == cJSON_GetLegalityEnumValue(cJSON_GetObjectItemCaseSensitive(j, "legality"))) { cJSON_DeleteLegalityElement(x); return NULL; }
+                if (!cJSON_IsLegalityEnumValue(cJSON_GetObjectItemCaseSensitive(j, "legality"))) { cJSON_DeleteLegalityElement(x); return NULL; }
                 x->legality = cJSON_GetLegalityEnumValue(cJSON_GetObjectItemCaseSensitive(j, "legality"));
             }
         }
@@ -436,6 +546,7 @@ struct Card * cJSON_GetCardValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "colorIdentity");
                     cJSON_ArrayForEach(e1, j1) {
+                        if (!cJSON_IsColorIdentityValue(e1)) { x->color_identity = x1; cJSON_DeleteCard(x); return NULL; }
                         enum ColorIdentity * tmp = cJSON_malloc(sizeof(enum ColorIdentity));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetColorIdentityValue(e1);
@@ -452,6 +563,7 @@ struct Card * cJSON_GetCardValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "colors");
                     cJSON_ArrayForEach(e1, j1) {
+                        if (!cJSON_IsColorValue(e1)) { x->colors = x1; cJSON_DeleteCard(x); return NULL; }
                         enum Color * tmp = cJSON_malloc(sizeof(enum Color));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetColorValue(e1);
@@ -487,8 +599,7 @@ struct Card * cJSON_GetCardValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "layout")) { cJSON_DeleteCard(x); return NULL; }
             if (cJSON_HasObjectItem(j, "layout")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "layout"))) { cJSON_DeleteCard(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "layout")) || 0 == cJSON_GetLayoutValue(cJSON_GetObjectItemCaseSensitive(j, "layout"))) { cJSON_DeleteCard(x); return NULL; }
+                if (!cJSON_IsLayoutValue(cJSON_GetObjectItemCaseSensitive(j, "layout"))) { cJSON_DeleteCard(x); return NULL; }
                 x->layout = cJSON_GetLayoutValue(cJSON_GetObjectItemCaseSensitive(j, "layout"));
             }
             if (!cJSON_HasObjectItem(j, "legalities")) { cJSON_DeleteCard(x); return NULL; }
@@ -569,8 +680,7 @@ struct Card * cJSON_GetCardValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "rarity")) { cJSON_DeleteCard(x); return NULL; }
             if (cJSON_HasObjectItem(j, "rarity")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "rarity"))) { cJSON_DeleteCard(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "rarity")) || 0 == cJSON_GetRarityValue(cJSON_GetObjectItemCaseSensitive(j, "rarity"))) { cJSON_DeleteCard(x); return NULL; }
+                if (!cJSON_IsRarityValue(cJSON_GetObjectItemCaseSensitive(j, "rarity"))) { cJSON_DeleteCard(x); return NULL; }
                 x->rarity = cJSON_GetRarityValue(cJSON_GetObjectItemCaseSensitive(j, "rarity"));
             }
             if (cJSON_HasObjectItem(j, "reserved")) {
@@ -613,6 +723,7 @@ struct Card * cJSON_GetCardValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "supertypes");
                     cJSON_ArrayForEach(e1, j1) {
+                        if (!cJSON_IsSupertypeValue(e1)) { x->supertypes = x1; cJSON_DeleteCard(x); return NULL; }
                         enum Supertype * tmp = cJSON_malloc(sizeof(enum Supertype));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetSupertypeValue(e1);
@@ -648,6 +759,7 @@ struct Card * cJSON_GetCardValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "types");
                     cJSON_ArrayForEach(e1, j1) {
+                        if (!cJSON_IsTypeValue(e1)) { x->types = x1; cJSON_DeleteCard(x); return NULL; }
                         enum Type * tmp = cJSON_malloc(sizeof(enum Type));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetTypeValue(e1);
@@ -1001,6 +1113,7 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "booster");
                     cJSON_ArrayForEach(e1, j1) {
+                        if (!cJSON_IsBoosterValue(e1)) { x->booster = x1; cJSON_DeleteTopLevel(x); return NULL; }
                         enum Booster * tmp = cJSON_malloc(sizeof(enum Booster));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetBoosterValue(e1);

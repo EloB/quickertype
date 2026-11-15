@@ -1,6 +1,14 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -69,7 +69,7 @@
+@@ -59,6 +59,7 @@
+ };
+ 
+ enum Shortcut cJSON_GetShortcutValue(const cJSON * j);
++bool cJSON_IsShortcutValue(const cJSON * j);
+ cJSON * cJSON_CreateShortcut(const enum Shortcut x);
+ 
+ struct TopLevel * cJSON_ParseTopLevel(const char * s);
+@@ -69,13 +70,21 @@
  
  enum Shortcut cJSON_GetShortcutValue(const cJSON * j) {
      enum Shortcut x = 0;
@@ -9,3 +17,27 @@
          if (!strcmp(cJSON_GetStringValue(j), "hidden")) x = SHORTCUT_HIDDEN;
          else if (!strcmp(cJSON_GetStringValue(j), "visible")) x = SHORTCUT_VISIBLE;
      }
+     return x;
+ }
+ 
++bool cJSON_IsShortcutValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "hidden")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "visible")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateShortcut(const enum Shortcut x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -113,8 +122,7 @@
+                 }
+             }
+             if (cJSON_HasObjectItem(j, "shortcut")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "shortcut"))) { cJSON_DeleteTopLevel(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "shortcut")) || 0 == cJSON_GetShortcutValue(cJSON_GetObjectItemCaseSensitive(j, "shortcut"))) { cJSON_DeleteTopLevel(x); return NULL; }
++                if (!cJSON_IsShortcutValue(cJSON_GetObjectItemCaseSensitive(j, "shortcut"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                 if (NULL != (x->shortcut = cJSON_malloc(sizeof(enum Shortcut)))) {
+                     *x->shortcut = cJSON_GetShortcutValue(cJSON_GetObjectItemCaseSensitive(j, "shortcut"));
+                 }

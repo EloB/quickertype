@@ -1,6 +1,18 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -86,7 +86,7 @@
+@@ -69,9 +69,10 @@
+ };
+ 
+ enum FooEnum cJSON_GetFooEnumValue(const cJSON * j);
++bool cJSON_IsFooEnumValue(const cJSON * j);
+ cJSON * cJSON_CreateFooEnum(const enum FooEnum x);
+ 
+-#define cJSON_IsFooUnion(j) (cJSON_IsNumber(j) || quicktype_cJSON_IsInteger(j) || cJSON_IsBool(j) || cJSON_IsString(j))
++#define cJSON_IsFooUnion(j) (cJSON_IsNumber(j) || quicktype_cJSON_IsInteger(j) || cJSON_IsBool(j) || cJSON_IsFooEnumValue(j))
+ struct FooUnion * cJSON_GetFooUnionValue(const cJSON * j);
+ cJSON * cJSON_CreateFooUnion(const struct FooUnion * x);
+ void cJSON_DeleteFooUnion(struct FooUnion * x);
+@@ -86,7 +87,7 @@
  
  enum FooEnum cJSON_GetFooEnumValue(const cJSON * j) {
      enum FooEnum x = 0;
@@ -9,3 +21,28 @@
          if (!strcmp(cJSON_GetStringValue(j), "a")) x = FOOENUM_A;
          else if (!strcmp(cJSON_GetStringValue(j), "b")) x = FOOENUM_B;
          else if (!strcmp(cJSON_GetStringValue(j), "c")) x = FOOENUM_C;
+@@ -94,6 +95,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsFooEnumValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "a")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "b")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "c")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateFooEnum(const enum FooEnum x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -120,7 +130,7 @@
+             x->type = cJSON_Bool;
+             x->value.boolean = cJSON_IsTrue(j);
+         }
+-        else if (cJSON_IsString(j)) {
++        else if (cJSON_IsFooEnumValue(j)) {
+             x->type = cJSON_Enum;
+             x->value.purple_enum = cJSON_GetFooEnumValue(j);
+         }

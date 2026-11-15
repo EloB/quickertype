@@ -155,8 +155,7 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "periodType")) { cJSON_DeleteTopLevel(x); return NULL; }
             if (cJSON_HasObjectItem(j, "periodType")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "periodType"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "periodType")) || 0 == cJSON_GetPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "periodType"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "periodType"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 x->period_type = cJSON_GetPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "periodType"));
             }
             if (!cJSON_HasObjectItem(j, "periodsMax")) { cJSON_DeleteTopLevel(x); return NULL; }

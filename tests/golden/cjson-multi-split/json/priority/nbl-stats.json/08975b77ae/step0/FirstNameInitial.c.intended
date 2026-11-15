@@ -24,6 +24,24 @@ enum FirstNameInitial cJSON_GetFirstNameInitialValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsFirstNameInitialValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "D")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "J")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "T")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "C")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "O")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "H")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "L")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "A")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "K")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "R")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "B")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "N")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateFirstNameInitial(const enum FirstNameInitial x) {
     cJSON * j = NULL;
     switch (x) {

@@ -13,6 +13,13 @@ enum Language cJSON_GetLanguageValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsLanguageValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Markdown")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateLanguage(const enum Language x) {
     cJSON * j = NULL;
     switch (x) {
@@ -27,6 +34,13 @@ enum Type cJSON_GetTypeValue(const cJSON * j) {
         if (!strcmp(cJSON_GetStringValue(j), "text/plain")) x = TYPE_TEXT_PLAIN;
     }
     return x;
+}
+
+bool cJSON_IsTypeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "text/plain")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateType(const enum Type x) {
@@ -66,8 +80,7 @@ struct File * cJSON_GetFileValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "language")) { cJSON_DeleteFile(x); return NULL; }
             if ((cJSON_HasObjectItem(j, "language")) && (!cJSON_IsNull(cJSON_GetObjectItemCaseSensitive(j, "language")))) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteFile(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "language")) || 0 == cJSON_GetLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteFile(x); return NULL; }
+                if (!cJSON_IsLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteFile(x); return NULL; }
                 if (NULL != (x->language = cJSON_malloc(sizeof(enum Language)))) {
                     *x->language = cJSON_GetLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"));
                 }
@@ -89,8 +102,7 @@ struct File * cJSON_GetFileValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteFile(x); return NULL; }
             if (cJSON_HasObjectItem(j, "type")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFile(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFile(x); return NULL; }
+                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteFile(x); return NULL; }
                 x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
             }
         }

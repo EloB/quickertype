@@ -21,6 +21,21 @@ enum OrbitClass cJSON_GetOrbitClassValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsOrbitClassValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Apollo")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Amor")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Aten")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Comet")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Jupiter-family Comet")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Halley-type Comet*")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Parabolic Comet")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Jupiter-family Comet*")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Encke-type Comet")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateOrbitClass(const enum OrbitClass x) {
     cJSON * j = NULL;
     switch (x) {
@@ -45,6 +60,15 @@ enum Pha cJSON_GetPhaValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "n/a")) x = PHA_N_A;
     }
     return x;
+}
+
+bool cJSON_IsPhaValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Y")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "N")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "n/a")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreatePha(const enum Pha x) {
@@ -120,8 +144,7 @@ struct TopLevelElement * cJSON_GetTopLevelElementValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "orbit_class")) { cJSON_DeleteTopLevelElement(x); return NULL; }
             if (cJSON_HasObjectItem(j, "orbit_class")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orbit_class"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "orbit_class")) || 0 == cJSON_GetOrbitClassValue(cJSON_GetObjectItemCaseSensitive(j, "orbit_class"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsOrbitClassValue(cJSON_GetObjectItemCaseSensitive(j, "orbit_class"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
                 x->orbit_class = cJSON_GetOrbitClassValue(cJSON_GetObjectItemCaseSensitive(j, "orbit_class"));
             }
             if (cJSON_HasObjectItem(j, "period_yr")) {
@@ -130,8 +153,7 @@ struct TopLevelElement * cJSON_GetTopLevelElementValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "pha")) { cJSON_DeleteTopLevelElement(x); return NULL; }
             if (cJSON_HasObjectItem(j, "pha")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "pha"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "pha")) || 0 == cJSON_GetPhaValue(cJSON_GetObjectItemCaseSensitive(j, "pha"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                if (!cJSON_IsPhaValue(cJSON_GetObjectItemCaseSensitive(j, "pha"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
                 x->pha = cJSON_GetPhaValue(cJSON_GetObjectItemCaseSensitive(j, "pha"));
             }
             if (!cJSON_HasObjectItem(j, "q_au_1")) { cJSON_DeleteTopLevelElement(x); return NULL; }

@@ -17,6 +17,17 @@ enum ScoreboardName cJSON_GetScoreboardNameValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsScoreboardNameValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "T. s")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "R. Ihata")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "D. Jones")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "B. Valentine")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateScoreboardName(const enum ScoreboardName x) {
     cJSON * j = NULL;
     switch (x) {

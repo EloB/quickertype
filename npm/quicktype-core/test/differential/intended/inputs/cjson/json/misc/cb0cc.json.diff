@@ -1,6 +1,14 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -99,7 +99,7 @@
+@@ -77,6 +77,7 @@
+ };
+ 
+ enum Category cJSON_GetCategoryValue(const cJSON * j);
++bool cJSON_IsCategoryValue(const cJSON * j);
+ cJSON * cJSON_CreateCategory(const enum Category x);
+ 
+ struct Laureate * cJSON_ParseLaureate(const char * s);
+@@ -99,7 +100,7 @@
  
  enum Category cJSON_GetCategoryValue(const cJSON * j) {
      enum Category x = 0;
@@ -9,3 +17,32 @@
          if (!strcmp(cJSON_GetStringValue(j), "physics")) x = CATEGORY_PHYSICS;
          else if (!strcmp(cJSON_GetStringValue(j), "chemistry")) x = CATEGORY_CHEMISTRY;
          else if (!strcmp(cJSON_GetStringValue(j), "medicine")) x = CATEGORY_MEDICINE;
+@@ -108,6 +109,18 @@
+         else if (!strcmp(cJSON_GetStringValue(j), "economics")) x = CATEGORY_ECONOMICS;
+     }
+     return x;
++}
++
++bool cJSON_IsCategoryValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "physics")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "chemistry")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "medicine")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "literature")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "peace")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "economics")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateCategory(const enum Category x) {
+@@ -287,8 +300,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "category")) { cJSON_DeletePrize(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "category")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeletePrize(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "category")) || 0 == cJSON_GetCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeletePrize(x); return NULL; }
++                if (!cJSON_IsCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"))) { cJSON_DeletePrize(x); return NULL; }
+                 x->category = cJSON_GetCategoryValue(cJSON_GetObjectItemCaseSensitive(j, "category"));
+             }
+             if (!cJSON_HasObjectItem(j, "laureates")) { cJSON_DeletePrize(x); return NULL; }

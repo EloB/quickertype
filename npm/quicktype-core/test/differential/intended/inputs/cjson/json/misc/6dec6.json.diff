@@ -1,6 +1,14 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -245,7 +245,7 @@
+@@ -157,6 +157,7 @@
+ };
+ 
+ enum Text cJSON_GetTextValue(const cJSON * j);
++bool cJSON_IsTextValue(const cJSON * j);
+ cJSON * cJSON_CreateText(const enum Text x);
+ 
+ struct Astronomy * cJSON_ParseAstronomy(const char * s);
+@@ -245,7 +246,7 @@
  
  enum Text cJSON_GetTextValue(const cJSON * j) {
      enum Text x = 0;
@@ -9,3 +17,29 @@
          if (!strcmp(cJSON_GetStringValue(j), "Showers")) x = TEXT_SHOWERS;
          else if (!strcmp(cJSON_GetStringValue(j), "Mostly Sunny")) x = TEXT_MOSTLY_SUNNY;
          else if (!strcmp(cJSON_GetStringValue(j), "Partly Cloudy")) x = TEXT_PARTLY_CLOUDY;
+@@ -253,6 +254,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsTextValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "Showers")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Mostly Sunny")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Partly Cloudy")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateText(const enum Text x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -813,8 +823,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "text")) { cJSON_DeleteForecast(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "text")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "text"))) { cJSON_DeleteForecast(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "text")) || 0 == cJSON_GetTextValue(cJSON_GetObjectItemCaseSensitive(j, "text"))) { cJSON_DeleteForecast(x); return NULL; }
++                if (!cJSON_IsTextValue(cJSON_GetObjectItemCaseSensitive(j, "text"))) { cJSON_DeleteForecast(x); return NULL; }
+                 x->text = cJSON_GetTextValue(cJSON_GetObjectItemCaseSensitive(j, "text"));
+             }
+         }

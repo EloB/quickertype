@@ -56,6 +56,7 @@ enum top_arr_enum_element {
 typedef enum top_arr_enum_element top_arr_enum_element;
 
 enum top_arr_enum_element cJSON_Gettop_arr_enum_elementValue(const cJSON * j);
+bool cJSON_Istop_arr_enum_elementValue(const cJSON * j);
 cJSON * cJSON_Createtop_arr_enum_element(const enum top_arr_enum_element x);
 
 enum top_arr_enum_element cJSON_Gettop_arr_enum_elementValue(const cJSON * j) {
@@ -65,6 +66,14 @@ enum top_arr_enum_element cJSON_Gettop_arr_enum_elementValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "two")) x = TOP_ARR_ENUM_ELEMENT_TWO;
     }
     return x;
+}
+
+bool cJSON_Istop_arr_enum_elementValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "one")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "two")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_Createtop_arr_enum_element(const enum top_arr_enum_element x) {

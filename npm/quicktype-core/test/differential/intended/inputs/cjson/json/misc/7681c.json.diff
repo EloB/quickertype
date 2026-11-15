@@ -1,6 +1,22 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -242,7 +242,7 @@
+@@ -172,12 +172,15 @@
+ };
+ 
+ enum Rating cJSON_GetRatingValue(const cJSON * j);
++bool cJSON_IsRatingValue(const cJSON * j);
+ cJSON * cJSON_CreateRating(const enum Rating x);
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j);
++bool cJSON_IsTypeValue(const cJSON * j);
+ cJSON * cJSON_CreateType(const enum Type x);
+ 
+ enum Username cJSON_GetUsernameValue(const cJSON * j);
++bool cJSON_IsUsernameValue(const cJSON * j);
+ cJSON * cJSON_CreateUsername(const enum Username x);
+ 
+ struct The480_WStill * cJSON_ParseThe480_WStill(const char * s);
+@@ -242,12 +245,21 @@
  
  enum Rating cJSON_GetRatingValue(const cJSON * j) {
      enum Rating x = 0;
@@ -9,7 +25,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "g")) x = RATING_G;
          else if (!strcmp(cJSON_GetStringValue(j), "pg")) x = RATING_PG;
          else if (!strcmp(cJSON_GetStringValue(j), "pg-13")) x = RATING_PG_13;
-@@ -262,7 +262,7 @@
+     }
+     return x;
++}
++
++bool cJSON_IsRatingValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "g")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "pg")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "pg-13")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateRating(const enum Rating x) {
+@@ -262,10 +274,17 @@
  
  enum Type cJSON_GetTypeValue(const cJSON * j) {
      enum Type x = 0;
@@ -18,7 +48,17 @@
          if (!strcmp(cJSON_GetStringValue(j), "gif")) x = TYPE_GIF;
      }
      return x;
-@@ -278,7 +278,7 @@
++}
++
++bool cJSON_IsTypeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "gif")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateType(const enum Type x) {
+@@ -278,7 +297,7 @@
  
  enum Username cJSON_GetUsernameValue(const cJSON * j) {
      enum Username x = 0;
@@ -27,3 +67,50 @@
          if (!strcmp(cJSON_GetStringValue(j), "")) x = USERNAME_EMPTY;
          else if (!strcmp(cJSON_GetStringValue(j), "mashable")) x = USERNAME_MASHABLE;
          else if (!strcmp(cJSON_GetStringValue(j), "nba")) x = USERNAME_NBA;
+@@ -287,6 +306,16 @@
+     return x;
+ }
+ 
++bool cJSON_IsUsernameValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "mashable")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "nba")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Originals")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateUsername(const enum Username x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -1282,8 +1311,7 @@
+             memset(x, 0, sizeof(struct Datum));
+             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteDatum(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteDatum(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteDatum(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteDatum(x); return NULL; }
+                 x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+             }
+             if (!cJSON_HasObjectItem(j, "id")) { cJSON_DeleteDatum(x); return NULL; }
+@@ -1348,8 +1376,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "username")) { cJSON_DeleteDatum(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "username")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "username"))) { cJSON_DeleteDatum(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "username")) || 0 == cJSON_GetUsernameValue(cJSON_GetObjectItemCaseSensitive(j, "username"))) { cJSON_DeleteDatum(x); return NULL; }
++                if (!cJSON_IsUsernameValue(cJSON_GetObjectItemCaseSensitive(j, "username"))) { cJSON_DeleteDatum(x); return NULL; }
+                 x->username = cJSON_GetUsernameValue(cJSON_GetObjectItemCaseSensitive(j, "username"));
+             }
+             if (!cJSON_HasObjectItem(j, "source")) { cJSON_DeleteDatum(x); return NULL; }
+@@ -1364,8 +1391,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "rating")) { cJSON_DeleteDatum(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "rating")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "rating"))) { cJSON_DeleteDatum(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "rating")) || 0 == cJSON_GetRatingValue(cJSON_GetObjectItemCaseSensitive(j, "rating"))) { cJSON_DeleteDatum(x); return NULL; }
++                if (!cJSON_IsRatingValue(cJSON_GetObjectItemCaseSensitive(j, "rating"))) { cJSON_DeleteDatum(x); return NULL; }
+                 x->rating = cJSON_GetRatingValue(cJSON_GetObjectItemCaseSensitive(j, "rating"));
+             }
+             if (!cJSON_HasObjectItem(j, "content_url")) { cJSON_DeleteDatum(x); return NULL; }

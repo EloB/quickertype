@@ -1,6 +1,38 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -203,7 +203,7 @@
+@@ -151,24 +151,31 @@
+ };
+ 
+ enum Party cJSON_GetPartyValue(const cJSON * j);
++bool cJSON_IsPartyValue(const cJSON * j);
+ cJSON * cJSON_CreateParty(const enum Party x);
+ 
+ enum Gender cJSON_GetGenderValue(const cJSON * j);
++bool cJSON_IsGenderValue(const cJSON * j);
+ cJSON * cJSON_CreateGender(const enum Gender x);
+ 
+ enum GenderLabel cJSON_GetGenderLabelValue(const cJSON * j);
++bool cJSON_IsGenderLabelValue(const cJSON * j);
+ cJSON * cJSON_CreateGenderLabel(const enum GenderLabel x);
+ 
+ enum Namemod cJSON_GetNamemodValue(const cJSON * j);
++bool cJSON_IsNamemodValue(const cJSON * j);
+ cJSON * cJSON_CreateNamemod(const enum Namemod x);
+ 
+ enum RoleType cJSON_GetRoleTypeValue(const cJSON * j);
++bool cJSON_IsRoleTypeValue(const cJSON * j);
+ cJSON * cJSON_CreateRoleType(const enum RoleType x);
+ 
+ enum RoleTypeLabel cJSON_GetRoleTypeLabelValue(const cJSON * j);
++bool cJSON_IsRoleTypeLabelValue(const cJSON * j);
+ cJSON * cJSON_CreateRoleTypeLabel(const enum RoleTypeLabel x);
+ 
+ enum Title cJSON_GetTitleValue(const cJSON * j);
++bool cJSON_IsTitleValue(const cJSON * j);
+ cJSON * cJSON_CreateTitle(const enum Title x);
+ 
+ struct Meta * cJSON_ParseMeta(const char * s);
+@@ -203,13 +210,21 @@
  
  enum Party cJSON_GetPartyValue(const cJSON * j) {
      enum Party x = 0;
@@ -9,7 +41,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "Republican")) x = PARTY_REPUBLICAN;
          else if (!strcmp(cJSON_GetStringValue(j), "Democrat")) x = PARTY_DEMOCRAT;
      }
-@@ -221,7 +221,7 @@
+     return x;
+ }
+ 
++bool cJSON_IsPartyValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "Republican")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Democrat")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateParty(const enum Party x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -221,11 +236,19 @@
  
  enum Gender cJSON_GetGenderValue(const cJSON * j) {
      enum Gender x = 0;
@@ -18,7 +64,19 @@
          if (!strcmp(cJSON_GetStringValue(j), "male")) x = GENDER_MALE;
          else if (!strcmp(cJSON_GetStringValue(j), "female")) x = GENDER_FEMALE;
      }
-@@ -239,7 +239,7 @@
+     return x;
++}
++
++bool cJSON_IsGenderValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "male")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "female")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateGender(const enum Gender x) {
+@@ -239,13 +262,21 @@
  
  enum GenderLabel cJSON_GetGenderLabelValue(const cJSON * j) {
      enum GenderLabel x = 0;
@@ -27,7 +85,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "Male")) x = GENDERLABEL_MALE;
          else if (!strcmp(cJSON_GetStringValue(j), "Female")) x = GENDERLABEL_FEMALE;
      }
-@@ -257,7 +257,7 @@
+     return x;
+ }
+ 
++bool cJSON_IsGenderLabelValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "Male")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Female")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateGenderLabel(const enum GenderLabel x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -257,7 +288,7 @@
  
  enum Namemod cJSON_GetNamemodValue(const cJSON * j) {
      enum Namemod x = 0;
@@ -36,7 +108,25 @@
          if (!strcmp(cJSON_GetStringValue(j), "")) x = NAMEMOD_EMPTY;
          else if (!strcmp(cJSON_GetStringValue(j), "Jr.")) x = NAMEMOD_JR;
          else if (!strcmp(cJSON_GetStringValue(j), "II")) x = NAMEMOD_II;
-@@ -281,7 +281,7 @@
+@@ -267,6 +298,17 @@
+     return x;
+ }
+ 
++bool cJSON_IsNamemodValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Jr.")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "II")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "III")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "IV")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateNamemod(const enum Namemod x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -281,12 +323,19 @@
  
  enum RoleType cJSON_GetRoleTypeValue(const cJSON * j) {
      enum RoleType x = 0;
@@ -45,7 +135,19 @@
          if (!strcmp(cJSON_GetStringValue(j), "representative")) x = ROLETYPE_REPRESENTATIVE;
      }
      return x;
-@@ -297,7 +297,7 @@
+ }
+ 
++bool cJSON_IsRoleTypeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "representative")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateRoleType(const enum RoleType x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -297,7 +346,7 @@
  
  enum RoleTypeLabel cJSON_GetRoleTypeLabelValue(const cJSON * j) {
      enum RoleTypeLabel x = 0;
@@ -54,7 +156,23 @@
          if (!strcmp(cJSON_GetStringValue(j), "Representative")) x = ROLETYPELABEL_REPRESENTATIVE;
          else if (!strcmp(cJSON_GetStringValue(j), "Delegate")) x = ROLETYPELABEL_DELEGATE;
          else if (!strcmp(cJSON_GetStringValue(j), "Resident Commissioner")) x = ROLETYPELABEL_RESIDENT_COMMISSIONER;
-@@ -317,7 +317,7 @@
+@@ -305,6 +354,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsRoleTypeLabelValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "Representative")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Delegate")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Resident Commissioner")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateRoleTypeLabel(const enum RoleTypeLabel x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -317,11 +375,19 @@
  
  enum Title cJSON_GetTitleValue(const cJSON * j) {
      enum Title x = 0;
@@ -63,3 +181,86 @@
          if (!strcmp(cJSON_GetStringValue(j), "Rep.")) x = TITLE_REP;
          else if (!strcmp(cJSON_GetStringValue(j), "Commish.")) x = TITLE_COMMISH;
      }
+     return x;
++}
++
++bool cJSON_IsTitleValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "Rep.")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Commish.")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateTitle(const enum Title x) {
+@@ -574,14 +640,12 @@
+             }
+             if (!cJSON_HasObjectItem(j, "gender")) { cJSON_DeletePerson(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "gender")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "gender"))) { cJSON_DeletePerson(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "gender")) || 0 == cJSON_GetGenderValue(cJSON_GetObjectItemCaseSensitive(j, "gender"))) { cJSON_DeletePerson(x); return NULL; }
++                if (!cJSON_IsGenderValue(cJSON_GetObjectItemCaseSensitive(j, "gender"))) { cJSON_DeletePerson(x); return NULL; }
+                 x->gender = cJSON_GetGenderValue(cJSON_GetObjectItemCaseSensitive(j, "gender"));
+             }
+             if (!cJSON_HasObjectItem(j, "gender_label")) { cJSON_DeletePerson(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "gender_label")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "gender_label"))) { cJSON_DeletePerson(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "gender_label")) || 0 == cJSON_GetGenderLabelValue(cJSON_GetObjectItemCaseSensitive(j, "gender_label"))) { cJSON_DeletePerson(x); return NULL; }
++                if (!cJSON_IsGenderLabelValue(cJSON_GetObjectItemCaseSensitive(j, "gender_label"))) { cJSON_DeletePerson(x); return NULL; }
+                 x->gender_label = cJSON_GetGenderLabelValue(cJSON_GetObjectItemCaseSensitive(j, "gender_label"));
+             }
+             if (!cJSON_HasObjectItem(j, "id")) { cJSON_DeletePerson(x); return NULL; }
+@@ -631,8 +695,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "namemod")) { cJSON_DeletePerson(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "namemod")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "namemod"))) { cJSON_DeletePerson(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "namemod")) || 0 == cJSON_GetNamemodValue(cJSON_GetObjectItemCaseSensitive(j, "namemod"))) { cJSON_DeletePerson(x); return NULL; }
++                if (!cJSON_IsNamemodValue(cJSON_GetObjectItemCaseSensitive(j, "namemod"))) { cJSON_DeletePerson(x); return NULL; }
+                 x->namemod = cJSON_GetNamemodValue(cJSON_GetObjectItemCaseSensitive(j, "namemod"));
+             }
+             if (!cJSON_HasObjectItem(j, "nickname")) { cJSON_DeletePerson(x); return NULL; }
+@@ -927,8 +990,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "party")) { cJSON_DeleteObjectElement(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "party")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "party"))) { cJSON_DeleteObjectElement(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "party")) || 0 == cJSON_GetPartyValue(cJSON_GetObjectItemCaseSensitive(j, "party"))) { cJSON_DeleteObjectElement(x); return NULL; }
++                if (!cJSON_IsPartyValue(cJSON_GetObjectItemCaseSensitive(j, "party"))) { cJSON_DeleteObjectElement(x); return NULL; }
+                 x->party = cJSON_GetPartyValue(cJSON_GetObjectItemCaseSensitive(j, "party"));
+             }
+             if (!cJSON_HasObjectItem(j, "person")) { cJSON_DeleteObjectElement(x); return NULL; }
+@@ -949,14 +1011,12 @@
+             }
+             if (!cJSON_HasObjectItem(j, "role_type")) { cJSON_DeleteObjectElement(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "role_type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "role_type"))) { cJSON_DeleteObjectElement(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "role_type")) || 0 == cJSON_GetRoleTypeValue(cJSON_GetObjectItemCaseSensitive(j, "role_type"))) { cJSON_DeleteObjectElement(x); return NULL; }
++                if (!cJSON_IsRoleTypeValue(cJSON_GetObjectItemCaseSensitive(j, "role_type"))) { cJSON_DeleteObjectElement(x); return NULL; }
+                 x->role_type = cJSON_GetRoleTypeValue(cJSON_GetObjectItemCaseSensitive(j, "role_type"));
+             }
+             if (!cJSON_HasObjectItem(j, "role_type_label")) { cJSON_DeleteObjectElement(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "role_type_label")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "role_type_label"))) { cJSON_DeleteObjectElement(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "role_type_label")) || 0 == cJSON_GetRoleTypeLabelValue(cJSON_GetObjectItemCaseSensitive(j, "role_type_label"))) { cJSON_DeleteObjectElement(x); return NULL; }
++                if (!cJSON_IsRoleTypeLabelValue(cJSON_GetObjectItemCaseSensitive(j, "role_type_label"))) { cJSON_DeleteObjectElement(x); return NULL; }
+                 x->role_type_label = cJSON_GetRoleTypeLabelValue(cJSON_GetObjectItemCaseSensitive(j, "role_type_label"));
+             }
+             if (!cJSON_HasObjectItem(j, "senator_class")) { cJSON_DeleteObjectElement(x); return NULL; }
+@@ -997,14 +1057,12 @@
+             }
+             if (!cJSON_HasObjectItem(j, "title")) { cJSON_DeleteObjectElement(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "title")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteObjectElement(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "title")) || 0 == cJSON_GetTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteObjectElement(x); return NULL; }
++                if (!cJSON_IsTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteObjectElement(x); return NULL; }
+                 x->title = cJSON_GetTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"));
+             }
+             if (!cJSON_HasObjectItem(j, "title_long")) { cJSON_DeleteObjectElement(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "title_long")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "title_long"))) { cJSON_DeleteObjectElement(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "title_long")) || 0 == cJSON_GetRoleTypeLabelValue(cJSON_GetObjectItemCaseSensitive(j, "title_long"))) { cJSON_DeleteObjectElement(x); return NULL; }
++                if (!cJSON_IsRoleTypeLabelValue(cJSON_GetObjectItemCaseSensitive(j, "title_long"))) { cJSON_DeleteObjectElement(x); return NULL; }
+                 x->title_long = cJSON_GetRoleTypeLabelValue(cJSON_GetObjectItemCaseSensitive(j, "title_long"));
+             }
+             if (!cJSON_HasObjectItem(j, "website")) { cJSON_DeleteObjectElement(x); return NULL; }

@@ -17,6 +17,17 @@ enum LeaddatumEnum cJSON_GetLeaddatumEnumValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsLeaddatumEnumValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "P1")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "P2")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "P3")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "P4")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateLeaddatumEnum(const enum LeaddatumEnum x) {
     cJSON * j = NULL;
     switch (x) {
@@ -35,6 +46,13 @@ enum PerType cJSON_GetPerTypeValue(const cJSON * j) {
         if (!strcmp(cJSON_GetStringValue(j), "REGULAR")) x = PERTYPE_REGULAR;
     }
     return x;
+}
+
+bool cJSON_IsPerTypeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "REGULAR")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreatePerType(const enum PerType x) {
@@ -65,6 +83,27 @@ enum ActionType cJSON_GetActionTypeValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "jumpball")) x = ACTIONTYPE_JUMPBALL;
     }
     return x;
+}
+
+bool cJSON_IsActionTypeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "game")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "period")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "3pt")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "2pt")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "rebound")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "timeout")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "foulon")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "foul")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "assist")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "substitution")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "freethrow")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "steal")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "turnover")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "jumpball")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateActionType(const enum ActionType x) {
@@ -110,6 +149,26 @@ enum FamilyNameInitial cJSON_GetFamilyNameInitialValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsFamilyNameInitialValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "R")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "M")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "s")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "C")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "O")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "W")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "A")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "P")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "V")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "I")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "J")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "S")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "H")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "B")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateFamilyNameInitial(const enum FamilyNameInitial x) {
     cJSON * j = NULL;
     switch (x) {
@@ -150,6 +209,24 @@ enum FirstNameInitial cJSON_GetFirstNameInitialValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsFirstNameInitialValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "D")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "J")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "T")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "C")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "O")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "H")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "L")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "A")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "K")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "R")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "B")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "N")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateFirstNameInitial(const enum FirstNameInitial x) {
     cJSON * j = NULL;
     switch (x) {
@@ -181,6 +258,17 @@ enum ScoreboardName cJSON_GetScoreboardNameValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsScoreboardNameValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "T. s")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "R. Ihata")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "D. Jones")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "B. Valentine")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateScoreboardName(const enum ScoreboardName x) {
     cJSON * j = NULL;
     switch (x) {
@@ -203,6 +291,15 @@ enum SubType cJSON_GetSubTypeValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsSubTypeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "jumpshot")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "layup")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "dunk")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateSubType(const enum SubType x) {
     cJSON * j = NULL;
     switch (x) {
@@ -217,7 +314,7 @@ struct LeaddatumElement * cJSON_GetLeaddatumElementValue(const cJSON * j) {
     struct LeaddatumElement * x = cJSON_malloc(sizeof(struct LeaddatumElement));
     if (NULL != x) {
         memset(x, 0, sizeof(struct LeaddatumElement));
-        if (cJSON_IsString(j)) {
+        if (cJSON_IsLeaddatumEnumValue(j)) {
             x->type = cJSON_Enum;
             x->value.purple_enum = cJSON_GetLeaddatumEnumValue(j);
         }
@@ -477,8 +574,7 @@ struct Othermatch * cJSON_GetOthermatchValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "periodType")) { cJSON_DeleteOthermatch(x); return NULL; }
             if (cJSON_HasObjectItem(j, "periodType")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "periodType"))) { cJSON_DeleteOthermatch(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "periodType")) || 0 == cJSON_GetPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "periodType"))) { cJSON_DeleteOthermatch(x); return NULL; }
+                if (!cJSON_IsPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "periodType"))) { cJSON_DeleteOthermatch(x); return NULL; }
                 x->period_type = cJSON_GetPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "periodType"));
             }
             if (!cJSON_HasObjectItem(j, "team1")) { cJSON_DeleteOthermatch(x); return NULL; }
@@ -631,8 +727,7 @@ struct Pbp * cJSON_GetPbpValue(const cJSON * j) {
             memset(x, 0, sizeof(struct Pbp));
             if (!cJSON_HasObjectItem(j, "actionType")) { cJSON_DeletePbp(x); return NULL; }
             if (cJSON_HasObjectItem(j, "actionType")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "actionType"))) { cJSON_DeletePbp(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "actionType")) || 0 == cJSON_GetActionTypeValue(cJSON_GetObjectItemCaseSensitive(j, "actionType"))) { cJSON_DeletePbp(x); return NULL; }
+                if (!cJSON_IsActionTypeValue(cJSON_GetObjectItemCaseSensitive(j, "actionType"))) { cJSON_DeletePbp(x); return NULL; }
                 x->action_type = cJSON_GetActionTypeValue(cJSON_GetObjectItemCaseSensitive(j, "actionType"));
             }
             if (cJSON_HasObjectItem(j, "familyName")) {
@@ -640,8 +735,7 @@ struct Pbp * cJSON_GetPbpValue(const cJSON * j) {
                 x->family_name = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "familyName")));
             }
             if (cJSON_HasObjectItem(j, "familyNameInitial")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial"))) { cJSON_DeletePbp(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial")) || 0 == cJSON_GetFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial"))) { cJSON_DeletePbp(x); return NULL; }
+                if (!cJSON_IsFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial"))) { cJSON_DeletePbp(x); return NULL; }
                 if (NULL != (x->family_name_initial = cJSON_malloc(sizeof(enum FamilyNameInitial)))) {
                     *x->family_name_initial = cJSON_GetFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial"));
                 }
@@ -651,8 +745,7 @@ struct Pbp * cJSON_GetPbpValue(const cJSON * j) {
                 x->first_name = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "firstName")));
             }
             if (cJSON_HasObjectItem(j, "firstNameInitial")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial"))) { cJSON_DeletePbp(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial")) || 0 == cJSON_GetFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial"))) { cJSON_DeletePbp(x); return NULL; }
+                if (!cJSON_IsFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial"))) { cJSON_DeletePbp(x); return NULL; }
                 if (NULL != (x->first_name_initial = cJSON_malloc(sizeof(enum FirstNameInitial)))) {
                     *x->first_name_initial = cJSON_GetFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial"));
                 }
@@ -672,8 +765,7 @@ struct Pbp * cJSON_GetPbpValue(const cJSON * j) {
                 x->international_family_name = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyName")));
             }
             if (cJSON_HasObjectItem(j, "internationalFamilyNameInitial")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial"))) { cJSON_DeletePbp(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial")) || 0 == cJSON_GetFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial"))) { cJSON_DeletePbp(x); return NULL; }
+                if (!cJSON_IsFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial"))) { cJSON_DeletePbp(x); return NULL; }
                 if (NULL != (x->international_family_name_initial = cJSON_malloc(sizeof(enum FamilyNameInitial)))) {
                     *x->international_family_name_initial = cJSON_GetFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial"));
                 }
@@ -683,8 +775,7 @@ struct Pbp * cJSON_GetPbpValue(const cJSON * j) {
                 x->international_first_name = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstName")));
             }
             if (cJSON_HasObjectItem(j, "internationalFirstNameInitial")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial"))) { cJSON_DeletePbp(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial")) || 0 == cJSON_GetFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial"))) { cJSON_DeletePbp(x); return NULL; }
+                if (!cJSON_IsFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial"))) { cJSON_DeletePbp(x); return NULL; }
                 if (NULL != (x->international_first_name_initial = cJSON_malloc(sizeof(enum FirstNameInitial)))) {
                     *x->international_first_name_initial = cJSON_GetFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial"));
                 }
@@ -701,8 +792,7 @@ struct Pbp * cJSON_GetPbpValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "periodType")) { cJSON_DeletePbp(x); return NULL; }
             if (cJSON_HasObjectItem(j, "periodType")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "periodType"))) { cJSON_DeletePbp(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "periodType")) || 0 == cJSON_GetPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "periodType"))) { cJSON_DeletePbp(x); return NULL; }
+                if (!cJSON_IsPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "periodType"))) { cJSON_DeletePbp(x); return NULL; }
                 x->period_type = cJSON_GetPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "periodType"));
             }
             if (!cJSON_HasObjectItem(j, "player")) { cJSON_DeletePbp(x); return NULL; }
@@ -741,8 +831,7 @@ struct Pbp * cJSON_GetPbpValue(const cJSON * j) {
                 x->s2 = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(j, "s2"));
             }
             if (cJSON_HasObjectItem(j, "scoreboardName")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "scoreboardName"))) { cJSON_DeletePbp(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "scoreboardName")) || 0 == cJSON_GetScoreboardNameValue(cJSON_GetObjectItemCaseSensitive(j, "scoreboardName"))) { cJSON_DeletePbp(x); return NULL; }
+                if (!cJSON_IsScoreboardNameValue(cJSON_GetObjectItemCaseSensitive(j, "scoreboardName"))) { cJSON_DeletePbp(x); return NULL; }
                 if (NULL != (x->scoreboard_name = cJSON_malloc(sizeof(enum ScoreboardName)))) {
                     *x->scoreboard_name = cJSON_GetScoreboardNameValue(cJSON_GetObjectItemCaseSensitive(j, "scoreboardName"));
                 }
@@ -957,8 +1046,7 @@ struct Time * cJSON_GetTimeValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "perType")) { cJSON_DeleteTime(x); return NULL; }
             if (cJSON_HasObjectItem(j, "perType")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "perType"))) { cJSON_DeleteTime(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "perType")) || 0 == cJSON_GetPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "perType"))) { cJSON_DeleteTime(x); return NULL; }
+                if (!cJSON_IsPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "perType"))) { cJSON_DeleteTime(x); return NULL; }
                 x->per_type = cJSON_GetPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "perType"));
             }
         }
@@ -1026,8 +1114,7 @@ struct Scorer * cJSON_GetScorerValue(const cJSON * j) {
                 x->family_name = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "familyName")));
             }
             if (cJSON_HasObjectItem(j, "familyNameInitial")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial"))) { cJSON_DeleteScorer(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial")) || 0 == cJSON_GetFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial"))) { cJSON_DeleteScorer(x); return NULL; }
+                if (!cJSON_IsFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial"))) { cJSON_DeleteScorer(x); return NULL; }
                 if (NULL != (x->family_name_initial = cJSON_malloc(sizeof(enum FamilyNameInitial)))) {
                     *x->family_name_initial = cJSON_GetFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial"));
                 }
@@ -1037,8 +1124,7 @@ struct Scorer * cJSON_GetScorerValue(const cJSON * j) {
                 x->first_name = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "firstName")));
             }
             if (cJSON_HasObjectItem(j, "firstNameInitial")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial"))) { cJSON_DeleteScorer(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial")) || 0 == cJSON_GetFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial"))) { cJSON_DeleteScorer(x); return NULL; }
+                if (!cJSON_IsFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial"))) { cJSON_DeleteScorer(x); return NULL; }
                 if (NULL != (x->first_name_initial = cJSON_malloc(sizeof(enum FirstNameInitial)))) {
                     *x->first_name_initial = cJSON_GetFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial"));
                 }
@@ -1052,8 +1138,7 @@ struct Scorer * cJSON_GetScorerValue(const cJSON * j) {
                 x->international_family_name = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyName")));
             }
             if (cJSON_HasObjectItem(j, "internationalFamilyNameInitial")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial"))) { cJSON_DeleteScorer(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial")) || 0 == cJSON_GetFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial"))) { cJSON_DeleteScorer(x); return NULL; }
+                if (!cJSON_IsFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial"))) { cJSON_DeleteScorer(x); return NULL; }
                 if (NULL != (x->international_family_name_initial = cJSON_malloc(sizeof(enum FamilyNameInitial)))) {
                     *x->international_family_name_initial = cJSON_GetFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial"));
                 }
@@ -1063,8 +1148,7 @@ struct Scorer * cJSON_GetScorerValue(const cJSON * j) {
                 x->international_first_name = strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstName")));
             }
             if (cJSON_HasObjectItem(j, "internationalFirstNameInitial")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial"))) { cJSON_DeleteScorer(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial")) || 0 == cJSON_GetFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial"))) { cJSON_DeleteScorer(x); return NULL; }
+                if (!cJSON_IsFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial"))) { cJSON_DeleteScorer(x); return NULL; }
                 if (NULL != (x->international_first_name_initial = cJSON_malloc(sizeof(enum FirstNameInitial)))) {
                     *x->international_first_name_initial = cJSON_GetFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial"));
                 }
@@ -1080,8 +1164,7 @@ struct Scorer * cJSON_GetScorerValue(const cJSON * j) {
                 }
             }
             if (cJSON_HasObjectItem(j, "perType")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "perType"))) { cJSON_DeleteScorer(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "perType")) || 0 == cJSON_GetPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "perType"))) { cJSON_DeleteScorer(x); return NULL; }
+                if (!cJSON_IsPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "perType"))) { cJSON_DeleteScorer(x); return NULL; }
                 if (NULL != (x->per_type = cJSON_malloc(sizeof(enum PerType)))) {
                     *x->per_type = cJSON_GetPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "perType"));
                 }
@@ -1096,8 +1179,7 @@ struct Scorer * cJSON_GetScorerValue(const cJSON * j) {
                 x->pno = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(j, "pno"));
             }
             if (cJSON_HasObjectItem(j, "scoreboardName")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "scoreboardName"))) { cJSON_DeleteScorer(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "scoreboardName")) || 0 == cJSON_GetScoreboardNameValue(cJSON_GetObjectItemCaseSensitive(j, "scoreboardName"))) { cJSON_DeleteScorer(x); return NULL; }
+                if (!cJSON_IsScoreboardNameValue(cJSON_GetObjectItemCaseSensitive(j, "scoreboardName"))) { cJSON_DeleteScorer(x); return NULL; }
                 if (NULL != (x->scoreboard_name = cJSON_malloc(sizeof(enum ScoreboardName)))) {
                     *x->scoreboard_name = cJSON_GetScoreboardNameValue(cJSON_GetObjectItemCaseSensitive(j, "scoreboardName"));
                 }
@@ -1791,8 +1873,7 @@ struct Pl * cJSON_GetPlValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "familyNameInitial")) { cJSON_DeletePl(x); return NULL; }
             if (cJSON_HasObjectItem(j, "familyNameInitial")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial"))) { cJSON_DeletePl(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial")) || 0 == cJSON_GetFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial"))) { cJSON_DeletePl(x); return NULL; }
+                if (!cJSON_IsFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial"))) { cJSON_DeletePl(x); return NULL; }
                 x->family_name_initial = cJSON_GetFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "familyNameInitial"));
             }
             if (!cJSON_HasObjectItem(j, "firstName")) { cJSON_DeletePl(x); return NULL; }
@@ -1807,8 +1888,7 @@ struct Pl * cJSON_GetPlValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "firstNameInitial")) { cJSON_DeletePl(x); return NULL; }
             if (cJSON_HasObjectItem(j, "firstNameInitial")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial"))) { cJSON_DeletePl(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial")) || 0 == cJSON_GetFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial"))) { cJSON_DeletePl(x); return NULL; }
+                if (!cJSON_IsFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial"))) { cJSON_DeletePl(x); return NULL; }
                 x->first_name_initial = cJSON_GetFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "firstNameInitial"));
             }
             if (!cJSON_HasObjectItem(j, "internationalFamilyName")) { cJSON_DeletePl(x); return NULL; }
@@ -1823,8 +1903,7 @@ struct Pl * cJSON_GetPlValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "internationalFamilyNameInitial")) { cJSON_DeletePl(x); return NULL; }
             if (cJSON_HasObjectItem(j, "internationalFamilyNameInitial")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial"))) { cJSON_DeletePl(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial")) || 0 == cJSON_GetFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial"))) { cJSON_DeletePl(x); return NULL; }
+                if (!cJSON_IsFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial"))) { cJSON_DeletePl(x); return NULL; }
                 x->international_family_name_initial = cJSON_GetFamilyNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFamilyNameInitial"));
             }
             if (!cJSON_HasObjectItem(j, "internationalFirstName")) { cJSON_DeletePl(x); return NULL; }
@@ -1839,8 +1918,7 @@ struct Pl * cJSON_GetPlValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "internationalFirstNameInitial")) { cJSON_DeletePl(x); return NULL; }
             if (cJSON_HasObjectItem(j, "internationalFirstNameInitial")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial"))) { cJSON_DeletePl(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial")) || 0 == cJSON_GetFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial"))) { cJSON_DeletePl(x); return NULL; }
+                if (!cJSON_IsFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial"))) { cJSON_DeletePl(x); return NULL; }
                 x->international_first_name_initial = cJSON_GetFirstNameInitialValue(cJSON_GetObjectItemCaseSensitive(j, "internationalFirstNameInitial"));
             }
             if (!cJSON_HasObjectItem(j, "name")) { cJSON_DeletePl(x); return NULL; }
@@ -2189,8 +2267,7 @@ struct Shot * cJSON_GetShotValue(const cJSON * j) {
             memset(x, 0, sizeof(struct Shot));
             if (!cJSON_HasObjectItem(j, "actionType")) { cJSON_DeleteShot(x); return NULL; }
             if (cJSON_HasObjectItem(j, "actionType")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "actionType"))) { cJSON_DeleteShot(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "actionType")) || 0 == cJSON_GetActionTypeValue(cJSON_GetObjectItemCaseSensitive(j, "actionType"))) { cJSON_DeleteShot(x); return NULL; }
+                if (!cJSON_IsActionTypeValue(cJSON_GetObjectItemCaseSensitive(j, "actionType"))) { cJSON_DeleteShot(x); return NULL; }
                 x->action_type = cJSON_GetActionTypeValue(cJSON_GetObjectItemCaseSensitive(j, "actionType"));
             }
             if (!cJSON_HasObjectItem(j, "p")) { cJSON_DeleteShot(x); return NULL; }
@@ -2205,8 +2282,7 @@ struct Shot * cJSON_GetShotValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "perType")) { cJSON_DeleteShot(x); return NULL; }
             if (cJSON_HasObjectItem(j, "perType")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "perType"))) { cJSON_DeleteShot(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "perType")) || 0 == cJSON_GetPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "perType"))) { cJSON_DeleteShot(x); return NULL; }
+                if (!cJSON_IsPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "perType"))) { cJSON_DeleteShot(x); return NULL; }
                 x->per_type = cJSON_GetPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "perType"));
             }
             if (!cJSON_HasObjectItem(j, "player")) { cJSON_DeleteShot(x); return NULL; }
@@ -2241,8 +2317,7 @@ struct Shot * cJSON_GetShotValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "subType")) { cJSON_DeleteShot(x); return NULL; }
             if (cJSON_HasObjectItem(j, "subType")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "subType"))) { cJSON_DeleteShot(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "subType")) || 0 == cJSON_GetSubTypeValue(cJSON_GetObjectItemCaseSensitive(j, "subType"))) { cJSON_DeleteShot(x); return NULL; }
+                if (!cJSON_IsSubTypeValue(cJSON_GetObjectItemCaseSensitive(j, "subType"))) { cJSON_DeleteShot(x); return NULL; }
                 x->sub_type = cJSON_GetSubTypeValue(cJSON_GetObjectItemCaseSensitive(j, "subType"));
             }
             if (!cJSON_HasObjectItem(j, "tno")) { cJSON_DeleteShot(x); return NULL; }
@@ -3421,8 +3496,7 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "periodType")) { cJSON_DeleteTopLevel(x); return NULL; }
             if (cJSON_HasObjectItem(j, "periodType")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "periodType"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "periodType")) || 0 == cJSON_GetPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "periodType"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "periodType"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 x->period_type = cJSON_GetPerTypeValue(cJSON_GetObjectItemCaseSensitive(j, "periodType"));
             }
             if (!cJSON_HasObjectItem(j, "periodsMax")) { cJSON_DeleteTopLevel(x); return NULL; }

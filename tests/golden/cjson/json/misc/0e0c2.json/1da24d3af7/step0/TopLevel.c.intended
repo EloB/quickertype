@@ -14,6 +14,14 @@ enum DetailLanguage cJSON_GetDetailLanguageValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsDetailLanguageValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "en")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "th")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateDetailLanguage(const enum DetailLanguage x) {
     cJSON * j = NULL;
     switch (x) {
@@ -32,6 +40,14 @@ enum Type cJSON_GetTypeValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsTypeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Poster")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Backdrop")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateType(const enum Type x) {
     cJSON * j = NULL;
     switch (x) {
@@ -48,6 +64,14 @@ enum ResultLanguage cJSON_GetResultLanguageValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "-")) x = RESULTLANGUAGE_EMPTY;
     }
     return x;
+}
+
+bool cJSON_IsResultLanguageValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "en")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "-")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateResultLanguage(const enum ResultLanguage x) {
@@ -234,8 +258,7 @@ struct Detail * cJSON_GetDetailValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "language")) { cJSON_DeleteDetail(x); return NULL; }
             if (cJSON_HasObjectItem(j, "language")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteDetail(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "language")) || 0 == cJSON_GetDetailLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteDetail(x); return NULL; }
+                if (!cJSON_IsDetailLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteDetail(x); return NULL; }
                 x->language = cJSON_GetDetailLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"));
             }
             if (!cJSON_HasObjectItem(j, "storyline")) { cJSON_DeleteDetail(x); return NULL; }
@@ -453,8 +476,7 @@ struct Image * cJSON_GetImageValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteImage(x); return NULL; }
             if (cJSON_HasObjectItem(j, "type")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteImage(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteImage(x); return NULL; }
+                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteImage(x); return NULL; }
                 x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
             }
             if (!cJSON_HasObjectItem(j, "url")) { cJSON_DeleteImage(x); return NULL; }
@@ -549,8 +571,7 @@ struct Video * cJSON_GetVideoValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "language")) { cJSON_DeleteVideo(x); return NULL; }
             if (cJSON_HasObjectItem(j, "language")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteVideo(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "language")) || 0 == cJSON_GetResultLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteVideo(x); return NULL; }
+                if (!cJSON_IsResultLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteVideo(x); return NULL; }
                 x->language = cJSON_GetResultLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"));
             }
             if (!cJSON_HasObjectItem(j, "source")) { cJSON_DeleteVideo(x); return NULL; }
@@ -797,8 +818,7 @@ struct Result * cJSON_GetResultValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "language")) { cJSON_DeleteResult(x); return NULL; }
             if (cJSON_HasObjectItem(j, "language")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteResult(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "language")) || 0 == cJSON_GetResultLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteResult(x); return NULL; }
+                if (!cJSON_IsResultLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"))) { cJSON_DeleteResult(x); return NULL; }
                 x->language = cJSON_GetResultLanguageValue(cJSON_GetObjectItemCaseSensitive(j, "language"));
             }
             if (!cJSON_HasObjectItem(j, "release_date")) { cJSON_DeleteResult(x); return NULL; }

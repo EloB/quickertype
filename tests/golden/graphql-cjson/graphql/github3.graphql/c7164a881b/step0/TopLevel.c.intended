@@ -15,6 +15,15 @@ enum PullRequestState cJSON_GetPullRequestStateValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsPullRequestStateValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "OPEN")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "CLOSED")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "MERGED")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreatePullRequestState(const enum PullRequestState x) {
     cJSON * j = NULL;
     switch (x) {
@@ -44,8 +53,7 @@ struct PullRequest * cJSON_GetPullRequestValue(const cJSON * j) {
             memset(x, 0, sizeof(struct PullRequest));
             if (!cJSON_HasObjectItem(j, "state")) { cJSON_DeletePullRequest(x); return NULL; }
             if (cJSON_HasObjectItem(j, "state")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "state"))) { cJSON_DeletePullRequest(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "state")) || 0 == cJSON_GetPullRequestStateValue(cJSON_GetObjectItemCaseSensitive(j, "state"))) { cJSON_DeletePullRequest(x); return NULL; }
+                if (!cJSON_IsPullRequestStateValue(cJSON_GetObjectItemCaseSensitive(j, "state"))) { cJSON_DeletePullRequest(x); return NULL; }
                 x->state = cJSON_GetPullRequestStateValue(cJSON_GetObjectItemCaseSensitive(j, "state"));
             }
         }

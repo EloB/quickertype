@@ -13,6 +13,13 @@ enum Text cJSON_GetTextValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsTextValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Thunderstorms")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateText(const enum Text x) {
     cJSON * j = NULL;
     switch (x) {
@@ -571,8 +578,7 @@ struct Forecast * cJSON_GetForecastValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "text")) { cJSON_DeleteForecast(x); return NULL; }
             if (cJSON_HasObjectItem(j, "text")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "text"))) { cJSON_DeleteForecast(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "text")) || 0 == cJSON_GetTextValue(cJSON_GetObjectItemCaseSensitive(j, "text"))) { cJSON_DeleteForecast(x); return NULL; }
+                if (!cJSON_IsTextValue(cJSON_GetObjectItemCaseSensitive(j, "text"))) { cJSON_DeleteForecast(x); return NULL; }
                 x->text = cJSON_GetTextValue(cJSON_GetObjectItemCaseSensitive(j, "text"));
             }
         }

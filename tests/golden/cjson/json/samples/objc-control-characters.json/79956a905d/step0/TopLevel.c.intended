@@ -14,6 +14,14 @@ enum Value cJSON_GetValueValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsValueValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "c0\001\033\037")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "c1\177\302\200\302\205\302\237")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateValue(const enum Value x) {
     cJSON * j = NULL;
     switch (x) {
@@ -63,6 +71,7 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "values");
                     cJSON_ArrayForEach(e1, j1) {
+                        if (!cJSON_IsValueValue(e1)) { x->values = x1; cJSON_DeleteTopLevel(x); return NULL; }
                         enum Value * tmp = cJSON_malloc(sizeof(enum Value));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetValueValue(e1);

@@ -1,0 +1,10 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -79,6 +79,7 @@
+             if (NULL != x->value) {
+                 cJSON * e = NULL;
+                 cJSON_ArrayForEach(e, j) {
++                    if (!cJSON_IsString(e)) { cJSON_DeleteTopLevel(x); return NULL; }
+                     hashtable_add(x->value, e->string, strdup(cJSON_GetStringValue(e)), sizeof(char *));
+                 }
+             }

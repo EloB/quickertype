@@ -27,6 +27,27 @@ enum ActionType cJSON_GetActionTypeValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsActionTypeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "game")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "period")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "3pt")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "2pt")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "rebound")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "timeout")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "foulon")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "foul")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "assist")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "substitution")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "freethrow")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "steal")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "turnover")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "block")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "jumpball")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateActionType(const enum ActionType x) {
     cJSON * j = NULL;
     switch (x) {

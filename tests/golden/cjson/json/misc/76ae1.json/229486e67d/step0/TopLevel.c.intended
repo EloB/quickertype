@@ -13,6 +13,13 @@ enum FormatEnum cJSON_GetFormatEnumValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsFormatEnumValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "string")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateFormatEnum(const enum FormatEnum x) {
     cJSON * j = NULL;
     switch (x) {
@@ -29,6 +36,13 @@ enum In cJSON_GetInValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsInValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "query")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateIn(const enum In x) {
     cJSON * j = NULL;
     switch (x) {
@@ -43,6 +57,13 @@ enum SchemaType cJSON_GetSchemaTypeValue(const cJSON * j) {
         if (!strcmp(cJSON_GetStringValue(j), "array")) x = SCHEMATYPE_ARRAY;
     }
     return x;
+}
+
+bool cJSON_IsSchemaTypeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "array")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateSchemaType(const enum SchemaType x) {
@@ -82,8 +103,7 @@ struct Property * cJSON_GetPropertyValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteProperty(x); return NULL; }
             if (cJSON_HasObjectItem(j, "type")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteProperty(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetFormatEnumValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteProperty(x); return NULL; }
+                if (!cJSON_IsFormatEnumValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteProperty(x); return NULL; }
                 x->type = cJSON_GetFormatEnumValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
             }
         }
@@ -1305,14 +1325,12 @@ struct Parameter * cJSON_GetParameterValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "format")) { cJSON_DeleteParameter(x); return NULL; }
             if (cJSON_HasObjectItem(j, "format")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "format"))) { cJSON_DeleteParameter(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "format")) || 0 == cJSON_GetFormatEnumValue(cJSON_GetObjectItemCaseSensitive(j, "format"))) { cJSON_DeleteParameter(x); return NULL; }
+                if (!cJSON_IsFormatEnumValue(cJSON_GetObjectItemCaseSensitive(j, "format"))) { cJSON_DeleteParameter(x); return NULL; }
                 x->format = cJSON_GetFormatEnumValue(cJSON_GetObjectItemCaseSensitive(j, "format"));
             }
             if (!cJSON_HasObjectItem(j, "in")) { cJSON_DeleteParameter(x); return NULL; }
             if (cJSON_HasObjectItem(j, "in")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "in"))) { cJSON_DeleteParameter(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "in")) || 0 == cJSON_GetInValue(cJSON_GetObjectItemCaseSensitive(j, "in"))) { cJSON_DeleteParameter(x); return NULL; }
+                if (!cJSON_IsInValue(cJSON_GetObjectItemCaseSensitive(j, "in"))) { cJSON_DeleteParameter(x); return NULL; }
                 x->in = cJSON_GetInValue(cJSON_GetObjectItemCaseSensitive(j, "in"));
             }
             if (!cJSON_HasObjectItem(j, "name")) { cJSON_DeleteParameter(x); return NULL; }
@@ -1332,8 +1350,7 @@ struct Parameter * cJSON_GetParameterValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteParameter(x); return NULL; }
             if (cJSON_HasObjectItem(j, "type")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteParameter(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetFormatEnumValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteParameter(x); return NULL; }
+                if (!cJSON_IsFormatEnumValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteParameter(x); return NULL; }
                 x->type = cJSON_GetFormatEnumValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
             }
         }
@@ -1847,8 +1864,7 @@ struct PurpleSchema * cJSON_GetPurpleSchemaValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeletePurpleSchema(x); return NULL; }
             if (cJSON_HasObjectItem(j, "type")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeletePurpleSchema(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetSchemaTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeletePurpleSchema(x); return NULL; }
+                if (!cJSON_IsSchemaTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeletePurpleSchema(x); return NULL; }
                 x->type = cJSON_GetSchemaTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
             }
         }

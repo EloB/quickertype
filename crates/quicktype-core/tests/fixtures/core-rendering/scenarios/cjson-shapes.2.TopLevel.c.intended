@@ -157,6 +157,7 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "arr_enum");
                     cJSON_ArrayForEach(e1, j1) {
+                        if (!cJSON_IsColorValue(e1)) { x->arr_enum = x1; cJSON_DeleteTopLevel(x); return NULL; }
                         enum Color * tmp = cJSON_malloc(sizeof(enum Color));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetColorValue(e1);
@@ -544,7 +545,7 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "map_enum");
                     cJSON_ArrayForEach(e1, j1) {
-                        if (!cJSON_IsString(e1)) { cJSON_DeleteTopLevel(x); return NULL; }
+                        if (!cJSON_IsColorValue(e1)) { cJSON_DeleteTopLevel(x); return NULL; }
                         enum Color * tmp = cJSON_malloc(sizeof(enum Color));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetColorValue(e1);
@@ -738,8 +739,7 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "null_enum")) { cJSON_DeleteTopLevel(x); return NULL; }
             if ((cJSON_HasObjectItem(j, "null_enum")) && (!cJSON_IsNull(cJSON_GetObjectItemCaseSensitive(j, "null_enum")))) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "null_enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "null_enum")) || 0 == cJSON_GetColorValue(cJSON_GetObjectItemCaseSensitive(j, "null_enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsColorValue(cJSON_GetObjectItemCaseSensitive(j, "null_enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 if (NULL != (x->null_enum = cJSON_malloc(sizeof(enum Color)))) {
                     *x->null_enum = cJSON_GetColorValue(cJSON_GetObjectItemCaseSensitive(j, "null_enum"));
                 }
@@ -828,8 +828,7 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
                 }
             }
             if (cJSON_HasObjectItem(j, "opt_enum")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "opt_enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "opt_enum")) || 0 == cJSON_GetColorValue(cJSON_GetObjectItemCaseSensitive(j, "opt_enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsColorValue(cJSON_GetObjectItemCaseSensitive(j, "opt_enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 if (NULL != (x->opt_enum = cJSON_malloc(sizeof(enum Color)))) {
                     *x->opt_enum = cJSON_GetColorValue(cJSON_GetObjectItemCaseSensitive(j, "opt_enum"));
                 }
@@ -873,8 +872,7 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "req_enum")) { cJSON_DeleteTopLevel(x); return NULL; }
             if (cJSON_HasObjectItem(j, "req_enum")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "req_enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "req_enum")) || 0 == cJSON_GetColorValue(cJSON_GetObjectItemCaseSensitive(j, "req_enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsColorValue(cJSON_GetObjectItemCaseSensitive(j, "req_enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 x->req_enum = cJSON_GetColorValue(cJSON_GetObjectItemCaseSensitive(j, "req_enum"));
             }
             if (!cJSON_HasObjectItem(j, "req_int")) { cJSON_DeleteTopLevel(x); return NULL; }

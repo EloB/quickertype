@@ -90,6 +90,7 @@ struct top_map_null * cJSON_Gettop_map_nullValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
+                    if (!cJSON_IsNull(e)) { cJSON_Deletetop_map_null(x); return NULL; }
                     hashtable_add(x->value, e->string, (void *)0xDEADBEEF, sizeof(void *));
                 }
             }

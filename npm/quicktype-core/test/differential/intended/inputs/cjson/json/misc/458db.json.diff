@@ -1,6 +1,14 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -136,7 +136,7 @@
+@@ -96,6 +96,7 @@
+ };
+ 
+ enum Name cJSON_GetNameValue(const cJSON * j);
++bool cJSON_IsNameValue(const cJSON * j);
+ cJSON * cJSON_CreateName(const enum Name x);
+ 
+ struct ResponseInfo * cJSON_ParseResponseInfo(const char * s);
+@@ -136,12 +137,19 @@
  
  enum Name cJSON_GetNameValue(const cJSON * j) {
      enum Name x = 0;
@@ -9,3 +17,25 @@
          if (!strcmp(cJSON_GetStringValue(j), "Office on Violence Against Women")) x = NAME_OFFICE_ON_VIOLENCE_AGAINST_WOMEN;
      }
      return x;
+ }
+ 
++bool cJSON_IsNameValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "Office on Violence Against Women")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateName(const enum Name x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -395,8 +403,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "name")) { cJSON_DeleteComponent(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "name")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "name"))) { cJSON_DeleteComponent(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "name")) || 0 == cJSON_GetNameValue(cJSON_GetObjectItemCaseSensitive(j, "name"))) { cJSON_DeleteComponent(x); return NULL; }
++                if (!cJSON_IsNameValue(cJSON_GetObjectItemCaseSensitive(j, "name"))) { cJSON_DeleteComponent(x); return NULL; }
+                 x->name = cJSON_GetNameValue(cJSON_GetObjectItemCaseSensitive(j, "name"));
+             }
+         }

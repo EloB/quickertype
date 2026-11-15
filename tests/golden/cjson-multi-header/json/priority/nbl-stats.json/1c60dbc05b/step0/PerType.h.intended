@@ -53,6 +53,7 @@ enum PerType {
 };
 
 enum PerType cJSON_GetPerTypeValue(const cJSON * j);
+bool cJSON_IsPerTypeValue(const cJSON * j);
 cJSON * cJSON_CreatePerType(const enum PerType x);
 
 enum PerType cJSON_GetPerTypeValue(const cJSON * j) {
@@ -61,6 +62,13 @@ enum PerType cJSON_GetPerTypeValue(const cJSON * j) {
         if (!strcmp(cJSON_GetStringValue(j), "REGULAR")) x = PERTYPE_REGULAR;
     }
     return x;
+}
+
+bool cJSON_IsPerTypeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "REGULAR")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreatePerType(const enum PerType x) {

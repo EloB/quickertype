@@ -17,6 +17,17 @@ enum ColorIdentity cJSON_GetColorIdentityValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsColorIdentityValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "W")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "R")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "B")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "G")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "U")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateColorIdentity(const enum ColorIdentity x) {
     cJSON * j = NULL;
     switch (x) {
@@ -41,6 +52,17 @@ enum Watermark cJSON_GetWatermarkValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsWatermarkValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "White")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Red")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Black")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Green")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Blue")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateWatermark(const enum Watermark x) {
     cJSON * j = NULL;
     switch (x) {
@@ -61,6 +83,13 @@ enum Layout cJSON_GetLayoutValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsLayoutValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "normal")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateLayout(const enum Layout x) {
     cJSON * j = NULL;
     switch (x) {
@@ -77,6 +106,15 @@ enum LegalityEnum cJSON_GetLegalityEnumValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "Restricted")) x = LEGALITYENUM_RESTRICTED;
     }
     return x;
+}
+
+bool cJSON_IsLegalityEnumValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Legal")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Banned")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Restricted")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateLegalityEnum(const enum LegalityEnum x) {
@@ -98,6 +136,16 @@ enum Rarity cJSON_GetRarityValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "Basic Land")) x = RARITY_BASIC_LAND;
     }
     return x;
+}
+
+bool cJSON_IsRarityValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Uncommon")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Rare")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Common")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Basic Land")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateRarity(const enum Rarity x) {
@@ -122,6 +170,18 @@ enum Type cJSON_GetTypeValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "Sorcery")) x = TYPE_SORCERY;
     }
     return x;
+}
+
+bool cJSON_IsTypeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Creature")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Artifact")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Instant")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Land")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Enchantment")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Sorcery")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateType(const enum Type x) {
@@ -166,8 +226,7 @@ struct LegalityElement * cJSON_GetLegalityElementValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "legality")) { cJSON_DeleteLegalityElement(x); return NULL; }
             if (cJSON_HasObjectItem(j, "legality")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "legality"))) { cJSON_DeleteLegalityElement(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "legality")) || 0 == cJSON_GetLegalityEnumValue(cJSON_GetObjectItemCaseSensitive(j, "legality"))) { cJSON_DeleteLegalityElement(x); return NULL; }
+                if (!cJSON_IsLegalityEnumValue(cJSON_GetObjectItemCaseSensitive(j, "legality"))) { cJSON_DeleteLegalityElement(x); return NULL; }
                 x->legality = cJSON_GetLegalityEnumValue(cJSON_GetObjectItemCaseSensitive(j, "legality"));
             }
         }
@@ -338,6 +397,7 @@ struct Card * cJSON_GetCardValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "colorIdentity");
                     cJSON_ArrayForEach(e1, j1) {
+                        if (!cJSON_IsColorIdentityValue(e1)) { x->color_identity = x1; cJSON_DeleteCard(x); return NULL; }
                         enum ColorIdentity * tmp = cJSON_malloc(sizeof(enum ColorIdentity));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetColorIdentityValue(e1);
@@ -354,6 +414,7 @@ struct Card * cJSON_GetCardValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "colors");
                     cJSON_ArrayForEach(e1, j1) {
+                        if (!cJSON_IsWatermarkValue(e1)) { x->colors = x1; cJSON_DeleteCard(x); return NULL; }
                         enum Watermark * tmp = cJSON_malloc(sizeof(enum Watermark));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetWatermarkValue(e1);
@@ -389,8 +450,7 @@ struct Card * cJSON_GetCardValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "layout")) { cJSON_DeleteCard(x); return NULL; }
             if (cJSON_HasObjectItem(j, "layout")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "layout"))) { cJSON_DeleteCard(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "layout")) || 0 == cJSON_GetLayoutValue(cJSON_GetObjectItemCaseSensitive(j, "layout"))) { cJSON_DeleteCard(x); return NULL; }
+                if (!cJSON_IsLayoutValue(cJSON_GetObjectItemCaseSensitive(j, "layout"))) { cJSON_DeleteCard(x); return NULL; }
                 x->layout = cJSON_GetLayoutValue(cJSON_GetObjectItemCaseSensitive(j, "layout"));
             }
             if (!cJSON_HasObjectItem(j, "legalities")) { cJSON_DeleteCard(x); return NULL; }
@@ -477,8 +537,7 @@ struct Card * cJSON_GetCardValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "rarity")) { cJSON_DeleteCard(x); return NULL; }
             if (cJSON_HasObjectItem(j, "rarity")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "rarity"))) { cJSON_DeleteCard(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "rarity")) || 0 == cJSON_GetRarityValue(cJSON_GetObjectItemCaseSensitive(j, "rarity"))) { cJSON_DeleteCard(x); return NULL; }
+                if (!cJSON_IsRarityValue(cJSON_GetObjectItemCaseSensitive(j, "rarity"))) { cJSON_DeleteCard(x); return NULL; }
                 x->rarity = cJSON_GetRarityValue(cJSON_GetObjectItemCaseSensitive(j, "rarity"));
             }
             if (cJSON_HasObjectItem(j, "reserved")) {
@@ -552,6 +611,7 @@ struct Card * cJSON_GetCardValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "types");
                     cJSON_ArrayForEach(e1, j1) {
+                        if (!cJSON_IsTypeValue(e1)) { x->types = x1; cJSON_DeleteCard(x); return NULL; }
                         enum Type * tmp = cJSON_malloc(sizeof(enum Type));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetTypeValue(e1);
@@ -581,8 +641,7 @@ struct Card * cJSON_GetCardValue(const cJSON * j) {
                 }
             }
             if (cJSON_HasObjectItem(j, "watermark")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "watermark"))) { cJSON_DeleteCard(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "watermark")) || 0 == cJSON_GetWatermarkValue(cJSON_GetObjectItemCaseSensitive(j, "watermark"))) { cJSON_DeleteCard(x); return NULL; }
+                if (!cJSON_IsWatermarkValue(cJSON_GetObjectItemCaseSensitive(j, "watermark"))) { cJSON_DeleteCard(x); return NULL; }
                 if (NULL != (x->watermark = cJSON_malloc(sizeof(enum Watermark)))) {
                     *x->watermark = cJSON_GetWatermarkValue(cJSON_GetObjectItemCaseSensitive(j, "watermark"));
                 }

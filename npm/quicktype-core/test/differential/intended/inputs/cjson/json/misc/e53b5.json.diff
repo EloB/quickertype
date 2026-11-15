@@ -1,6 +1,18 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -129,7 +129,7 @@
+@@ -91,9 +91,11 @@
+ };
+ 
+ enum Id cJSON_GetIdValue(const cJSON * j);
++bool cJSON_IsIdValue(const cJSON * j);
+ cJSON * cJSON_CreateId(const enum Id x);
+ 
+ enum Value cJSON_GetValueValue(const cJSON * j);
++bool cJSON_IsValueValue(const cJSON * j);
+ cJSON * cJSON_CreateValue(const enum Value x);
+ 
+ #define cJSON_IsTopLevelUnion(j) (cJSON_IsObject(j) || cJSON_IsArray(j))
+@@ -129,13 +131,21 @@
  
  enum Id cJSON_GetIdValue(const cJSON * j) {
      enum Id x = 0;
@@ -9,7 +21,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "IN")) x = ID_IN;
          else if (!strcmp(cJSON_GetStringValue(j), "SP.POP.TOTL")) x = ID_SP_POP_TOTL;
      }
-@@ -147,7 +147,7 @@
+     return x;
+ }
+ 
++bool cJSON_IsIdValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "IN")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "SP.POP.TOTL")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateId(const enum Id x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -147,11 +157,19 @@
  
  enum Value cJSON_GetValueValue(const cJSON * j) {
      enum Value x = 0;
@@ -18,3 +44,32 @@
          if (!strcmp(cJSON_GetStringValue(j), "India")) x = VALUE_INDIA;
          else if (!strcmp(cJSON_GetStringValue(j), "Population, total")) x = VALUE_POPULATION_TOTAL;
      }
+     return x;
++}
++
++bool cJSON_IsValueValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "India")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "Population, total")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateValue(const enum Value x) {
+@@ -249,14 +267,12 @@
+             memset(x, 0, sizeof(struct Country));
+             if (!cJSON_HasObjectItem(j, "id")) { cJSON_DeleteCountry(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "id")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "id"))) { cJSON_DeleteCountry(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "id")) || 0 == cJSON_GetIdValue(cJSON_GetObjectItemCaseSensitive(j, "id"))) { cJSON_DeleteCountry(x); return NULL; }
++                if (!cJSON_IsIdValue(cJSON_GetObjectItemCaseSensitive(j, "id"))) { cJSON_DeleteCountry(x); return NULL; }
+                 x->id = cJSON_GetIdValue(cJSON_GetObjectItemCaseSensitive(j, "id"));
+             }
+             if (!cJSON_HasObjectItem(j, "value")) { cJSON_DeleteCountry(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "value")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "value"))) { cJSON_DeleteCountry(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "value")) || 0 == cJSON_GetValueValue(cJSON_GetObjectItemCaseSensitive(j, "value"))) { cJSON_DeleteCountry(x); return NULL; }
++                if (!cJSON_IsValueValue(cJSON_GetObjectItemCaseSensitive(j, "value"))) { cJSON_DeleteCountry(x); return NULL; }
+                 x->value = cJSON_GetValueValue(cJSON_GetObjectItemCaseSensitive(j, "value"));
+             }
+         }

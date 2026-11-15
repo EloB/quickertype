@@ -14,6 +14,14 @@ enum Status cJSON_GetStatusValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsStatusValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "active")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "inactive")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateStatus(const enum Status x) {
     cJSON * j = NULL;
     switch (x) {
@@ -30,6 +38,14 @@ enum CustomIncomeType cJSON_GetCustomIncomeTypeValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "other")) x = CUSTOMINCOMETYPE_OTHER;
     }
     return x;
+}
+
+bool cJSON_IsCustomIncomeTypeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "public")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "other")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateCustomIncomeType(const enum CustomIncomeType x) {
@@ -49,6 +65,15 @@ enum ResultType cJSON_GetResultTypeValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "FinancialDataTradeAssociation")) x = RESULTTYPE_FINANCIAL_DATA_TRADE_ASSOCIATION;
     }
     return x;
+}
+
+bool cJSON_IsResultTypeValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "FinancialDataNGO")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "FinancialDataLawyer")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "FinancialDataTradeAssociation")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateResultType(const enum ResultType x) {
@@ -164,14 +189,12 @@ struct CustomIncome * cJSON_GetCustomIncomeValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "status")) { cJSON_DeleteCustomIncome(x); return NULL; }
             if (cJSON_HasObjectItem(j, "status")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteCustomIncome(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "status")) || 0 == cJSON_GetStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteCustomIncome(x); return NULL; }
+                if (!cJSON_IsStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteCustomIncome(x); return NULL; }
                 x->status = cJSON_GetStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"));
             }
             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteCustomIncome(x); return NULL; }
             if (cJSON_HasObjectItem(j, "type")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteCustomIncome(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetCustomIncomeTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteCustomIncome(x); return NULL; }
+                if (!cJSON_IsCustomIncomeTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteCustomIncome(x); return NULL; }
                 x->type = cJSON_GetCustomIncomeTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
             }
             if (!cJSON_HasObjectItem(j, "updated_at")) { cJSON_DeleteCustomIncome(x); return NULL; }
@@ -479,8 +502,7 @@ struct Result * cJSON_GetResultValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "status")) { cJSON_DeleteResult(x); return NULL; }
             if (cJSON_HasObjectItem(j, "status")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteResult(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "status")) || 0 == cJSON_GetStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteResult(x); return NULL; }
+                if (!cJSON_IsStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteResult(x); return NULL; }
                 x->status = cJSON_GetStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"));
             }
             if (!cJSON_HasObjectItem(j, "total_budget")) { cJSON_DeleteResult(x); return NULL; }
@@ -513,8 +535,7 @@ struct Result * cJSON_GetResultValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteResult(x); return NULL; }
             if (cJSON_HasObjectItem(j, "type")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteResult(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetResultTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteResult(x); return NULL; }
+                if (!cJSON_IsResultTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteResult(x); return NULL; }
                 x->type = cJSON_GetResultTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
             }
             if (!cJSON_HasObjectItem(j, "updated_at")) { cJSON_DeleteResult(x); return NULL; }

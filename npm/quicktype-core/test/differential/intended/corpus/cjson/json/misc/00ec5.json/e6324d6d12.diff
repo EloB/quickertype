@@ -1,0 +1,73 @@
+--- $.ok.$map.0.1.lines
++++ $.ok.$map.0.1.lines
+@@ -117,6 +117,7 @@
+ };
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j);
++bool cJSON_IsTypeValue(const cJSON * j);
+ cJSON * cJSON_CreateType(const enum Type x);
+ 
+ struct Property * cJSON_ParseProperty(const char * s);
+--- $.ok.$map.1.1.lines
++++ $.ok.$map.1.1.lines
+@@ -7,12 +7,19 @@
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j) {
+     enum Type x = 0;
+-    if (NULL != j) {
++    if (cJSON_IsString(j)) {
+         if (!strcmp(cJSON_GetStringValue(j), "string")) x = TYPE_STRING;
+     }
+     return x;
+ }
+ 
++bool cJSON_IsTypeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "string")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateType(const enum Type x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -50,8 +57,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteProperty(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteProperty(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteProperty(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteProperty(x); return NULL; }
+                 x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+             }
+         }
+@@ -128,8 +134,7 @@
+                             cJSON_DeleteProvider(x);
+                             return NULL;
+                         }
+-                        cJSON_DeleteProperty(validated);
+-                        hashtable_add(x1, e1->string, cJSON_GetPropertyValue(e1), sizeof(struct Property *));
++                        hashtable_add(x1, e1->string, validated, sizeof(struct Property *));
+                     }
+                     x->properties = x1;
+                 }
+@@ -392,8 +397,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "format")) { cJSON_DeleteParameter(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "format")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "format"))) { cJSON_DeleteParameter(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "format")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "format"))) { cJSON_DeleteParameter(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "format"))) { cJSON_DeleteParameter(x); return NULL; }
+                 x->format = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "format"));
+             }
+             if (!cJSON_HasObjectItem(j, "in")) { cJSON_DeleteParameter(x); return NULL; }
+@@ -423,8 +427,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteParameter(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteParameter(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteParameter(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteParameter(x); return NULL; }
+                 x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+             }
+         }

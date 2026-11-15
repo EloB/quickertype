@@ -26,9 +26,12 @@ struct TopMapNullInt * cJSON_GetTopMapNullIntValue(const cJSON * j) {
             if (NULL != x->value) {
                 cJSON * e = NULL;
                 cJSON_ArrayForEach(e, j) {
+                    if (!cJSON_IsNull(e) && !quicktype_cJSON_IsInteger(e)) { cJSON_DeleteTopMapNullInt(x); return NULL; }
                     if (!cJSON_IsNull(e)) {
                         int64_t * item = cJSON_malloc(sizeof(*item));
-                        if (NULL != item) { *item = cJSON_GetNumberValue(e); hashtable_add(x->value, e->string, item, sizeof(*item)); }
+                        if (NULL == item) { cJSON_DeleteTopMapNullInt(x); return NULL; }
+                        *item = cJSON_GetNumberValue(e);
+                        hashtable_add(x->value, e->string, item, sizeof(*item));
                     }
                     else {
                         hashtable_add(x->value, e->string, (void *)0xDEADBEEF, sizeof(void *));
@@ -87,7 +90,7 @@ void cJSON_DeleteTopMapNullInt(struct TopMapNullInt * x) {
                 for (size_t index = 0; index < count; index++) {
                     int64_t *x2 = hashtable_lookup(x->value, keys[index]);
                     if (NULL != x2) {
-                        if ((int64_t *)0xDEADBEEF != x2) {
+                        if ((void *)0xDEADBEEF != x2) {
                             cJSON_free(x2);
                         }
                     }

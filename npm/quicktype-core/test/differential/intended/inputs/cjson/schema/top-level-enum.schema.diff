@@ -1,6 +1,11 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -59,7 +59,7 @@
+@@ -55,11 +55,12 @@
+ };
+ 
+ enum TopLevel cJSON_GetTopLevelValue(const cJSON * j);
++bool cJSON_IsTopLevelValue(const cJSON * j);
+ cJSON * cJSON_CreateTopLevel(const enum TopLevel x);
  
  enum TopLevel cJSON_GetTopLevelValue(const cJSON * j) {
      enum TopLevel x = 0;
@@ -9,3 +14,19 @@
          if (!strcmp(cJSON_GetStringValue(j), "one")) x = TOPLEVEL_ONE;
          else if (!strcmp(cJSON_GetStringValue(j), "three")) x = TOPLEVEL_THREE;
          else if (!strcmp(cJSON_GetStringValue(j), "two")) x = TOPLEVEL_TWO;
+@@ -67,6 +68,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsTopLevelValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "one")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "three")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "two")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateTopLevel(const enum TopLevel x) {
+     cJSON * j = NULL;
+     switch (x) {

@@ -34,6 +34,34 @@ enum Id cJSON_GetIdValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsIdValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "SAS")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "SSA")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "ECA")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "LAC")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "EAP")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "MNA")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "HIC")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "LIC")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "NA")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "LMC")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "UMC")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "LNX")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "IDX")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "IBD")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "IDB")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "LCN")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "SSF")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "ECS")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "MEA")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "EAS")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "NAC")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateId(const enum Id x) {
     cJSON * j = NULL;
     switch (x) {
@@ -90,6 +118,34 @@ enum Value cJSON_GetValueValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "North America")) x = VALUE_NORTH_AMERICA;
     }
     return x;
+}
+
+bool cJSON_IsValueValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "South Asia")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Sub-Saharan Africa (excluding high income)")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Europe & Central Asia (excluding high income)")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Latin America & Caribbean (excluding high income)")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "East Asia & Pacific (excluding high income)")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Middle East & North Africa (excluding high income)")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "High income")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Low income")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Aggregates")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Lower middle income")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Upper middle income")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Not classified")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "IDA")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "IBRD")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Blend")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Latin America & Caribbean ")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Sub-Saharan Africa ")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Europe & Central Asia")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Middle East & North Africa")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "East Asia & Pacific")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "North America")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateValue(const enum Value x) {
@@ -207,14 +263,12 @@ struct Adminregion * cJSON_GetAdminregionValue(const cJSON * j) {
             memset(x, 0, sizeof(struct Adminregion));
             if (!cJSON_HasObjectItem(j, "id")) { cJSON_DeleteAdminregion(x); return NULL; }
             if (cJSON_HasObjectItem(j, "id")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "id"))) { cJSON_DeleteAdminregion(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "id")) || 0 == cJSON_GetIdValue(cJSON_GetObjectItemCaseSensitive(j, "id"))) { cJSON_DeleteAdminregion(x); return NULL; }
+                if (!cJSON_IsIdValue(cJSON_GetObjectItemCaseSensitive(j, "id"))) { cJSON_DeleteAdminregion(x); return NULL; }
                 x->id = cJSON_GetIdValue(cJSON_GetObjectItemCaseSensitive(j, "id"));
             }
             if (!cJSON_HasObjectItem(j, "value")) { cJSON_DeleteAdminregion(x); return NULL; }
             if (cJSON_HasObjectItem(j, "value")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "value"))) { cJSON_DeleteAdminregion(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "value")) || 0 == cJSON_GetValueValue(cJSON_GetObjectItemCaseSensitive(j, "value"))) { cJSON_DeleteAdminregion(x); return NULL; }
+                if (!cJSON_IsValueValue(cJSON_GetObjectItemCaseSensitive(j, "value"))) { cJSON_DeleteAdminregion(x); return NULL; }
                 x->value = cJSON_GetValueValue(cJSON_GetObjectItemCaseSensitive(j, "value"));
             }
         }

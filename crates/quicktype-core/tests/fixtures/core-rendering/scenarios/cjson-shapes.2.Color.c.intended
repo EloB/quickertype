@@ -16,6 +16,16 @@ enum Color cJSON_GetColorValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsColorValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "red")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "green")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "blue\"x")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "ctl\002")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateColor(const enum Color x) {
     cJSON * j = NULL;
     switch (x) {

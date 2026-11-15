@@ -15,6 +15,15 @@ enum OtherArr cJSON_GetOtherArrValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsOtherArrValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "foo")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "bar")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "if")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateOtherArr(const enum OtherArr x) {
     cJSON * j = NULL;
     switch (x) {
@@ -33,6 +42,15 @@ enum Gve cJSON_GetGveValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "evil")) x = GVE_EVIL;
     }
     return x;
+}
+
+bool cJSON_IsGveValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "good")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "neutral")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "evil")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateGve(const enum Gve x) {
@@ -55,6 +73,15 @@ enum Lvc cJSON_GetLvcValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsLvcValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "lawful")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "neutral")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "chaotic")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateLvc(const enum Lvc x) {
     cJSON * j = NULL;
     switch (x) {
@@ -73,7 +100,7 @@ struct Arr * cJSON_GetArrValue(const cJSON * j) {
             x->type = cJSON_Integer;
             x->value.integer = cJSON_GetNumberValue(j);
         }
-        else if (cJSON_IsString(j)) {
+        else if (cJSON_IsOtherArrValue(j)) {
             x->type = cJSON_Enum;
             x->value.purple_enum = cJSON_GetOtherArrValue(j);
         }
@@ -144,13 +171,11 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "gve")) { cJSON_DeleteTopLevel(x); return NULL; }
             if (cJSON_HasObjectItem(j, "gve")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "gve"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "gve")) || 0 == cJSON_GetGveValue(cJSON_GetObjectItemCaseSensitive(j, "gve"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsGveValue(cJSON_GetObjectItemCaseSensitive(j, "gve"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 x->gve = cJSON_GetGveValue(cJSON_GetObjectItemCaseSensitive(j, "gve"));
             }
             if (cJSON_HasObjectItem(j, "lvc")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "lvc"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "lvc")) || 0 == cJSON_GetLvcValue(cJSON_GetObjectItemCaseSensitive(j, "lvc"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsLvcValue(cJSON_GetObjectItemCaseSensitive(j, "lvc"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 if (NULL != (x->lvc = cJSON_malloc(sizeof(enum Lvc)))) {
                     *x->lvc = cJSON_GetLvcValue(cJSON_GetObjectItemCaseSensitive(j, "lvc"));
                 }
@@ -162,6 +187,7 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
                     cJSON * e1 = NULL;
                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "otherArr");
                     cJSON_ArrayForEach(e1, j1) {
+                        if (!cJSON_IsOtherArrValue(e1)) { x->other_arr = x1; cJSON_DeleteTopLevel(x); return NULL; }
                         enum OtherArr * tmp = cJSON_malloc(sizeof(enum OtherArr));
                         if (NULL != tmp) {
                             * tmp = cJSON_GetOtherArrValue(e1);

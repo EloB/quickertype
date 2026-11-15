@@ -1,6 +1,14 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -358,7 +358,7 @@
+@@ -276,6 +276,7 @@
+ };
+ 
+ enum Type cJSON_GetTypeValue(const cJSON * j);
++bool cJSON_IsTypeValue(const cJSON * j);
+ cJSON * cJSON_CreateType(const enum Type x);
+ 
+ struct Actor * cJSON_ParseActor(const char * s);
+@@ -358,7 +359,7 @@
  
  enum Type cJSON_GetTypeValue(const cJSON * j) {
      enum Type x = 0;
@@ -9,3 +17,31 @@
          if (!strcmp(cJSON_GetStringValue(j), "PushEvent")) x = TYPE_PUSH_EVENT;
          else if (!strcmp(cJSON_GetStringValue(j), "CreateEvent")) x = TYPE_CREATE_EVENT;
          else if (!strcmp(cJSON_GetStringValue(j), "WatchEvent")) x = TYPE_WATCH_EVENT;
+@@ -368,6 +369,17 @@
+     return x;
+ }
+ 
++bool cJSON_IsTypeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "PushEvent")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "CreateEvent")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "WatchEvent")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "PullRequestEvent")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "DeleteEvent")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateType(const enum Type x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -3494,8 +3506,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "type")) { cJSON_DeleteTopLevelElement(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "type")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "type")) || 0 == cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
++                if (!cJSON_IsTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"))) { cJSON_DeleteTopLevelElement(x); return NULL; }
+                 x->type = cJSON_GetTypeValue(cJSON_GetObjectItemCaseSensitive(j, "type"));
+             }
+             if (!cJSON_HasObjectItem(j, "actor")) { cJSON_DeleteTopLevelElement(x); return NULL; }

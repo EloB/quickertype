@@ -14,6 +14,14 @@ enum TopEnum cJSON_GetTopEnumValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsTopEnumValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "a")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "b")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateTopEnum(const enum TopEnum x) {
     cJSON * j = NULL;
     switch (x) {

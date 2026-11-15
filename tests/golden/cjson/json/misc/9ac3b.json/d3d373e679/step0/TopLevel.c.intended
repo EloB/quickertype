@@ -14,6 +14,14 @@ enum Status cJSON_GetStatusValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsStatusValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "inactive")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "active")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateStatus(const enum Status x) {
     cJSON * j = NULL;
     switch (x) {
@@ -30,6 +38,14 @@ enum Title cJSON_GetTitleValue(const cJSON * j) {
         else if (!strcmp(cJSON_GetStringValue(j), "Ms")) x = TITLE_MS;
     }
     return x;
+}
+
+bool cJSON_IsTitleValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "Mr")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "Ms")) return true;
+    }
+    return false;
 }
 
 cJSON * cJSON_CreateTitle(const enum Title x) {
@@ -174,14 +190,12 @@ struct Result * cJSON_GetResultValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "status")) { cJSON_DeleteResult(x); return NULL; }
             if (cJSON_HasObjectItem(j, "status")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteResult(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "status")) || 0 == cJSON_GetStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteResult(x); return NULL; }
+                if (!cJSON_IsStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteResult(x); return NULL; }
                 x->status = cJSON_GetStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"));
             }
             if (!cJSON_HasObjectItem(j, "title")) { cJSON_DeleteResult(x); return NULL; }
             if ((cJSON_HasObjectItem(j, "title")) && (!cJSON_IsNull(cJSON_GetObjectItemCaseSensitive(j, "title")))) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteResult(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "title")) || 0 == cJSON_GetTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteResult(x); return NULL; }
+                if (!cJSON_IsTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"))) { cJSON_DeleteResult(x); return NULL; }
                 if (NULL != (x->title = cJSON_malloc(sizeof(enum Title)))) {
                     *x->title = cJSON_GetTitleValue(cJSON_GetObjectItemCaseSensitive(j, "title"));
                 }

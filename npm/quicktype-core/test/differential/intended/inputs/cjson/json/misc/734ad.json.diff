@@ -1,6 +1,14 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -150,7 +150,7 @@
+@@ -128,6 +128,7 @@
+ };
+ 
+ enum Status cJSON_GetStatusValue(const cJSON * j);
++bool cJSON_IsStatusValue(const cJSON * j);
+ cJSON * cJSON_CreateStatus(const enum Status x);
+ 
+ struct Facets * cJSON_ParseFacets(const char * s);
+@@ -150,11 +151,19 @@
  
  enum Status cJSON_GetStatusValue(const cJSON * j) {
      enum Status x = 0;
@@ -9,3 +17,25 @@
          if (!strcmp(cJSON_GetStringValue(j), "active")) x = STATUS_ACTIVE;
          else if (!strcmp(cJSON_GetStringValue(j), "inactive")) x = STATUS_INACTIVE;
      }
+     return x;
++}
++
++bool cJSON_IsStatusValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "active")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "inactive")) return true;
++    }
++    return false;
+ }
+ 
+ cJSON * cJSON_CreateStatus(const enum Status x) {
+@@ -425,8 +434,7 @@
+             }
+             if (!cJSON_HasObjectItem(j, "status")) { cJSON_DeleteResult(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "status")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteResult(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "status")) || 0 == cJSON_GetStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteResult(x); return NULL; }
++                if (!cJSON_IsStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"))) { cJSON_DeleteResult(x); return NULL; }
+                 x->status = cJSON_GetStatusValue(cJSON_GetObjectItemCaseSensitive(j, "status"));
+             }
+             if (!cJSON_HasObjectItem(j, "main_category_title")) { cJSON_DeleteResult(x); return NULL; }

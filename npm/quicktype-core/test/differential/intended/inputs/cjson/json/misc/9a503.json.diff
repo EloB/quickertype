@@ -1,6 +1,14 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -120,7 +120,7 @@
+@@ -86,6 +86,7 @@
+ };
+ 
+ enum Keyword cJSON_GetKeywordValue(const cJSON * j);
++bool cJSON_IsKeywordValue(const cJSON * j);
+ cJSON * cJSON_CreateKeyword(const enum Keyword x);
+ 
+ struct Identifier * cJSON_ParseIdentifier(const char * s);
+@@ -120,7 +121,7 @@
  
  enum Keyword cJSON_GetKeywordValue(const cJSON * j) {
      enum Keyword x = 0;
@@ -9,3 +17,27 @@
          if (!strcmp(cJSON_GetStringValue(j), "discouraged")) x = KEYWORD_DISCOURAGED;
          else if (!strcmp(cJSON_GetStringValue(j), "retired")) x = KEYWORD_RETIRED;
          else if (!strcmp(cJSON_GetStringValue(j), "osi-approved")) x = KEYWORD_OSI_APPROVED;
+@@ -128,6 +129,15 @@
+     return x;
+ }
+ 
++bool cJSON_IsKeywordValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "discouraged")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "retired")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "osi-approved")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateKeyword(const enum Keyword x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -528,6 +538,7 @@
+                     cJSON * e1 = NULL;
+                     cJSON * j1 = cJSON_GetObjectItemCaseSensitive(j, "keywords");
+                     cJSON_ArrayForEach(e1, j1) {
++                        if (!cJSON_IsKeywordValue(e1)) { x->keywords = x1; cJSON_DeleteTopLevelElement(x); return NULL; }
+                         enum Keyword * tmp = cJSON_malloc(sizeof(enum Keyword));
+                         if (NULL != tmp) {
+                             * tmp = cJSON_GetKeywordValue(e1);

@@ -1,6 +1,30 @@
 --- $.ok.$map.0.1.lines
 +++ $.ok.$map.0.1.lines
-@@ -136,7 +136,7 @@
+@@ -102,18 +102,23 @@
+ };
+ 
+ enum Code cJSON_GetCodeValue(const cJSON * j);
++bool cJSON_IsCodeValue(const cJSON * j);
+ cJSON * cJSON_CreateCode(const enum Code x);
+ 
+ enum English cJSON_GetEnglishValue(const cJSON * j);
++bool cJSON_IsEnglishValue(const cJSON * j);
+ cJSON * cJSON_CreateEnglish(const enum English x);
+ 
+ enum Thai cJSON_GetThaiValue(const cJSON * j);
++bool cJSON_IsThaiValue(const cJSON * j);
+ cJSON * cJSON_CreateThai(const enum Thai x);
+ 
+ enum Location cJSON_GetLocationValue(const cJSON * j);
++bool cJSON_IsLocationValue(const cJSON * j);
+ cJSON * cJSON_CreateLocation(const enum Location x);
+ 
+ enum Tel cJSON_GetTelValue(const cJSON * j);
++bool cJSON_IsTelValue(const cJSON * j);
+ cJSON * cJSON_CreateTel(const enum Tel x);
+ 
+ struct Group * cJSON_ParseGroup(const char * s);
+@@ -136,12 +141,19 @@
  
  enum Code cJSON_GetCodeValue(const cJSON * j) {
      enum Code x = 0;
@@ -9,7 +33,19 @@
          if (!strcmp(cJSON_GetStringValue(j), "sf")) x = CODE_SF;
      }
      return x;
-@@ -152,7 +152,7 @@
+ }
+ 
++bool cJSON_IsCodeValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "sf")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateCode(const enum Code x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -152,12 +164,19 @@
  
  enum English cJSON_GetEnglishValue(const cJSON * j) {
      enum English x = 0;
@@ -18,7 +54,19 @@
          if (!strcmp(cJSON_GetStringValue(j), "SF")) x = ENGLISH_SF;
      }
      return x;
-@@ -168,7 +168,7 @@
+ }
+ 
++bool cJSON_IsEnglishValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "SF")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateEnglish(const enum English x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -168,12 +187,19 @@
  
  enum Thai cJSON_GetThaiValue(const cJSON * j) {
      enum Thai x = 0;
@@ -27,7 +75,19 @@
          if (!strcmp(cJSON_GetStringValue(j), "เอสเอฟ")) x = THAI_EMPTY;
      }
      return x;
-@@ -184,7 +184,7 @@
+ }
+ 
++bool cJSON_IsThaiValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "เอสเอฟ")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateThai(const enum Thai x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -184,13 +210,21 @@
  
  enum Location cJSON_GetLocationValue(const cJSON * j) {
      enum Location x = 0;
@@ -36,7 +96,21 @@
          if (!strcmp(cJSON_GetStringValue(j), "")) x = LOCATION_EMPTY;
          else if (!strcmp(cJSON_GetStringValue(j), "5th Fl. Emporium")) x = LOCATION_THE_5_TH_FL_EMPORIUM;
      }
-@@ -202,7 +202,7 @@
+     return x;
+ }
+ 
++bool cJSON_IsLocationValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "5th Fl. Emporium")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateLocation(const enum Location x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -202,13 +236,21 @@
  
  enum Tel cJSON_GetTelValue(const cJSON * j) {
      enum Tel x = 0;
@@ -45,3 +119,58 @@
          if (!strcmp(cJSON_GetStringValue(j), "")) x = TEL_EMPTY;
          else if (!strcmp(cJSON_GetStringValue(j), "02-268-8899")) x = TEL_THE_022688899;
      }
+     return x;
+ }
+ 
++bool cJSON_IsTelValue(const cJSON * j) {
++    if (cJSON_IsString(j)) {
++        if (!strcmp(cJSON_GetStringValue(j), "")) return true;
++        if (!strcmp(cJSON_GetStringValue(j), "02-268-8899")) return true;
++    }
++    return false;
++}
++
+ cJSON * cJSON_CreateTel(const enum Tel x) {
+     cJSON * j = NULL;
+     switch (x) {
+@@ -237,20 +279,17 @@
+             memset(x, 0, sizeof(struct Group));
+             if (!cJSON_HasObjectItem(j, "code")) { cJSON_DeleteGroup(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "code")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "code"))) { cJSON_DeleteGroup(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "code")) || 0 == cJSON_GetCodeValue(cJSON_GetObjectItemCaseSensitive(j, "code"))) { cJSON_DeleteGroup(x); return NULL; }
++                if (!cJSON_IsCodeValue(cJSON_GetObjectItemCaseSensitive(j, "code"))) { cJSON_DeleteGroup(x); return NULL; }
+                 x->code = cJSON_GetCodeValue(cJSON_GetObjectItemCaseSensitive(j, "code"));
+             }
+             if (!cJSON_HasObjectItem(j, "english")) { cJSON_DeleteGroup(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "english")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "english"))) { cJSON_DeleteGroup(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "english")) || 0 == cJSON_GetEnglishValue(cJSON_GetObjectItemCaseSensitive(j, "english"))) { cJSON_DeleteGroup(x); return NULL; }
++                if (!cJSON_IsEnglishValue(cJSON_GetObjectItemCaseSensitive(j, "english"))) { cJSON_DeleteGroup(x); return NULL; }
+                 x->english = cJSON_GetEnglishValue(cJSON_GetObjectItemCaseSensitive(j, "english"));
+             }
+             if (!cJSON_HasObjectItem(j, "thai")) { cJSON_DeleteGroup(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "thai")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "thai"))) { cJSON_DeleteGroup(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "thai")) || 0 == cJSON_GetThaiValue(cJSON_GetObjectItemCaseSensitive(j, "thai"))) { cJSON_DeleteGroup(x); return NULL; }
++                if (!cJSON_IsThaiValue(cJSON_GetObjectItemCaseSensitive(j, "thai"))) { cJSON_DeleteGroup(x); return NULL; }
+                 x->thai = cJSON_GetThaiValue(cJSON_GetObjectItemCaseSensitive(j, "thai"));
+             }
+             if (!cJSON_HasObjectItem(j, "website")) { cJSON_DeleteGroup(x); return NULL; }
+@@ -417,14 +456,12 @@
+             }
+             if (!cJSON_HasObjectItem(j, "location")) { cJSON_DeleteResult(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "location")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "location"))) { cJSON_DeleteResult(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "location")) || 0 == cJSON_GetLocationValue(cJSON_GetObjectItemCaseSensitive(j, "location"))) { cJSON_DeleteResult(x); return NULL; }
++                if (!cJSON_IsLocationValue(cJSON_GetObjectItemCaseSensitive(j, "location"))) { cJSON_DeleteResult(x); return NULL; }
+                 x->location = cJSON_GetLocationValue(cJSON_GetObjectItemCaseSensitive(j, "location"));
+             }
+             if (!cJSON_HasObjectItem(j, "tel")) { cJSON_DeleteResult(x); return NULL; }
+             if (cJSON_HasObjectItem(j, "tel")) {
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "tel"))) { cJSON_DeleteResult(x); return NULL; }
+-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "tel")) || 0 == cJSON_GetTelValue(cJSON_GetObjectItemCaseSensitive(j, "tel"))) { cJSON_DeleteResult(x); return NULL; }
++                if (!cJSON_IsTelValue(cJSON_GetObjectItemCaseSensitive(j, "tel"))) { cJSON_DeleteResult(x); return NULL; }
+                 x->tel = cJSON_GetTelValue(cJSON_GetObjectItemCaseSensitive(j, "tel"));
+             }
+         }

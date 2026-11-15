@@ -15,6 +15,15 @@ enum Enum cJSON_GetEnumValue(const cJSON * j) {
     return x;
 }
 
+bool cJSON_IsEnumValue(const cJSON * j) {
+    if (cJSON_IsString(j)) {
+        if (!strcmp(cJSON_GetStringValue(j), "red")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "green")) return true;
+        if (!strcmp(cJSON_GetStringValue(j), "blue")) return true;
+    }
+    return false;
+}
+
 cJSON * cJSON_CreateEnum(const enum Enum x) {
     cJSON * j = NULL;
     switch (x) {
@@ -96,8 +105,7 @@ struct TopLevel * cJSON_GetTopLevelValue(const cJSON * j) {
             }
             if (!cJSON_HasObjectItem(j, "enum")) { cJSON_DeleteTopLevel(x); return NULL; }
             if (cJSON_HasObjectItem(j, "enum")) {
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
-                if (!cJSON_IsString(cJSON_GetObjectItemCaseSensitive(j, "enum")) || 0 == cJSON_GetEnumValue(cJSON_GetObjectItemCaseSensitive(j, "enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
+                if (!cJSON_IsEnumValue(cJSON_GetObjectItemCaseSensitive(j, "enum"))) { cJSON_DeleteTopLevel(x); return NULL; }
                 x->enumerification = cJSON_GetEnumValue(cJSON_GetObjectItemCaseSensitive(j, "enum"));
             }
             if (!cJSON_HasObjectItem(j, "foo")) { cJSON_DeleteTopLevel(x); return NULL; }

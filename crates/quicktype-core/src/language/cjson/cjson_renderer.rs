@@ -543,6 +543,13 @@ impl<'a> CJsonRenderer<'a> {
             " * j);"
         ]);
         self.emit_line(sl![
+            "bool cJSON_Is",
+            enum_name,
+            "Value(",
+            with_const("cJSON"),
+            " * j);"
+        ]);
+        self.emit_line(sl![
             "cJSON * cJSON_Create",
             enum_name,
             "(",
@@ -595,6 +602,36 @@ impl<'a> CJsonRenderer<'a> {
                     })
                 })?;
                 r.emit_line("return x;");
+                Ok(())
+            },
+        )?;
+        self.ensure_blank_line();
+
+        // Whether `j` is one of the enum's values (not in quicktype, whose
+        // getter's `0` for any other value was taken as a case: a fix of
+        // ours, docs/PARITY.md, "Bugs fixed in quickertype"). The getters
+        // of classes, lists, maps, unions and top-levels check it first.
+        self.emit_block(
+            sl![
+                "bool cJSON_Is",
+                enum_name,
+                "Value(",
+                with_const("cJSON"),
+                " * j)"
+            ],
+            |r| {
+                r.emit_block(sl!["if (cJSON_IsString(j))"], |r| {
+                    r.for_each_enum_case(e, BlankLinePosition::None, |r, _, json_name, _| {
+                        let json_name = c_string_escape(json_name);
+                        r.emit_line(sl![
+                            "if (!strcmp(cJSON_GetStringValue(j), \"",
+                            json_name,
+                            "\")) return true;"
+                        ]);
+                        Ok(())
+                    })
+                })?;
+                r.emit_line("return false;");
                 Ok(())
             },
         )?;
@@ -1589,7 +1626,7 @@ impl<'a> CJsonRenderer<'a> {
         self.emit_parse_function(class_name)?;
 
         // Create cJSON to className generator function.
-        self.emit_get_value_function(class_name, |r| r.class_get_recur(class_name, c, 0))?;
+        self.emit_get_value_function(class_name, |r| r.class_get_recur(class_name, c, 0, ""))?;
 
         // Create className to cJSON generator function.
         self.emit_block(
@@ -1644,7 +1681,16 @@ impl<'a> CJsonRenderer<'a> {
 
     /// The `recur(type, level)` of `emitClassFunctions`' getter: the
     /// statements reading `t` (an array or a class) at `level`.
-    fn class_get_recur(&mut self, class_name: Name, t: TypeRef, level: usize) -> Result<()> {
+    /// `fail` is what a list nested in a property's list does with an
+    /// element it rejects: link the lists built so far into the property
+    /// and delete the class (only an enum's elements are checked there).
+    fn class_get_recur(
+        &mut self,
+        class_name: Name,
+        t: TypeRef,
+        level: usize,
+        fail: &str,
+    ) -> Result<()> {
         // Endless on a cycle through a nullable union (V8 overflows its stack).
         guard(|| {
             let ty = self.type_graph().type_at(t)?;
@@ -1671,8 +1717,12 @@ impl<'a> CJsonRenderer<'a> {
                         |r| {
                             if c.is("cJSON_Array") {
                                 let child2 = child + 1;
-                                r.class_get_recur(class_name, item_type, child)?;
                                 let items = defined(c.items.as_deref())?;
+                                let c_type = r.sourcelike_to_string(&items.c_type)?;
+                                let fail = format!(
+                                    "list_add_tail(x{cs}, x{child2}, sizeof({c_type} *)); {fail}"
+                                );
+                                r.class_get_recur(class_name, item_type, child, &fail)?;
                                 r.emit_line(sl![
                                     "list_add_tail(x",
                                     cs.as_str(),
@@ -1700,6 +1750,12 @@ impl<'a> CJsonRenderer<'a> {
                                 ]);
                                 Ok(())
                             } else {
+                                if c.is("cJSON_Enum") {
+                                    // Not in quicktype (a fix of ours,
+                                    // see `emit_enum_functions`).
+                                    let is_type = r.sourcelike_to_string(&c.is_type)?;
+                                    r.emit_line(format!("if (!{is_type}(e{cs})) {{ {fail} }}"));
+                                }
                                 r.emit_add_scalar(Container::List, &c, level, child)
                             }
                         },
@@ -1822,14 +1878,11 @@ impl<'a> CJsonRenderer<'a> {
                     num(max_length)
                 ));
             }
-            if c.is("cJSON_Enum") {
-                // Enum getters return zero for unknown strings, so every
-                // direct enum property needs this guard.
-                let get_value = r.sourcelike_to_string(&c.get_value)?;
-                r.emit_line(format!(
-                    "if (!cJSON_IsString({value}) || 0 == {get_value}({value})) {fail}"
-                ));
-            }
+            // quicktype adds `if (!cJSON_IsString(v) || 0 == cJSON_Get<E>Value(v))`
+            // for an enum, which takes a case whose value is 0
+            // (`qt-enum-values`) for an unknown value; the is_type check
+            // above is `cJSON_Is<E>Value` (a fix of ours, see
+            // `emit_enum_functions`).
             r.class_get_property_value(class_name, level, name, &json_name, p, &c)
         })?;
         if !p.is_optional && !c.is_nullable {
@@ -2123,7 +2176,14 @@ impl<'a> CJsonRenderer<'a> {
                 return panic("Invalid type");
             }
             let child2 = child + 1;
-            self.class_get_recur(class_name, ty.items()?, child)?;
+            let fail = self.property_fail(
+                class_name,
+                level,
+                name,
+                &format!("list_add_tail(x{cs}, x{child2}, sizeof("),
+                items,
+            )?;
+            self.class_get_recur(class_name, ty.items()?, child, &fail)?;
             self.emit_line(sl![
                 "list_add_tail(x",
                 cs.as_str(),
@@ -2171,8 +2231,41 @@ impl<'a> CJsonRenderer<'a> {
             ]);
             Ok(())
         } else {
+            if items.is("cJSON_Enum") {
+                // Not in quicktype, whose enum getter gives 0 for any other
+                // value (a fix of ours, see `emit_enum_functions`).
+                let l = lvl(level);
+                let property = self.sourcelike_to_string(&name.into())?;
+                let class = self.sourcelike_to_string(&class_name.into())?;
+                let is_type = self.sourcelike_to_string(&items.is_type)?;
+                self.emit_line(format!(
+                    "if (!{is_type}(e{child})) {{ x{l}->{property} = x{child}; cJSON_Delete{class}(x); return NULL; }}"
+                ));
+            }
             self.emit_add_scalar(Container::List, items, level, child)
         }
+    }
+
+    /// What a list nested in property `name`'s list or map (at `level`)
+    /// does with an element it rejects: `add` (the call that adds the
+    /// nested list, up to `sizeof(`) the nested list, set the property and
+    /// delete the class.
+    fn property_fail(
+        &mut self,
+        class_name: Name,
+        level: usize,
+        name: Name,
+        add: &str,
+        items: &TypeCJSON,
+    ) -> Result<String> {
+        let child = level + 1;
+        let l = lvl(level);
+        let c_type = self.sourcelike_to_string(&items.c_type)?;
+        let property = self.sourcelike_to_string(&name.into())?;
+        let class = self.sourcelike_to_string(&class_name.into())?;
+        Ok(format!(
+            "{add}{c_type} *)); x{l}->{property} = x{child}; cJSON_Delete{class}(x); return NULL;"
+        ))
     }
 
     /// The `add` of a map property in `emitClassFunctions`' getter: one
@@ -2193,7 +2286,14 @@ impl<'a> CJsonRenderer<'a> {
                 return panic("Invalid type");
             }
             let child2 = child + 1;
-            self.class_get_recur(class_name, ty.map_values()?, child)?;
+            let fail = self.property_fail(
+                class_name,
+                level,
+                name,
+                &format!("hashtable_add(x{cs}, e{cs}->string, x{child2}, sizeof("),
+                items,
+            )?;
+            self.class_get_recur(class_name, ty.map_values()?, child, &fail)?;
             self.emit_line(sl![
                 "hashtable_add(x",
                 cs.as_str(),
@@ -2868,61 +2968,55 @@ if (NULL == validated) {{
     /// The body of a top-level's `cJSON_Get<name>Value`.
     fn top_level_get_value(&mut self, t: TypeRef, class_name: Name) -> Result<()> {
         let c = self.quicktype_type_to_cjson(t, false, false)?;
-        if c.is("cJSON_Array")
-            && let Some(items) = &c.items
-        {
-            self.emit_line("x->value = list_create(false, NULL);");
+        let container = if c.is("cJSON_Array") {
+            Some((
+                "list_create(false, NULL)".to_owned(),
+                "list_add_tail(x->value, ",
+            ))
+        } else if c.is("cJSON_Map") {
+            Some((
+                format!("hashtable_create({}, false)", self.options.hashtable_size),
+                "hashtable_add(x->value, e->string, ",
+            ))
+        } else {
+            None
+        };
+        if let (Some((create, prefix)), Some(items)) = (container, &c.items) {
+            self.emit_line(format!("x->value = {create};"));
             self.emit_block(sl!["if (NULL != x->value)"], |r| {
                 r.emit_line("cJSON * e = NULL;");
                 r.emit_block(sl!["cJSON_ArrayForEach(e, j)"], |r| {
-                    if !items.is_nullable && items.has_is_type() {
+                    // quicktype checks the elements of a list, and only
+                    // those that are not nullable; a map's are checked too
+                    // (a fix of ours, docs/PARITY.md, "Bugs fixed in
+                    // quickertype").
+                    if items.has_is_type() && (c.is("cJSON_Map") || !items.is_nullable) {
+                        let nullable = if items.is_nullable {
+                            "!cJSON_IsNull(e) && "
+                        } else {
+                            ""
+                        };
                         r.emit_line(sl![
-                            "if (!",
+                            "if (",
+                            nullable,
+                            "!",
                             &items.is_type,
                             "(e)) { cJSON_Delete",
                             class_name,
                             "(x); return NULL; }"
                         ]);
                     }
-
                     if items.is_nullable {
                         r.emit_block(sl!["if (!cJSON_IsNull(e))"], |r| {
-                            r.top_level_list_add(items);
+                            r.top_level_add(prefix, items, class_name);
                             Ok(())
                         })?;
                         r.emit_block(sl!["else"], |r| {
-                            r.emit_line(
-                                "list_add_tail(x->value, (void *)0xDEADBEEF, sizeof(void *));",
-                            );
+                            r.emit_line(sl![prefix, "(void *)0xDEADBEEF, sizeof(void *));"]);
                             Ok(())
                         })
                     } else {
-                        r.top_level_list_add(items);
-                        Ok(())
-                    }
-                })
-            })
-        } else if c.is("cJSON_Map")
-            && let Some(items) = &c.items
-        {
-            let size = self.options.hashtable_size.clone();
-            self.emit_line(sl!["x->value = hashtable_create(", size, ", false);"]);
-            self.emit_block(sl!["if (NULL != x->value)"], |r| {
-                r.emit_line("cJSON * e = NULL;");
-                r.emit_block(sl!["cJSON_ArrayForEach(e, j)"], |r| {
-                    if items.is_nullable {
-                        r.emit_block(sl!["if (!cJSON_IsNull(e))"], |r| {
-                            r.top_level_hashtable_add(items);
-                            Ok(())
-                        })?;
-                        r.emit_block(sl!["else"], |r| {
-                            r.emit_line(
-                                "hashtable_add(x->value, e->string, (void *)0xDEADBEEF, sizeof(void *));",
-                            );
-                            Ok(())
-                        })
-                    } else {
-                        r.top_level_hashtable_add(items);
+                        r.top_level_add(prefix, items, class_name);
                         Ok(())
                     }
                 })
@@ -2937,20 +3031,34 @@ if (NULL == validated) {{
             self.emit_line(sl!["x->value = strdup(", &c.get_value, "(j));"]);
             Ok(())
         } else {
+            if c.is("cJSON_Enum") {
+                // Not in quicktype, whose enum getter gives 0 for any other
+                // value (a fix of ours, see `emit_enum_functions`).
+                self.emit_line(sl![
+                    "if (!",
+                    &c.is_type,
+                    "(j)) { cJSON_Delete",
+                    class_name,
+                    "(x); return NULL; }"
+                ]);
+            }
             self.emit_line(sl!["x->value = ", &c.get_value, "(j);"]);
             Ok(())
         }
     }
 
-    /// The `add` of a top-level array's getter. quicktype's marker for
-    /// `null` here is `0xDEADBEAF`, which nothing compares with (a fix of
-    /// ours, docs/PARITY.md, "Bugs fixed in quickertype").
-    fn top_level_list_add(&mut self, items: &TypeCJSON) {
+    /// Adds the element `e` to a top-level list or map, `prefix` the call
+    /// up to the element. quicktype's list marks `null` with `0xDEADBEAF`,
+    /// its map stores an integer, boolean, double or enum itself as the
+    /// pointer, and its list drops an element it cannot allocate (fixes
+    /// of ours, docs/PARITY.md, "Bugs fixed in quickertype").
+    fn top_level_add(&mut self, prefix: &str, items: &TypeCJSON, class_name: Name) {
         if items.is("cJSON_Array") || items.is("cJSON_Map") {
             // Not supported.
         } else if items.is("cJSON_Invalid") || items.is("cJSON_NULL") {
             self.emit_line(sl![
-                "list_add_tail(x->value, (",
+                prefix,
+                "(",
                 &items.c_type,
                 " *)0xDEADBEEF, sizeof(",
                 &items.c_type,
@@ -2958,7 +3066,8 @@ if (NULL == validated) {{
             ]);
         } else if items.is("cJSON_String") {
             self.emit_line(sl![
-                "list_add_tail(x->value, strdup(",
+                prefix,
+                "strdup(",
                 &items.get_value,
                 "(e)), sizeof(",
                 &items.c_type,
@@ -2967,55 +3076,15 @@ if (NULL == validated) {{
         } else if items.is_freed_with_cjson_free() {
             self.emit_line(sl![&items.c_type, " * item = cJSON_malloc(sizeof(*item));"]);
             self.emit_line(sl![
-                "if (NULL != item) { *item = ",
-                &items.get_value,
-                "(e); list_add_tail(x->value, item, sizeof(*item)); }"
+                "if (NULL == item) { cJSON_Delete",
+                class_name,
+                "(x); return NULL; }"
             ]);
+            self.emit_line(sl!["*item = ", &items.get_value, "(e);"]);
+            self.emit_line(sl![prefix, "item, sizeof(*item));"]);
         } else {
             self.emit_line(sl![
-                "list_add_tail(x->value, ",
-                &items.get_value,
-                "(e), sizeof(",
-                &items.c_type,
-                " *));"
-            ]);
-        }
-    }
-
-    /// The `add` of a top-level map's getter. A value freed with
-    /// `cJSON_free` (an integer, a boolean, a double or an enum) is
-    /// allocated as in the top-level list; quicktype stores the value
-    /// itself as the pointer (a fix of ours, docs/PARITY.md, "Bugs fixed
-    /// in quickertype").
-    fn top_level_hashtable_add(&mut self, items: &TypeCJSON) {
-        if items.is("cJSON_Array") || items.is("cJSON_Map") {
-            // Not supported.
-        } else if items.is("cJSON_Invalid") || items.is("cJSON_NULL") {
-            self.emit_line(sl![
-                "hashtable_add(x->value, e->string, (",
-                &items.c_type,
-                " *)0xDEADBEEF, sizeof(",
-                &items.c_type,
-                " *));"
-            ]);
-        } else if items.is("cJSON_String") {
-            self.emit_line(sl![
-                "hashtable_add(x->value, e->string, strdup(",
-                &items.get_value,
-                "(e)), sizeof(",
-                &items.c_type,
-                " *));"
-            ]);
-        } else if items.is_freed_with_cjson_free() {
-            self.emit_line(sl![&items.c_type, " * item = cJSON_malloc(sizeof(*item));"]);
-            self.emit_line(sl![
-                "if (NULL != item) { *item = ",
-                &items.get_value,
-                "(e); hashtable_add(x->value, e->string, item, sizeof(*item)); }"
-            ]);
-        } else {
-            self.emit_line(sl![
-                "hashtable_add(x->value, e->string, ",
+                prefix,
                 &items.get_value,
                 "(e), sizeof(",
                 &items.c_type,
@@ -3094,9 +3163,10 @@ if (NULL == validated) {{
     }
 
     /// The body of a top-level's `cJSON_Delete<name>`, inside
-    /// `if (NULL != x)` and before `cJSON_free(x)`. The values of a list or
-    /// map of `null` are the marker `0xDEADBEEF`, which quicktype frees (a
-    /// fix of ours, docs/PARITY.md, "Bugs fixed in quickertype").
+    /// `if (NULL != x)` and before `cJSON_free(x)`. Each element goes
+    /// through [`Self::emit_delete_item`], as in a class: quicktype frees
+    /// the marker `0xDEADBEEF` of a list or map of `null` (a fix of ours,
+    /// docs/PARITY.md, "Bugs fixed in quickertype").
     fn top_level_delete(&mut self, t: TypeRef) -> Result<()> {
         let c = self.quicktype_type_to_cjson(t, false, false)?;
         if c.is("cJSON_Array")
@@ -3105,17 +3175,7 @@ if (NULL == validated) {{
             self.emit_block(sl!["if (NULL != x->value)"], |r| {
                 r.emit_line(sl![&items.c_type, " * x1 = list_get_head(x->value);"]);
                 r.emit_block(sl!["while (NULL != x1)"], |r| {
-                    if items.is("cJSON_NULL") || items.is("cJSON_Invalid") {
-                        // Nothing to free: the values are 0xDEADBEEF.
-                    } else if items.is_nullable {
-                        r.emit_block(sl!["if ((void *)0xDEADBEEF != x1)"], |r| {
-                            r.emit_line(sl![&items.delete_type, "(x1);"]);
-                            Ok(())
-                        })?;
-                    } else {
-                        r.emit_line(sl![&items.delete_type, "(x1);"]);
-                    }
-
+                    r.emit_delete_item(items, "x1")?;
                     r.emit_line("x1 = list_get_next(x->value);");
                     Ok(())
                 })?;
@@ -3134,23 +3194,7 @@ if (NULL == validated) {{
                             &items.c_type,
                             " *x2 = hashtable_lookup(x->value, keys[index]);"
                         ]);
-                        r.emit_block(sl!["if (NULL != x2)"], |r| {
-                            if items.is("cJSON_NULL") || items.is("cJSON_Invalid") {
-                                // Nothing to free: the values are 0xDEADBEEF.
-                                Ok(())
-                            } else if items.is_nullable {
-                                r.emit_block(
-                                    sl!["if ((", &items.c_type, " *)0xDEADBEEF != x2)"],
-                                    |r| {
-                                        r.emit_line(sl![&items.delete_type, "(x2);"]);
-                                        Ok(())
-                                    },
-                                )
-                            } else {
-                                r.emit_line(sl![&items.delete_type, "(x2);"]);
-                                Ok(())
-                            }
-                        })
+                        r.emit_block(sl!["if (NULL != x2)"], |r| r.emit_delete_item(items, "x2"))
                     })?;
                     r.emit_line("cJSON_free(keys);");
                     Ok(())
@@ -3311,7 +3355,9 @@ if (NULL == validated) {{
                         c_type: sl!["enum ", name],
                         optional_qualifier: optional,
                         cjson_type: "cJSON_Enum",
-                        is_type: "cJSON_IsString".into(),
+                        // quicktype's is `cJSON_IsString` (a fix of ours,
+                        // see `emit_enum_functions`).
+                        is_type: sl!["cJSON_Is", name, "Value"],
                         get_value: sl!["cJSON_Get", name, "Value"],
                         add_to_object: "cJSON_AddItemToObject".into(),
                         create_object: sl!["cJSON_Create", name],
