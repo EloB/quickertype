@@ -377,6 +377,45 @@ fn is_json_whitespace(b: u8) -> bool {
     matches!(b, b' ' | b'\t' | b'\n' | b'\r')
 }
 
+/// Why a sample is read in one go, where the CLI would read it so
+/// ([`form_parts`], [`decide`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum InOneGo {
+    /// No split at all: an array of one element (or none), JSON Lines of
+    /// one value.
+    NoSplit,
+    /// JSON Lines without a split in the ranges that start within
+    /// [`FIRST_LINE_MAX`] of the start.
+    NoEarlyLineFeed,
+    /// A part whose tree would take more than half the budget.
+    PartTooLong,
+    /// The first parts' trees are more than [`MAX_RATIO`] times their text.
+    TreesTooLarge,
+}
+
+impl InOneGo {
+    /// What the reason is, in words.
+    pub fn message(self) -> &'static str {
+        match self {
+            InOneGo::NoSplit => "no split",
+            InOneGo::NoEarlyLineFeed => "no line feed between values in the first MiB",
+            InOneGo::PartTooLong => "a part too long to read beside others",
+            InOneGo::TreesTooLarge => "trees far larger than their text",
+        }
+    }
+
+    /// Whether it holds of the sample whatever the plan (the threads, the
+    /// ranges, the budget): a sample with no split has no separator
+    /// anywhere (the first one would be some range's first split), and the
+    /// probe measures the same first parts under any plan of a sample this
+    /// size (the first range is twice the probe long, whatever the others
+    /// are). Which ranges start in the first MiB, and the budget, are the
+    /// plan's: another plan may read the sample in parts.
+    pub fn always(self) -> bool {
+        matches!(self, InOneGo::NoSplit | InOneGo::TreesTooLarge)
+    }
+}
+
 /// A part of a sample: from `from` to the split at `to` (a comma, or a
 /// line feed), after which the next part starts, or to the end of the
 /// sample.
@@ -416,12 +455,12 @@ pub fn form_parts(
     first: u64,
     splits: &[Option<u64>],
     lines: bool,
-) -> std::result::Result<Vec<Part>, &'static str> {
+) -> std::result::Result<Vec<Part>, InOneGo> {
     let mut parts: Vec<Part> = Vec::new();
     let mut next_from = first;
     for (k, split) in splits.iter().enumerate() {
         if lines && parts.is_empty() && plan.bounds(k).0 >= FIRST_LINE_MAX {
-            return Err("no line feed between values in the first MiB");
+            return Err(InOneGo::NoEarlyLineFeed);
         }
         let Some(split) = *split else {
             continue;
@@ -438,13 +477,13 @@ pub fn form_parts(
             first: parts.is_empty(),
         };
         if part.len(plan.len) as f64 * 2.0 > plan.budget as f64 {
-            return Err("a part too long to read beside others");
+            return Err(InOneGo::PartTooLong);
         }
         parts.push(part);
         next_from = split + 1;
     }
     if parts.is_empty() {
-        return Err("no split");
+        return Err(InOneGo::NoSplit);
     }
     parts.push(Part {
         from: next_from,
@@ -473,15 +512,15 @@ pub fn decide(
     parts: &[Part],
     probed: usize,
     probe: Probe,
-) -> std::result::Result<(), &'static str> {
+) -> std::result::Result<(), InOneGo> {
     let ratio = (probe.trees as f64 / probe.text.max(1) as f64).max(1.0);
     if ratio > MAX_RATIO && probe.text >= PROBE_LEN {
-        return Err("trees far larger than their text");
+        return Err(InOneGo::TreesTooLarge);
     }
     for part in parts.iter().skip(probed) {
         let estimate = ((ratio * part.len(plan.len) as f64) as u64).max(probe.smallest);
         if estimate.saturating_mul(2) > plan.budget {
-            return Err("a part too long to read beside others");
+            return Err(InOneGo::PartTooLong);
         }
     }
     Ok(())
@@ -865,7 +904,7 @@ mod tests {
                     .map(|i| from + i as u64)
             })
             .collect();
-        let parts = form_parts(&plan, first, &splits, lines)?;
+        let parts = form_parts(&plan, first, &splits, lines).map_err(|e| e.message().to_owned())?;
         let part_bytes = |part: &Part| &bytes[part.from as usize..part.to.unwrap_or(len) as usize];
         let last = |i: usize| i + 1 == parts.len();
         let mut here = PartTallies::new(config(), LIMITS);
@@ -885,7 +924,7 @@ mod tests {
             };
             probed += 1;
         }
-        decide(&plan, &parts, probed, probe)?;
+        decide(&plan, &parts, probed, probe).map_err(|e| e.message().to_owned())?;
         // Each worker's ranges, in turn; a part goes to the worker whose
         // ranges it starts in.
         let block = plan.ranges.div_ceil(workers);
@@ -1075,7 +1114,7 @@ mod tests {
         let plan = Plan::for_workers(10 << 20, 4, 0, None).unwrap();
         assert_eq!(
             form_parts(&plan, 1, &vec![None; plan.ranges], false),
-            Err("no split")
+            Err(InOneGo::NoSplit)
         );
         let mut splits = vec![None; plan.ranges];
         let far = (0..plan.ranges)
@@ -1085,7 +1124,7 @@ mod tests {
         assert!(form_parts(&plan, 1, &splits, false).is_ok());
         assert_eq!(
             form_parts(&plan, 0, &splits, true),
-            Err("no line feed between values in the first MiB")
+            Err(InOneGo::NoEarlyLineFeed)
         );
         splits[far - 1] = Some(plan.bounds(far - 1).0 + 5);
         assert!(form_parts(&plan, 0, &splits, true).is_ok());
@@ -1097,7 +1136,7 @@ mod tests {
         splits[large.ranges - 1] = Some(large.bounds(large.ranges - 1).0);
         assert_eq!(
             form_parts(&large, 1, &splits, false),
-            Err("a part too long to read beside others")
+            Err(InOneGo::PartTooLong)
         );
         // Parts of at most 16 MiB are not.
         for k in (0..large.ranges).step_by(4) {
@@ -1130,7 +1169,7 @@ mod tests {
         assert_eq!(decide(&plan, &parts, 1, probe(100_000)), Ok(()));
         assert_eq!(
             decide(&plan, &parts, 1, probe(900_000)),
-            Err("trees far larger than their text")
+            Err(InOneGo::TreesTooLarge)
         );
         assert_eq!(
             decide(
@@ -1172,6 +1211,24 @@ mod tests {
             )
             .is_err()
         );
+        // Which reasons hold whatever the plan: no split, and the probe's
+        // ratio, measured on the same first parts by every plan of a
+        // sample (the first range and the probe are the same whatever the
+        // workers), unlike the budget and which ranges start in the first
+        // MiB.
+        assert!(InOneGo::NoSplit.always() && InOneGo::TreesTooLarge.always());
+        assert!(!InOneGo::NoEarlyLineFeed.always() && !InOneGo::PartTooLong.always());
+        for size in [16u64 << 20, 100 << 20, 656 << 20, 2 << 30] {
+            let firsts: Vec<(u64, u64)> = (2..=16)
+                .filter_map(|workers| Plan::for_workers(size, workers, 0, None))
+                .map(|plan| (plan.head, plan.probe))
+                .collect();
+            assert_eq!(firsts.len(), 15);
+            assert!(
+                firsts.iter().all(|&f| f == (2 * PROBE_LEN, PROBE_LEN)),
+                "{size}: {firsts:?}"
+            );
+        }
         // Samples too small for parts.
         assert_eq!(Plan::for_workers(1 << 20, 4, 8 << 20, None), None);
         assert_eq!(Plan::for_workers(10 << 20, 1, 0, None), None);

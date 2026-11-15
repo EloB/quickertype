@@ -29,7 +29,7 @@ use std::cell::RefCell;
 
 use js_sys::{Float64Array, Object, Reflect};
 use quicktype_core::input::parts::{
-    self, NotRead, Part, PartTallies, Plan, Probe, RangeSummary, SharedTallies, SplitState,
+    self, InOneGo, NotRead, Part, PartTallies, Plan, Probe, RangeSummary, SharedTallies, SplitState,
 };
 use wasm_bindgen::prelude::*;
 
@@ -198,33 +198,51 @@ pub fn split_array_start(head: &[u8]) -> f64 {
 /// (`splitPlan`'s), from `first` (where the first part starts) and
 /// `splits` (each range's first split, or -1): `{ parts }`, three numbers
 /// a part (from, to or -1 for the last, whether it is the first), or
-/// `{ inOneGo }`, why the sample is to be read in one go instead.
+/// why the sample is to be read in one go instead ([`in_one_go`]).
 #[wasm_bindgen(js_name = splitParts)]
 pub fn split_parts(plan: &[f64], first: f64, splits: &[f64], lines: bool) -> JsValue {
-    let object = Object::new();
     let formed = (|| {
-        let plan = plan_of(plan).ok_or("not a plan")?;
-        let first = whole(first).ok_or("not a start")?;
+        let plan = plan_of(plan).ok_or(NOT_THE_ENGINES)?;
+        let first = whole(first).ok_or(NOT_THE_ENGINES)?;
         if splits.len() != plan.ranges {
-            return Err("not a split a range");
+            return Err(NOT_THE_ENGINES);
         }
         let splits: Vec<Option<u64>> = splits
             .iter()
             .map(|&s| if s < 0.0 { None } else { whole(s) })
             .collect();
-        parts::form_parts(&plan, first, &splits, lines)
+        parts::form_parts(&plan, first, &splits, lines).map_err(Some)
     })();
     match formed {
         Ok(parts) => {
+            let object = Object::new();
             let numbers: Vec<f64> = parts.iter().flat_map(part_numbers).collect();
             set(
                 &object,
                 "parts",
                 &Float64Array::from(numbers.as_slice()).into(),
             );
+            object.into()
         }
-        Err(why) => set(&object, "inOneGo", &JsValue::from_str(why)),
+        Err(why) => in_one_go(why),
     }
+}
+
+/// What a split binding was given that is not what the engine gave: a
+/// reason of this reading (and a bug), not of the sample.
+const NOT_THE_ENGINES: Option<InOneGo> = None;
+
+/// `{ inOneGo, always }`: why the sample is to be read in one go (in
+/// words), and whether that holds of the sample whatever the plan
+/// ([`InOneGo::always`]); a caller may remember only those.
+fn in_one_go(why: Option<InOneGo>) -> JsValue {
+    let object = Object::new();
+    let (message, always) = match why {
+        Some(why) => (why.message(), why.always()),
+        None => ("numbers that are not the engine's", false),
+    };
+    set(&object, "inOneGo", &JsValue::from_str(message));
+    set(&object, "always", &JsValue::from_bool(always));
     object.into()
 }
 
@@ -239,7 +257,8 @@ fn part_numbers(part: &Part) -> [f64; 3] {
 /// Once the first `probed` of `parts` (`splitParts`' numbers) are read
 /// and measured (their text, their trees' bytes together, the smallest
 /// tree): why the sample is to be read in one go after all, where the CLI
-/// would, or `undefined` to read the rest in parts.
+/// would (as [`split_parts`] gives it), or `undefined` to read the rest in
+/// parts.
 #[wasm_bindgen(js_name = splitDecide)]
 pub fn split_decide(
     plan: &[f64],
@@ -248,11 +267,11 @@ pub fn split_decide(
     text: f64,
     trees: f64,
     smallest: f64,
-) -> Option<String> {
+) -> JsValue {
     let decided = (|| {
-        let plan = plan_of(plan).ok_or("not a plan")?;
+        let plan = plan_of(plan).ok_or(NOT_THE_ENGINES)?;
         if parts.len() % 3 != 0 {
-            return Err("not parts");
+            return Err(NOT_THE_ENGINES);
         }
         let parts = parts
             .chunks(3)
@@ -264,15 +283,18 @@ pub fn split_decide(
                 })
             })
             .collect::<Option<Vec<_>>>()
-            .ok_or("not parts")?;
+            .ok_or(NOT_THE_ENGINES)?;
         let probe = Probe {
-            text: whole(text).ok_or("not a probe")?,
-            trees: whole(trees).ok_or("not a probe")?,
-            smallest: whole(smallest).ok_or("not a probe")?,
+            text: whole(text).ok_or(NOT_THE_ENGINES)?,
+            trees: whole(trees).ok_or(NOT_THE_ENGINES)?,
+            smallest: whole(smallest).ok_or(NOT_THE_ENGINES)?,
         };
-        parts::decide(&plan, &parts, probed as usize, probe)
+        parts::decide(&plan, &parts, probed as usize, probe).map_err(Some)
     })();
-    decided.err().map(str::to_owned)
+    match decided {
+        Ok(()) => JsValue::UNDEFINED,
+        Err(why) => in_one_go(why),
+    }
 }
 
 // ---- The parts' tallies ----------------------------------------------------
