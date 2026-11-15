@@ -1,10 +1,23 @@
 //! Finding the TypeScript 7 native compiler.
 //!
-//! Port of the lookup in `typescript/lib/getExePath.js`, extended with an
-//! environment override and a `PATH` search. Only the exact pinned release
-//! ([`TSC_VERSION`]) is accepted: the `--api` protocol is unversioned, and
-//! the enum values in [`super::generated`] change between releases.
+//! [`locate`] looks, in this order, at:
+//!
+//! 1. `$QUICKTYPE_TSC` ([`TSC_ENV`]), and at nothing else when it is set;
+//! 2. the compiler a release bundles with quickertype
+//!    ([`bundled_candidates`]): the npm platform package, unmodified, in a
+//!    `typescript` directory next to the executable (the release archives,
+//!    the MSI, the npm package) or in `../share/quickertype` (Homebrew),
+//!    found from the executable's real path;
+//! 3. the npm platform package in `node_modules` of the working directory
+//!    or any ancestor (a port of the lookup in `typescript/lib/getExePath.js`),
+//!    then `tsgo`/`tsc` on `PATH`.
+//!
+//! Without one, [`Error::TscNotFound`] names the npm package to install for
+//! this platform. Only the exact pinned release ([`TSC_VERSION`]) is
+//! accepted: the `--api` protocol is unversioned, and the enum values in
+//! [`super::generated`] change between releases.
 
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -13,6 +26,11 @@ use crate::error::{Error, Result};
 
 /// The environment variable that names the compiler binary explicitly.
 pub const TSC_ENV: &str = "QUICKTYPE_TSC";
+
+/// The directory that a release puts the compiler in, next to quickertype:
+/// the npm platform package (`@typescript/typescript-<os>-<arch>`, pinned
+/// in `release/typescript/pins.json`), unmodified.
+pub const BUNDLED_DIR: &str = "typescript";
 
 /// Node's `process.platform-process.arch` suffix of the npm package that
 /// ships the native compiler, e.g. `darwin-arm64`.
@@ -39,13 +57,37 @@ fn exe_name(base: &str) -> String {
     }
 }
 
+/// The compiler in a platform package's directory: `<package>/lib/tsc`.
+fn package_exe(package: &Path) -> PathBuf {
+    package.join("lib").join(exe_name("tsc"))
+}
+
 /// `<dir>/node_modules/@typescript/typescript-<os>-<arch>/lib/tsc`.
 pub fn platform_package_exe(node_modules: &Path) -> PathBuf {
-    node_modules
-        .join("@typescript")
-        .join(format!("typescript-{}", platform_suffix()))
-        .join("lib")
-        .join(exe_name("tsc"))
+    package_exe(
+        &node_modules
+            .join("@typescript")
+            .join(format!("typescript-{}", platform_suffix())),
+    )
+}
+
+/// Where a release install keeps the bundled compiler of the executable
+/// `exe` (quickertype): `typescript/lib/tsc` in the directory of `exe`'s
+/// real path (the release archives, the MSI's `bin`, the npm package's
+/// unpacked archive), then `../share/quickertype/typescript/lib/tsc` from
+/// it (Homebrew's `pkgshare`, which its `bin` links point into). The real
+/// path resolves symbolic links, and on Windows is in the form users write
+/// (no `\\?\` prefix).
+pub fn bundled_candidates(exe: &Path) -> Vec<PathBuf> {
+    let real = simplified(std::fs::canonicalize(exe).unwrap_or_else(|_| exe.to_path_buf()));
+    let Some(dir) = real.parent() else {
+        return Vec::new();
+    };
+    let mut packages = vec![dir.join(BUNDLED_DIR)];
+    if let Some(prefix) = dir.parent() {
+        packages.push(prefix.join("share").join("quickertype").join(BUNDLED_DIR));
+    }
+    packages.iter().map(|p| package_exe(p)).collect()
 }
 
 /// Whether `exe` runs and reports exactly the pinned version.
@@ -131,15 +173,41 @@ fn native_candidates(found: &Path) -> Vec<PathBuf> {
     out
 }
 
-/// Finds the compiler: `$QUICKTYPE_TSC`, then the npm platform package in
-/// `node_modules` of `cwd` or any ancestor, then `tsgo`/`tsc` on `PATH`.
+/// What [`locate`] reads from the process, passed in so that the tests can
+/// give each lookup step its own inputs.
+struct Environment<'a> {
+    /// `$QUICKTYPE_TSC`.
+    explicit: Option<OsString>,
+    /// The running executable ([`std::env::current_exe`]).
+    exe: Option<PathBuf>,
+    /// `$PATH`.
+    path: Option<OsString>,
+    /// Whether an existing file is the pinned compiler
+    /// ([`has_pinned_version`]).
+    is_pinned: &'a dyn Fn(&Path) -> bool,
+}
+
+/// Finds the compiler: `$QUICKTYPE_TSC`, then the compiler bundled next to
+/// the running executable, then the npm platform package in `node_modules`
+/// of `cwd` or any ancestor, then `tsgo`/`tsc` on `PATH` (the module
+/// documentation has the details).
 pub fn locate(cwd: &Path) -> Result<PathBuf> {
-    if let Some(explicit) = std::env::var_os(TSC_ENV) {
+    find(
+        cwd,
+        &Environment {
+            explicit: std::env::var_os(TSC_ENV),
+            exe: std::env::current_exe().ok(),
+            path: std::env::var_os("PATH"),
+            is_pinned: &has_pinned_version,
+        },
+    )
+}
+
+fn find(cwd: &Path, env: &Environment<'_>) -> Result<PathBuf> {
+    let pinned = |exe: &Path| exe.is_file() && (env.is_pinned)(exe);
+    if let Some(explicit) = &env.explicit {
         let exe = PathBuf::from(explicit);
-        if let Some(native) = native_candidates(&exe)
-            .into_iter()
-            .find(|c| c.is_file() && has_pinned_version(c))
-        {
+        if let Some(native) = native_candidates(&exe).into_iter().find(|c| pinned(c)) {
             return Ok(native);
         }
         return Err(not_found(&format!(
@@ -147,14 +215,22 @@ pub fn locate(cwd: &Path) -> Result<PathBuf> {
             exe.display()
         )));
     }
+    if let Some(bundled) = env
+        .exe
+        .iter()
+        .flat_map(|exe| bundled_candidates(exe))
+        .find(|c| pinned(c))
+    {
+        return Ok(bundled);
+    }
     for dir in cwd.ancestors() {
         let exe = platform_package_exe(&dir.join("node_modules"));
-        if exe.is_file() && has_pinned_version(&exe) {
+        if pinned(&exe) {
             return Ok(exe);
         }
     }
-    if let Some(path) = std::env::var_os("PATH") {
-        for dir in std::env::split_paths(&path) {
+    if let Some(path) = &env.path {
+        for dir in std::env::split_paths(path) {
             for name in ["tsgo", "tsc"] {
                 // On Windows, `npm install -g` makes `tsc.cmd`, not `tsc.exe`.
                 let shim = cfg!(windows).then(|| dir.join(format!("{name}.cmd")));
@@ -162,10 +238,8 @@ pub fn locate(cwd: &Path) -> Result<PathBuf> {
                     if !found.is_file() {
                         continue;
                     }
-                    for exe in native_candidates(&found) {
-                        if exe.is_file() && has_pinned_version(&exe) {
-                            return Ok(exe);
-                        }
+                    if let Some(exe) = native_candidates(&found).into_iter().find(|c| pinned(c)) {
+                        return Ok(exe);
                     }
                 }
             }
@@ -177,7 +251,9 @@ pub fn locate(cwd: &Path) -> Result<PathBuf> {
 fn not_found(why: &str) -> Error {
     Error::TscNotFound(format!(
         "TypeScript input requires the TypeScript {TSC_VERSION} compiler (tsc), but {why}. \
-         Install it with \"npm install -g typescript@{TSC_VERSION}\" or set {TSC_ENV} to its path."
+         Install it with \"npm install -g typescript@{TSC_VERSION}\" (for this platform, that \
+         installs @typescript/typescript-{}@{TSC_VERSION}), or set {TSC_ENV} to its path",
+        platform_suffix()
     ))
 }
 
@@ -203,6 +279,70 @@ pub fn for_tests(crate_dir: &Path) -> Option<PathBuf> {
 mod tests {
     use super::*;
 
+    /// What the fake compilers of these tests contain; [`fake_check`]
+    /// accepts exactly that, as [`has_pinned_version`] accepts the pinned
+    /// release (the lookup runs on every platform without running one).
+    const FAKE_TSC: &str = "fake tsc 7.0.2";
+
+    fn fake_check(exe: &Path) -> bool {
+        std::fs::read_to_string(exe).is_ok_and(|text| text == FAKE_TSC)
+    }
+
+    /// A fresh directory under the system's temporary directory, removed
+    /// when dropped.
+    struct Scratch(PathBuf);
+
+    impl Scratch {
+        fn new(name: &str) -> Self {
+            let dir = std::env::temp_dir().join(format!("qt-tsc-{name}-{}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&dir);
+            std::fs::create_dir_all(&dir).unwrap();
+            Scratch(dir)
+        }
+
+        /// Writes `contents` to `relative` (creating its directories) and
+        /// returns its path.
+        fn file(&self, relative: &Path, contents: &str) -> PathBuf {
+            let path = self.0.join(relative);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(&path, contents).unwrap();
+            path
+        }
+
+        /// `relative`'s real path, as the lookup reports it.
+        fn real(&self, relative: &Path) -> PathBuf {
+            simplified(std::fs::canonicalize(self.0.join(relative)).unwrap())
+        }
+    }
+
+    impl Drop for Scratch {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    /// `<root>/install/quickertype` with the compiler next to it, a project
+    /// at `<root>/project` with the platform package in its `node_modules`,
+    /// and `tsc` in `<root>/path`: a candidate for every step.
+    fn every_step(scratch: &Scratch) -> Environment<'static> {
+        let exe = scratch.file(&Path::new("install").join(exe_name("quickertype")), "");
+        scratch.file(
+            &package_exe(&Path::new("install").join(BUNDLED_DIR)),
+            FAKE_TSC,
+        );
+        scratch.file(
+            &platform_package_exe(&Path::new("project").join("node_modules")),
+            FAKE_TSC,
+        );
+        scratch.file(&Path::new("path").join(exe_name("tsc")), FAKE_TSC);
+        Environment {
+            explicit: None,
+            exe: Some(exe),
+            path: Some(scratch.0.join("path").into_os_string()),
+            is_pinned: &fake_check,
+        }
+    }
+
     #[test]
     fn platform_package_path() {
         let exe = platform_package_exe(Path::new("/x/node_modules"));
@@ -210,6 +350,158 @@ mod tests {
             .join("@typescript")
             .join(format!("typescript-{}", platform_suffix()));
         assert_eq!(exe, package.join("lib").join(exe_name("tsc")));
+    }
+
+    #[test]
+    fn explicit_compiler_comes_first() {
+        let scratch = Scratch::new("explicit");
+        let explicit = scratch.file(&Path::new("elsewhere").join(exe_name("tsc")), FAKE_TSC);
+        let env = Environment {
+            explicit: Some(explicit.clone().into_os_string()),
+            ..every_step(&scratch)
+        };
+        let found = find(&scratch.0.join("project"), &env).unwrap();
+        assert_eq!(
+            found,
+            scratch.real(&Path::new("elsewhere").join(exe_name("tsc")))
+        );
+    }
+
+    #[test]
+    fn explicit_compiler_of_another_version_is_an_error() {
+        let scratch = Scratch::new("explicit-other");
+        let explicit = scratch.file(&Path::new("elsewhere").join(exe_name("tsc")), "tsc 7.0.1");
+        let env = Environment {
+            explicit: Some(explicit.clone().into_os_string()),
+            ..every_step(&scratch)
+        };
+        let error = find(&scratch.0.join("project"), &env).unwrap_err();
+        assert!(
+            error.message().starts_with(&format!(
+                "TypeScript input requires the TypeScript 7.0.2 compiler (tsc), but \
+                 QUICKTYPE_TSC is set to {}, which is not the TypeScript 7.0.2 compiler. ",
+                explicit.display()
+            )),
+            "{}",
+            error.message()
+        );
+    }
+
+    #[test]
+    fn bundled_compiler_comes_before_node_modules_and_path() {
+        let scratch = Scratch::new("bundled");
+        let env = every_step(&scratch);
+        let found = find(&scratch.0.join("project"), &env).unwrap();
+        assert_eq!(
+            found,
+            scratch.real(&package_exe(&Path::new("install").join(BUNDLED_DIR)))
+        );
+        // In the form users write: no `\\?\` prefix on Windows.
+        assert!(!found.to_string_lossy().starts_with("\\\\?\\"));
+    }
+
+    #[test]
+    fn bundled_compiler_in_share_quickertype() {
+        // Homebrew's layout: the formula installs the archive's binary into
+        // `<prefix>/bin` and the rest into `<prefix>/share/quickertype`.
+        let scratch = Scratch::new("bundled-share");
+        let prefix = Path::new("Cellar").join("quickertype").join("1.0");
+        let exe = scratch.file(&prefix.join("bin").join(exe_name("quickertype")), "");
+        let bundled = package_exe(&prefix.join("share").join("quickertype").join(BUNDLED_DIR));
+        scratch.file(&bundled, FAKE_TSC);
+        let env = Environment {
+            exe: Some(exe),
+            ..every_step(&scratch)
+        };
+        // `every_step` put a compiler next to its own executable, not this one.
+        assert_eq!(
+            find(&scratch.0.join("project"), &env).unwrap(),
+            scratch.real(&bundled)
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn bundled_compiler_through_a_symbolic_link() {
+        // `brew install` links `<HOMEBREW_PREFIX>/bin/quickertype` to
+        // `../Cellar/quickertype/<version>/bin/quickertype`; a user's own
+        // link to an unpacked archive works the same way.
+        let scratch = Scratch::new("bundled-link");
+        let prefix = Path::new("Cellar").join("quickertype").join("1.0");
+        let real_exe = scratch.file(&prefix.join("bin").join("quickertype"), "");
+        let bundled = package_exe(&prefix.join("share").join("quickertype").join(BUNDLED_DIR));
+        scratch.file(&bundled, FAKE_TSC);
+        let link = scratch.0.join("bin").join("quickertype");
+        std::fs::create_dir_all(link.parent().unwrap()).unwrap();
+        std::os::unix::fs::symlink(&real_exe, &link).unwrap();
+        let env = Environment {
+            exe: Some(link),
+            path: None,
+            ..every_step(&scratch)
+        };
+        assert_eq!(
+            find(&scratch.0.join("project"), &env).unwrap(),
+            scratch.real(&bundled)
+        );
+    }
+
+    #[test]
+    fn bundled_compiler_of_another_version_is_skipped() {
+        let scratch = Scratch::new("bundled-other");
+        let env = every_step(&scratch);
+        scratch.file(
+            &package_exe(&Path::new("install").join(BUNDLED_DIR)),
+            "tsc 7.0.1",
+        );
+        let cwd = scratch.0.join("project").join("src");
+        assert_eq!(
+            find(&cwd, &env).unwrap(),
+            platform_package_exe(&scratch.0.join("project").join("node_modules"))
+        );
+    }
+
+    #[test]
+    fn node_modules_of_the_working_directory_or_an_ancestor() {
+        let scratch = Scratch::new("node-modules");
+        let env = Environment {
+            exe: None,
+            ..every_step(&scratch)
+        };
+        let cwd = scratch.0.join("project").join("src").join("models");
+        assert_eq!(
+            find(&cwd, &env).unwrap(),
+            platform_package_exe(&scratch.0.join("project").join("node_modules"))
+        );
+    }
+
+    #[test]
+    fn compiler_on_path() {
+        let scratch = Scratch::new("path");
+        let env = Environment {
+            exe: None,
+            ..every_step(&scratch)
+        };
+        let outside = scratch.0.join("outside");
+        std::fs::create_dir_all(&outside).unwrap();
+        assert_eq!(
+            find(&outside, &env).unwrap(),
+            scratch.real(&Path::new("path").join(exe_name("tsc")))
+        );
+    }
+
+    #[test]
+    fn nothing_found_names_the_package_to_install() {
+        let scratch = Scratch::new("nothing");
+        let exe = scratch.file(&Path::new("bin").join(exe_name("quickertype")), "");
+        let env = Environment {
+            explicit: None,
+            exe: Some(exe),
+            path: Some(scratch.0.join("bin").into_os_string()),
+            is_pinned: &fake_check,
+        };
+        let error = find(&scratch.0, &env).unwrap_err();
+        assert!(matches!(error, Error::TscNotFound(_)));
+        assert_eq!(error.message(), not_found("it was not found").message());
     }
 
     #[test]
@@ -247,28 +539,30 @@ mod tests {
         let e = not_found("it was not found");
         assert_eq!(
             e.message(),
-            "TypeScript input requires the TypeScript 7.0.2 compiler (tsc), but it was not found. \
-             Install it with \"npm install -g typescript@7.0.2\" or set QUICKTYPE_TSC to its path."
+            format!(
+                "TypeScript input requires the TypeScript 7.0.2 compiler (tsc), but it was not \
+                 found. Install it with \"npm install -g typescript@7.0.2\" (for this platform, \
+                 that installs @typescript/typescript-{}@7.0.2), or set QUICKTYPE_TSC to its path",
+                platform_suffix()
+            )
         );
     }
 
     #[test]
     fn npm_launcher_resolves_to_the_native_binary() {
-        let root = std::env::temp_dir().join(format!("qt-tsc-locate-{}", std::process::id()));
-        let launcher = root
-            .join("node_modules")
-            .join("typescript")
-            .join("bin")
-            .join("tsc");
-        std::fs::create_dir_all(launcher.parent().unwrap()).unwrap();
-        std::fs::write(&launcher, "#!/usr/bin/env node\n").unwrap();
+        let scratch = Scratch::new("launcher");
+        let launcher = scratch.file(
+            &Path::new("node_modules")
+                .join("typescript")
+                .join("bin")
+                .join("tsc"),
+            "#!/usr/bin/env node\n",
+        );
         // The candidates are under the launcher's real path (symbolic links,
         // 8.3 short names and macOS's /private resolved), in the form users
         // write: no `\\?\` prefix on Windows.
-        let real_root = simplified(std::fs::canonicalize(&root).unwrap());
+        let node_modules = scratch.real(Path::new("node_modules"));
         let candidates = native_candidates(&launcher);
-        std::fs::remove_dir_all(&root).unwrap();
-        let node_modules = real_root.join("node_modules");
         assert_eq!(
             candidates,
             [
@@ -282,5 +576,42 @@ mod tests {
     #[test]
     fn missing_binary_is_rejected() {
         assert!(!has_pinned_version(Path::new("/nonexistent/tsc")));
+    }
+
+    /// `release/typescript/pins.json`, the compiler the release bundles, pins
+    /// [`TSC_VERSION`], the release these tables and the lookup accept. It
+    /// is in the repository, not in the published crate.
+    #[test]
+    fn release_bundles_the_pinned_version() {
+        let Some(pins) = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .ancestors()
+            .map(|dir| dir.join("release").join("typescript").join("pins.json"))
+            .find(|file| file.is_file())
+        else {
+            eprintln!("skipped: no release/typescript/pins.json above this crate");
+            return;
+        };
+        let pins: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(pins).unwrap()).unwrap();
+        assert_eq!(pins["version"], TSC_VERSION);
+        let packages = pins["packages"].as_object().unwrap();
+        assert!(!packages.is_empty());
+        for (suffix, package) in packages {
+            let name = format!("@typescript/typescript-{suffix}");
+            assert_eq!(package["name"], name.as_str());
+            assert_eq!(
+                package["tarball"],
+                format!(
+                    "https://registry.npmjs.org/{name}/-/typescript-{suffix}-{TSC_VERSION}.tgz"
+                )
+                .as_str()
+            );
+            assert!(
+                package["integrity"]
+                    .as_str()
+                    .is_some_and(|i| i.starts_with("sha512-")),
+                "{suffix}"
+            );
+        }
     }
 }
