@@ -10,6 +10,13 @@ bugs](docs/PARITY.md#bugs-fixed-in-quickertype), up to 89× faster.**
 [![npm](https://img.shields.io/npm/v/quickertype-core?label=npm%20quickertype-core)](https://www.npmjs.com/package/quickertype-core)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
+<p>
+<img alt="A terminal split in two. Both sides run the same command on Scryfall's card data, 657 MB of real JSON, to TypeScript types: quicktype on the left, quickertype on the right. quickertype is done in 0.26 s at a peak of 55 MB of memory; quicktype takes 28.3 s and 3.2 GB. Then cmp confirms the two files are the same, byte for byte." src="https://raw.githubusercontent.com/EloB/quickertype/main/docs/assets/race/race.gif" width="800">
+</p>
+
+One real run, as it happened (Scryfall's card data, 657 MB; re-record it
+with [`xtask/race/record.sh`](xtask/race/record.sh)).
+
 quickertype is a port of [quicktype](https://github.com/glideapps/quicktype),
 which generates types and serializers from JSON, JSON Schema, GraphQL,
 Postman collections and TypeScript. It is a drop-in replacement:
