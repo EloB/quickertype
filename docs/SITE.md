@@ -9,7 +9,7 @@ on every push to `main`.
 
 | Path | Page | Made by |
 |---|---|---|
-| `/quickertype/` | The landing page | `site/landing.mjs`, `site/src/landing.html`, `landing.css`, `landing-head.js` |
+| `/quickertype/` | The landing page | `site/landing.mjs`, `site/src/landing.html`, `landing.css`, `landing-head.js`, `landing-art.js`, `landing-scenes.js` |
 | `/quickertype/app/` | The playground | `site/src/index.html`, `main.js`, `worker.js`, … |
 | `/quickertype/benchmarks.html` | The benchmarks page | `site/benchmarks.mjs`, `site/src/benchmarks.html` |
 
@@ -21,8 +21,10 @@ anything paints. The landing page's own anchors never have a `=` (the build
 checks). Like the playground's inline script, it is allowed by its hash
 under a Content-Security-Policy (`script-src 'self' 'sha256-…'`); the build
 prints both hashes, and the smoke test runs both pages under such a policy.
-Apart from that script, the landing page has no JavaScript: the example's
-language tabs are radio buttons styled with CSS.
+Apart from that script, the landing page's only JavaScript is
+`site/src/landing-art.js`, a module that draws over the images ([The
+images' scenes](#the-images-scenes)); the page works without it, and the
+example's language tabs are radio buttons styled with CSS.
 
 ## Large files in the playground
 
@@ -237,3 +239,31 @@ them hashed names.
 The originals were 1376×768 JPEGs, encoded with `cwebp` (quality 78, and 88
 for the trails, which are mostly smooth gradient). The social preview (Open
 Graph) is `docs/assets/social-preview.png`, copied into the site.
+
+### The images' scenes
+
+Each image has a scene drawn over it, live, in WebGL 1
+(`site/src/landing-art.js`, 4 KiB gzipped; the shaders are in
+`landing-scenes.js`, named by the image's `data-scene`):
+
+- `speed-trails`: quickertype's violet trail overtakes quicktype's slower
+  blue one, again and again, through drifting smoke and out-of-focus lights.
+- `thanks-threads`: threads twist into a braided cord, which turns; the
+  loose ends sway.
+- `parity-mirror`: two glass lattices turn as exact mirror images of each
+  other (the scene folds x around the line), and a pulse runs along the
+  line of light between them.
+
+The images stay: they are the first paint, and what anyone sees without
+WebGL, with `prefers-reduced-motion: reduce` or Save-Data, or on a device
+too slow to draw the scenes. The module starts after the page has loaded
+and gone idle; a canvas fades in over its image after its first frame and
+draws only while it is on screen (and the tab visible), at up to 1.5 device
+pixels per CSS pixel. When frames average over 40 ms, it draws at 75%, then
+50% of that; below that it removes itself and leaves the image. `<html
+data-art>` says what happened: `live`, `no-webgl`, `reduced-motion` or
+`save-data`. On an M2 Max all three draw at 120 frames per second.
+
+To look at a scene at a given moment, a page can import `landing-scenes.js`
+and draw `COMMON + SCENES[name]` with its own `T` (seconds) and `R` (the
+canvas's size in pixels).

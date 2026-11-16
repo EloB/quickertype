@@ -625,6 +625,30 @@ html:has(.landing) {
     background: var(--stage);
 }
 
+/* The images' scenes (landing-art.js): a canvas over each image, which
+   fades in after its first frame. The image stays under it. */
+.art-frame {
+    position: relative;
+}
+
+.art-frame > .live-art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 22px;
+}
+
+.live-art {
+    display: block;
+    opacity: 0;
+    transition: opacity 0.9s ease;
+}
+
+.live-art.on {
+    opacity: 1;
+}
+
 .thanks-text > p:not(.lead) {
     max-width: var(--measure);
     color: var(--muted);
