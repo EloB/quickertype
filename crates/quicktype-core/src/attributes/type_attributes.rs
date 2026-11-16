@@ -863,6 +863,29 @@ pub fn combine_type_attributes(
     Ok(result)
 }
 
+/// Combines `b`'s names into `a`'s in place, as [`combine_type_attributes2`]
+/// would, and takes them out of `b`, so that combining the two afterwards
+/// gives what combining them before would. `a`'s names are reused where
+/// nothing else holds them: a type that gains names one at a time (the
+/// string type every string property shares) would otherwise copy all of
+/// them each time.
+pub fn merge_names_into(a: &mut TypeAttributes, b: &mut TypeAttributes) {
+    let Some(TypeAttributeValue::Names(names)) =
+        a.0.iter_mut()
+            .find(|v| v.kind() == TypeAttributeKind::Names)
+    else {
+        return;
+    };
+    let Some(TypeAttributeValue::Names(other)) = b.remove(TypeAttributeKind::Names) else {
+        return;
+    };
+    let mine = std::mem::replace(names, Rc::clone(&other));
+    *names = Rc::new(match Rc::try_unwrap(mine) {
+        Ok(mine) => mine.add_owned(&[other.as_ref()]),
+        Err(mine) => type_names::combine(&[mine.as_ref(), other.as_ref()]),
+    });
+}
+
 /// `combineTypeAttributes(kind, a, b)`.
 pub fn combine_type_attributes2(
     combination: CombinationKind,

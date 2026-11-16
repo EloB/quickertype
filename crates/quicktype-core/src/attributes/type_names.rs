@@ -301,6 +301,15 @@ impl TypeNames {
         }
     }
 
+    /// [`add`](Self::add) of all of `others`, reusing these names' sets
+    /// (`combine([self, ...others])`).
+    pub fn add_owned(self, others: &[&TypeNames]) -> TypeNames {
+        match self {
+            TypeNames::Regular(r) => r.add_owned(others),
+            TypeNames::TooMany(_) => self.add(others, 0),
+        }
+    }
+
     /// `add(namesArray, startIndex)`: combines these names with
     /// `names_array[start_index..]`. Closer names win; at equal distance the
     /// names are merged. Alternatives are merged regardless of distance.
@@ -410,11 +419,17 @@ impl TypeNames {
 
 impl RegularTypeNames {
     fn add(&self, names_array: &[&TypeNames], start_index: usize) -> TypeNames {
-        let mut new_names = self.names.clone();
-        let mut new_distance = self.distance;
-        let mut new_alternative_names = self.alternative_names.clone();
+        self.clone()
+            .add_owned(names_array.get(start_index..).unwrap_or_default())
+    }
 
-        for (i, other) in names_array.iter().enumerate().skip(start_index) {
+    /// [`add`](Self::add) of `others`, reusing these names' sets.
+    fn add_owned(self, others: &[&TypeNames]) -> TypeNames {
+        let mut new_names = self.names;
+        let mut new_distance = self.distance;
+        let mut new_alternative_names = self.alternative_names;
+
+        for (i, other) in others.iter().enumerate() {
             if let TypeNames::Regular(o) = other
                 && let Some(alternatives) = &o.alternative_names
             {
@@ -430,7 +445,7 @@ impl RegularTypeNames {
             let o = match other {
                 TypeNames::TooMany(_) => {
                     // The other one is at most our distance, so let it sort it out.
-                    return other.add(names_array, i + 1);
+                    return other.add(others, i + 1);
                 }
                 TypeNames::Regular(o) => o,
             };

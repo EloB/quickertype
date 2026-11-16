@@ -29,13 +29,13 @@
 //! [`JsException`](crate::messages::JsException)s with the same name and
 //! message.
 
-use std::cell::RefCell;
+use std::cell::{OnceCell, RefCell};
 use std::fmt;
 use std::future::Future;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 use quicktype_js_compat::sort::{compare_utf16, sort_by};
-use quicktype_js_compat::uri::{Uri, UriError, decode_uri_component};
+use quicktype_js_compat::uri::{Uri, UriEqualsForm, UriError, decode_uri_component};
 use quicktype_js_compat::{number, utf16};
 
 use crate::attributes::accessor_names::accessor_names_attribute_producer;
@@ -138,33 +138,152 @@ fn is_number_string(s: &str) -> bool {
     !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())
 }
 
-thread_local! {
+/// The `normalizeURI` results and the addresses they made.
+#[derive(Default)]
+struct AddressCache {
     /// `normalizeURI` is a pure function of the URI; quicktype calls it for
     /// every `Ref` it creates.
-    static NORMALIZED: RefCell<HashMap<Uri, std::result::Result<Uri, UriError>>> =
-        RefCell::new(HashMap::default());
+    normalized: HashMap<Uri, std::result::Result<Rc<Address>, UriError>>,
+    /// The addresses by URI, so that the refs at one address share it.
+    addresses: HashMap<Uri, Rc<Address>>,
+}
+
+thread_local! {
+    static ADDRESSES: RefCell<AddressCache> = RefCell::new(AddressCache::default());
+}
+
+/// A ref's address, with what comparing and hashing it needs, made once
+/// for all the refs at the address (comparing addresses normalizes them,
+/// and a lookup by ref compares them).
+#[derive(Debug)]
+struct Address {
+    uri: Uri,
+    /// [`Uri::equals_form`], `None` if the URI does not normalize.
+    equals_form: OnceCell<Option<UriEqualsForm>>,
+    /// [`Uri::equals_hash`] under [`deep_state`].
+    equals_hash: OnceCell<u64>,
+    /// `hashCodeOf(address.toString())`.
+    hash_code: OnceCell<i64>,
+    /// [`normalize_address`] of the URI: `new Ref(address, path)` normalizes
+    /// the address again for every ref made at the address of another.
+    renormalized: OnceCell<Renormalized>,
+}
+
+/// [`Address::renormalized`].
+#[derive(Debug)]
+enum Renormalized {
+    /// Normalizing gives the same URI.
+    Same,
+    /// Another address: weak, so that addresses never keep each other.
+    Other(Weak<Address>),
+    Error(UriError),
+}
+
+impl Address {
+    fn new(uri: Uri) -> Address {
+        Address {
+            uri,
+            equals_form: OnceCell::new(),
+            equals_hash: OnceCell::new(),
+            hash_code: OnceCell::new(),
+            renormalized: OnceCell::new(),
+        }
+    }
+
+    /// The address of `new Ref(this address, path)`: an internal error if
+    /// the URI has a fragment, else [`normalize_address`] of it.
+    fn renormalized(self: &Rc<Self>) -> Result<Rc<Address>> {
+        check_no_fragment(&self.uri)?;
+        let renormalized =
+            self.renormalized
+                .get_or_init(|| match cached_normalize_address(&self.uri) {
+                    Ok(address) if address.uri == self.uri => Renormalized::Same,
+                    Ok(address) => Renormalized::Other(Rc::downgrade(&address)),
+                    Err(error) => Renormalized::Error(error),
+                });
+        match renormalized {
+            Renormalized::Same => Ok(Rc::clone(self)),
+            Renormalized::Other(address) => match address.upgrade() {
+                Some(address) => Ok(address),
+                None => normalize_address(&self.uri),
+            },
+            Renormalized::Error(error) => Err(uri_error(error.clone())),
+        }
+    }
+
+    fn equals_form(&self) -> Option<&UriEqualsForm> {
+        self.equals_form
+            .get_or_init(|| self.uri.equals_form().ok())
+            .as_ref()
+    }
+
+    /// urijs `equals`; an error (a URI that does not normalize) is unequal.
+    fn equals(self: &Rc<Self>, other: &Rc<Self>) -> bool {
+        match (self.equals_form(), other.equals_form()) {
+            (Some(_), Some(_)) if Rc::ptr_eq(self, other) => true,
+            (Some(a), Some(b)) => a.equals(b),
+            _ => false,
+        }
+    }
+
+    fn equals_hash(&self) -> u64 {
+        *self
+            .equals_hash
+            .get_or_init(|| UriEqualsForm::equals_hash_of(self.equals_form(), deep_state()))
+    }
+
+    fn hash_code(&self) -> i64 {
+        *self
+            .hash_code
+            .get_or_init(|| Some(self.uri.to_string()).hash_code())
+    }
+}
+
+/// The assertion of `new Ref(address, path)`: the address has no fragment.
+fn check_no_fragment(uri: &Uri) -> Result<()> {
+    if uri.fragment().is_empty() {
+        return Ok(());
+    }
+    panic(format!("Ref URI with fragment is not allowed: {uri}"))
 }
 
 /// `normalizeURI(uri)`: `new URI(URI.decode(uri.clone().normalize().toString()))`.
 /// The decoding is what lets addresses be read as files, and it throws on a
 /// malformed escape (`URI malformed`).
 fn normalize_uri(uri: &Uri) -> Result<Uri> {
-    if let Some(cached) = NORMALIZED.with(|m| m.borrow().get(uri).cloned()) {
-        return cached.map_err(uri_error);
+    Ok(normalize_address(uri)?.uri.clone())
+}
+
+/// [`normalize_uri`] as the shared [`Address`] of the result.
+fn normalize_address(uri: &Uri) -> Result<Rc<Address>> {
+    cached_normalize_address(uri).map_err(uri_error)
+}
+
+fn cached_normalize_address(uri: &Uri) -> std::result::Result<Rc<Address>, UriError> {
+    if let Some(cached) = ADDRESSES.with(|c| c.borrow().normalized.get(uri).cloned()) {
+        return cached;
     }
     let result = (|| {
         let mut normalized = uri.js_clone();
         normalized.normalize()?;
         Uri::parse(&decode_uri_component(&normalized.to_string())?)
     })();
-    NORMALIZED.with(|m| {
-        let mut m = m.borrow_mut();
-        if m.len() > 100_000 {
-            m.clear();
+    ADDRESSES.with(|c| {
+        let mut c = c.borrow_mut();
+        if c.normalized.len() > 100_000 {
+            c.normalized.clear();
+            c.addresses.clear();
         }
-        m.insert(uri.clone(), result.clone());
-    });
-    result.map_err(uri_error)
+        let result = result.map(|normalized| {
+            Rc::clone(
+                c.addresses
+                    .entry(normalized)
+                    .or_insert_with_key(|n| Rc::new(Address::new(n.clone()))),
+            )
+        });
+        c.normalized.insert(uri.clone(), result.clone());
+        result
+    })
 }
 
 /// `normalizeURI(string)`: parse (after `fixWindowsPath`), then normalize.
@@ -179,10 +298,10 @@ fn normalize_uri_string(uri: &str) -> Result<Uri> {
 /// without fragment, absent only for `Ref.root(undefined)`) and a path.
 #[derive(Clone, Debug)]
 pub struct Ref {
-    address_uri: Option<Uri>,
+    address: Option<Rc<Address>>,
     path: Vec<PathElement>,
     /// Its [`DeepHash`], made when first asked for (a ref is never
-    /// changed): `Uri::equals_hash` normalizes a copy of the address.
+    /// changed).
     deep_hash: std::cell::OnceCell<u64>,
 }
 
@@ -238,18 +357,15 @@ impl Ref {
     /// `new Ref(addressURI, path)`: normalizes the address, which must not
     /// have a fragment.
     pub fn new(address_uri: Option<Uri>, path: Vec<PathElement>) -> Result<Ref> {
-        let address_uri = match address_uri {
+        let address = match address_uri {
             Some(uri) => {
-                assert(
-                    uri.fragment().is_empty(),
-                    &format!("Ref URI with fragment is not allowed: {uri}"),
-                )?;
-                Some(normalize_uri(&uri)?)
+                check_no_fragment(&uri)?;
+                Some(normalize_address(&uri)?)
             }
             None => None,
         };
         Ok(Ref {
-            address_uri,
+            address,
             path,
             deep_hash: std::cell::OnceCell::new(),
         })
@@ -257,7 +373,7 @@ impl Ref {
 
     /// `addressURI`.
     pub fn address_uri(&self) -> Option<&Uri> {
-        self.address_uri.as_ref()
+        self.address.as_ref().map(|a| &a.uri)
     }
 
     /// `path`.
@@ -267,12 +383,12 @@ impl Ref {
 
     /// `hasAddress`.
     pub fn has_address(&self) -> bool {
-        self.address_uri.is_some()
+        self.address.is_some()
     }
 
     /// `address`: the address as a string (an internal error without one).
     pub fn address(&self) -> Result<String> {
-        Ok(defined(self.address_uri.as_ref())?.to_string())
+        Ok(defined(self.address_uri())?.to_string())
     }
 
     /// `isRoot`: the path is exactly the root.
@@ -280,10 +396,23 @@ impl Ref {
         self.path == [PathElement::Root]
     }
 
+    /// `new Ref(this.addressURI, path)`.
+    fn at_address_of_self(&self, path: Vec<PathElement>) -> Result<Ref> {
+        let address = match &self.address {
+            Some(address) => Some(address.renormalized()?),
+            None => None,
+        };
+        Ok(Ref {
+            address,
+            path,
+            deep_hash: std::cell::OnceCell::new(),
+        })
+    }
+
     fn push_element(&self, element: PathElement) -> Result<Ref> {
         let mut path = self.path.clone();
         path.push(element);
-        Ref::new(self.address_uri.clone(), path)
+        self.at_address_of_self(path)
     }
 
     /// `push(...keys)`.
@@ -308,8 +437,8 @@ impl Ref {
     /// `resolveAgainst(base)`: this address resolved against the base's
     /// (urijs `absoluteTo`), or the base's address if this has none.
     pub fn resolve_against(&self, base: Option<&Ref>) -> Result<Ref> {
-        let mut address_uri = self.address_uri.clone();
-        if let Some(base_uri) = base.and_then(|b| b.address_uri.as_ref()) {
+        let mut address_uri = self.address_uri().cloned();
+        if let Some(base_uri) = base.and_then(Ref::address_uri) {
             address_uri = Some(match &address_uri {
                 None => base_uri.clone(),
                 Some(uri) => uri.absolute_to(base_uri).map_err(uri_error)?,
@@ -334,7 +463,7 @@ impl Ref {
                 }
             }
         }
-        let (mut name, suffix) = match &self.address_uri {
+        let (mut name, suffix) = match self.address_uri() {
             Some(uri) => (uri.filename().to_owned(), uri.suffix()),
             None => (String::new(), ""),
         };
@@ -377,7 +506,7 @@ impl Ref {
     pub fn message_value(&self) -> MessageValue {
         MessageValue::Ref(Box::new(RefValue {
             display: self.to_string(),
-            address: self.address_uri.as_ref().map(ToString::to_string),
+            address: self.address_uri().map(ToString::to_string),
             path: self.path.clone(),
         }))
     }
@@ -399,7 +528,7 @@ impl Ref {
         path: &[PathElement],
         root: &JsonSchema,
     ) -> Result<JsonSchema> {
-        let ref_maker = || Ref::new(self.address_uri.clone(), path.to_vec());
+        let ref_maker = || Ref::new(self.address_uri().cloned(), path.to_vec());
         let Some((first, rest)) = path.split_first() else {
             check_json_schema(local, ref_maker)?;
             return Ok(local.clone());
@@ -465,7 +594,7 @@ fn has_own_property(x: &JsonSchema, key: &str) -> bool {
 /// `toString()`: `address#path`, with path elements joined by `/`.
 impl fmt::Display for Ref {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(uri) = &self.address_uri {
+        if let Some(uri) = self.address_uri() {
             write!(f, "{uri}")?;
         }
         f.write_str("#")?;
@@ -482,7 +611,10 @@ impl fmt::Display for Ref {
 impl JsHash for Ref {
     /// `hashCode()`.
     fn hash_code(&self) -> i64 {
-        let mut acc = self.address_uri.as_ref().map(|u| u.to_string()).hash_code();
+        let mut acc = match &self.address {
+            Some(address) => address.hash_code(),
+            None => None::<String>.hash_code(),
+        };
         for element in &self.path {
             acc = add_hash_code(acc, element.kind());
             match element {
@@ -503,8 +635,8 @@ impl JsEquals for Ref {
     /// for addresses that could not have been constructed; that counts as
     /// unequal.
     fn js_equals(&self, other: &Self) -> bool {
-        let addresses_equal = match (&self.address_uri, &other.address_uri) {
-            (Some(a), Some(b)) => a.equals(b).unwrap_or(false),
+        let addresses_equal = match (&self.address, &other.address) {
+            (Some(a), Some(b)) => a.equals(b),
             (None, None) => true,
             _ => false,
         };
@@ -518,9 +650,9 @@ impl DeepHash for Ref {
     /// compares exactly.
     fn deep_hash(&self) -> u64 {
         *self.deep_hash.get_or_init(|| {
-            let address = match &self.address_uri {
+            let address = match &self.address {
                 None => 0,
-                Some(uri) => uri.equals_hash(deep_state()),
+                Some(address) => address.equals_hash(),
             };
             deep_combine(&[address, deep_hash_of(&self.path)])
         })
@@ -663,11 +795,9 @@ impl Canonizer {
         if let Some(loc) = self.map.get(&virtual_ref) {
             return Ok(loc.clone());
         }
-        let canonical_ref = if virtual_ref.address_uri.is_none() {
-            Ref::new(
-                base.canonical_ref.address_uri.clone(),
-                virtual_ref.path.clone(),
-            )?
+        let canonical_ref = if virtual_ref.address_uri().is_none() {
+            base.canonical_ref
+                .at_address_of_self(virtual_ref.path.clone())?
         } else {
             virtual_ref.clone()
         };
@@ -723,7 +853,7 @@ impl Resolver<'_> {
                 "Canonical ref can't be resolved without an address",
             )?;
             let address = canonical.address()?;
-            let schema = if canonical.address_uri.is_none() {
+            let schema = if canonical.address_uri().is_none() {
                 None
             } else {
                 self.store
@@ -739,10 +869,8 @@ impl Resolver<'_> {
             } else {
                 let lookup_loc = self.canonizer.canonize(lookup_base, virtual_ref)?;
                 let lookup_loc = Location::new(
-                    Ref::new(
-                        loc.canonical_ref.address_uri.clone(),
-                        lookup_loc.canonical_ref.path.clone(),
-                    )?,
+                    loc.canonical_ref
+                        .at_address_of_self(lookup_loc.canonical_ref.path.clone())?,
                     Some(lookup_loc.virtual_ref),
                     lookup_loc.have_id,
                 );
@@ -773,10 +901,10 @@ impl Resolver<'_> {
         }
         let alt_base = Location::new(
             base.canonical_ref.clone(),
-            Some(Ref::new(
-                base.canonical_ref.address_uri.clone(),
-                base.virtual_ref.path.clone(),
-            )?),
+            Some(
+                base.canonical_ref
+                    .at_address_of_self(base.virtual_ref.path.clone())?,
+            ),
             base.have_id,
         );
         let (schema, loc) = self
@@ -794,7 +922,7 @@ impl Resolver<'_> {
     /// `resolveTopLevelRef(ref)`.
     async fn resolve_top_level_ref(&mut self, r: &Ref) -> Result<(JsonSchema, Location)> {
         self.resolve_virtual_ref(
-            &Location::new(Ref::new(r.address_uri.clone(), Vec::new())?, None, false),
+            &Location::new(r.at_address_of_self(Vec::new())?, None, false),
             &Ref::new(None, r.path.clone())?,
         )
         .await

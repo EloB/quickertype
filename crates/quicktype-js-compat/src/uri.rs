@@ -1154,26 +1154,63 @@ impl Uri {
     /// `equals(other)`: equal after normalizing both, with query parameters
     /// compared as unordered sets.
     pub fn equals(&self, other: &Uri) -> Result<bool> {
-        let mut one = self.js_clone();
-        let mut two = other.js_clone();
-        one.normalize()?;
-        two.normalize()?;
-        if one.to_string() == two.to_string() {
-            return Ok(true);
+        let one = self.equals_form()?;
+        let two = other.equals_form()?;
+        Ok(one.equals(&two))
+    }
+
+    /// What [`Uri::equals`] compares of this URI: its normalized form. An
+    /// error if it does not normalize, which makes `equals` an error.
+    pub fn equals_form(&self) -> Result<UriEqualsForm> {
+        let mut uri = self.js_clone();
+        uri.normalize()?;
+        let string = uri.to_string();
+        let query = uri.query.take().unwrap_or_default();
+        let rest = uri.to_string();
+        Ok(UriEqualsForm {
+            string,
+            rest,
+            query,
+        })
+    }
+
+    /// A hash consistent with [`Uri::equals`]: URIs it finds equal hash
+    /// alike (see [`UriEqualsForm::equals_hash`]). A URI that does not
+    /// normalize, which `equals` reports as an error, hashes as a constant.
+    pub fn equals_hash(&self, state: &impl std::hash::BuildHasher) -> u64 {
+        UriEqualsForm::equals_hash_of(self.equals_form().ok().as_ref(), state)
+    }
+}
+
+/// A normalized URI as [`Uri::equals`] compares it, so that a URI compared
+/// many times is normalized once ([`Uri::equals_form`]).
+#[derive(Clone, Debug)]
+pub struct UriEqualsForm {
+    /// The normalized URI.
+    string: String,
+    /// The normalized URI without its query.
+    rest: String,
+    /// Its query, without the `?`.
+    query: String,
+}
+
+impl UriEqualsForm {
+    /// [`Uri::equals`] of the URIs these are the forms of.
+    pub fn equals(&self, other: &UriEqualsForm) -> bool {
+        if self.string == other.string {
+            return true;
         }
-        let one_query = one.query.take().unwrap_or_default();
-        let two_query = two.query.take().unwrap_or_default();
-        if one.to_string() != two.to_string() {
-            return Ok(false);
+        if self.rest != other.rest {
+            return false;
         }
-        if one_query.encode_utf16().count() != two_query.encode_utf16().count() {
-            return Ok(false);
+        if self.query.encode_utf16().count() != other.query.encode_utf16().count() {
+            return false;
         }
-        let one_map = parse_query(&one_query);
-        let two_map = parse_query(&two_query);
+        let one_map = parse_query(&self.query);
+        let two_map = parse_query(&other.query);
         for (key, values) in &one_map {
             let Some(other_values) = two_map.get(key) else {
-                return Ok(false);
+                return false;
             };
             let equal = match (values.as_slice(), other_values.as_slice()) {
                 ([a], [b]) => a == b,
@@ -1184,27 +1221,31 @@ impl Uri {
                 }
             };
             if !equal {
-                return Ok(false);
+                return false;
             }
         }
-        Ok(two_map.keys().all(|k| one_map.contains_key(k)))
+        two_map.keys().all(|k| one_map.contains_key(k))
     }
 
-    /// A hash consistent with [`Uri::equals`]: URIs it finds equal hash
-    /// alike. It hashes what `equals` compares: the normalized URI without
-    /// its query, the query's length in UTF-16 units, and its parameters in
-    /// any order, each with its value, or its values in any order (`equals`
-    /// compares several values sorted, so equal lists are permutations).
-    /// A URI that does not normalize, which `equals` reports as an error,
-    /// hashes as a constant.
-    pub fn equals_hash(&self, state: &impl std::hash::BuildHasher) -> u64 {
-        let mut uri = self.js_clone();
-        if uri.normalize().is_err() {
-            return state.hash_one(0u8);
+    /// [`Uri::equals_hash`] of the URI with this form, or of one that does
+    /// not normalize (`None`), which hashes as a constant.
+    pub fn equals_hash_of(
+        form: Option<&UriEqualsForm>,
+        state: &impl std::hash::BuildHasher,
+    ) -> u64 {
+        match form {
+            Some(form) => form.equals_hash(state),
+            None => state.hash_one(0u8),
         }
-        let query = uri.query.take().unwrap_or_default();
-        let rest = uri.to_string();
-        let parameters = parse_query(&query);
+    }
+
+    /// A hash consistent with [`equals`](Self::equals): it hashes what
+    /// `equals` compares, the URI without its query, the query's length in
+    /// UTF-16 units, and its parameters in any order, each with its value,
+    /// or its values in any order (`equals` compares several values sorted,
+    /// so equal lists are permutations).
+    pub fn equals_hash(&self, state: &impl std::hash::BuildHasher) -> u64 {
+        let parameters = parse_query(&self.query);
         let mut sum = 0u64;
         for (name, values) in &parameters {
             let values = match values.as_slice() {
@@ -1220,8 +1261,8 @@ impl Uri {
         }
         state.hash_one((
             1u8,
-            rest,
-            query.encode_utf16().count(),
+            &self.rest,
+            self.query.encode_utf16().count(),
             parameters.len(),
             sum,
         ))
