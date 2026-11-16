@@ -34,11 +34,15 @@
 //    this script removes from it first.)
 // 3. record-cli.mjs records the CLI-behavior cases (cli-*): help, errors,
 //    options, stdout.
-// 4. GENERATED says what was generated (the commit, the number of cases);
-//    the tools that read the corpus check it (state.mjs).
+// 4. GENERATED says what was generated (the commit, the number of cases,
+//    a digest of the inputs); the tools that read the corpus check it
+//    (state.mjs), and clean.mjs keeps a corpus only for the same inputs.
 //
 // Everything is written to a work directory first and moved into
-// tests/golden at the end, so a failed run leaves no half corpus behind.
+// tests/golden at the end, so a failed run leaves no half corpus behind
+// (only the harness's log, if it got that far). Two runs never use one
+// quicktype checkout at once: the second waits for the first (a lock in
+// the temporary directory, per checkout).
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -48,7 +52,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { cleanGolden, goldenDir } from "./clean.mjs";
-import { caseDirs, readReference } from "./state.mjs";
+import { caseDirs, inputsDigest, readReference } from "./state.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, "..", "..");
@@ -62,6 +66,66 @@ const started = Date.now();
 function fail(message) {
     console.error(`golden: ${message}`);
     process.exit(1);
+}
+
+// Released, and the work directory removed (but the harness's log, on a
+// failure), however the script ends.
+const heldLocks = [];
+let work;
+process.on("exit", (code) => {
+    for (const dir of heldLocks) fs.rmSync(dir, { recursive: true, force: true });
+    if (work === undefined || !fs.existsSync(work)) return;
+    const log = path.join(work, "record.log");
+    if (code === 0 || !fs.existsSync(log)) {
+        fs.rmSync(work, { recursive: true, force: true });
+        return;
+    }
+    for (const name of fs.readdirSync(work)) if (name !== "record.log") fs.rmSync(path.join(work, name), { recursive: true, force: true });
+});
+
+/** Whether process `pid` is running. */
+function alive(pid) {
+    try {
+        process.kill(pid, 0);
+        return true;
+    } catch (error) {
+        return error.code === "EPERM";
+    }
+}
+
+/**
+ * Waits until no other generation uses `checkout`, then holds it until
+ * this one ends: a directory in the temporary directory, made atomically,
+ * with the holder's process id. A holder that is gone (or a lock without
+ * an id for over a minute) is taken over.
+ */
+function lockCheckout(checkout) {
+    const id = createHash("sha256").update(path.resolve(checkout)).digest("hex").slice(0, 16);
+    const dir = path.join(os.tmpdir(), `quickertype-golden-${id}.lock`);
+    const pause = new Int32Array(new SharedArrayBuffer(4));
+    let said = false;
+    for (;;) {
+        try {
+            fs.mkdirSync(dir);
+            fs.writeFileSync(path.join(dir, "pid"), String(process.pid));
+            heldLocks.push(dir);
+            return;
+        } catch (error) {
+            if (error.code !== "EEXIST") throw error;
+        }
+        let pid;
+        try {
+            pid = Number(fs.readFileSync(path.join(dir, "pid"), "utf8"));
+        } catch {}
+        const stale = pid ? !alive(pid) : Date.now() - (fs.statSync(dir, { throwIfNoEntry: false })?.mtimeMs ?? 0) > 60_000;
+        if (stale) {
+            fs.rmSync(dir, { recursive: true, force: true });
+            continue;
+        }
+        if (!said) step(`waiting for another generation that uses ${checkout} (process ${pid || "unknown"})`);
+        said = true;
+        Atomics.wait(pause, 0, 0, 2000);
+    }
 }
 
 function step(message) {
@@ -117,6 +181,7 @@ function userCacheDir() {
 /** quicktype at `commit` in the user's cache directory, fetched and built the first time. */
 function cachedCheckout(commit) {
     const checkout = path.join(userCacheDir(), "quickertype", "quicktype-reference", commit);
+    lockCheckout(checkout);
     if (git(checkout, "rev-parse", "HEAD") === commit && fs.existsSync(path.join(checkout, "dist", "index.js"))) {
         return checkout;
     }
@@ -154,6 +219,8 @@ if (process.platform === "win32") {
     fail("generating tests/golden needs macOS or Linux: quicktype's fixture harness is a bash script");
 }
 const { commit, node } = readReference(root);
+// Of the inputs as they are before the run (state.mjs's inputsDigest).
+const inputs = inputsDigest(root);
 const major = (version) => version.replace(/^v/, "").split(".")[0];
 if (major(process.version) !== major(node)) {
     fail(`tests/golden/REFERENCE records quicktype's output with Node ${major(node)} (${node}); this is Node ${process.version}`);
@@ -165,12 +232,16 @@ function referenceCheckout(commit) {
     if (given !== undefined) {
         const problem = unusableCheckout(path.resolve(given), commit);
         if (problem !== undefined) fail(problem);
+        lockCheckout(path.resolve(given));
         return path.resolve(given);
     }
     const fromEnv = process.env.QUICKTYPE_REFERENCE;
     if (fromEnv && fromEnv !== "self") {
         const problem = unusableCheckout(path.resolve(fromEnv), commit);
-        if (problem === undefined) return path.resolve(fromEnv);
+        if (problem === undefined) {
+            lockCheckout(path.resolve(fromEnv));
+            return path.resolve(fromEnv);
+        }
         step(`QUICKTYPE_REFERENCE: ${problem}; using a checkout of ${commit.slice(0, 8)} instead`);
     }
     return cachedCheckout(commit);
@@ -213,7 +284,7 @@ const reference = referenceCheckout(commit);
 step(`recording from ${reference} (${commit.slice(0, 8)})`);
 
 fs.mkdirSync(workParent, { recursive: true });
-const work = fs.mkdtempSync(path.join(workParent, "golden-"));
+work = fs.mkdtempSync(path.join(workParent, "golden-"));
 const raw = path.join(work, "raw");
 const snapshot = path.join(work, "snapshot");
 const out = path.join(work, "golden");
@@ -254,7 +325,7 @@ run("record-cli.mjs", process.execPath, [path.join(here, "record-cli.mjs"), refe
 });
 
 const cases = caseDirs(out).length;
-fs.writeFileSync(path.join(out, "GENERATED"), `quicktype_commit=${commit}\nnode=${process.version}\ncases=${cases}\n`);
+fs.writeFileSync(path.join(out, "GENERATED"), `quicktype_commit=${commit}\nnode=${process.version}\ncases=${cases}\ninputs=${inputs}\n`);
 cleanGolden(goldenDir);
 for (const name of fs.readdirSync(out)) move(path.join(out, name), path.join(goldenDir, name));
 fs.rmSync(work, { recursive: true, force: true });

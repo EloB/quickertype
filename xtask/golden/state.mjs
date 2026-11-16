@@ -6,6 +6,7 @@
 // commit and the number of cases. A corpus that is missing, of another
 // commit, or mixed with another's leftovers is refused with what to run.
 
+import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,6 +16,32 @@ const repositoryRoot = path.join(here, "..", "..");
 
 /** How to (re)generate tests/golden, for error messages. */
 export const HOW_TO_GENERATE = "run `npm run golden` (docs/ARCHITECTURE.md, \"The golden corpus\")";
+
+/**
+ * A digest of what the corpus is generated from: tests/golden/REFERENCE,
+ * the generator (xtask/golden) and tests/inputs, the files turbo.json
+ * names as golden#generate's inputs (but Finder's .DS_Store). The same
+ * inputs give the same corpus, byte for byte.
+ */
+export function inputsDigest(root = repositoryRoot) {
+    const files = [path.join("tests", "golden", "REFERENCE")];
+    const walk = (rel) => {
+        const entries = fs.readdirSync(path.join(root, rel), { withFileTypes: true });
+        for (const e of entries) {
+            const child = path.join(rel, e.name);
+            if (e.isDirectory()) walk(child);
+            else if (e.isFile() && e.name !== ".DS_Store") files.push(child);
+        }
+    };
+    walk(path.join("xtask", "golden"));
+    walk(path.join("tests", "inputs"));
+    const hash = createHash("sha256");
+    for (const file of files.map((f) => f.split(path.sep).join("/")).sort()) {
+        const bytes = fs.readFileSync(path.join(root, file));
+        hash.update(`${file}\0${bytes.length}\0`).update(bytes);
+    }
+    return hash.digest("hex");
+}
 
 /** `key=value` lines. */
 function readKeyValues(file) {
@@ -53,7 +80,7 @@ export function readGenerated(root = repositoryRoot) {
     }
     const count = Number(cases);
     if (!Number.isInteger(count) || count <= 0) throw new Error(`${file}: no cases=<number>`);
-    return { dir, commit, cases: count };
+    return { dir, commit, cases: count, inputs: readKeyValues(file).inputs };
 }
 
 /**

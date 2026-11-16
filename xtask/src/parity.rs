@@ -24,8 +24,8 @@
 //!
 //! A case listed in `tests/intended-differences.txt` differs from the
 //! recording on purpose (a bug quickertype fixes): each of its outputs with
-//! an `.intended` file beside the recorded one must match that file, and
-//! not the recording ([`crate::intended`]). Such cases are reported as
+//! an `.intended` file (in tests/intended, at the recording's path) must
+//! match that file, and not the recording ([`crate::intended`]). Such cases are reported as
 //! intended differences, apart from the identical ones.
 //!
 //! A case may set extra environment variables with `env`. Every step runs
@@ -64,8 +64,8 @@ cargo xtask parity [options]
                        against the TypeScript reference)
   --record-intended    write the outputs of the cases listed in
                        tests/intended-differences.txt that differ from the
-                       recording to <file>.intended, and delete the
-                       .intended files of those that do not
+                       recording to tests/intended/<case>/<file>.intended,
+                       and delete the .intended files of those that do not
 ";
 
 #[derive(Deserialize)]

@@ -4,8 +4,10 @@
 //
 //   node site/build.mjs [--dev]
 //
-// Needs npm/quicktype-core built first (`npm ci && npm run build` there);
-// esbuild comes from that package's devDependencies.
+// Needs npm/quicktype-core built first (`npm ci` at the repository root,
+// then `npm run build -w quickertype-core`) and tests/golden generated
+// (`npm run golden`); esbuild comes from that package's devDependencies.
+// `npx turbo run build --filter=site` does all of it.
 //
 // * index.html, landing-*.css: the landing page (site/landing.mjs renders
 //   it from the repository's data; see there), with the font and the images
@@ -66,7 +68,7 @@ const wasmSource = path.join(packageRoot, "dist", "native", "wasm", "quicktype_w
 const dev = process.argv.includes("--dev");
 
 if (!fs.existsSync(wasmSource) || !fs.existsSync(path.join(packageRoot, "dist", "esm", "index.js"))) {
-    throw new Error("npm/quicktype-core is not built: cd npm/quicktype-core && npm ci && npm run build");
+    throw new Error("npm/quicktype-core is not built: npm ci && npm run build -w quickertype-core (at the repository root)");
 }
 
 const require = createRequire(path.join(packageRoot, "package.json"));

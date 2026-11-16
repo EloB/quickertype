@@ -23,7 +23,8 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      # Turborepo alone (the root's devDependencies), not the workspaces'.
+      - run: npm ci --workspaces=false
       # Every task in turbo.json resolves (a dry run plans them all).
       - run: npx turbo run build lint test test:differential parity --dry=json > /dev/null
       - uses: ./.github/actions/golden

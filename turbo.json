@@ -25,7 +25,8 @@
         },
         "golden#generate": {
             "dependsOn": ["golden#clean"],
-            "inputs": ["REFERENCE", "$TURBO_ROOT$/xtask/golden/**", "$TURBO_ROOT$/tests/inputs/**"],
+            // The same files as state.mjs's inputsDigest.
+            "inputs": ["REFERENCE", "$TURBO_ROOT$/xtask/golden/**", "$TURBO_ROOT$/tests/inputs/**", "!$TURBO_ROOT$/**/.DS_Store"],
             "outputs": ["**", "!package.json", "!REFERENCE", "!.gitignore", "!.turbo/**"],
             // QUICKTYPE_REFERENCE: a quicktype checkout to use instead of
             // fetching one, if it is at the commit in REFERENCE, built and
@@ -59,8 +60,9 @@
             "env": ["CARGO_*", "RUST*"]
         },
         // release/** includes the TypeScript compiler a release bundles when
-        // it is staged there (ignored by git): the tests that find a
-        // compiler see it.
+        // it is staged there (ignored by git), and package-lock.json pins
+        // the one in the repository's node_modules: the tests that find a
+        // compiler run with it.
         "crates#test": {
             "dependsOn": ["golden#generate"],
             "inputs": [
@@ -68,6 +70,7 @@
                 "$TURBO_ROOT$/Cargo.toml",
                 "$TURBO_ROOT$/Cargo.lock",
                 "$TURBO_ROOT$/rust-toolchain.toml",
+                "$TURBO_ROOT$/package-lock.json",
                 "$TURBO_ROOT$/.cargo/**",
                 "$TURBO_ROOT$/xtask/**",
                 "$TURBO_ROOT$/release/**",
@@ -85,6 +88,7 @@
                 "$TURBO_ROOT$/Cargo.toml",
                 "$TURBO_ROOT$/Cargo.lock",
                 "$TURBO_ROOT$/rust-toolchain.toml",
+                "$TURBO_ROOT$/package-lock.json",
                 "$TURBO_ROOT$/.cargo/**",
                 "$TURBO_ROOT$/xtask/**",
                 "$TURBO_ROOT$/release/**",

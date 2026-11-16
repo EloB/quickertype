@@ -497,8 +497,10 @@ Generating needs Node at the pinned major version, git and bash; on
 Windows, take the corpus from a macOS or Linux machine (CI hands it to its
 Windows job).
 
-`tests/golden/GENERATED`, written with the cases, records the commit and the
-number of cases. The tools that read the corpus check it against
+`tests/golden/GENERATED`, written with the cases, records the commit, the
+number of cases and a digest of the inputs (`REFERENCE`, `xtask/golden`,
+`tests/inputs`). Two generations never use one quicktype checkout at once:
+the second waits for the first. The tools that read the corpus check it against
 `REFERENCE` and refuse a corpus that is missing, of another commit, or
 (where they count the cases) mixed with another's leftovers, saying what to
 run: [`xtask/src/golden.rs`](../xtask/src/golden.rs) for `cargo xtask parity`,
@@ -535,8 +537,9 @@ generator (`xtask/golden/`), `tests/inputs` and the workspace's root files,
 so it reruns when one of them changes, for instance when `REFERENCE` pins
 a new quicktype commit; replaying it takes about two seconds. Before every
 replay its `clean` task empties `tests/golden` unless it already holds
-exactly the pinned commit's corpus, complete and nothing else, so a replay
-never mixes two commits' files or leftovers. The Rust tasks list the crates, xtask, `tests` and the root Cargo
+exactly the corpus of the current inputs (`GENERATED` records a digest of
+them), complete and nothing else, so a replay, which only writes files,
+never mixes with another corpus's files or leftovers. The Rust tasks list the crates, xtask, `tests` and the root Cargo
 files as inputs; `crates#build` always runs, since cargo knows itself what
 is up to date and other tasks run the binary it leaves in `target/`.
 

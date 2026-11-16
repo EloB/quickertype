@@ -19,8 +19,9 @@
 //! lists the file names to pass instead of its sorted `.ts` files.
 //!
 //! Needs the TypeScript 7.0.2 compiler: `$QUICKTYPE_TSC`, the usual lookup
-//! from this crate's directory, or `node_modules` of a sibling `quicktype`
-//! checkout (the layout `cargo xtask golden` uses). Without one the test is
+//! from this crate's directory (the repository's `node_modules` has it after
+//! `npm ci` at the root, as npm/quicktype-core's devDependency), or
+//! `node_modules` of a sibling `quicktype` checkout. Without one the test is
 //! skipped with a message.
 //!
 //! Cases listed in `tests/known-differences.txt` are expected to differ; the

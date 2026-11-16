@@ -29,7 +29,8 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      # Turborepo alone (the root's devDependencies), not the workspaces'.
+      - run: npm ci --workspaces=false
       - uses: ./.github/actions/golden
         with:
           mode: share
