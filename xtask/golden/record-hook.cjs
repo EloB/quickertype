@@ -22,7 +22,43 @@ const OUT = process.env.GOLDEN_RAW_DIR;
 const ROOT = process.cwd();
 const TARGET = path.join(ROOT, "src", "index.ts");
 
+// The harness names each run's directory test/runs/<fixture>-<3 random
+// bytes, in hex> (getRunDirectory in test/fixtures.ts). Over about 11,000
+// runs, two runs of one fixture draw the same name in a few percent of
+// recordings; the recordings, keyed by that name, would then merge into
+// one case (and, with CI set, the harness deletes each directory after its
+// run, so the second makes it afresh). Each run gets a name of its own
+// instead: the cluster worker's id (8 bits) and a count of the worker's
+// runs (16 bits; a recording is about 10,000 runs in all). The name is the
+// harness's alone; nothing recorded contains it.
+
+// The names given (their hex part), to check each recorded run's.
+const givenNames = new Set();
+
+function uniqueRunNames() {
+    const crypto = require("node:crypto");
+    const cluster = require("node:cluster");
+    const randomBytes = crypto.randomBytes;
+    let runs = 0;
+    crypto.randomBytes = function (size, callback) {
+        if (size !== 3 || callback !== undefined || !/\bgetRunDirectory\b/.test(new Error().stack ?? "")) {
+            return randomBytes.apply(this, arguments);
+        }
+        const worker = cluster.worker?.id ?? 0;
+        if (worker > 0xff || runs > 0xffff) {
+            throw new Error(`recorder: no unique run directory name for worker ${worker}'s run ${runs}`);
+        }
+        const n = (worker << 16) | runs++;
+        const bytes = Buffer.from([(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff]);
+        givenNames.add(bytes.toString("hex"));
+        return bytes;
+    };
+    // For an ESM `import { randomBytes } from "node:crypto"` too.
+    require("node:module").syncBuiltinESMExports();
+}
+
 if (OUT) {
+    uniqueRunNames();
     const origLoad = Module._load;
     let wrapped;
     let core;
@@ -115,6 +151,12 @@ if (OUT) {
             if (Array.isArray(opts)) return real.main(opts);
 
             const cwd = process.cwd();
+            // A run in a directory the harness named without us (if its
+            // naming changed) could share it with another run.
+            const name = path.basename(cwd);
+            if (!givenNames.has(name.slice(-6))) {
+                throw new Error(`recorder: the run directory ${name} was not named by uniqueRunNames (has getRunDirectory changed?)`);
+            }
             const { real: argv, templ } = toArgv(opts, cwd);
             const before = scan(cwd);
             const firstStep = !fs.existsSync(path.join(OUT, path.basename(cwd), "run.json"));
