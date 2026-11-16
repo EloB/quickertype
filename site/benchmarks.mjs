@@ -240,12 +240,13 @@ export function checkBigInputs(data, file = bigInputsFile) {
         if (input.quicktype !== undefined) run(input.quicktype, `${at}.quicktype`);
     });
     // quicktype's CLI on an input it did not finish, measured here: when it was stopped, and why it stalls.
-    ok(Array.isArray(data.unfinished), "unfinished", "must be an array");
+    ok(Array.isArray(data.unfinished) && data.unfinished.length <= 1, "unfinished", "must be an array of at most one run (the pages show one)");
     data.unfinished.forEach((stall, i) => {
         const at = `unfinished[${i}]`;
         ok(isObject(stall), at, "must be an object");
         for (const key of ["input", "measured", "machine", "node", "how", "why"]) ok(text(stall[key]), at, `needs ${key}`);
-        ok(positive(stall.stopped_after_seconds), at, "needs stopped_after_seconds");
+        // The pages write it to the minute.
+        ok(positive(stall.stopped_after_seconds) && stall.stopped_after_seconds >= 60, at, "needs stopped_after_seconds, a minute or more");
         ok(isDate(stall.date), at, "needs date (when quicktype was run)");
         ok(sha(stall.quicktype_commit), at, "needs quicktype_commit");
         // The pages say both sides were measured here: on the machine the inputs were measured on.
@@ -581,9 +582,26 @@ function longDate(iso) {
 
 const e = escapeHtml;
 
-/** " Reported to quicktype." as a link, when an unfinished run names the issue. */
-export function issueLink(stall) {
-    return stall.issue === undefined ? "" : ` <a href="${e(stall.issue)}">Reported to quicktype.</a>`;
+/**
+ * quicktype's unfinished run (big-inputs.json's `unfinished`), for both
+ * pages: the run, quickertype's measured input of the same file, its pair
+ * of bars and the fine print that says why and how it was measured; or
+ * undefined if there is none.
+ */
+export function unfinishedRun(big) {
+    const stall = big.unfinished[0];
+    if (stall === undefined) return undefined;
+    const input = big.measured.inputs.find((i) => i.name === stall.measured);
+    const stopped = stoppedText(stall);
+    const chart = pairChart({
+        theirs: { name: "quicktype", value: stall.stopped_after_seconds, text: stopped, label: `quicktype: did not finish, ${stopped}` },
+        ours: { name: "quickertype", value: input.seconds, text: seconds(input.seconds), label: `quickertype: ${seconds(input.seconds)}` },
+        tips: false,
+        more: true,
+    });
+    const issue = stall.issue === undefined ? "" : ` <a href="${e(stall.issue)}">Reported to quicktype.</a>`;
+    const note = `${e(stall.why)}${issue} quicktype (<code>${stall.quicktype_commit.slice(0, 7)}</code>, Node.js ${e(stall.node)}) was stopped after ${hoursMinutes(stall.stopped_after_seconds)} on ${e(longDate(stall.date))}, on the same machine as quickertype.`;
+    return { stall, input, chart, note };
 }
 
 // ---------------------------------------------------------------------------
@@ -855,9 +873,7 @@ export function benchmarksPageHtml({ bench, big, workers, h2h }) {
     const inProcess = bench.in_process.results;
     const machine = bench.machine;
     const date = longDate(bench.date);
-    const stall = big.unfinished[0];
-    // quickertype on the file quicktype did not finish, measured here.
-    const stallInput = stall === undefined ? undefined : big.measured.inputs.find((i) => i.name === stall.measured);
+    const unfinished = unfinishedRun(big);
     // The 40 MB input, measured again for big-inputs.json after this run (only then is it news here;
     // said as what was measured, which may be more or less).
     const measuredLarge = big.measured.date > bench.date ? big.measured.inputs.find((i) => large.name.startsWith(`${i.name} `)) : undefined;
@@ -872,9 +888,9 @@ export function benchmarksPageHtml({ bench, big, workers, h2h }) {
         [`${facts.upTo}×`, `faster per CLI run at most (<code>${e(facts.upToRow.name)}</code>, ${e(measures(facts.upToRow))}); about ${facts.typical}× on typical files`],
         [`${times(facts.corpus)}`, `faster on quicktype's whole test corpus, ${corpus.typescript.steps.toLocaleString("en-US")} CLI runs`],
         [`${times(pokedexMemory)}`, `less memory on pokedex.json: ${formatMiB(pokedex.results.rust.peak_rss_mib)} against ${formatMiB(pokedex.results.typescript.peak_rss_mib)}`],
-        ...(stall === undefined
+        ...(unfinished === undefined
             ? []
-            : [[seconds(stallInput.seconds), `for ${e(stall.input)} that quicktype did not finish (${e(stoppedText(stall))})`]]),
+            : [[seconds(unfinished.input.seconds), `for ${e(unfinished.stall.input)} that quicktype did not finish (${e(stoppedText(unfinished.stall))})`]]),
     ];
 
     const typicalList = bench.cli.filter(isTypical);
@@ -933,17 +949,12 @@ ${unexpectedExits(corpus)}
 </section>`);
 
     const stallChart =
-        stall === undefined
+        unfinished === undefined
             ? ""
             : `<figure class="chart" aria-labelledby="stall-title">
-<figcaption id="stall-title">${e(stall.input.replace(/^a /, "A "))}: quicktype did not finish</figcaption>
-${pairChart({
-    theirs: { name: "quicktype", value: stall.stopped_after_seconds, text: stoppedText(stall), label: `quicktype: did not finish, ${stoppedText(stall)}` },
-    ours: { name: "quickertype", value: stallInput.seconds, text: seconds(stallInput.seconds), label: `quickertype: ${seconds(stallInput.seconds)}` },
-    tips: false,
-    more: true,
-})}
-<p class="fineprint">${e(stall.why)}${issueLink(stall)} quicktype (<code>${stall.quicktype_commit.slice(0, 7)}</code>, Node.js ${e(stall.node)}) was stopped after ${hoursMinutes(stall.stopped_after_seconds)} on ${e(longDate(stall.date))}; its bar is solid up to then and faded after, as it was still running. quickertype's time is from the table below (${e(stallInput.description)}). Both were measured on the same machine.</p>
+<figcaption id="stall-title">${e(unfinished.stall.input.replace(/^a /, "A "))}: quicktype did not finish</figcaption>
+${unfinished.chart}
+<p class="fineprint">${unfinished.note} Its bar is solid up to then and faded after, as it was still running. quickertype's time is from the table below (${e(unfinished.input.description)}). How: ${e(unfinished.stall.how)}</p>
 </figure>`;
     sections.push(`<section id="big-files" aria-labelledby="big-title">
 <h2 id="big-title">Big files</h2>

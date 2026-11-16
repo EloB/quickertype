@@ -33,8 +33,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { formatMiB, formatMs, headToHeadFacts, headToHeadName, inputSize, issueLink, named, refusals, seconds, sizeIn, speedFacts, stoppedText, times } from "./benchmarks.mjs";
-import { columnChart, legend, pairChart, pairRows, startIds, tableView, valueRows } from "./charts.mjs";
+import { formatMiB, formatMs, headToHeadFacts, headToHeadName, inputSize, named, refusals, seconds, sizeIn, speedFacts, times, unfinishedRun } from "./benchmarks.mjs";
+import { columnChart, legend, pairRows, startIds, tableView, valueRows } from "./charts.mjs";
 import { generatedCases } from "../xtask/golden/state.mjs";
 import { quicktypeReference } from "./reference.mjs";
 import { highlight } from "./src/highlight.js";
@@ -494,9 +494,8 @@ export function landingPageHtml(facts, images) {
     const version = cli(named.startup);
     const pokedex = cli(named.pokedex);
     const corpus = bench.corpus.results;
-    const stall = big.unfinished[0];
-    // quickertype on the file quicktype did not finish, measured here.
-    const stallInput = stall === undefined ? undefined : big.measured.inputs.find((i) => i.name === stall.measured);
+    // quicktype on a file it did not finish, against quickertype on the same file.
+    const unfinished = unfinishedRun(big);
     // The largest input measured here, and the largest quicktype was timed on too.
     const largest = big.measured.inputs.reduce((a, b) => (b.bytes > a.bytes ? b : a));
     const against = big.measured.inputs.filter((i) => i.quicktype !== undefined).reduce((a, b) => (a === undefined || b.bytes > a.bytes ? b : a), undefined);
@@ -692,18 +691,9 @@ ${tableView("A warm run in the playground, headless Chrome, s (site/data/head-to
     // Big files: quicktype on a file it did not finish (its bar ends where it was
     // stopped, and going on), and the largest input measured here.
     const bigFiles = `<figure class="chart" aria-labelledby="big-title">
-<figcaption id="big-title">Big files${stall === undefined ? "" : `: ${e(stall.input)}`}</figcaption>
-${
-    stall === undefined
-        ? ""
-        : pairChart({
-              theirs: { name: "quicktype", value: stall.stopped_after_seconds, text: stoppedText(stall), label: `quicktype: did not finish, ${stoppedText(stall)}` },
-              ours: { name: "quickertype", value: stallInput.seconds, text: seconds(stallInput.seconds), label: `quickertype: ${seconds(stallInput.seconds)}` },
-              tips: false,
-              more: true,
-          })
-}
-<p class="fineprint">${stall === undefined ? "" : `${e(stall.why)}${issueLink(stall)} `}Measured here: ${stat("big-size", largest.bytes, inputSize(largest.bytes))} of JSON (${e(largest.description)}) in ${stat("big-seconds", largest.seconds, seconds(largest.seconds))}, at a peak of ${stat("big-memory", largest.peak_rss_mib, formatMiB(largest.peak_rss_mib))}.${
+<figcaption id="big-title">Big files${unfinished === undefined ? "" : `: ${e(unfinished.stall.input)}`}</figcaption>
+${unfinished === undefined ? "" : unfinished.chart}
+<p class="fineprint">${unfinished === undefined ? "" : `${unfinished.note} `}Measured here: ${stat("big-size", largest.bytes, inputSize(largest.bytes))} of JSON (${e(largest.description)}) in ${stat("big-seconds", largest.seconds, seconds(largest.seconds))}, at a peak of ${stat("big-memory", largest.peak_rss_mib, formatMiB(largest.peak_rss_mib))}.${
     against === undefined
         ? ""
         : ` On ${stat("against-size", against.bytes, inputSize(against.bytes))} (${e(against.description)}), quicktype took ${stat("against-quicktype-seconds", against.quicktype.seconds, seconds(against.quicktype.seconds))} and ${stat("against-quicktype-memory", against.quicktype.peak_rss_mib, formatMiB(against.quicktype.peak_rss_mib))}; quickertype ${stat("against-seconds", against.seconds, seconds(against.seconds))} and ${stat("against-memory", against.peak_rss_mib, formatMiB(against.peak_rss_mib))}.`
