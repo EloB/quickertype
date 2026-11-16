@@ -28,9 +28,8 @@ tasks:
   bench [options]    time ours against the TypeScript CLI, Markdown report (--help)
   golden [ref-dir]   generate tests/golden again from quicktype at the commit in
                      tests/golden/REFERENCE (`npm run golden` replays Turborepo's
-                     cached result instead when nothing changed); ref-dir (or
-                     $QUICKTYPE_REFERENCE): a built checkout of that commit to use
-                     instead of fetching one
+                     cached result instead when nothing changed); ref-dir: a built
+                     checkout of that commit to use instead of fetching one
   streaming-fuzz [options]
                      generated inputs through inference from running tallies and from
                      the compressed form; outputs must be identical (--help)
@@ -88,7 +87,7 @@ fn main() -> ExitCode {
             command.arg(root.join("xtask/golden/generate.mjs"));
             match args.next() {
                 Some(dir) if args.next().is_none() => {
-                    command.env("QUICKTYPE_REFERENCE", dir);
+                    command.arg(dir);
                 }
                 Some(_) => {
                     eprint!("{USAGE}");

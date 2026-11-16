@@ -4,6 +4,7 @@
     "private": true,
     "description": "The website (docs/SITE.md): the landing page, the playground and the benchmarks.",
     "license": "Apache-2.0",
+    "type": "module",
     "scripts": {
         "build": "node build.mjs",
         "lint": "node readme-charts.mjs --check",

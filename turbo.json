@@ -28,9 +28,12 @@
             "inputs": ["REFERENCE", "$TURBO_ROOT$/xtask/golden/**", "$TURBO_ROOT$/tests/inputs/**"],
             "outputs": ["**", "!package.json", "!REFERENCE", "!.gitignore", "!.turbo/**"],
             // QUICKTYPE_REFERENCE: a quicktype checkout to use instead of
-            // fetching one; it must be at the commit in REFERENCE (the
-            // generator checks). The proxy variables: for that fetch.
-            "passThroughEnv": ["QUICKTYPE_REFERENCE", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy"]
+            // fetching one, if it is at the commit in REFERENCE, built and
+            // unchanged (the generator checks; it passes over anything
+            // else, `self` included, which the npm differential suite
+            // reads). XDG_CACHE_HOME: where the fetched checkout is kept.
+            // The proxy variables: for that fetch.
+            "passThroughEnv": ["QUICKTYPE_REFERENCE", "XDG_CACHE_HOME", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy"]
         },
 
         // The Rust workspace (crates/package.json). `build` always runs:
@@ -49,10 +52,15 @@
                 "$TURBO_ROOT$/clippy.toml",
                 "$TURBO_ROOT$/rustfmt.toml",
                 "$TURBO_ROOT$/.cargo/**",
-                "$TURBO_ROOT$/xtask/**"
+                "$TURBO_ROOT$/xtask/**",
+                "!$TURBO_ROOT$/**/.turbo/**",
+                "!$TURBO_ROOT$/**/.DS_Store"
             ],
             "env": ["CARGO_*", "RUST*"]
         },
+        // release/** includes the TypeScript compiler a release bundles when
+        // it is staged there (ignored by git): the tests that find a
+        // compiler see it.
         "crates#test": {
             "dependsOn": ["golden#generate"],
             "inputs": [
@@ -64,7 +72,9 @@
                 "$TURBO_ROOT$/xtask/**",
                 "$TURBO_ROOT$/release/**",
                 "$TURBO_ROOT$/tests/**",
-                "!$TURBO_ROOT$/tests/golden/**"
+                "!$TURBO_ROOT$/tests/golden/**",
+                "!$TURBO_ROOT$/**/.turbo/**",
+                "!$TURBO_ROOT$/**/.DS_Store"
             ],
             "env": ["CARGO_*", "RUST*", "QUICKTYPE_*", "RENDER_*", "TS_INPUT_*", "BUNDLE_GEMFILE"]
         },
@@ -79,7 +89,9 @@
                 "$TURBO_ROOT$/xtask/**",
                 "$TURBO_ROOT$/release/**",
                 "$TURBO_ROOT$/tests/**",
-                "!$TURBO_ROOT$/tests/golden/**"
+                "!$TURBO_ROOT$/tests/golden/**",
+                "!$TURBO_ROOT$/**/.turbo/**",
+                "!$TURBO_ROOT$/**/.DS_Store"
             ],
             "env": ["CARGO_*", "RUST*", "QUICKTYPE_*"]
         },
@@ -93,7 +105,10 @@
                 "$TURBO_ROOT$/Cargo.lock",
                 "$TURBO_ROOT$/rust-toolchain.toml",
                 "$TURBO_ROOT$/.cargo/**",
-                "$TURBO_ROOT$/crates/**"
+                "$TURBO_ROOT$/crates/**",
+                "!$TURBO_ROOT$/**/.turbo/**",
+                "!$TURBO_ROOT$/**/.DS_Store",
+                "!$TURBO_ROOT$/crates/quicktype-cli/wix/bundled.wxs"
             ],
             "outputs": ["dist/**", "build/**"],
             "env": ["CARGO_*", "RUST*"],
@@ -107,14 +122,17 @@
                 "$TURBO_ROOT$/Cargo.lock",
                 "$TURBO_ROOT$/rust-toolchain.toml",
                 "$TURBO_ROOT$/.cargo/**",
-                "$TURBO_ROOT$/crates/**"
+                "$TURBO_ROOT$/crates/**",
+                "!$TURBO_ROOT$/**/.turbo/**",
+                "!$TURBO_ROOT$/**/.DS_Store",
+                "!$TURBO_ROOT$/crates/quicktype-cli/wix/bundled.wxs"
             ],
             "env": ["CARGO_*", "RUST*", "QUICKTYPE_*"],
             "passThroughEnv": ["WASM_BINDGEN"]
         },
         "quickertype-core#test:differential": {
             "dependsOn": ["build", "golden#generate"],
-            "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/tests/**", "!$TURBO_ROOT$/tests/golden/**"],
+            "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/tests/**", "!$TURBO_ROOT$/tests/golden/**", "!$TURBO_ROOT$/**/.DS_Store"],
             // QUICKTYPE_REFERENCE: a quicktype checkout, or `self` (the
             // package's own TypeScript engine) to compare with.
             "env": ["QUICKTYPE_*"]
@@ -138,7 +156,8 @@
                 "!$TURBO_ROOT$/tests/golden/**",
                 "!$TURBO_ROOT$/npm/*/dist/**",
                 "!$TURBO_ROOT$/npm/*/build/**",
-                "!$TURBO_ROOT$/site/dist/**"
+                "!$TURBO_ROOT$/site/dist/**",
+                "!$TURBO_ROOT$/**/.DS_Store"
             ],
             "outputs": ["dist/**"]
         },
@@ -157,7 +176,8 @@
                 "!$TURBO_ROOT$/tests/golden/**",
                 "!$TURBO_ROOT$/npm/*/dist/**",
                 "!$TURBO_ROOT$/npm/*/build/**",
-                "!$TURBO_ROOT$/site/dist/**"
+                "!$TURBO_ROOT$/site/dist/**",
+                "!$TURBO_ROOT$/**/.DS_Store"
             ],
             "env": ["QUICKTYPE_*", "CHROME"]
         },

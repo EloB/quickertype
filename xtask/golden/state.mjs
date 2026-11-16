@@ -56,22 +56,31 @@ export function readGenerated(root = repositoryRoot) {
     return { dir, commit, cases: count };
 }
 
-/** The directories below `dir` that hold a case.json, relative to it, sorted. */
+/**
+ * The directories below `dir` that hold a case.json, relative to it, in
+ * the order of a walk that visits each directory's entries by name (a
+ * case's own directories are not searched further).
+ */
 export function caseDirs(dir) {
     const out = [];
+    const byName = (a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
     const walk = (rel) => {
-        const entries = fs.readdirSync(path.join(dir, rel), { withFileTypes: true });
-        if (entries.some((e) => e.isFile() && e.name === "case.json")) out.push(rel);
-        for (const e of entries) if (e.isDirectory()) walk(rel ? path.join(rel, e.name) : e.name);
+        const entries = fs.readdirSync(path.join(dir, rel), { withFileTypes: true }).sort(byName);
+        if (rel !== "" && entries.some((e) => e.isFile() && e.name === "case.json")) {
+            out.push(rel);
+            return;
+        }
+        for (const e of entries) if (e.isDirectory() && e.name !== ".turbo") walk(rel ? path.join(rel, e.name) : e.name);
     };
     walk("");
-    return out.sort();
+    return out;
 }
 
 /**
- * The generated corpus's case directories (relative to tests/golden), after
- * checking that they are exactly the ones generated: no fewer (an
- * interrupted restore) and no more (leftovers of another commit).
+ * The generated corpus's case directories (relative to tests/golden, in
+ * caseDirs' order), after checking that they are exactly the ones
+ * generated: no fewer (an interrupted restore) and no more (leftovers of
+ * another commit).
  */
 export function generatedCases(root = repositoryRoot) {
     const { dir, cases } = readGenerated(root);

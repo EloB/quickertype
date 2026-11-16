@@ -483,12 +483,19 @@ harness's own snapshot) and records the CLI-behavior cases (`record-cli.mjs`).
 It takes about a minute and a half on a 12-core machine. The same commit
 gives the same bytes, so generating the corpus again gives what it replaced.
 
-quicktype is `$QUICKTYPE_REFERENCE`, a built checkout of that commit with
-no changes (the generator checks both), or else a checkout the generator
-makes once in `node_modules/.cache/quicktype-reference/<commit>` (a shallow
-fetch from GitHub, `npm ci`, `npm run build`). Generating needs Node at the
-pinned major version, git and bash; on Windows, take the corpus from a
-macOS or Linux machine (CI hands it to its Windows job).
+quicktype is the checkout `cargo xtask golden <dir>` names, which must be
+at that commit, built and without changes (the generator checks); else
+`$QUICKTYPE_REFERENCE` if it is such a checkout (the other tools take it
+to mean any quicktype, or `self`, so the generator passes over anything
+else, with a note); else a checkout the generator makes once in the
+user's cache directory, `quickertype/quicktype-reference/<commit>` in
+`$XDG_CACHE_HOME`, `~/Library/Caches` on macOS or `~/.cache` (a shallow
+fetch from GitHub, `npm ci`, `npm run build`). It is outside the
+repository so that its module and type lookups never reach this
+repository's `node_modules`, and `npm ci` here does not delete it.
+Generating needs Node at the pinned major version, git and bash; on
+Windows, take the corpus from a macOS or Linux machine (CI hands it to its
+Windows job).
 
 `tests/golden/GENERATED`, written with the cases, records the commit and the
 number of cases. The tools that read the corpus check it against
@@ -526,9 +533,10 @@ restores the files it made. The cache is `.turbo/cache` (shared by the
 worktrees of one clone). `tests/golden`'s task depends on `REFERENCE`, its
 generator (`xtask/golden/`), `tests/inputs` and the workspace's root files,
 so it reruns when one of them changes, for instance when `REFERENCE` pins
-a new quicktype commit; replaying it takes seconds. Before every replay its
-`clean` task empties `tests/golden`, so a replay never mixes two commits'
-files. The Rust tasks list the crates, xtask, `tests` and the root Cargo
+a new quicktype commit; replaying it takes about two seconds. Before every
+replay its `clean` task empties `tests/golden` unless it already holds
+exactly the pinned commit's corpus, complete and nothing else, so a replay
+never mixes two commits' files or leftovers. The Rust tasks list the crates, xtask, `tests` and the root Cargo
 files as inputs; `crates#build` always runs, since cargo knows itself what
 is up to date and other tasks run the binary it leaves in `target/`.
 
@@ -543,7 +551,8 @@ is up to date and other tasks run the binary it leaves in `target/`.
    `crates/quicktype-cli/src/main.rs` to it: `--version` prints quicktype's
    version (the `cli-version` cases), not this port's own (the workspace
    version, see [RELEASING.md](RELEASING.md)).
-3. `cargo xtask parity --strict --as-recorded --bin "node node_modules/.cache/quicktype-reference/<commit>/dist/index.js"`:
+3. `cargo xtask parity --strict --as-recorded --bin "node <checkout>/dist/index.js"`,
+   with the checkout step 2 names in its output:
    the new corpus must pass completely against the reference itself.
 4. `cargo xtask parity`: the regressions are what changed upstream. Port it
    (section 7), then `cargo xtask parity --update-baseline`.

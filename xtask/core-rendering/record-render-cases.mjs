@@ -23,7 +23,7 @@
 // throws is reported and skipped, and the exit code is 1.
 //
 // Usage: node xtask/core-rendering/record-render-cases.mjs ../quicktype [lang...]
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, posix, resolve } from "node:path";
@@ -244,15 +244,6 @@ TargetLanguage.prototype.renderGraphAndSerialize = function (
 };
 
 // ---- Cases ------------------------------------------------------------------
-
-function* goldenCases(dir, rel = "") {
-    for (const e of readdirSync(join(dir, rel), { withFileTypes: true })) {
-        if (!e.isDirectory()) continue;
-        const r = rel ? join(rel, e.name) : e.name;
-        if (existsSync(join(dir, r, "case.json"))) yield r;
-        else yield* goldenCases(dir, r);
-    }
-}
 
 function langOf(args) {
     const i = args.indexOf("--lang");
@@ -598,8 +589,7 @@ function count(id, outcome) {
     if (failed) process.exitCode = 1;
 }
 // The generated corpus (`npm run golden`), checked to be of the pinned commit.
-generatedCases();
-for (const id of goldenCases(goldenDir)) {
+for (const id of generatedCases()) {
     if (id.startsWith("cli-") && !id.startsWith("cli-options/") && !id.startsWith("cli-stdout/")) continue;
     const outcome = await attempt(id, () => recordGolden(id));
     if (outcome === undefined) continue;

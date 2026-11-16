@@ -215,8 +215,7 @@ for (const s of [" 12 ", "0x1F", "-0b101", "0o7", "1e309", ".5e-3", "+Infinity",
 
 const argvs = new Set();
 // The generated corpus (`npm run golden`), checked to be of the pinned commit.
-generatedCases();
-for (const path of files(join(root, "tests/golden"), (p) => p.endsWith("case.json"))) {
+for (const path of generatedCases().map((dir) => join(root, "tests/golden", dir, "case.json"))) {
   const { steps } = JSON.parse(readFileSync(path, "utf8"));
   for (const { args } of steps) {
     argvs.add(args.map((a) => a.replaceAll("{INPUTS}", "inputs")).join("\0"));

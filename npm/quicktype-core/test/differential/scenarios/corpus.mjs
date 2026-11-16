@@ -15,23 +15,13 @@ const globalBooleanFlags = new Set(["--quiet", "--alphabetize-properties"]);
 
 function findCases() {
     // Generated, of the pinned quicktype commit, and nothing else (throws
-    // with what to run otherwise).
-    generatedCases();
-    const cases = [];
-    const walk = (dir) => {
-        for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
-            const full = path.join(dir, entry.name);
-            if (entry.isDirectory()) walk(full);
-            else if (entry.name === "case.json") cases.push(full);
-        }
-    };
-    for (const fixture of fs.readdirSync(goldenDir).sort()) {
-        if (fixture.startsWith("cli-") || fixture.startsWith("graphql-")) continue;
-        const dir = path.join(goldenDir, fixture);
-        if (fs.statSync(dir).isDirectory()) walk(dir);
-    }
-
-    return cases;
+    // with what to run otherwise); in the order of a walk by name.
+    return generatedCases()
+        .filter((dir) => {
+            const fixture = dir.split(path.sep)[0];
+            return !fixture.startsWith("cli-") && !fixture.startsWith("graphql-");
+        })
+        .map((dir) => path.join(goldenDir, dir, "case.json"));
 }
 
 /** The API options of a golden case's (single) CLI step. */

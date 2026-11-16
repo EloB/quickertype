@@ -2,14 +2,22 @@
 // Removes the generated files from tests/golden: everything but the files
 // in git (REFERENCE, package.json, .gitignore) and Turborepo's logs.
 //
-//   node xtask/golden/clean.mjs
+//   node xtask/golden/clean.mjs          unless tests/golden is exactly a
+//                                        generated corpus of the commit
+//                                        REFERENCE pins
+//   node xtask/golden/clean.mjs --force  always
 //
-// `npm run golden` runs this before Turborepo replays a cached result, so
-// that tests/golden never mixes files of two quicktype commits.
+// Turborepo runs it before it replays a cached corpus (turbo.json's
+// golden#clean), so that a replay never mixes with files of another
+// quicktype commit or with leftovers. A corpus that is already the pinned
+// commit's, complete and nothing else, is kept: the replay writes the same
+// files over it. generate.mjs empties tests/golden itself.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { generatedCases } from "./state.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -27,5 +35,15 @@ export function cleanGolden(dir = goldenDir) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-    cleanGolden();
+    let keep = false;
+    if (!process.argv.includes("--force")) {
+        try {
+            const cases = generatedCases();
+            console.log(`tests/golden: ${cases.length} cases of the pinned quicktype commit, complete; kept`);
+            keep = true;
+        } catch (error) {
+            console.log(`tests/golden: ${error.message.replace(/: run .*$/, "")}; emptied`);
+        }
+    }
+    if (!keep) cleanGolden();
 }

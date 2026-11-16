@@ -27,12 +27,8 @@ jobs:
       # Every task in turbo.json resolves (a dry run plans them all).
       - run: npx turbo run build lint test test:differential parity --dry=json > /dev/null
       - uses: ./.github/actions/golden
-      - run: tar -C tests/golden -cf golden.tar --exclude=./.turbo .
-      - uses: actions/upload-artifact@v4
         with:
-          name: golden
-          path: golden.tar
-          retention-days: 1
+          mode: share
 
   lint:
     runs-on: ubuntu-latest
@@ -62,12 +58,9 @@ jobs:
           toolchain: "1.99"
       - uses: Swatinem/rust-cache@v2
       # tests/golden, from the golden job.
-      - uses: actions/download-artifact@v4
+      - uses: ./.github/actions/golden
         with:
-          name: golden
-          path: tests/golden
-      - run: cd tests/golden && tar -xf golden.tar && rm golden.tar
-        shell: bash
+          mode: download
       - run: cargo test --workspace
       - run: cargo test -p quickertype-core -p quicktype-wasm --lib --features quickertype-core/trace,quicktype-wasm/trace
       # With `siphash`: the same output with std's SipHash in every map.
@@ -92,12 +85,9 @@ jobs:
           toolchain: "1.99"
       - uses: Swatinem/rust-cache@v2
       # tests/golden, from the golden job.
-      - uses: actions/download-artifact@v4
+      - uses: ./.github/actions/golden
         with:
-          name: golden
-          path: tests/golden
-      - run: cd tests/golden && tar -xf golden.tar && rm golden.tar
-        shell: bash
+          mode: download
       - run: cargo test --workspace --no-fail-fast
 
   # .github/workflows/release.yml and crates/quicktype-cli/wix/main.wxs are
@@ -175,12 +165,9 @@ jobs:
           toolchain: "1.99"
       - uses: Swatinem/rust-cache@v2
       # tests/golden, from the golden job.
-      - uses: actions/download-artifact@v4
+      - uses: ./.github/actions/golden
         with:
-          name: golden
-          path: tests/golden
-      - run: cd tests/golden && tar -xf golden.tar && rm golden.tar
-        shell: bash
+          mode: download
       - run: cargo xtask parity --report parity-report.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -270,12 +257,9 @@ jobs:
       # dependencies with it.
       - run: npm ci
       # tests/golden, from the golden job.
-      - uses: actions/download-artifact@v4
+      - uses: ./.github/actions/golden
         with:
-          name: golden
-          path: tests/golden
-      - run: cd tests/golden && tar -xf golden.tar && rm golden.tar
-        shell: bash
+          mode: download
       - run: npm run build -w quickertype-core
       - run: npm test -w quickertype-core
       - run: npm run test:differential -w quickertype-core -- --report differential-report.json

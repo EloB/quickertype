@@ -661,10 +661,12 @@ struct CorpusStats {
 /// Runs every step of every golden case once with `jobs` parallel jobs,
 /// without checking the outputs (that is `cargo xtask parity`).
 fn run_corpus(root: &Path, cmd: &[String], jobs: usize) -> Result<CorpusStats, String> {
-    let golden = root.join("tests/golden");
+    let golden = root.join(crate::golden::DIR);
     let inputs = root.join("tests/inputs").to_string_lossy().into_owned();
     let mut dirs = vec![];
     find_cases(&golden, &mut dirs);
+    // Generated, of the pinned commit, complete and nothing else.
+    crate::golden::check_case_count(root, dirs.len())?;
     dirs.sort();
     let work_root = root.join("target/bench/corpus");
     let next = AtomicUsize::new(0);

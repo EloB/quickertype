@@ -39,9 +39,8 @@ fs.mkdirSync(goldenDir, { recursive: true });
 let cases = 0;
 let duplicates = 0;
 const conflicts = [];
-// Snapshot cross-check results (below): unexplained, and explained.
+// Snapshot cross-check results (below).
 const mismatches = [];
-const expected = [];
 const recordedHashes = new Map(); // "<fixture>\0<input>" -> multiset of file hashes
 
 for (const run of fs.readdirSync(rawDir).sort()) {
@@ -127,25 +126,18 @@ if (snapDir) {
             const m = f.match(/^(test\/inputs\/.+?\.(?:json|schema|graphql))\/[^/]+\/(.+)$/);
             if (!m) continue;
             const list = byInput.get(m[1]) ?? [];
-            list.push({ hash: sha(fs.readFileSync(path.join(fixtureDir, f))), file: m[2] });
+            list.push(sha(fs.readFileSync(path.join(fixtureDir, f))));
             byInput.set(m[1], list);
         }
-        for (const [input, snapFiles] of byInput) {
+        for (const [input, snapHashes] of byInput) {
             checked++;
             const rec = recordedHashes.get(`${fixture}\0${input}`) ?? [];
             // Recorded runs include every step's outputs, so they are a superset.
-            const missing = snapFiles.filter(({ hash }) => !rec.includes(hash));
-            if (missing.length === 0) continue;
-            // The Java fixtures' snapshots also hold the fixture driver's own
-            // TopLevel.java, which is not quicktype's output.
-            const driverOnly = fixture.includes("java") && missing.every(({ file }) => path.basename(file) === "TopLevel.java");
-            (driverOnly ? expected : mismatches).push(`${fixture} ${input} (${missing.length} files)`);
+            const missing = snapHashes.filter((hash) => !rec.includes(hash));
+            if (missing.length > 0) mismatches.push(`${fixture} ${input} (${missing.length} files)`);
         }
     }
-    console.log(
-        `snapshot cross-check: ${checked} fixture/input groups, ${mismatches.length} mismatches` +
-            ` (and ${expected.length} of the Java fixture driver's own TopLevel.java)`,
-    );
+    console.log(`snapshot cross-check: ${checked} fixture/input groups, ${mismatches.length} mismatches`);
     for (const m of mismatches.slice(0, 20)) console.log(`  MISMATCH ${m}`);
 }
 if (conflicts.length > 0 || mismatches.length > 0) process.exit(1);
