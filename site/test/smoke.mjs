@@ -3347,7 +3347,7 @@ try {
                 memory: [...document.querySelectorAll("#memory .bar-row")].map((r) => [r.querySelector(".bar-name").textContent, ...[...r.querySelectorAll("text.tip")].map((t) => t.textContent)]),
                 corpus: [...document.querySelectorAll("#corpus text.tip")].map((t) => t.textContent),
                 big: [...document.querySelectorAll("#big-files table.plain tbody tr")].map((r) => [...r.children].map((c) => c.textContent)),
-                report: [...document.querySelectorAll("#big-files .bars .bar-value")].map((v) => v.textContent),
+                stall: [...document.querySelectorAll("#big-files .bars .bar-value")].map((v) => v.textContent),
                 browser: [...document.querySelectorAll("#browser .bar-row")].map((r) => [r.querySelector(".bar-value").textContent, r.querySelector(".bar-note").textContent]),
                 large: [...document.querySelectorAll("#browser-files .bar-row")].map((r) => [r.querySelector(".bar-name").textContent, r.querySelector(".bar-value").textContent, ...[...r.querySelectorAll("text.tip")].map((t) => t.textContent)]),
                 workers: [...document.querySelectorAll("#browser-files table.plain tbody tr")].map((r) => [...r.children].map((c) => c.textContent)),
@@ -3363,7 +3363,7 @@ try {
             `${speedNow.upTo}×`,
             speedup(speedNow.corpus),
             speedup(pokedex.typescript.peak_rss_mib / pokedex.rust.peak_rss_mib),
-            bigSeconds(big.measured.inputs.find((i) => i.name === big.reports[0].measured).seconds),
+            bigSeconds(big.measured.inputs.find((i) => i.name === big.unfinished[0].measured).seconds),
         ]);
         assert.deepEqual(
             pageNow.cli,
@@ -3394,9 +3394,9 @@ try {
             "the big inputs' sizes",
         );
         assert.deepEqual(
-            pageNow.report,
-            [big.reports[0].quicktype, bigSeconds(big.measured.inputs.find((i) => i.name === big.reports[0].measured).seconds)],
-            "the user's report, against quickertype measured on the same file",
+            pageNow.stall,
+            [big.unfinished[0].quicktype, bigSeconds(big.measured.inputs.find((i) => i.name === big.unfinished[0].measured).seconds)],
+            "quicktype on the file it did not finish, against quickertype on the same file",
         );
         const version = data.cli.find((r) => r.name === benchNamed.startup).results;
         assert.deepEqual(
@@ -3428,7 +3428,7 @@ try {
             ]),
             "reading on workers",
         );
-        console.log(`ok: the benchmarks page says what the data holds: ${pageNow.cli.length} CLI benchmarks, ${pageNow.memory.length} memory rows, the corpus, ${pageNow.big.length} big inputs and a user's report, the method (${pageNow.method.Date})`);
+        console.log(`ok: the benchmarks page says what the data holds: ${pageNow.cli.length} CLI benchmarks, ${pageNow.memory.length} memory rows, the corpus, ${pageNow.big.length} big inputs and a file quicktype did not finish, the method (${pageNow.method.Date})`);
 
         // Accessible: every chart a figure with a caption; every bar an image
         // with a name; every other drawing hidden; every chart's numbers in a table.
@@ -3447,8 +3447,8 @@ try {
         for (const name of data.cli.map((r) => r.name)) {
             assert.ok(a11y.bars.some((label) => label.startsWith(`${name}: quickertype `)), `no accessible label for ${name}`);
         }
-        const reportTables = big.reports.length; // the user's report lists its two values beside the bars
-        assert.equal(a11y.tables.length, reportTables, `charts without a table: ${a11y.tables.join(", ")}`);
+        const stallTables = big.unfinished.length; // the unfinished run lists its two values beside the bars
+        assert.equal(a11y.tables.length, stallTables, `charts without a table: ${a11y.tables.join(", ")}`);
         console.log(`ok: the charts are labelled: ${a11y.figures.length} figures with captions, ${a11y.bars.length} bars named (e.g. "${a11y.bars[2]}"), a table for each chart`);
 
         // The charts' colours come from the theme: violet and gray, light and dark.

@@ -147,10 +147,12 @@ made and measured: [BENCHMARKS.md](BENCHMARKS.md)):
   it was timed too (`quicktype`). `bytes` is the input's size: the pages
   show it to three significant figures, so an input has no size of its
   own to disagree with it. The landing page names the largest input and
-  the largest that quicktype ran on. `reports` holds what users reported
-  of quicktype, which was not measured here; its `measured` names the
-  input above that is the same file, whose measured time the pages show
-  for quickertype beside the report.
+  the largest that quicktype ran on. `unfinished` holds quicktype's CLI
+  on an input it did not finish, measured here: what it says
+  (`quicktype`), when it was stopped (`stopped_after_seconds`, `date`),
+  why it stalls (`why`) and, once there is one, the quicktype issue
+  (`issue`). Its `measured` names the input above that is the same file,
+  whose time the pages show for quickertype beside it.
 - `site/data/browser.json`: the WebAssembly engine against quicktype's
   TypeScript engine, from `node --expose-gc
   npm/quicktype-core/test/bench/compare.mjs --browser --again --json`
