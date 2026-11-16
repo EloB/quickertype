@@ -39,6 +39,8 @@ fs.mkdirSync(goldenDir, { recursive: true });
 let cases = 0;
 let duplicates = 0;
 const conflicts = [];
+// Snapshot cross-check results (below).
+const mismatches = [];
 const recordedHashes = new Map(); // "<fixture>\0<input>" -> multiset of file hashes
 
 for (const run of fs.readdirSync(rawDir).sort()) {
@@ -116,7 +118,6 @@ if (snapDir) {
     // Cross-check: for every (fixture, input) in the reference snapshot, the
     // multiset of output-file hashes must equal what we recorded via argv.
     let checked = 0;
-    const mismatches = [];
     for (const fixture of fs.readdirSync(snapDir)) {
         const fixtureDir = path.join(snapDir, fixture);
         const byInput = new Map();
@@ -130,14 +131,13 @@ if (snapDir) {
         }
         for (const [input, snapHashes] of byInput) {
             checked++;
-            const rec = (recordedHashes.get(`${fixture}\0${input}`) ?? []).slice().sort();
-            const ref = snapHashes.slice().sort();
+            const rec = recordedHashes.get(`${fixture}\0${input}`) ?? [];
             // Recorded runs include every step's outputs, so they are a superset.
-            const missing = ref.filter((h) => !rec.includes(h));
+            const missing = snapHashes.filter((hash) => !rec.includes(hash));
             if (missing.length > 0) mismatches.push(`${fixture} ${input} (${missing.length} files)`);
         }
     }
     console.log(`snapshot cross-check: ${checked} fixture/input groups, ${mismatches.length} mismatches`);
     for (const m of mismatches.slice(0, 20)) console.log(`  MISMATCH ${m}`);
-    if (mismatches.length > 0 || conflicts.length > 0) process.exit(1);
 }
+if (conflicts.length > 0 || mismatches.length > 0) process.exit(1);

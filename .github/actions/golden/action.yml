@@ -1,0 +1,69 @@
+# tests/golden: quicktype's output for every test case, generated from
+# quicktype at the commit in tests/golden/REFERENCE; not in git
+# (docs/ARCHITECTURE.md, "The golden corpus").
+#
+# mode: generate (the default): Turborepo replays the corpus from its
+#   cache, which this keeps in the GitHub Actions cache under a key of what
+#   the corpus depends on (turbo.json's golden#generate and its global
+#   inputs); on a miss Turborepo generates it, fetching and building
+#   quicktype (a few minutes), and the cache keeps the result. Needs Node 24
+#   and Turborepo installed first (`npm ci`, or `npm ci --workspaces=false`
+#   for the root's devDependencies alone).
+# mode: share: generate, then upload it as the workflow's `golden` artifact
+#   for other jobs.
+# mode: download: take it from that artifact (in a job that `needs` the
+#   sharing one); needs neither Node nor npm.
+name: tests/golden
+description: Generates tests/golden (or replays it from Turborepo's cache), shares it with other jobs, or takes it from the job that shared it
+inputs:
+  mode:
+    description: generate, share or download
+    required: false
+    default: generate
+runs:
+  using: composite
+  steps:
+    - if: inputs.mode != 'generate' && inputs.mode != 'share' && inputs.mode != 'download'
+      shell: bash
+      run: |
+        echo "::error::.github/actions/golden: unknown mode '${{ inputs.mode }}' (generate, share or download)"
+        exit 1
+    # An exact key when nothing the corpus depends on changed; otherwise the
+    # latest cache, in which Turborepo looks for its own hash (a change to
+    # the lockfile or turbo.json may leave it the same).
+    - if: inputs.mode == 'generate' || inputs.mode == 'share'
+      uses: actions/cache@v4
+      with:
+        path: .turbo/cache
+        key: golden-${{ hashFiles('tests/golden/REFERENCE', 'tests/golden/package.json', 'tests/golden/.gitignore', 'xtask/golden/**', 'tests/inputs/**', 'turbo.json', 'package.json', 'package-lock.json') }}
+        restore-keys: golden-
+    # The oldest entries go once the cache passes 200 MB (a corpus is about
+    # 26 MB), so that restoring the latest cache does not keep every
+    # corpus ever made.
+    - if: inputs.mode == 'generate' || inputs.mode == 'share'
+      shell: bash
+      env:
+        TURBO_CACHE_MAX_SIZE: 200MB
+      run: npx turbo run generate --filter=golden
+    # A tar: one file to upload, and it keeps the bytes and names as they are.
+    - if: inputs.mode == 'share'
+      shell: bash
+      run: tar -C tests/golden -cf golden.tar --exclude=./.turbo .
+    - if: inputs.mode == 'share'
+      uses: actions/upload-artifact@v4
+      with:
+        name: golden
+        path: golden.tar
+        # Long enough to re-run a failed job of the run a few days later
+        # (a re-run does not run the sharing job again).
+        retention-days: 7
+    - if: inputs.mode == 'download'
+      uses: actions/download-artifact@v4
+      with:
+        name: golden
+        path: tests/golden
+    # Relative paths only: Git Bash's tar would read a Windows path's
+    # drive letter as a remote host.
+    - if: inputs.mode == 'download'
+      shell: bash
+      run: cd tests/golden && tar -xf golden.tar && rm golden.tar

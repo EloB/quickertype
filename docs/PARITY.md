@@ -10,7 +10,9 @@ with file and line references.
 
 ## How parity is tested
 
-- **CLI:** `tests/golden` holds 10,132 recorded runs of the TypeScript CLI:
+- **CLI:** `tests/golden` holds 10,132 recorded runs of the TypeScript CLI
+  (generated from quicktype at the pinned commit, not kept in git;
+  [ARCHITECTURE.md](ARCHITECTURE.md#the-golden-corpus)):
   every fixture in quicktype's test suite (all target languages × JSON, JSON
   Schema and GraphQL inputs × renderer-option variants). A case is a list of
   steps; each step is an argv plus the exact files it must write.
@@ -34,7 +36,7 @@ with file and line references.
   quicktype's with `jsonl|` added and six fewer spaces of padding (an
   error says so otherwise); they turn those lines into quicktype's and
   compare everything else byte for byte.
-- **Recording** (`xtask/golden/`): a preload hook intercepts the reference test
+- **Recording** (`xtask/golden/generate.mjs`): a preload hook intercepts the reference test
   harness's in-process CLI calls, converts each options object into the
   equivalent argv, runs the *real* CLI code path with that argv, and stores
   the args plus every written file. `finalize.mjs` cross-checks the result
@@ -42,17 +44,20 @@ with file and line references.
 - **Intended differences:** [`tests/intended-differences.txt`](../tests/intended-differences.txt)
   names every case whose output differs from quicktype's on purpose, with
   the bugs (below) that change it, and declares each bug with its upstream
-  report. The corrected output sits next to the recorded one, in a file of
-  the same name plus `.intended` (`step0/TopLevel.c.intended` beside
-  `step0/TopLevel.c`); the recording itself is never changed. `parity`
+  report. The corrected output is in `tests/intended`, at the recorded
+  file's path below `tests/golden` plus `.intended`
+  (`tests/intended/<case>/step0/TopLevel.c.intended` for
+  `tests/golden/<case>/step0/TopLevel.c`); the recording itself is
+  generated and never changed. `parity`
   compares such an output with its `.intended` file and reports the case
   as an intended difference, apart from the identical ones; it fails when
   the output is quicktype's recorded one again or differs from the
   `.intended` file, and when the list and the `.intended` files disagree.
   `--record-intended` writes the `.intended` files of the listed cases
-  (review them with `diff <file> <file>.intended`). The same list covers
-  the other parity tests: `render_cases.rs` expects a golden file's
-  `.intended` copy where there is one; render scenarios are listed as
+  (review them with `diff tests/golden/<case>/<file>
+  tests/intended/<case>/<file>.intended`). The same list covers the other
+  parity tests: `render_cases.rs` expects a golden file's `.intended` copy
+  where there is one; render scenarios are listed as
   `render-scenarios/<id>`, with `<id>.<render>.<file>.intended` beside the
   scenario (`RENDER_SCENARIOS_RECORD_INTENDED=1` writes them); in the npm
   differential suite, a `corpus/<case>` scenario of a listed golden case

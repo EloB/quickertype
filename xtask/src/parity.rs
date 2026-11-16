@@ -24,8 +24,8 @@
 //!
 //! A case listed in `tests/intended-differences.txt` differs from the
 //! recording on purpose (a bug quickertype fixes): each of its outputs with
-//! an `.intended` file beside the recorded one must match that file, and
-//! not the recording ([`crate::intended`]). Such cases are reported as
+//! an `.intended` file (in tests/intended, at the recording's path) must
+//! match that file, and not the recording ([`crate::intended`]). Such cases are reported as
 //! intended differences, apart from the identical ones.
 //!
 //! A case may set extra environment variables with `env`. Every step runs
@@ -64,8 +64,8 @@ cargo xtask parity [options]
                        against the TypeScript reference)
   --record-intended    write the outputs of the cases listed in
                        tests/intended-differences.txt that differ from the
-                       recording to <file>.intended, and delete the
-                       .intended files of those that do not
+                       recording to tests/intended/<case>/<file>.intended,
+                       and delete the .intended files of those that do not
 ";
 
 #[derive(Deserialize)]
@@ -351,12 +351,16 @@ struct Intended<'a> {
     bugs: &'a [String],
     /// `--record-intended`.
     record: bool,
+    /// tests/golden, which the recordings are in.
+    golden: &'a Path,
+    /// tests/intended, which their `.intended` files are in.
+    dir: &'a Path,
 }
 
 /// Compares an output (`what`: `step N: <name>`) with the recording at
 /// `path` (a missing file is empty output if `missing_is_empty`), or, for a
-/// case with intended differences, with the `.intended` file beside it if
-/// there is one. Returns whether the `.intended` file was the expected
+/// case with intended differences, with its `.intended` file in
+/// tests/intended if there is one. Returns whether the `.intended` file was the expected
 /// output.
 fn check_output(
     what: &str,
@@ -383,11 +387,14 @@ fn check_output(
             Err(differs(&recorded, "the recording"))
         };
     };
-    let intended_path = crate::intended::intended_path(path);
+    let intended_path = crate::intended::intended_path(intended.golden, intended.dir, path);
     if intended.record {
         if recorded == actual {
             let _ = fs::remove_file(&intended_path);
             return Ok(false);
+        }
+        if let Some(parent) = intended_path.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
         }
         fs::write(&intended_path, actual)
             .map_err(|e| format!("{}: {e}", intended_path.display()))?;
@@ -641,7 +648,10 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
         Some(bin) if !bin.is_empty() => bin.clone(),
         _ => build_cli(root)?,
     };
-    let golden = root.join("tests/golden");
+    let golden = root.join(crate::golden::DIR);
+    let intended_dir = root.join(crate::intended::DIR);
+    // Before anything else reads it: generated, and of the pinned commit.
+    crate::golden::generated_cases(root)?;
     let baseline_path = root.join("tests/parity-baseline.txt");
     let inputs = root.join("tests/inputs").to_string_lossy().into_owned();
     if o.as_recorded && o.record_intended {
@@ -650,13 +660,19 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
     let intended = if o.as_recorded {
         None
     } else {
-        Some(IntendedDifferences::load(root, &golden, o.record_intended)?)
+        Some(IntendedDifferences::load(
+            root,
+            &golden,
+            &intended_dir,
+            o.record_intended,
+        )?)
     };
 
     let matches =
         |id: &str| o.filters.is_empty() || o.filters.iter().any(|f| id.contains(f.as_str()));
     let mut dirs = vec![];
     find_cases(&golden, &mut dirs);
+    crate::golden::check_case_count(root, dirs.len())?;
     let mut cases: Vec<(String, PathBuf)> = dirs
         .into_iter()
         .map(|d| {
@@ -698,6 +714,8 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
                         .map(|bugs| Intended {
                             bugs,
                             record: o.record_intended,
+                            golden: &golden,
+                            dir: &intended_dir,
                         });
                     let (failure, intended, elapsed) =
                         match run_case(&bin, &inputs, dir, &work, listed) {

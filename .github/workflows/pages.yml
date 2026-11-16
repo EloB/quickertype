@@ -43,11 +43,11 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: npm/quicktype-core/package-lock.json
+      # The repository's npm workspace (package.json).
       - run: npm ci
-        working-directory: npm/quicktype-core
-      - run: npm run build
-        working-directory: npm/quicktype-core
+      - run: npm run build -w quickertype-core
+      # tests/golden, whose cases the landing page counts.
+      - uses: ./.github/actions/golden
       - run: node site/build.mjs
       # The smoke test compares the page's output with the CLI's.
       - run: cargo build --release --package quickertype

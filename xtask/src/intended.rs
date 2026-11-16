@@ -5,11 +5,12 @@
 //!
 //! [`LIST`] declares the bugs (`bug <id> <upstream report>`) and names each
 //! case with the bugs that change it (`<case id> <bug id>...`). The
-//! corrected output is stored next to the recorded one, in a file of the
-//! same name with [`SUFFIX`] appended (`step0/TopLevel.c.intended` beside
-//! `step0/TopLevel.c`, `step0.stdout.intended` beside `step0.stdout`); the
-//! recording itself is never changed. A file without an `.intended` copy
-//! must still match the recording.
+//! corrected output is stored in [`DIR`] at the recording's path below
+//! tests/golden, with [`SUFFIX`] appended (`tests/intended/<case>/step0/
+//! TopLevel.c.intended` for `tests/golden/<case>/step0/TopLevel.c`,
+//! `step0.stdout.intended` for `step0.stdout`); the recording itself is
+//! generated and never changed. A file without an `.intended` copy must
+//! still match the recording.
 //!
 //! [`IntendedDifferences::load`] checks the list against the corpus: every
 //! listed golden case exists and has an `.intended` file, every `.intended` file
@@ -25,6 +26,9 @@ use std::path::{Path, PathBuf};
 /// The list, relative to the workspace root.
 pub(crate) const LIST: &str = "tests/intended-differences.txt";
 
+/// The corrected output files, relative to the workspace root.
+pub(crate) const DIR: &str = "tests/intended";
+
 /// The suffix of a corrected output file.
 pub(crate) const SUFFIX: &str = ".intended";
 
@@ -34,47 +38,59 @@ pub(crate) struct IntendedDifferences {
 }
 
 impl IntendedDifferences {
-    /// Reads [`LIST`] and checks it against the `.intended` files below
-    /// `golden`. With `recording` (`parity --record-intended`, which writes
-    /// them), a listed case may have none yet.
-    pub(crate) fn load(root: &Path, golden: &Path, recording: bool) -> Result<Self, String> {
+    /// Reads [`LIST`] and checks it against the `.intended` files in
+    /// `intended` ([`DIR`]) and the cases in `golden`. With `recording`
+    /// (`parity --record-intended`, which writes them), a listed case may
+    /// have none yet.
+    pub(crate) fn load(
+        root: &Path,
+        golden: &Path,
+        intended: &Path,
+        recording: bool,
+    ) -> Result<Self, String> {
         let path = root.join(LIST);
         let text = fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
         let list = parse(&text).map_err(|e| format!("{LIST}: {e}"))?;
         let mut problems = vec![];
-        let mut files: BTreeMap<String, Vec<PathBuf>> = BTreeMap::new();
-        walk_intended(golden, &mut |file| {
-            let case = file
-                .ancestors()
-                .find(|dir| dir.join("case.json").is_file())
-                .and_then(|dir| dir.strip_prefix(golden).ok())
-                .map(|id| id.to_string_lossy().replace('\\', "/"));
-            match case {
-                Some(case) => files.entry(case).or_default().push(file.to_path_buf()),
-                None => problems.push(format!("{}: not in a golden case", file.display())),
+        // The recording each `.intended` file corrects, by case.
+        let mut files: BTreeMap<String, Vec<(PathBuf, PathBuf)>> = BTreeMap::new();
+        walk_intended(intended, &mut |file| {
+            let recorded = file
+                .strip_prefix(intended)
+                .ok()
+                .and_then(|rel| rel.to_str())
+                .and_then(|rel| rel.strip_suffix(SUFFIX))
+                .map(|rel| golden.join(rel));
+            let case = recorded.as_ref().and_then(|recorded| {
+                recorded
+                    .ancestors()
+                    .skip(1)
+                    .find(|dir| dir.join("case.json").is_file())
+                    .and_then(|dir| dir.strip_prefix(golden).ok())
+                    .map(|id| id.to_string_lossy().replace('\\', "/"))
+            });
+            match (case, recorded) {
+                (Some(case), Some(recorded)) => files
+                    .entry(case)
+                    .or_default()
+                    .push((file.to_path_buf(), recorded)),
+                _ => problems.push(format!("{}: not of a golden case", file.display())),
             }
         });
         for (case, paths) in &files {
-            for intended in paths {
-                let recorded = intended.with_file_name(
-                    intended
-                        .file_name()
-                        .and_then(|n| n.to_str())
-                        .and_then(|n| n.strip_suffix(SUFFIX))
-                        .unwrap_or_default(),
-                );
+            for (intended, recorded) in paths {
                 let is_stream = recorded
                     .extension()
                     .is_some_and(|e| e == "stdout" || e == "stderr");
                 // A missing stream file is an empty stream.
-                let reference = match fs::read(&recorded) {
+                let reference = match fs::read(recorded) {
                     Ok(bytes) => Some(bytes),
                     Err(_) if is_stream => Some(vec![]),
                     Err(_) => None,
                 };
                 match reference {
                     None => problems.push(format!(
-                        "{}: no recorded {} beside it",
+                        "{}: its recording {} does not exist",
                         intended.display(),
                         recorded.display()
                     )),
@@ -106,7 +122,7 @@ impl IntendedDifferences {
             Ok(list)
         } else {
             Err(format!(
-                "{LIST} does not match the {SUFFIX} files in tests/golden:\n  {}",
+                "{LIST} does not match the {SUFFIX} files in {DIR}:\n  {}",
                 problems.join("\n  ")
             ))
         }
@@ -194,9 +210,11 @@ fn walk_intended(dir: &Path, f: &mut dyn FnMut(&Path)) {
     }
 }
 
-/// The `.intended` file of `recorded`, if there is one.
-pub(crate) fn intended_path(recorded: &Path) -> PathBuf {
-    let mut name = recorded.as_os_str().to_owned();
+/// The `.intended` file of `recorded` (a file below `golden`), if there
+/// is one: its path below `intended` ([`DIR`]), with [`SUFFIX`].
+pub(crate) fn intended_path(golden: &Path, intended: &Path, recorded: &Path) -> PathBuf {
+    let rel = recorded.strip_prefix(golden).unwrap_or(recorded);
+    let mut name = intended.join(rel).into_os_string();
     name.push(SUFFIX);
     PathBuf::from(name)
 }

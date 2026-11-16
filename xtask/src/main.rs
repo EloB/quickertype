@@ -4,12 +4,13 @@
 //! cargo xtask parity [options]     replay the golden corpus (see `parity --help`)
 //! cargo xtask diff [opts] -- <args> run the TypeScript CLI and ours side by side and compare
 //! cargo xtask bench [options]      time ours against the TypeScript CLI (see `bench --help`)
-//! cargo xtask golden [ref-dir]     re-record tests/golden from the TypeScript reference
+//! cargo xtask golden [ref-dir]     generate tests/golden again from quicktype (npm run golden: cached)
 //! cargo xtask streaming-fuzz [opts] compare inference from tallies with the reference
 //! ```
 
 mod bench;
 mod diff;
+mod golden;
 mod intended;
 mod parity;
 mod streaming;
@@ -25,9 +26,10 @@ tasks:
   diff [options] -- <quicktype args>
                      run the TypeScript CLI and ours side by side and compare (--help)
   bench [options]    time ours against the TypeScript CLI, Markdown report (--help)
-  golden [ref-dir]   re-record tests/golden from a built TypeScript quicktype checkout
-                     (default ref-dir: $QUICKTYPE_REFERENCE, else ../quicktype
-                     or ../../quicktype)
+  golden [ref-dir]   generate tests/golden again from quicktype at the commit in
+                     tests/golden/REFERENCE (`npm run golden` replays Turborepo's
+                     cached result instead when nothing changed); ref-dir: a built
+                     checkout of that commit to use instead of fetching one
   streaming-fuzz [options]
                      generated inputs through inference from running tallies and from
                      the compressed form; outputs must be identical (--help)
@@ -80,11 +82,24 @@ fn main() -> ExitCode {
             }
             streaming::run(&root, rest)
         }
-        Some("golden") => Command::new(root.join("xtask/golden/record.sh"))
-            .args(args)
-            .status()
-            .map(|s| s.success())
-            .map_err(|e| e.to_string()),
+        Some("golden") => {
+            let mut command = Command::new("node");
+            command.arg(root.join("xtask/golden/generate.mjs"));
+            match args.next() {
+                Some(dir) if args.next().is_none() => {
+                    command.arg(dir);
+                }
+                Some(_) => {
+                    eprint!("{USAGE}");
+                    return ExitCode::from(2);
+                }
+                None => {}
+            }
+            command
+                .status()
+                .map(|s| s.success())
+                .map_err(|e| format!("node: {e}"))
+        }
         _ => {
             eprint!("{USAGE}");
             return ExitCode::from(2);

@@ -22,6 +22,9 @@ on:
   pull_request:
     paths:
       - npm/quicktype-core/**
+      # The npm workspace, whose lockfile holds the package's dependencies.
+      - package.json
+      - package-lock.json
       # The WebAssembly engine and the version the package must have.
       - Cargo.toml
       - Cargo.lock
@@ -81,9 +84,11 @@ jobs:
             exit 1
           fi
           # `npm version X.Y.Z --no-git-tag-version` sets both of these too.
-          lock=$(jq -r '[.name, .version, .packages[""].name, .packages[""].version] | join(" ")' package-lock.json)
-          if [ "$lock" != "$PACKAGE $version $PACKAGE $version" ]; then
-            echo "::error::npm/quicktype-core/package-lock.json has (name version, root package's name version) $lock, not $PACKAGE $version: run npm install."
+          # The repository's lockfile (npm workspace) holds the package as
+          # the workspace npm/quicktype-core.
+          lock=$(jq -r '[.packages["npm/quicktype-core"].name, .packages["npm/quicktype-core"].version] | join(" ")' ../../package-lock.json)
+          if [ "$lock" != "$PACKAGE $version" ]; then
+            echo "::error::package-lock.json has (name version) $lock for the workspace npm/quicktype-core, not $PACKAGE $version: run npm install at the repository root."
             exit 1
           fi
           if [ -n "$PLAN" ]; then
@@ -94,7 +99,11 @@ jobs:
             fi
           fi
           echo "VERSION=$version" >> "$GITHUB_ENV"
+      # The repository's npm workspace (package.json at the root), which
+      # installs the package's dependencies; the steps below run in the
+      # package's directory, which npm treats as that workspace.
       - run: npm ci
+        working-directory: .
       - run: npm run build
       - run: npm test
       - name: Package contents (npm pack --dry-run)

@@ -1,0 +1,7 @@
+# quicktype's output for every test case, generated from quicktype at the
+# commit in REFERENCE by `npm run golden` (xtask/golden/generate.mjs) and
+# cached by Turborepo. Only the files below are in git.
+/*
+!/.gitignore
+!/package.json
+!/REFERENCE

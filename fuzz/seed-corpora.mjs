@@ -13,6 +13,8 @@ import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "n
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { generatedCases } from "../xtask/golden/state.mjs";
+
 const fuzz = dirname(fileURLToPath(import.meta.url));
 const root = join(fuzz, "..");
 
@@ -212,7 +214,8 @@ for (const s of [" 12 ", "0x1F", "-0b101", "0o7", "1e309", ".5e-3", "+Infinity",
 // ---- CLI arguments ---------------------------------------------------------
 
 const argvs = new Set();
-for (const path of files(join(root, "tests/golden"), (p) => p.endsWith("case.json"))) {
+// The generated corpus (`npm run golden`), checked to be of the pinned commit.
+for (const path of generatedCases().map((dir) => join(root, "tests/golden", dir, "case.json"))) {
   const { steps } = JSON.parse(readFileSync(path, "utf8"));
   for (const { args } of steps) {
     argvs.add(args.map((a) => a.replaceAll("{INPUTS}", "inputs")).join("\0"));

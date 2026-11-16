@@ -15,3 +15,5 @@ node_modules/
 # Public JSON and JSON Schema corpora for comparing with quicktype,
 # downloaded locally and never committed
 /corpus/
+# Turborepo: task logs and the local cache
+.turbo/

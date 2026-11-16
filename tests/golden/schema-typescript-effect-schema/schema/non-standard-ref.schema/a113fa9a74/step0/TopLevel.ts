@@ -1,8 +1,0 @@
-import * as S from "effect/Schema";
-
-
-export class TopLevel extends S.Class<TopLevel>("TopLevel")({
-    "bar": S.Int,
-    "foo": S.Int,
-    "quux": S.Boolean,
-}) {}

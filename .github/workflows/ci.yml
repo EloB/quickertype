@@ -10,6 +10,27 @@ env:
   RUSTFLAGS: -D warnings
 
 jobs:
+  # tests/golden: quicktype's output for every test case, generated from
+  # quicktype at the commit in tests/golden/REFERENCE and not in git
+  # (docs/ARCHITECTURE.md, "The golden corpus"). Restored from Turborepo's
+  # cache unless what it depends on changed (.github/actions/golden), and
+  # handed to the jobs that compare with it as an artifact.
+  golden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # Turborepo alone (the root's devDependencies), not the workspaces'.
+      - run: npm ci --workspaces=false
+      # Every task in turbo.json resolves (a dry run plans them all).
+      - run: npx turbo run build lint test test:differential parity --dry=json > /dev/null
+      - uses: ./.github/actions/golden
+        with:
+          mode: share
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -29,6 +50,7 @@ jobs:
       - run: cargo clippy --workspace --all-targets --features quickertype-core/siphash
 
   test:
+    needs: golden
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +58,10 @@ jobs:
         with:
           toolchain: "1.99"
       - uses: Swatinem/rust-cache@v2
+      # tests/golden, from the golden job.
+      - uses: ./.github/actions/golden
+        with:
+          mode: download
       - run: cargo test --workspace
       - run: cargo test -p quickertype-core -p quicktype-wasm --lib --features quickertype-core/trace,quicktype-wasm/trace
       # With `siphash`: the same output with std's SipHash in every map.
@@ -47,6 +73,7 @@ jobs:
   # (`CARGO_BIN_EXE_quickertype`).
   test-platforms:
     name: test (${{ matrix.os }})
+    needs: golden
     strategy:
       fail-fast: false
       matrix:
@@ -58,6 +85,10 @@ jobs:
         with:
           toolchain: "1.99"
       - uses: Swatinem/rust-cache@v2
+      # tests/golden, from the golden job.
+      - uses: ./.github/actions/golden
+        with:
+          mode: download
       - run: cargo test --workspace --no-fail-fast
 
   # .github/workflows/release.yml and crates/quicktype-cli/wix/main.wxs are
@@ -126,6 +157,7 @@ jobs:
   # Byte-for-byte parity with the TypeScript quicktype. Fails only if a case
   # listed in tests/parity-baseline.txt regresses.
   parity:
+    needs: golden
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -133,6 +165,10 @@ jobs:
         with:
           toolchain: "1.99"
       - uses: Swatinem/rust-cache@v2
+      # tests/golden, from the golden job.
+      - uses: ./.github/actions/golden
+        with:
+          mode: download
       - run: cargo xtask parity --report parity-report.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -202,10 +238,8 @@ jobs:
   # compares the engine with the package's own (vendored, unmodified)
   # TypeScript engine.
   npm:
+    needs: golden
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: npm/quicktype-core
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
@@ -220,14 +254,19 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: npm/quicktype-core/package-lock.json
+      # The repository's npm workspace (package.json), the package's
+      # dependencies with it.
       - run: npm ci
-      - run: npm run build
-      - run: npm test
-      - run: npm run test:differential -- --report differential-report.json
+      # tests/golden, from the golden job.
+      - uses: ./.github/actions/golden
+        with:
+          mode: download
+      - run: npm run build -w quickertype-core
+      - run: npm test -w quickertype-core
+      - run: npm run test:differential -w quickertype-core -- --report differential-report.json
         env:
           QUICKTYPE_REFERENCE: self
-      - run: npm run test:browser
+      - run: npm run test:browser -w quickertype-core
       - uses: actions/upload-artifact@v4
         if: always()
         with:

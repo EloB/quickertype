@@ -24,7 +24,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { goldenDir, repositoryRoot } from "./packages.mjs";
+import { goldenDir, goldenIntendedDir, repositoryRoot } from "./packages.mjs";
 
 const listFile = path.join(repositoryRoot, "tests", "intended-differences.txt");
 export const intendedDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "intended");
@@ -194,15 +194,16 @@ function applyGolden(caseId, outcome) {
     let changed = 0;
     for (const [name, file] of corrected.ok?.$map ?? []) {
         const recorded = path.join(caseDir, "step0", path.dirname(out), name);
-        if (!fs.existsSync(`${recorded}.intended`)) continue;
+        const intended = `${path.join(goldenIntendedDir, path.relative(goldenDir, recorded))}.intended`;
+        if (!fs.existsSync(intended)) continue;
         const read = (f) => fs.readFileSync(f, "utf8").split("\n");
-        const diff = unifiedDiff(read(recorded), read(`${recorded}.intended`));
+        const diff = unifiedDiff(read(recorded), read(intended));
         const [hunks] = parseDiff(`+++ ${name}\n${diff}`, name).values();
         file.lines = applyHunks(file.lines, hunks, `${name}.intended`);
         changed++;
     }
 
-    if (changed === 0) throw new Error(`no file of the result has an .intended copy in tests/golden/${caseId}/step0`);
+    if (changed === 0) throw new Error(`no file of the result has an .intended copy in tests/intended/${caseId}/step0`);
     return corrected;
 }
 

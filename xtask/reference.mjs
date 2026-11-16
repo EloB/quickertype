@@ -4,8 +4,10 @@
 // stderr), else the first of ../quicktype and ../../quicktype next to this
 // repository that is built (has packages/quicktype-core/dist), as
 // npm/quicktype-core's differential tests look. `cargo xtask diff`/`bench`
-// (xtask/src/diff.rs) and `cargo xtask golden` (xtask/golden/record.sh) look
-// in the same order, for a built CLI (dist/index.js).
+// (xtask/src/diff.rs) look in the same order, for a built CLI
+// (dist/index.js). The golden corpus's generator (xtask/golden/generate.mjs)
+// is the exception: it needs quicktype at the pinned commit and fetches it
+// when no such checkout is given.
 //
 // Unlike the npm differential suite, these scripts need a real checkout:
 // QUICKTYPE_REFERENCE=self (that suite's comparison with the package's own

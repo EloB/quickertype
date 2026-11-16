@@ -36,8 +36,15 @@
 
 ## Tests
 
-- `tests/golden` is generated: never edit it by hand. Re-record with
-  `cargo xtask golden`.
+- Run `npm ci` once at the repository root: it installs
+  [Turborepo](https://turborepo.dev), which runs the tasks and caches their
+  results (`npm test`, `npm run parity`, `npm run lint`; docs/ARCHITECTURE.md,
+  "Tasks and the cache").
+- `tests/golden`, quicktype's output for every test case, is generated from
+  quicktype at the commit in `tests/golden/REFERENCE` and not kept in git:
+  `npm run golden` makes it (or replays it from the cache), and the tasks
+  that need it do so themselves. Never edit it; a corrected output (an
+  intended difference) goes in `tests/intended` (docs/PARITY.md).
 - Unit tests for a module live next to it (`#[cfg(test)] mod tests`). When
   quicktype has a Vitest test for the behavior (`test/unit/*.test.ts`), port
   it and keep its name.

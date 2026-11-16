@@ -25,11 +25,24 @@
 
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
+import { createRequire } from "node:module";
 import * as path from "node:path";
 
 import { findBindgen, packageRoot, repositoryRoot, writeGlue } from "./bindgen.mjs";
 
 const bindgenDir = path.join(packageRoot, "build", "wasm-bindgen");
+// The package's dependencies, where npm installed them: in the
+// repository's node_modules (an npm workspace) or the package's own.
+const require = createRequire(path.join(packageRoot, "package.json"));
+
+/** A file of the installed package `name`, or undefined if it is not installed. */
+function installedFile(name, ...file) {
+    try {
+        return path.join(path.dirname(require.resolve(`${name}/package.json`)), ...file);
+    } catch {
+        return undefined;
+    }
+}
 const dist = path.join(packageRoot, "dist");
 
 const args = new Set(process.argv.slice(2));
@@ -79,8 +92,8 @@ const wasmFeatures = [
 
 /** `wasm-opt -O3` on the module, in place. */
 function optimizeWasm() {
-    const wasmOpt = path.join(packageRoot, "node_modules", "binaryen", "bin", "wasm-opt");
-    if (!fs.existsSync(wasmOpt)) throw new Error("binaryen is not installed: npm install");
+    const wasmOpt = installedFile("binaryen", "bin", "wasm-opt");
+    if (wasmOpt === undefined || !fs.existsSync(wasmOpt)) throw new Error("binaryen is not installed: npm ci (at the repository root)");
     const file = path.join(bindgenDir, "quicktype_wasm_bg.wasm");
     const before = fs.statSync(file).size;
     run(process.execPath, [wasmOpt, "-O3", ...wasmFeatures, file, "-o", file]);
@@ -89,7 +102,8 @@ function optimizeWasm() {
 
 function buildTypeScript() {
     fs.rmSync(dist, { recursive: true, force: true });
-    const tsc = path.join(packageRoot, "node_modules", "typescript", "bin", "tsc");
+    const tsc = installedFile("typescript", "bin", "tsc");
+    if (tsc === undefined) throw new Error("typescript is not installed: npm ci (at the repository root)");
     run(process.execPath, [tsc, "-p", "tsconfig.json"], { cwd: packageRoot });
     run(process.execPath, [tsc, "-p", "tsconfig.esm.json"], { cwd: packageRoot });
     run(process.execPath, [path.join("script", "write-esm-package-json.mjs")], {
