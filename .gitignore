@@ -12,3 +12,6 @@ node_modules/
 !/release/typescript/pins.json
 /release/.typescript.tmp/
 /crates/quicktype-cli/wix/bundled.wxs
+# Public JSON and JSON Schema corpora for comparing with quicktype,
+# downloaded locally and never committed
+/corpus/
