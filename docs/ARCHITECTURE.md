@@ -517,7 +517,14 @@ The repository is an npm workspace ([`package.json`](../package.json)) whose
 packages are `crates` (the Rust workspace, one package whose scripts run
 cargo), `tests/golden`, `npm/quicktype-core` and `site`.
 [Turborepo](https://turborepo.dev) runs their scripts in dependency order
-and caches the results ([`turbo.json`](../turbo.json)):
+and caches the results. The root [`turbo.json`](../turbo.json) holds the
+global options and the tasks' names; each package's own `turbo.json`, next
+to its `package.json` and extending the root's (`"extends": ["//"]`), says
+what its tasks read, write and wait for, another package's task included
+(`crates/turbo.json`'s `test` waits for `golden#generate`). A crate that
+needs scripts of its own can become a package the same way: a
+`package.json` and a `turbo.json` in its directory, and the directory in
+the workspace's `workspaces`.
 
 ```sh
 npm ci              # once: Turborepo and the npm package's dependencies
@@ -528,8 +535,8 @@ npm run lint        # fmt, clippy, the README charts
 npm run build       # the release CLI, the npm package, the site
 ```
 
-A task whose inputs (the files and environment variables `turbo.json`
-lists, and the results of the tasks it depends on) are the same as in an
+A task whose inputs (the files and environment variables its package's
+`turbo.json` lists, and the results of the tasks it depends on) are the same as in an
 earlier run is not run again: Turborepo prints the earlier output and
 restores the files it made. The cache is `.turbo/cache` (shared by the
 worktrees of one clone). `tests/golden`'s task depends on `REFERENCE`, its
@@ -539,9 +546,10 @@ a new quicktype commit; replaying it takes about two seconds. Before every
 replay its `clean` task empties `tests/golden` unless it already holds
 exactly the corpus of the current inputs (`GENERATED` records a digest of
 them), complete and nothing else, so a replay, which only writes files,
-never mixes with another corpus's files or leftovers. The Rust tasks list the crates, xtask, `tests` and the root Cargo
-files as inputs; `crates#build` always runs, since cargo knows itself what
-is up to date and other tasks run the binary it leaves in `target/`.
+never mixes with another corpus's files or leftovers. The Rust tasks list
+the crates, xtask, `tests` and the root Cargo files as inputs; `crates`'
+`build` always runs, since cargo knows itself what is up to date and other
+tasks run the binary it leaves in `target/`.
 
 ### Re-recording against a new quicktype commit
 

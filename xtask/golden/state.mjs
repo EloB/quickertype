@@ -19,8 +19,9 @@ export const HOW_TO_GENERATE = "run `npm run golden` (docs/ARCHITECTURE.md, \"Th
 
 /**
  * A digest of what the corpus is generated from: tests/golden/REFERENCE,
- * the generator (xtask/golden) and tests/inputs, the files turbo.json
- * names as golden#generate's inputs (but Finder's .DS_Store). The same
+ * the generator (xtask/golden) and tests/inputs, the files
+ * tests/golden/turbo.json names as the generate task's inputs (but
+ * Finder's .DS_Store). The same
  * inputs give the same corpus, byte for byte.
  */
 export function inputsDigest(root = repositoryRoot) {

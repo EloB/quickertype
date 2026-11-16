@@ -6,187 +6,32 @@
     // instead of running again. See docs/ARCHITECTURE.md, "Tasks and the
     // cache".
     //
-    // Inputs are listed generously: a file a task reads that is not an
-    // input would let a stale result be replayed. Globs given in `inputs`
-    // do not skip ignored files (only $TURBO_DEFAULT$, the package's own
-    // files, does), so generated folders are excluded by name.
+    // This file holds the global options and the tasks' names; each
+    // package's own turbo.json (next to its package.json, extending this
+    // one) says what its tasks read, write and wait for:
+    // crates/turbo.json, tests/golden/turbo.json,
+    // npm/quicktype-core/turbo.json and site/turbo.json.
+    //
+    // Inputs are listed generously there: a file a task reads that is not
+    // an input would let a stale result be replayed. Globs given in
+    // `inputs` do not skip ignored files (only $TURBO_DEFAULT$, the
+    // package's own files, does), so generated folders are excluded by
+    // name.
     "$schema": "./node_modules/turbo/schema.json",
     "ui": "stream",
     // Read by tests that print GitHub annotations; they do not change
     // results.
     "globalPassThroughEnv": ["GITHUB_ACTIONS"],
     "tasks": {
-        // tests/golden: quicktype's output for every test case, generated
-        // from quicktype at the commit in tests/golden/REFERENCE. `clean`
-        // removes it first, so that a result replayed from the cache never
-        // mixes with files of another quicktype commit.
-        "golden#clean": {
+        "build": {},
+        "lint": {},
+        "test": {},
+        "test:differential": {},
+        "parity": {},
+        "generate": {},
+        // Removing files is never replayed from the cache.
+        "clean": {
             "cache": false
-        },
-        "golden#generate": {
-            "dependsOn": ["golden#clean"],
-            // The same files as state.mjs's inputsDigest.
-            "inputs": ["REFERENCE", "$TURBO_ROOT$/xtask/golden/**", "$TURBO_ROOT$/tests/inputs/**", "!$TURBO_ROOT$/**/.DS_Store"],
-            "outputs": ["**", "!package.json", "!REFERENCE", "!.gitignore", "!.turbo/**"],
-            // QUICKTYPE_REFERENCE: a quicktype checkout to use instead of
-            // fetching one, if it is at the commit in REFERENCE, built and
-            // unchanged (the generator checks; it passes over anything
-            // else, `self` included, which the npm differential suite
-            // reads). XDG_CACHE_HOME: where the fetched checkout is kept.
-            // The proxy variables: for that fetch.
-            "passThroughEnv": ["QUICKTYPE_REFERENCE", "XDG_CACHE_HOME", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy"]
-        },
-
-        // The Rust workspace (crates/package.json). `build` always runs:
-        // cargo knows itself what is up to date, and other tasks run the
-        // binary it leaves in target/.
-        "crates#build": {
-            "cache": false,
-            "env": ["CARGO_*", "RUST*"]
-        },
-        "crates#lint": {
-            "inputs": [
-                "$TURBO_DEFAULT$",
-                "$TURBO_ROOT$/Cargo.toml",
-                "$TURBO_ROOT$/Cargo.lock",
-                "$TURBO_ROOT$/rust-toolchain.toml",
-                "$TURBO_ROOT$/clippy.toml",
-                "$TURBO_ROOT$/rustfmt.toml",
-                "$TURBO_ROOT$/.cargo/**",
-                "$TURBO_ROOT$/xtask/**",
-                "!$TURBO_ROOT$/**/.turbo/**",
-                "!$TURBO_ROOT$/**/.DS_Store"
-            ],
-            "env": ["CARGO_*", "RUST*"]
-        },
-        // release/** includes the TypeScript compiler a release bundles when
-        // it is staged there (ignored by git), and package-lock.json pins
-        // the one in the repository's node_modules: the tests that find a
-        // compiler run with it.
-        "crates#test": {
-            "dependsOn": ["golden#generate"],
-            "inputs": [
-                "$TURBO_DEFAULT$",
-                "$TURBO_ROOT$/Cargo.toml",
-                "$TURBO_ROOT$/Cargo.lock",
-                "$TURBO_ROOT$/rust-toolchain.toml",
-                "$TURBO_ROOT$/package-lock.json",
-                "$TURBO_ROOT$/.cargo/**",
-                "$TURBO_ROOT$/xtask/**",
-                "$TURBO_ROOT$/release/**",
-                "$TURBO_ROOT$/tests/**",
-                "!$TURBO_ROOT$/tests/golden/**",
-                "!$TURBO_ROOT$/**/.turbo/**",
-                "!$TURBO_ROOT$/**/.DS_Store"
-            ],
-            "env": ["CARGO_*", "RUST*", "QUICKTYPE_*", "RENDER_*", "TS_INPUT_*", "BUNDLE_GEMFILE"]
-        },
-        "crates#parity": {
-            "dependsOn": ["golden#generate"],
-            "inputs": [
-                "$TURBO_DEFAULT$",
-                "$TURBO_ROOT$/Cargo.toml",
-                "$TURBO_ROOT$/Cargo.lock",
-                "$TURBO_ROOT$/rust-toolchain.toml",
-                "$TURBO_ROOT$/package-lock.json",
-                "$TURBO_ROOT$/.cargo/**",
-                "$TURBO_ROOT$/xtask/**",
-                "$TURBO_ROOT$/release/**",
-                "$TURBO_ROOT$/tests/**",
-                "!$TURBO_ROOT$/tests/golden/**",
-                "!$TURBO_ROOT$/**/.turbo/**",
-                "!$TURBO_ROOT$/**/.DS_Store"
-            ],
-            "env": ["CARGO_*", "RUST*", "QUICKTYPE_*"]
-        },
-
-        // npm/quicktype-core: its build compiles the engine to WebAssembly
-        // (cargo), so the crates are inputs too.
-        "quickertype-core#build": {
-            "inputs": [
-                "$TURBO_DEFAULT$",
-                "$TURBO_ROOT$/Cargo.toml",
-                "$TURBO_ROOT$/Cargo.lock",
-                "$TURBO_ROOT$/rust-toolchain.toml",
-                "$TURBO_ROOT$/.cargo/**",
-                "$TURBO_ROOT$/crates/**",
-                "!$TURBO_ROOT$/**/.turbo/**",
-                "!$TURBO_ROOT$/**/.DS_Store",
-                "!$TURBO_ROOT$/crates/quicktype-cli/wix/bundled.wxs"
-            ],
-            "outputs": ["dist/**", "build/**"],
-            "env": ["CARGO_*", "RUST*"],
-            "passThroughEnv": ["WASM_BINDGEN"]
-        },
-        "quickertype-core#test": {
-            "dependsOn": ["build"],
-            "inputs": [
-                "$TURBO_DEFAULT$",
-                "$TURBO_ROOT$/Cargo.toml",
-                "$TURBO_ROOT$/Cargo.lock",
-                "$TURBO_ROOT$/rust-toolchain.toml",
-                "$TURBO_ROOT$/.cargo/**",
-                "$TURBO_ROOT$/crates/**",
-                "!$TURBO_ROOT$/**/.turbo/**",
-                "!$TURBO_ROOT$/**/.DS_Store",
-                "!$TURBO_ROOT$/crates/quicktype-cli/wix/bundled.wxs"
-            ],
-            "env": ["CARGO_*", "RUST*", "QUICKTYPE_*"],
-            "passThroughEnv": ["WASM_BINDGEN"]
-        },
-        "quickertype-core#test:differential": {
-            "dependsOn": ["build", "golden#generate"],
-            "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/tests/**", "!$TURBO_ROOT$/tests/golden/**", "!$TURBO_ROOT$/**/.DS_Store"],
-            // QUICKTYPE_REFERENCE: a quicktype checkout, or `self` (the
-            // package's own TypeScript engine) to compare with.
-            "env": ["QUICKTYPE_*"]
-        },
-
-        // The website: it reads facts from all over the repository (the
-        // tests, the crates, the workflows, the README), so every file but
-        // the generated ones is an input.
-        "site#build": {
-            "dependsOn": ["quickertype-core#build", "golden#generate"],
-            "inputs": [
-                "$TURBO_ROOT$/**",
-                "!$TURBO_ROOT$/.git/**",
-                "!$TURBO_ROOT$/**/.turbo/**",
-                "!$TURBO_ROOT$/**/node_modules/**",
-                "!$TURBO_ROOT$/target/**",
-                "!$TURBO_ROOT$/corpus/**",
-                "!$TURBO_ROOT$/fuzz/target/**",
-                "!$TURBO_ROOT$/fuzz/corpus/**",
-                "!$TURBO_ROOT$/fuzz/artifacts/**",
-                "!$TURBO_ROOT$/tests/golden/**",
-                "!$TURBO_ROOT$/npm/*/dist/**",
-                "!$TURBO_ROOT$/npm/*/build/**",
-                "!$TURBO_ROOT$/site/dist/**",
-                "!$TURBO_ROOT$/**/.DS_Store"
-            ],
-            "outputs": ["dist/**"]
-        },
-        "site#test": {
-            "dependsOn": ["site#build", "crates#build"],
-            "inputs": [
-                "$TURBO_ROOT$/**",
-                "!$TURBO_ROOT$/.git/**",
-                "!$TURBO_ROOT$/**/.turbo/**",
-                "!$TURBO_ROOT$/**/node_modules/**",
-                "!$TURBO_ROOT$/target/**",
-                "!$TURBO_ROOT$/corpus/**",
-                "!$TURBO_ROOT$/fuzz/target/**",
-                "!$TURBO_ROOT$/fuzz/corpus/**",
-                "!$TURBO_ROOT$/fuzz/artifacts/**",
-                "!$TURBO_ROOT$/tests/golden/**",
-                "!$TURBO_ROOT$/npm/*/dist/**",
-                "!$TURBO_ROOT$/npm/*/build/**",
-                "!$TURBO_ROOT$/site/dist/**",
-                "!$TURBO_ROOT$/**/.DS_Store"
-            ],
-            "env": ["QUICKTYPE_*", "CHROME"]
-        },
-        "site#lint": {
-            "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/README.md", "$TURBO_ROOT$/docs/assets/charts/**"]
         }
     }
 }
