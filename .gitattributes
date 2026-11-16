@@ -3,8 +3,10 @@
 # are compared or embedded byte for byte.
 * text=auto eol=lf
 
-# Golden files are compared byte-for-byte: never touch line endings.
+# Golden files (generated, not in git but for REFERENCE) and their
+# corrected copies are compared byte-for-byte: never touch line endings.
 tests/golden/** -text -diff linguist-generated
+tests/intended/** -text linguist-generated
 tests/inputs/** -text linguist-vendored
 # graphql-js's introspection query, embedded byte for byte (trailing spaces included).
 crates/quicktype-graphql-input/src/graphql/introspection_query.graphql -text

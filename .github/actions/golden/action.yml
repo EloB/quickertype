@@ -1,0 +1,19 @@
+# tests/golden: quicktype's output for every test case, generated from
+# quicktype at the commit in tests/golden/REFERENCE; not in git
+# (docs/ARCHITECTURE.md, "The golden corpus"). Turborepo replays it from its
+# cache, which this action keeps in the GitHub Actions cache under a key of
+# what the corpus depends on (turbo.json's golden#generate and its global
+# inputs); on a miss, Turborepo generates it, fetching and building
+# quicktype (a few minutes), and the cache keeps the result. Needs Node 24
+# and `npm ci` done first.
+name: Generate tests/golden
+description: Restores tests/golden from Turborepo's cache, or generates it from quicktype
+runs:
+  using: composite
+  steps:
+    - uses: actions/cache@v4
+      with:
+        path: .turbo/cache
+        key: golden-${{ hashFiles('tests/golden/REFERENCE', 'tests/golden/package.json', 'tests/golden/.gitignore', 'xtask/golden/**', 'tests/inputs/**', 'turbo.json', 'package.json', 'package-lock.json') }}
+    - shell: bash
+      run: npx turbo run generate --filter=golden

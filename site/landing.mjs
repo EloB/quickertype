@@ -35,6 +35,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { formatMiB, formatMs, headToHeadFacts, headToHeadName, inputSize, named, refusals, seconds, sizeIn, speedFacts, times } from "./benchmarks.mjs";
 import { columnChart, legend, pairChart, pairRows, startIds, tableView, valueRows } from "./charts.mjs";
+import { generatedCases } from "../xtask/golden/state.mjs";
 import { quicktypeReference } from "./reference.mjs";
 import { highlight } from "./src/highlight.js";
 import { escapeHtml as e } from "./src/html.js";
@@ -146,13 +147,16 @@ export function goldenFacts() {
     const kinds = { json: 0, schema: 0, graphql: 0, cli: 0 };
     const ids = [];
     let steps = 0;
-    for (const file of filesUnder(golden).filter((f) => f.endsWith("/case.json"))) {
-        const c = JSON.parse(fs.readFileSync(path.join(golden, file), "utf8"));
+    // Generated (`npm run golden`) from the pinned quicktype commit, and
+    // nothing else: the counts are of exactly that corpus.
+    for (const dir of generatedCases(repositoryRoot)) {
+        const id = dir.split(path.sep).join("/");
+        const c = JSON.parse(fs.readFileSync(path.join(golden, dir, "case.json"), "utf8"));
         const kind = c.fixture.startsWith("cli-") ? "cli" : c.input.split("/")[0];
-        if (!(kind in kinds)) throw new Error(`tests/golden/${file}: a fixture's input of an unknown kind (${c.input})`);
+        if (!(kind in kinds)) throw new Error(`tests/golden/${id}/case.json: a fixture's input of an unknown kind (${c.input})`);
         kinds[kind]++;
         steps += c.steps.length;
-        ids.push(file.slice(0, -"/case.json".length));
+        ids.push(id);
     }
     const baseline = new Set(
         fs

@@ -4,8 +4,9 @@
 #
 # The allowlisted paths are test data: quicktype's own public test inputs
 # (copied verbatim; they include long-expired URLs with tokens), the
-# recorded golden outputs generated from them, and test vectors derived
-# from both. Everything else is scanned with the default rules.
+# golden outputs generated from them (in git until they were generated
+# instead) and their corrected copies, and test vectors derived from
+# both. Everything else is scanned with the default rules.
 
 [extend]
 useDefault = true
@@ -15,5 +16,6 @@ description = "quicktype's public test data and vectors derived from it"
 paths = [
   '''^tests/inputs/''',
   '''^tests/golden/''',
+  '''^tests/intended/''',
   '''^crates/[^/]+/tests/vectors/''',
 ]

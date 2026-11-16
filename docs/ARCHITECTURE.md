@@ -430,8 +430,13 @@ Loading in browsers and bundlers and the remaining differences are in the
 
 ## 6. Testing
 
-No Rust test needs Node; Node and a built quicktype checkout are needed to
-record fixtures and for `cargo xtask diff`. The npm tests run under Node.
+The golden corpus (`tests/golden`) is generated from quicktype, not kept in
+git ([below](#the-golden-corpus)): `npm ci` once at the repository root,
+then `npm run golden` makes it, or replays it from Turborepo's cache. The
+tests that compare with it (`cargo xtask parity`, `render_cases.rs`, the npm
+differential suite) refuse to run without it. No other Rust test needs
+Node; Node and a built quicktype checkout are needed to record fixtures and
+for `cargo xtask diff`. The npm tests run under Node.
 Each tool takes the checkout as a path argument where it has one, else from
 `$QUICKTYPE_REFERENCE`, else uses the first built one of `../quicktype` and
 `../../quicktype` next to this repository (the second finds it from a
@@ -444,7 +449,7 @@ suite (see below); the xtask tools reject it.
 
 | Layer | Lives in | Run with | Recorded by |
 |---|---|---|---|
-| Golden corpus: recorded TS CLI runs compared byte for byte (files; for `cli-*` cases also stdout, stderr, exit code), apart from the intended differences | `tests/golden/<fixture>/<input>/<hash>/case.json` plus expected files, and `<file>.intended` for the cases in `tests/intended-differences.txt`; runner `xtask/src/parity.rs` (`xtask/src/intended.rs`) | `cargo xtask parity` (`--filter`, `--strict`, `--bin`, `--report`, `--keep`, `--as-recorded`, `--record-intended`) | `cargo xtask golden [ref-dir]` (`xtask/golden/record.sh`: `record-hook.cjs`, `finalize.mjs`, `record-cli.mjs`) |
+| Golden corpus: recorded TS CLI runs compared byte for byte (files; for `cli-*` cases also stdout, stderr, exit code), apart from the intended differences | `tests/golden/<fixture>/<input>/<hash>/case.json` plus expected files (generated, not in git), and in `tests/intended/` the `<file>.intended` copies for the cases in `tests/intended-differences.txt`; runner `xtask/src/parity.rs` (`xtask/src/golden.rs`, `xtask/src/intended.rs`) | `cargo xtask parity` (`--filter`, `--strict`, `--bin`, `--report`, `--keep`, `--as-recorded`, `--record-intended`) | `npm run golden`, `cargo xtask golden [ref-dir]` (`xtask/golden/generate.mjs`: `record-hook.cjs`, `finalize.mjs`, `record-cli.mjs`) |
 | Parity ratchet | [`tests/parity-baseline.txt`](../tests/parity-baseline.txt): ids that must keep passing | `cargo xtask parity` fails on a regression; `--update-baseline` records new passes | |
 | Live side by side | `xtask/src/diff.rs` | `cargo xtask diff -- <args>`, `--each <dir>` | none: runs the TS CLI live |
 | Differential fuzzing: seeded random inputs and options against the live reference, in-process and through both CLIs; minimized divergences kept as regression cases | `xtask/fuzz/` ([README](../xtask/fuzz/README.md)); cases in `tests/fuzz-regressions/`, replayed by `crates/quicktype-cli/tests/fuzz_regressions.rs` and the npm differential suite (`fuzz`) | `node xtask/fuzz/fuzz.mjs --seed N --minutes M` | `xtask/fuzz/record.mjs` |
@@ -456,20 +461,89 @@ suite (see below); the xtask tools reject it.
 
 CI ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) runs fmt and
 clippy, `cargo test --workspace`, `cargo xtask parity`, the `wasm32` build and
-the npm tests. Without a quicktype checkout, the differential suite compares
-against the package's own vendored TypeScript engine (`QUICKTYPE_REFERENCE=self`).
+the npm tests. Its `golden` job makes the golden corpus (through
+[`.github/actions/golden`](../.github/actions/golden/action.yml), which keeps
+Turborepo's cache in the GitHub Actions cache) and hands it to the jobs that
+compare with it. Without a quicktype checkout, the differential suite
+compares against the package's own vendored TypeScript engine
+(`QUICKTYPE_REFERENCE=self`).
+
+### The golden corpus
+
+`tests/golden` holds quicktype's output for every test case: 11,177 cases,
+about 32,000 files and 4.6 million lines, all of them quicktype's. They are
+generated rather than kept in git. [`xtask/golden/generate.mjs`](../xtask/golden/generate.mjs)
+records them from quicktype at the commit
+[`tests/golden/REFERENCE`](../tests/golden/REFERENCE) pins (`quicktype_commit`,
+and `node`, the Node major version the output is recorded with). It runs
+quicktype's own fixture harness without compiling the generated code, with
+`record-hook.cjs` turning each of its CLI calls into a recorded CLI run, lays
+the runs out as cases (`finalize.mjs`, which also checks them against the
+harness's own snapshot) and records the CLI-behavior cases (`record-cli.mjs`).
+It takes about a minute and a half on a 12-core machine. The same commit
+gives the same bytes, so generating the corpus again gives what it replaced.
+
+quicktype is `$QUICKTYPE_REFERENCE`, a built checkout of that commit with
+no changes (the generator checks both), or else a checkout the generator
+makes once in `node_modules/.cache/quicktype-reference/<commit>` (a shallow
+fetch from GitHub, `npm ci`, `npm run build`). Generating needs Node at the
+pinned major version, git and bash; on Windows, take the corpus from a
+macOS or Linux machine (CI hands it to its Windows job).
+
+`tests/golden/GENERATED`, written with the cases, records the commit and the
+number of cases. The tools that read the corpus check it against
+`REFERENCE` and refuse a corpus that is missing, of another commit, or
+(where they count the cases) mixed with another's leftovers, saying what to
+run: [`xtask/src/golden.rs`](../xtask/src/golden.rs) for `cargo xtask parity`,
+[`xtask/golden/state.mjs`](../xtask/golden/state.mjs) for the JavaScript
+tools, and `render_cases.rs` for itself.
+
+The corrected outputs of the [intended differences](PARITY.md#how-parity-is-tested)
+are in git, in `tests/intended`, each at its recording's path below
+`tests/golden` plus `.intended`.
+
+### Tasks and the cache
+
+The repository is an npm workspace ([`package.json`](../package.json)) whose
+packages are `crates` (the Rust workspace, one package whose scripts run
+cargo), `tests/golden`, `npm/quicktype-core` and `site`.
+[Turborepo](https://turborepo.dev) runs their scripts in dependency order
+and caches the results ([`turbo.json`](../turbo.json)):
+
+```sh
+npm ci              # once: Turborepo and the npm package's dependencies
+npm run golden      # tests/golden, generated or replayed from the cache
+npm test            # cargo test, the npm package's and the site's tests
+npm run parity      # cargo xtask parity
+npm run lint        # fmt, clippy, the README charts
+npm run build       # the release CLI, the npm package, the site
+```
+
+A task whose inputs (the files and environment variables `turbo.json`
+lists, and the results of the tasks it depends on) are the same as in an
+earlier run is not run again: Turborepo prints the earlier output and
+restores the files it made. The cache is `.turbo/cache` (shared by the
+worktrees of one clone). `tests/golden`'s task depends on `REFERENCE`, its
+generator (`xtask/golden/`), `tests/inputs` and the workspace's root files,
+so it reruns when one of them changes, for instance when `REFERENCE` pins
+a new quicktype commit; replaying it takes seconds. Before every replay its
+`clean` task empties `tests/golden`, so a replay never mixes two commits'
+files. The Rust tasks list the crates, xtask, `tests` and the root Cargo
+files as inputs; `crates#build` always runs, since cargo knows itself what
+is up to date and other tasks run the binary it leaves in `target/`.
 
 ### Re-recording against a new quicktype commit
 
-1. Check out the commit next to this repository as `../quicktype` and build
-   it (`npm ci && npm run build`).
-2. `cargo xtask golden ../quicktype` rewrites `tests/golden` and
-   `tests/golden/REFERENCE` (commit, Node version, date). If the version in
+1. Keep the old corpus to compare: `cp -R tests/golden ../golden-old`.
+2. Set `quicktype_commit` in `tests/golden/REFERENCE` to the new commit
+   (and `node` if quicktype needs a newer Node), then `npm run golden`,
+   which fetches and builds that commit once. `diff -r ../golden-old
+   tests/golden` shows how quicktype's output changed. If the version in
    quicktype's `package.json` changed, set `QUICKTYPE_VERSION` in
    `crates/quicktype-cli/src/main.rs` to it: `--version` prints quicktype's
    version (the `cli-version` cases), not this port's own (the workspace
    version, see [RELEASING.md](RELEASING.md)).
-3. `cargo xtask parity --strict --as-recorded --bin "node ../quicktype/dist/index.js"`:
+3. `cargo xtask parity --strict --as-recorded --bin "node node_modules/.cache/quicktype-reference/<commit>/dist/index.js"`:
    the new corpus must pass completely against the reference itself.
 4. `cargo xtask parity`: the regressions are what changed upstream. Port it
    (section 7), then `cargo xtask parity --update-baseline`.

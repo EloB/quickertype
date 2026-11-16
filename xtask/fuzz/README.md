@@ -13,7 +13,8 @@ quicktype checkout with the same fixes applied.
 
 Needs a built quicktype checkout (`npm ci && npm run build`; found as
 `--reference`, `$QUICKTYPE_REFERENCE`, `../quicktype` or `../../quicktype`), the
-built npm package (`cd npm/quicktype-core && npm ci && npm run build`) and the
+built npm package (`npm ci` at the repository root, then
+`npm run build -w quickertype-core`) and the
 release CLI (`cargo build --release -p quickertype`).
 
 ```sh

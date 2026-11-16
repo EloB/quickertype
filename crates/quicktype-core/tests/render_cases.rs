@@ -18,10 +18,14 @@
 //! `console.log` (none if absent); they must match, and they precede the
 //! files on stdout.
 //!
-//! A golden file with an `.intended` copy beside it is an intended
-//! difference (`tests/intended-differences.txt`: a bug quickertype fixes):
-//! the render must produce the copy, not the recording. `cargo xtask
-//! parity` checks that the copies and the list agree.
+//! The golden files are generated (`npm run golden`, docs/ARCHITECTURE.md
+//! "The golden corpus"); the test refuses a corpus that is not, or that was
+//! generated from another quicktype commit than `tests/golden/REFERENCE`
+//! pins. A golden file with an `.intended` copy (at its path in
+//! `tests/intended`) is an intended difference
+//! (`tests/intended-differences.txt`: a bug quickertype fixes): the render
+//! must produce the copy, not the recording. `cargo xtask parity` checks
+//! that the copies and the list agree.
 
 mod render_support;
 
@@ -62,7 +66,9 @@ fn join_stdout(result: &MultiFileRenderResult, quiet: bool) -> String {
 /// differences, see the module documentation).
 fn read_golden(golden_dir: &Path, path: &str) -> Result<String, String> {
     let recorded = golden_dir.join(path);
-    let intended = golden_dir.join(format!("{path}.intended"));
+    let intended = golden_dir
+        .with_file_name("intended")
+        .join(format!("{path}.intended"));
     let file = if intended.is_file() {
         intended
     } else {
@@ -163,11 +169,35 @@ fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// tests/golden, after checking that it is generated, from the quicktype
+/// commit tests/golden/REFERENCE pins (as xtask/src/golden.rs does for
+/// `cargo xtask parity`).
+fn generated_golden_dir(manifest: &Path) -> std::path::PathBuf {
+    const HOW_TO_GENERATE: &str =
+        "run `npm run golden` (docs/ARCHITECTURE.md, \"The golden corpus\")";
+    let dir = manifest.join("../../tests/golden");
+    let commit = |name: &str| {
+        let text = fs::read_to_string(dir.join(name)).ok()?;
+        text.lines()
+            .find_map(|line| line.strip_prefix("quicktype_commit="))
+            .map(|commit| commit.trim().to_owned())
+    };
+    let Some(generated) = commit("GENERATED") else {
+        panic!("tests/golden is not generated: {HOW_TO_GENERATE}");
+    };
+    let pinned = commit("REFERENCE").expect("tests/golden/REFERENCE: quicktype_commit");
+    assert_eq!(
+        generated, pinned,
+        "tests/golden was generated from another quicktype commit than tests/golden/REFERENCE pins: {HOW_TO_GENERATE}"
+    );
+    dir
+}
+
 #[test]
 fn render_cases_match_reference() {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
     let dir = manifest.join("tests/fixtures/core-rendering/cases");
-    let golden_dir = manifest.join("../../tests/golden");
+    let golden_dir = generated_golden_dir(manifest);
     let filter = std::env::var("RENDER_CASES_FILTER").unwrap_or_default();
     // The canonical names (what the recorder stores) of the requested
     // languages, resolved through every name of each language.

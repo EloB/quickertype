@@ -1,0 +1,13 @@
+{
+    "name": "crates",
+    "version": "0.0.0",
+    "private": true,
+    "description": "The Rust workspace (Cargo.toml at the repository root) as one Turborepo package: its scripts run cargo.",
+    "license": "Apache-2.0",
+    "scripts": {
+        "build": "cargo build --release",
+        "lint": "cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings",
+        "parity": "cargo xtask parity",
+        "test": "cargo test --workspace"
+    }
+}

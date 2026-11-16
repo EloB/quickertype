@@ -1,0 +1,11 @@
+{
+    "name": "golden",
+    "version": "0.0.0",
+    "private": true,
+    "description": "quicktype's output for every test case, generated from quicktype at the commit in REFERENCE (xtask/golden/generate.mjs). Not in git: Turborepo caches it.",
+    "license": "Apache-2.0",
+    "scripts": {
+        "clean": "node ../../xtask/golden/clean.mjs",
+        "generate": "node ../../xtask/golden/generate.mjs"
+    }
+}

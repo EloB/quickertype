@@ -42,8 +42,9 @@ with quicktype's own packages:
     kind, and that each published crate is at the workspace version;
   - `version` in
     [`npm/quicktype-core/package.json`](../npm/quicktype-core/package.json)
-    and in its `package-lock.json` (the top-level one and the root
-    package's), which `publish-npm-core.yml` checks.
+    and in the repository's `package-lock.json` (the npm workspace's
+    lockfile, under `packages["npm/quicktype-core"]`), which
+    `publish-npm-core.yml` checks.
 - **quicktype's version** is what `quickertype --version` prints
   (`quicktype version 24.0.0`): `QUICKTYPE_VERSION` in
   [`crates/quicktype-cli/src/main.rs`](../crates/quicktype-cli/src/main.rs).
@@ -399,7 +400,8 @@ repository that change it.
    four path dependencies of `[workspace.dependencies]` in `Cargo.toml`
    (`version = "=X.Y.Z"`), run `cargo build` to update `Cargo.lock`, and
    set it in `npm/quicktype-core` with
-   `npm version X.Y.Z --no-git-tag-version` (package.json and
+   `npm version X.Y.Z --no-git-tag-version -w quickertype-core` at the
+   repository root (the package's package.json and the root
    package-lock.json). The branch's pull request runs the publish dry
    runs, which fail if one of them was missed.
 3. In `CHANGELOG.md`, move what is under `## [Unreleased]` into a new

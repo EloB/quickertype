@@ -18,6 +18,8 @@ export const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.u
 export const repositoryRoot = path.resolve(packageRoot, "..", "..");
 export const inputsDir = path.join(repositoryRoot, "tests", "inputs");
 export const goldenDir = path.join(repositoryRoot, "tests", "golden");
+/** tests/intended: the `.intended` files, corrected copies of golden files at their paths below tests/golden. */
+export const goldenIntendedDir = path.join(repositoryRoot, "tests", "intended");
 
 const engineKey = Symbol.for("quicktype-core.engine");
 

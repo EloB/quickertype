@@ -19,7 +19,27 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # tests/golden, whose cases' arguments seed cli_args (as in CI's golden
+  # job; docs/ARCHITECTURE.md, "The golden corpus").
+  golden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: ./.github/actions/golden
+      - run: tar -C tests/golden -cf golden.tar --exclude=./.turbo .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: golden
+          path: golden.tar
+          retention-days: 1
+
   fuzz:
+    needs: golden
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -58,6 +78,11 @@ jobs:
           path: fuzz/corpus/${{ matrix.target }}
           key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
           restore-keys: fuzz-corpus-${{ matrix.target }}-
+      - uses: actions/download-artifact@v4
+        with:
+          name: golden
+          path: tests/golden
+      - run: cd tests/golden && tar -xf golden.tar && rm golden.tar
       - run: node fuzz/seed-corpora.mjs
       - name: Fuzz ${{ matrix.target }}
         run: >-

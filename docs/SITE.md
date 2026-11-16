@@ -1,9 +1,10 @@
 # The site
 
 `site/` builds the GitHub Pages site at <https://elob.github.io/quickertype/>
-into `site/dist` (`node site/build.mjs`, after `npm ci && npm run build` in
-`npm/quicktype-core`), and `site/test/smoke.mjs` checks it in headless Chrome
-(after `cargo build --release -p quickertype`). The Pages workflow does both
+into `site/dist` (`node site/build.mjs`, after `npm ci` at the repository
+root, `npm run build -w quickertype-core` and `npm run golden`; `npx turbo
+run build --filter=site` does all of it), and `site/test/smoke.mjs` checks
+it in headless Chrome (after `cargo build --release -p quickertype`). The Pages workflow does both
 on every push to `main`.
 
 | Path | Page | Made by |

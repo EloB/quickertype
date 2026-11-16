@@ -7,12 +7,16 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import { generatedCases } from "../../../../../xtask/golden/state.mjs";
 import { goldenDir, inputsDir } from "../packages.mjs";
 
 const globalValueFlags = new Set(["--src-lang", "--lang", "--src", "--out", "--top-level", "--telemetry", "--debug"]);
 const globalBooleanFlags = new Set(["--quiet", "--alphabetize-properties"]);
 
 function findCases() {
+    // Generated, of the pinned quicktype commit, and nothing else (throws
+    // with what to run otherwise).
+    generatedCases();
     const cases = [];
     const walk = (dir) => {
         for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {

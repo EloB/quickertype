@@ -31,6 +31,7 @@ import { fileURLToPath } from "node:url";
 import { format } from "node:util";
 
 import { dumpTransformation } from "./dump-transformation.mjs";
+import { generatedCases } from "../golden/state.mjs";
 import { referenceCheckout } from "../reference.mjs";
 
 const quicktype = referenceCheckout(process.argv[2]);
@@ -596,6 +597,8 @@ function count(id, outcome) {
     if (!outcome.startsWith("recorded")) console.log(`${id}: ${outcome}`);
     if (failed) process.exitCode = 1;
 }
+// The generated corpus (`npm run golden`), checked to be of the pinned commit.
+generatedCases();
 for (const id of goldenCases(goldenDir)) {
     if (id.startsWith("cli-") && !id.startsWith("cli-options/") && !id.startsWith("cli-stdout/")) continue;
     const outcome = await attempt(id, () => recordGolden(id));
