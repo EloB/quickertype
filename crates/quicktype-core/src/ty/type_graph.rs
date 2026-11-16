@@ -54,6 +54,10 @@ pub struct TypeGraph {
     top_level_attributes: IndexMap<String, TypeAttributes>,
     top_levels: IndexMap<String, TypeRef>,
     parents: OnceCell<Vec<IndexSet<TypeRef>>>,
+    /// Each type's [`combined_name`](Self::combined_name), computed on first
+    /// use: a renderer asks for a class's name once per property, and a type
+    /// can have hundreds of names to combine.
+    combined_names: OnceCell<Vec<OnceCell<String>>>,
     print_on_rewrite: bool,
 }
 
@@ -81,6 +85,7 @@ impl TypeGraph {
             top_level_attributes: IndexMap::default(),
             top_levels,
             parents: OnceCell::new(),
+            combined_names: OnceCell::new(),
             print_on_rewrite: false,
         })
     }
@@ -153,6 +158,13 @@ impl TypeGraph {
     pub fn set_attribute(&mut self, r: TypeRef, value: TypeAttributeValue) -> Result<()> {
         let index = self.index_of(r)?;
         self.attributes[index].insert(value);
+        if let Some(cell) = self
+            .combined_names
+            .get_mut()
+            .and_then(|names| names.get_mut(index))
+        {
+            *cell = OnceCell::new();
+        }
         Ok(())
     }
 
@@ -192,7 +204,16 @@ impl TypeGraph {
 
     /// `t.getCombinedName()`.
     pub fn combined_name(&self, r: TypeRef) -> Result<String> {
-        defined(NamesTypeAttributeKind.try_get_in_attributes(self.attributes(r)?))?.combined_name()
+        let index = self.index_of(r)?;
+        let cell = &self
+            .combined_names
+            .get_or_init(|| (0..self.types.len()).map(|_| OnceCell::new()).collect())[index];
+        if let Some(name) = cell.get() {
+            return Ok(name.clone());
+        }
+        let name = defined(NamesTypeAttributeKind.try_get_in_attributes(&self.attributes[index]))?
+            .combined_name()?;
+        Ok(cell.get_or_init(|| name).clone())
     }
 
     /// `getNonAttributeChildren()`: array items; object property types

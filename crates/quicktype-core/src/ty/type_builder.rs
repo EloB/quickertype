@@ -22,6 +22,7 @@ use crate::support::fast_hash::{IndexMap, IndexSet};
 use crate::attributes::string_types::{StringTypes, StringTypesTypeAttributeKind};
 use crate::attributes::type_attributes::{
     AttributeKind, CombinationKind, TypeAttributeKind, TypeAttributes, combine_type_attributes2,
+    combine_type_attributes2_owned,
 };
 use crate::graph_rewriting::RewriteState;
 use crate::messages::Result;
@@ -296,9 +297,10 @@ impl<'g> TypeBuilder<'g> {
             None => attributes.clone(),
         };
         let non_identity_attributes = attributes.non_identity_attributes();
-        self.type_attributes[index] = combine_type_attributes2(
+        let existing = std::mem::take(&mut self.type_attributes[index]);
+        self.type_attributes[index] = combine_type_attributes2_owned(
             CombinationKind::Union,
-            &self.type_attributes[index],
+            existing,
             &non_identity_attributes,
         )?;
         Ok(())

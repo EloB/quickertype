@@ -565,6 +565,37 @@ mod tests {
     }
 
     #[test]
+    fn combined_names_follow_new_names() {
+        let mut b =
+            TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
+        let s = b
+            .get_string_type(
+                TypeAttributes::new(),
+                Some(StringTypes::unrestricted()),
+                None,
+            )
+            .unwrap();
+        let top: IndexMap<String, ClassProperty> =
+            [("flavor".to_owned(), ClassProperty::new(s, false))]
+                .into_iter()
+                .collect();
+        let top = b
+            .get_class_type(make_names_type_attributes("Cookie", true), top, None)
+            .unwrap();
+        b.add_top_level("TopLevel", top).unwrap();
+        let mut graph = b.finish().unwrap();
+        // Asked for before gather_names, which replaces the inferred name:
+        // the graph keeps a combined name only until the names change.
+        assert_eq!(graph.combined_name(top).unwrap(), "Cookie");
+        gather_names(&mut graph, true, false).unwrap();
+        let names = NamesTypeAttributeKind
+            .try_get_in_attributes(graph.attributes(top).unwrap())
+            .unwrap();
+        assert_eq!(names.combined_name().unwrap(), "TopLevel");
+        assert_eq!(graph.combined_name(top).unwrap(), "TopLevel");
+    }
+
+    #[test]
     fn deep_nesting_does_not_overflow_the_stack() {
         let mut b =
             TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
