@@ -79,9 +79,13 @@ jobs:
         with:
           mode: download
       - run: node fuzz/seed-corpora.mjs
+      # cargo-fuzz builds for the triple it was itself built for, and the
+      # prebuilt binary install-action fetches is a musl one; the nightly
+      # toolchain above has only the gnu standard library.
       - name: Fuzz ${{ matrix.target }}
         run: >-
-          cargo +nightly fuzz run ${{ matrix.target }} -s none --
+          cargo +nightly fuzz run ${{ matrix.target }} -s none
+          --target x86_64-unknown-linux-gnu --
           -max_total_time=${{ inputs.seconds || '300' }}
           -max_len=${{ matrix.max_len }}
           -timeout=${{ matrix.timeout }}
