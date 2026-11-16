@@ -1,0 +1,54 @@
+{
+    // The website (docs/SITE.md). It reads facts from all over the
+    // repository (the tests, the crates, the workflows, the README), so
+    // every file but the generated ones is an input of its build and test.
+    "$schema": "../node_modules/turbo/schema.json",
+    "extends": ["//"],
+    "tasks": {
+        "build": {
+            "dependsOn": ["quickertype-core#build", "golden#generate"],
+            "inputs": [
+                "$TURBO_ROOT$/**",
+                "!$TURBO_ROOT$/.git/**",
+                "!$TURBO_ROOT$/**/.turbo/**",
+                "!$TURBO_ROOT$/**/node_modules/**",
+                "!$TURBO_ROOT$/target/**",
+                "!$TURBO_ROOT$/corpus/**",
+                "!$TURBO_ROOT$/fuzz/target/**",
+                "!$TURBO_ROOT$/fuzz/corpus/**",
+                "!$TURBO_ROOT$/fuzz/artifacts/**",
+                "!$TURBO_ROOT$/tests/golden/**",
+                "!$TURBO_ROOT$/npm/*/dist/**",
+                "!$TURBO_ROOT$/npm/*/build/**",
+                "!$TURBO_ROOT$/site/dist/**",
+                "!$TURBO_ROOT$/**/.DS_Store"
+            ],
+            "outputs": ["dist/**"]
+        },
+        // The smoke test compares the pages with the release CLI's output.
+        "test": {
+            "dependsOn": ["build", "crates#build"],
+            "inputs": [
+                "$TURBO_ROOT$/**",
+                "!$TURBO_ROOT$/.git/**",
+                "!$TURBO_ROOT$/**/.turbo/**",
+                "!$TURBO_ROOT$/**/node_modules/**",
+                "!$TURBO_ROOT$/target/**",
+                "!$TURBO_ROOT$/corpus/**",
+                "!$TURBO_ROOT$/fuzz/target/**",
+                "!$TURBO_ROOT$/fuzz/corpus/**",
+                "!$TURBO_ROOT$/fuzz/artifacts/**",
+                "!$TURBO_ROOT$/tests/golden/**",
+                "!$TURBO_ROOT$/npm/*/dist/**",
+                "!$TURBO_ROOT$/npm/*/build/**",
+                "!$TURBO_ROOT$/site/dist/**",
+                "!$TURBO_ROOT$/**/.DS_Store"
+            ],
+            "env": ["QUICKTYPE_*", "CHROME"]
+        },
+        // The README's charts against their tables.
+        "lint": {
+            "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/README.md", "$TURBO_ROOT$/docs/assets/charts/**"]
+        }
+    }
+}

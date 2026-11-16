@@ -1,0 +1,31 @@
+{
+    // quicktype's output for every test case, generated from quicktype at
+    // the commit in REFERENCE (xtask/golden/generate.mjs; docs/ARCHITECTURE.md,
+    // "The golden corpus").
+    "$schema": "../../node_modules/turbo/schema.json",
+    "extends": ["//"],
+    "tasks": {
+        // Empties tests/golden before a replay unless it already holds the
+        // corpus of the current inputs (xtask/golden/clean.mjs), so that a
+        // replayed corpus never mixes with another's files. Never cached:
+        // it must run before every replay.
+        "clean": {
+            "cache": false
+        },
+        "generate": {
+            "dependsOn": ["clean"],
+            // The files state.mjs's inputsDigest covers; Turborepo also
+            // hashes this package's package.json and turbo.json.
+            "inputs": ["REFERENCE", "$TURBO_ROOT$/xtask/golden/**", "$TURBO_ROOT$/tests/inputs/**", "!$TURBO_ROOT$/**/.DS_Store"],
+            // Everything but the files in git and Turborepo's logs.
+            "outputs": ["**", "!package.json", "!turbo.json", "!REFERENCE", "!.gitignore", "!.turbo/**"],
+            // QUICKTYPE_REFERENCE: a quicktype checkout to use instead of
+            // fetching one, if it is at the commit in REFERENCE, built and
+            // unchanged (the generator checks; it passes over anything
+            // else, `self` included, which the npm differential suite
+            // reads). XDG_CACHE_HOME: where the fetched checkout is kept.
+            // The proxy variables: for that fetch.
+            "passThroughEnv": ["QUICKTYPE_REFERENCE", "XDG_CACHE_HOME", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy"]
+        }
+    }
+}

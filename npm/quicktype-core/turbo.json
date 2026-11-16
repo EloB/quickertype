@@ -1,0 +1,48 @@
+{
+    // The npm package quickertype-core. Its build compiles the engine to
+    // WebAssembly (cargo), so the crates are inputs too. Not published
+    // (package.json's "files").
+    "$schema": "../../node_modules/turbo/schema.json",
+    "extends": ["//"],
+    "tasks": {
+        "build": {
+            "inputs": [
+                "$TURBO_DEFAULT$",
+                "$TURBO_ROOT$/Cargo.toml",
+                "$TURBO_ROOT$/Cargo.lock",
+                "$TURBO_ROOT$/rust-toolchain.toml",
+                "$TURBO_ROOT$/.cargo/**",
+                "$TURBO_ROOT$/crates/**",
+                "!$TURBO_ROOT$/**/.turbo/**",
+                "!$TURBO_ROOT$/**/.DS_Store",
+                "!$TURBO_ROOT$/crates/quicktype-cli/wix/bundled.wxs"
+            ],
+            "outputs": ["dist/**", "build/**"],
+            "env": ["CARGO_*", "RUST*"],
+            "passThroughEnv": ["WASM_BINDGEN"]
+        },
+        "test": {
+            "dependsOn": ["build"],
+            "inputs": [
+                "$TURBO_DEFAULT$",
+                "$TURBO_ROOT$/Cargo.toml",
+                "$TURBO_ROOT$/Cargo.lock",
+                "$TURBO_ROOT$/rust-toolchain.toml",
+                "$TURBO_ROOT$/.cargo/**",
+                "$TURBO_ROOT$/crates/**",
+                "!$TURBO_ROOT$/**/.turbo/**",
+                "!$TURBO_ROOT$/**/.DS_Store",
+                "!$TURBO_ROOT$/crates/quicktype-cli/wix/bundled.wxs"
+            ],
+            "env": ["CARGO_*", "RUST*", "QUICKTYPE_*"],
+            "passThroughEnv": ["WASM_BINDGEN"]
+        },
+        "test:differential": {
+            "dependsOn": ["build", "golden#generate"],
+            "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/tests/**", "!$TURBO_ROOT$/tests/golden/**", "!$TURBO_ROOT$/**/.DS_Store"],
+            // QUICKTYPE_REFERENCE: a quicktype checkout, or `self` (the
+            // package's own TypeScript engine) to compare with.
+            "env": ["QUICKTYPE_*"]
+        }
+    }
+}

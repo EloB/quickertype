@@ -1,0 +1,69 @@
+{
+    // The Rust workspace (Cargo.toml at the repository root) as one
+    // package: its scripts run cargo (crates/package.json).
+    "$schema": "../node_modules/turbo/schema.json",
+    "extends": ["//"],
+    "tasks": {
+        // Always runs: cargo knows itself what is up to date, and other
+        // tasks run the binary it leaves in target/.
+        "build": {
+            "cache": false,
+            "env": ["CARGO_*", "RUST*"]
+        },
+        "lint": {
+            "inputs": [
+                "$TURBO_DEFAULT$",
+                "$TURBO_ROOT$/Cargo.toml",
+                "$TURBO_ROOT$/Cargo.lock",
+                "$TURBO_ROOT$/rust-toolchain.toml",
+                "$TURBO_ROOT$/clippy.toml",
+                "$TURBO_ROOT$/rustfmt.toml",
+                "$TURBO_ROOT$/.cargo/**",
+                "$TURBO_ROOT$/xtask/**",
+                "!$TURBO_ROOT$/**/.turbo/**",
+                "!$TURBO_ROOT$/**/.DS_Store"
+            ],
+            "env": ["CARGO_*", "RUST*"]
+        },
+        // release/** includes the TypeScript compiler a release bundles when
+        // it is staged there (ignored by git), and package-lock.json pins
+        // the one in the repository's node_modules: the tests that find a
+        // compiler run with it.
+        "test": {
+            "dependsOn": ["golden#generate"],
+            "inputs": [
+                "$TURBO_DEFAULT$",
+                "$TURBO_ROOT$/Cargo.toml",
+                "$TURBO_ROOT$/Cargo.lock",
+                "$TURBO_ROOT$/rust-toolchain.toml",
+                "$TURBO_ROOT$/package-lock.json",
+                "$TURBO_ROOT$/.cargo/**",
+                "$TURBO_ROOT$/xtask/**",
+                "$TURBO_ROOT$/release/**",
+                "$TURBO_ROOT$/tests/**",
+                "!$TURBO_ROOT$/tests/golden/**",
+                "!$TURBO_ROOT$/**/.turbo/**",
+                "!$TURBO_ROOT$/**/.DS_Store"
+            ],
+            "env": ["CARGO_*", "RUST*", "QUICKTYPE_*", "RENDER_*", "TS_INPUT_*", "BUNDLE_GEMFILE"]
+        },
+        "parity": {
+            "dependsOn": ["golden#generate"],
+            "inputs": [
+                "$TURBO_DEFAULT$",
+                "$TURBO_ROOT$/Cargo.toml",
+                "$TURBO_ROOT$/Cargo.lock",
+                "$TURBO_ROOT$/rust-toolchain.toml",
+                "$TURBO_ROOT$/package-lock.json",
+                "$TURBO_ROOT$/.cargo/**",
+                "$TURBO_ROOT$/xtask/**",
+                "$TURBO_ROOT$/release/**",
+                "$TURBO_ROOT$/tests/**",
+                "!$TURBO_ROOT$/tests/golden/**",
+                "!$TURBO_ROOT$/**/.turbo/**",
+                "!$TURBO_ROOT$/**/.DS_Store"
+            ],
+            "env": ["CARGO_*", "RUST*", "QUICKTYPE_*"]
+        }
+    }
+}

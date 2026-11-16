@@ -5,7 +5,8 @@
 //
 //   npm run golden                  through Turborepo, which replays its
 //                                   cached result instead when nothing the
-//                                   corpus depends on changed (turbo.json)
+//                                   corpus depends on changed
+//                                   (tests/golden/turbo.json)
 //   node xtask/golden/generate.mjs [<quicktype checkout>]
 //                                   generate it again (cargo xtask golden)
 //

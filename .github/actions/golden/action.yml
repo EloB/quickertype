@@ -4,8 +4,8 @@
 #
 # mode: generate (the default): Turborepo replays the corpus from its
 #   cache, which this keeps in the GitHub Actions cache under a key of what
-#   the corpus depends on (turbo.json's golden#generate and its global
-#   inputs); on a miss Turborepo generates it, fetching and building
+#   the corpus depends on (tests/golden/turbo.json's generate task and the
+#   global inputs); on a miss Turborepo generates it, fetching and building
 #   quicktype (a few minutes), and the cache keeps the result. Needs Node 24
 #   and Turborepo installed first (`npm ci`, or `npm ci --workspaces=false`
 #   for the root's devDependencies alone).
@@ -30,12 +30,13 @@ runs:
         exit 1
     # An exact key when nothing the corpus depends on changed; otherwise the
     # latest cache, in which Turborepo looks for its own hash (a change to
-    # the lockfile or turbo.json may leave it the same).
+    # the lockfile or the root turbo.json may leave it the same; one to
+    # tests/golden/turbo.json, a comment included, does not).
     - if: inputs.mode == 'generate' || inputs.mode == 'share'
       uses: actions/cache@v4
       with:
         path: .turbo/cache
-        key: golden-${{ hashFiles('tests/golden/REFERENCE', 'tests/golden/package.json', 'tests/golden/.gitignore', 'xtask/golden/**', 'tests/inputs/**', 'turbo.json', 'package.json', 'package-lock.json') }}
+        key: golden-${{ hashFiles('tests/golden/REFERENCE', 'tests/golden/package.json', 'tests/golden/turbo.json', 'tests/golden/.gitignore', 'xtask/golden/**', 'tests/inputs/**', 'turbo.json', 'package.json', 'package-lock.json') }}
         restore-keys: golden-
     # The oldest entries go once the cache passes 200 MB (a corpus is about
     # 26 MB), so that restoring the latest cache does not keep every

@@ -1,7 +1,7 @@
 {
     "name": "quickertype-workspace",
     "private": true,
-    "description": "The repository's npm workspace. Turborepo runs its packages' scripts and caches their results (turbo.json, docs/ARCHITECTURE.md).",
+    "description": "The repository's npm workspace. Turborepo runs its packages' scripts and caches their results (turbo.json here and in each package, docs/ARCHITECTURE.md).",
     "license": "Apache-2.0",
     "packageManager": "npm@11.13.0",
     "workspaces": [
