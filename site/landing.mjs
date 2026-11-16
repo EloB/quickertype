@@ -33,7 +33,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { formatMiB, formatMs, headToHeadFacts, headToHeadName, inputSize, issueLink, named, refusals, seconds, sizeIn, speedFacts, times } from "./benchmarks.mjs";
+import { formatMiB, formatMs, headToHeadFacts, headToHeadName, inputSize, issueLink, named, refusals, seconds, sizeIn, speedFacts, stoppedText, times } from "./benchmarks.mjs";
 import { columnChart, legend, pairChart, pairRows, startIds, tableView, valueRows } from "./charts.mjs";
 import { generatedCases } from "../xtask/golden/state.mjs";
 import { quicktypeReference } from "./reference.mjs";
@@ -697,7 +697,7 @@ ${
     stall === undefined
         ? ""
         : pairChart({
-              theirs: { name: "quicktype", value: stall.stopped_after_seconds, text: stall.quicktype, label: `quicktype: did not finish, ${stall.quicktype}` },
+              theirs: { name: "quicktype", value: stall.stopped_after_seconds, text: stoppedText(stall), label: `quicktype: did not finish, ${stoppedText(stall)}` },
               ours: { name: "quickertype", value: stallInput.seconds, text: seconds(stallInput.seconds), label: `quickertype: ${seconds(stallInput.seconds)}` },
               tips: false,
               more: true,

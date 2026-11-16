@@ -165,6 +165,8 @@ import {
     readBenchmarks,
     seconds as bigSeconds,
     speedFacts,
+    stoppedText,
+    hoursMinutes,
     speedupText,
     times as speedup,
     wholeMiB,
@@ -484,6 +486,12 @@ const speedNow = speedFacts(benchmarkData.bench);
     refused("a big input that is not an object", checkBigInputs, "big-inputs.json", big((d) => (d.measured.inputs[0] = null)));
     refused("a big input without bytes", checkBigInputs, "big-inputs.json", big((d) => delete d.measured.inputs[0].bytes), /bytes/);
     refused("a big input with a size of its own", checkBigInputs, "big-inputs.json", big((d) => (d.measured.inputs[0].size = "40 MB")), /derive it from bytes/);
+    // quicktype's unfinished run: on the same machine, on an input it has no finished time for, with a real issue link.
+    refused("an unfinished run on another machine", checkBigInputs, "big-inputs.json", big((d) => (d.unfinished[0].machine = "another machine")), /measured\.machine/);
+    refused("an unfinished run on an input quicktype finished", checkBigInputs, "big-inputs.json", big((d) => (d.unfinished[0].measured = d.measured.inputs.find((i) => i.quicktype !== undefined).name)), /quicktype finished/);
+    refused("an unfinished run whose issue is not an issue", checkBigInputs, "big-inputs.json", big((d) => (d.unfinished[0].issue = "https://github.com/glideapps/quicktype/issues/")), /issue's URL/);
+    checkBigInputs(big((d) => (d.unfinished[0].issue = "https://github.com/glideapps/quicktype/issues/3548")));
+    assert.deepEqual([7402, 7190, 7200, 2700, 3590].map(hoursMinutes), ["2 h 3 min", "2 h", "2 h", "45 min", "1 h"], "hours and minutes, rounded to the minute");
     const browserData = (change) => {
         const data = structuredClone(benchmarkData.browser);
         change(data);
@@ -3395,7 +3403,7 @@ try {
         );
         assert.deepEqual(
             pageNow.stall,
-            [big.unfinished[0].quicktype, bigSeconds(big.measured.inputs.find((i) => i.name === big.unfinished[0].measured).seconds)],
+            [stoppedText(big.unfinished[0]), bigSeconds(big.measured.inputs.find((i) => i.name === big.unfinished[0].measured).seconds)],
             "quicktype on the file it did not finish, against quickertype on the same file",
         );
         const version = data.cli.find((r) => r.name === benchNamed.startup).results;
@@ -3502,7 +3510,7 @@ try {
                 }
             } else {
                 assert.ok(
-                    [benchLinks.readme, benchLinks.install, benchLinks.releases, benchLinks.npmCore, repository, "https://github.com/glideapps/quicktype"].includes(href),
+                    [benchLinks.readme, benchLinks.install, benchLinks.releases, benchLinks.npmCore, repository, "https://github.com/glideapps/quicktype", ...big.unfinished.flatMap((u) => u.issue ?? [])].includes(href),
                     `an unexpected link: ${href}`,
                 );
             }
@@ -3719,7 +3727,7 @@ try {
             wall: document.querySelectorAll(".wall img").length,
         })`);
         const repo = quicktype.repository;
-        const quicktypeLinks = [repo.url, repo.homepage, `${repo.url}/graphs/contributors`, `${repo.url}/blob/${repo.default_branch}/LICENSE`, `https://github.com/glideapps/quicktype/commit/${quicktypeReference().commit}`];
+        const quicktypeLinks = [repo.url, repo.homepage, `${repo.url}/graphs/contributors`, `${repo.url}/blob/${repo.default_branch}/LICENSE`, `https://github.com/glideapps/quicktype/commit/${quicktypeReference().commit}`, ...benchmarkData.big.unfinished.flatMap((u) => u.issue ?? [])];
         const profiles = new Set(people.map((p) => `https://github.com/${p.login}`));
         const ours = new Set([landingLinks.repository, landingLinks.install, landingLinks.npmCore, landingLinks.crate]);
         const linked = { anchors: 0, pages: 0, files: 0, quicktype: 0, profiles: 0, ours: 0 };

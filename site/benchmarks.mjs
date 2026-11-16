@@ -244,12 +244,17 @@ export function checkBigInputs(data, file = bigInputsFile) {
     data.unfinished.forEach((stall, i) => {
         const at = `unfinished[${i}]`;
         ok(isObject(stall), at, "must be an object");
-        for (const key of ["input", "quicktype", "measured", "why"]) ok(text(stall[key]), at, `needs ${key}`);
+        for (const key of ["input", "measured", "machine", "node", "how", "why"]) ok(text(stall[key]), at, `needs ${key}`);
         ok(positive(stall.stopped_after_seconds), at, "needs stopped_after_seconds");
         ok(isDate(stall.date), at, "needs date (when quicktype was run)");
-        ok(stall.issue === undefined || (text(stall.issue) && stall.issue.startsWith("https://github.com/glideapps/quicktype/issues/")), at, "issue must be a quicktype issue URL if given");
-        // quickertype's side is a measurement of the same file.
-        ok(data.measured.inputs.some((input) => input.name === stall.measured), at, `measured names no measured input: ${stall.measured}`);
+        ok(sha(stall.quicktype_commit), at, "needs quicktype_commit");
+        // The pages say both sides were measured here: on the machine the inputs were measured on.
+        ok(stall.machine === m.machine, at, `machine is not measured.machine: ${stall.machine}`);
+        ok(stall.issue === undefined || (typeof stall.issue === "string" && /^https:\/\/github\.com\/glideapps\/quicktype\/issues\/\d+$/.test(stall.issue)), at, "issue must be a quicktype issue's URL if given");
+        // quickertype's side is a measurement of the same file, which quicktype has no finished time for.
+        const input = m.inputs.find((i) => i.name === stall.measured);
+        ok(input !== undefined, at, `measured names no measured input: ${stall.measured}`);
+        ok(input.quicktype === undefined, at, `measured names an input quicktype finished: ${stall.measured}`);
     });
     return data;
 }
@@ -549,11 +554,18 @@ export function formatMiB(x) {
     return `${x.toFixed(1)} MiB`;
 }
 
-/** 7402 → "2 h 3 min". */
-function hoursMinutes(seconds) {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.round((seconds - h * 3600) / 60);
-    return h === 0 ? `${m} min` : `${h} h ${m} min`;
+/** 7402 → "2 h 3 min", 7190 → "2 h", 2700 → "45 min" (to the nearest minute). */
+export function hoursMinutes(seconds) {
+    const total = Math.round(seconds / 60);
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    if (h === 0) return `${m} min`;
+    return m === 0 ? `${h} h` : `${h} h ${m} min`;
+}
+
+/** What quicktype's bar says for a run it did not finish: "stopped after 2 h 3 min". */
+export function stoppedText(stall) {
+    return `stopped after ${hoursMinutes(stall.stopped_after_seconds)}`;
 }
 
 /** 571.7 → "9 min 32 s". */
@@ -862,7 +874,7 @@ export function benchmarksPageHtml({ bench, big, workers, h2h }) {
         [`${times(pokedexMemory)}`, `less memory on pokedex.json: ${formatMiB(pokedex.results.rust.peak_rss_mib)} against ${formatMiB(pokedex.results.typescript.peak_rss_mib)}`],
         ...(stall === undefined
             ? []
-            : [[seconds(stallInput.seconds), `for ${e(stall.input)} that quicktype did not finish (${e(stall.quicktype)})`]]),
+            : [[seconds(stallInput.seconds), `for ${e(stall.input)} that quicktype did not finish (${e(stoppedText(stall))})`]]),
     ];
 
     const typicalList = bench.cli.filter(isTypical);
@@ -926,12 +938,12 @@ ${unexpectedExits(corpus)}
             : `<figure class="chart" aria-labelledby="stall-title">
 <figcaption id="stall-title">${e(stall.input.replace(/^a /, "A "))}: quicktype did not finish</figcaption>
 ${pairChart({
-    theirs: { name: "quicktype", value: stall.stopped_after_seconds, text: stall.quicktype, label: `quicktype: did not finish, ${stall.quicktype}` },
+    theirs: { name: "quicktype", value: stall.stopped_after_seconds, text: stoppedText(stall), label: `quicktype: did not finish, ${stoppedText(stall)}` },
     ours: { name: "quickertype", value: stallInput.seconds, text: seconds(stallInput.seconds), label: `quickertype: ${seconds(stallInput.seconds)}` },
     tips: false,
     more: true,
 })}
-<p class="fineprint">${e(stall.why)}${issueLink(stall)} It was stopped after ${hoursMinutes(stall.stopped_after_seconds)} on ${e(longDate(stall.date))}, where its bar ends. quickertype's time is from the table below (${e(stallInput.description)}). Both were measured here.</p>
+<p class="fineprint">${e(stall.why)}${issueLink(stall)} quicktype (<code>${stall.quicktype_commit.slice(0, 7)}</code>, Node.js ${e(stall.node)}) was stopped after ${hoursMinutes(stall.stopped_after_seconds)} on ${e(longDate(stall.date))}; its bar is solid up to then and faded after, as it was still running. quickertype's time is from the table below (${e(stallInput.description)}). Both were measured on the same machine.</p>
 </figure>`;
     sections.push(`<section id="big-files" aria-labelledby="big-title">
 <h2 id="big-title">Big files</h2>
