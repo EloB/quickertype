@@ -3358,7 +3358,7 @@ try {
             `${speedNow.upTo}×`,
             speedup(speedNow.corpus),
             speedup(pokedex.typescript.peak_rss_mib / pokedex.rust.peak_rss_mib),
-            big.reports[0].quickertype.replace(/^about /, "~"),
+            bigSeconds(big.measured.inputs.find((i) => i.name === big.reports[0].measured).seconds),
         ]);
         assert.deepEqual(
             pageNow.cli,
@@ -3388,7 +3388,11 @@ try {
             big.measured.inputs.map((i) => inputSize(i.bytes)),
             "the big inputs' sizes",
         );
-        assert.deepEqual(pageNow.report, [big.reports[0].quicktype, big.reports[0].quickertype], "the user's report");
+        assert.deepEqual(
+            pageNow.report,
+            [big.reports[0].quicktype, bigSeconds(big.measured.inputs.find((i) => i.name === big.reports[0].measured).seconds)],
+            "the user's report, against quickertype measured on the same file",
+        );
         const version = data.cli.find((r) => r.name === benchNamed.startup).results;
         assert.deepEqual(
             pageNow.browser.map(([total]) => total),
