@@ -1,6 +1,6 @@
 // The playground's benchmark numbers: site/data/benchmarks.json (written by
 // `cargo xtask bench --json`), site/data/big-inputs.json (large inputs,
-// measured by hand, and a user's report), site/data/browser.json (the
+// measured by hand, and quicktype on one it did not finish), site/data/browser.json (the
 // WebAssembly engine in Chrome, from npm/quicktype-core's compare.mjs),
 // site/data/browser-workers.json (the playground reading large files in one
 // go and on several workers, from site/test/parts-bench.mjs) and
@@ -239,14 +239,23 @@ export function checkBigInputs(data, file = bigInputsFile) {
         if (input.one_thread !== undefined) run(input.one_thread, `${at}.one_thread`);
         if (input.quicktype !== undefined) run(input.quicktype, `${at}.quicktype`);
     });
-    ok(Array.isArray(data.reports), "reports", "must be an array");
-    data.reports.forEach((report, i) => {
-        const at = `reports[${i}]`;
-        ok(isObject(report), at, "must be an object");
-        for (const key of ["input", "size", "quicktype", "measured", "source"]) ok(text(report[key]), at, `needs ${key}`);
-        ok(positive(report.quicktype_seconds_at_least), at, "needs quicktype_seconds_at_least");
-        // quickertype's side is a measurement of the same file, never a report.
-        ok(data.measured.inputs.some((input) => input.name === report.measured), at, `measured names no measured input: ${report.measured}`);
+    // quicktype's CLI on an input it did not finish, measured here: when it was stopped, and why it stalls.
+    ok(Array.isArray(data.unfinished) && data.unfinished.length <= 1, "unfinished", "must be an array of at most one run (the pages show one)");
+    data.unfinished.forEach((stall, i) => {
+        const at = `unfinished[${i}]`;
+        ok(isObject(stall), at, "must be an object");
+        for (const key of ["input", "measured", "machine", "node", "how", "why"]) ok(text(stall[key]), at, `needs ${key}`);
+        // The pages write it to the minute.
+        ok(positive(stall.stopped_after_seconds) && stall.stopped_after_seconds >= 60, at, "needs stopped_after_seconds, a minute or more");
+        ok(isDate(stall.date), at, "needs date (when quicktype was run)");
+        ok(sha(stall.quicktype_commit), at, "needs quicktype_commit");
+        // The pages say both sides were measured here: on the machine the inputs were measured on.
+        ok(stall.machine === m.machine, at, `machine is not measured.machine: ${stall.machine}`);
+        ok(stall.issue === undefined || (typeof stall.issue === "string" && /^https:\/\/github\.com\/glideapps\/quicktype\/issues\/\d+$/.test(stall.issue)), at, "issue must be a quicktype issue's URL if given");
+        // quickertype's side is a measurement of the same file, which quicktype has no finished time for.
+        const input = m.inputs.find((i) => i.name === stall.measured);
+        ok(input !== undefined, at, `measured names no measured input: ${stall.measured}`);
+        ok(input.quicktype === undefined, at, `measured names an input quicktype finished: ${stall.measured}`);
     });
     return data;
 }
@@ -546,10 +555,18 @@ export function formatMiB(x) {
     return `${x.toFixed(1)} MiB`;
 }
 
-/** 18000 → "5 hours". */
-function hours(seconds) {
-    const h = seconds / 3600;
-    return `${Number.isInteger(h) ? h : h.toFixed(1)} hour${h === 1 ? "" : "s"}`;
+/** 7402 → "2 h 3 min", 7190 → "2 h", 2700 → "45 min" (to the nearest minute). */
+export function hoursMinutes(seconds) {
+    const total = Math.round(seconds / 60);
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    if (h === 0) return `${m} min`;
+    return m === 0 ? `${h} h` : `${h} h ${m} min`;
+}
+
+/** What quicktype's bar says for a run it did not finish: "stopped after 2 h 3 min". */
+export function stoppedText(stall) {
+    return `stopped after ${hoursMinutes(stall.stopped_after_seconds)}`;
 }
 
 /** 571.7 → "9 min 32 s". */
@@ -564,6 +581,28 @@ function longDate(iso) {
 }
 
 const e = escapeHtml;
+
+/**
+ * quicktype's unfinished run (big-inputs.json's `unfinished`), for both
+ * pages: the run, quickertype's measured input of the same file, its pair
+ * of bars and the fine print that says why and how it was measured; or
+ * undefined if there is none.
+ */
+export function unfinishedRun(big) {
+    const stall = big.unfinished[0];
+    if (stall === undefined) return undefined;
+    const input = big.measured.inputs.find((i) => i.name === stall.measured);
+    const stopped = stoppedText(stall);
+    const chart = pairChart({
+        theirs: { name: "quicktype", value: stall.stopped_after_seconds, text: stopped, label: `quicktype: did not finish, ${stopped}` },
+        ours: { name: "quickertype", value: input.seconds, text: seconds(input.seconds), label: `quickertype: ${seconds(input.seconds)}` },
+        tips: false,
+        more: true,
+    });
+    const issue = stall.issue === undefined ? "" : ` <a href="${e(stall.issue)}">Reported to quicktype.</a>`;
+    const note = `${e(stall.why)}${issue} quicktype (<code>${stall.quicktype_commit.slice(0, 7)}</code>, Node.js ${e(stall.node)}) was stopped after ${hoursMinutes(stall.stopped_after_seconds)} on ${e(longDate(stall.date))}, on the same machine as quickertype.`;
+    return { stall, input, chart, note };
+}
 
 // ---------------------------------------------------------------------------
 // Charts (the pieces are site/charts.mjs)
@@ -834,9 +873,7 @@ export function benchmarksPageHtml({ bench, big, workers, h2h }) {
     const inProcess = bench.in_process.results;
     const machine = bench.machine;
     const date = longDate(bench.date);
-    const report = big.reports[0];
-    // quickertype on the report's file, measured here.
-    const reported = report === undefined ? undefined : big.measured.inputs.find((i) => i.name === report.measured);
+    const unfinished = unfinishedRun(big);
     // The 40 MB input, measured again for big-inputs.json after this run (only then is it news here;
     // said as what was measured, which may be more or less).
     const measuredLarge = big.measured.date > bench.date ? big.measured.inputs.find((i) => large.name.startsWith(`${i.name} `)) : undefined;
@@ -851,9 +888,9 @@ export function benchmarksPageHtml({ bench, big, workers, h2h }) {
         [`${facts.upTo}×`, `faster per CLI run at most (<code>${e(facts.upToRow.name)}</code>, ${e(measures(facts.upToRow))}); about ${facts.typical}× on typical files`],
         [`${times(facts.corpus)}`, `faster on quicktype's whole test corpus, ${corpus.typescript.steps.toLocaleString("en-US")} CLI runs`],
         [`${times(pokedexMemory)}`, `less memory on pokedex.json: ${formatMiB(pokedex.results.rust.peak_rss_mib)} against ${formatMiB(pokedex.results.typescript.peak_rss_mib)}`],
-        ...(report === undefined
+        ...(unfinished === undefined
             ? []
-            : [[seconds(reported.seconds), `for a user's ${e(report.size)} JSON file, where quicktype ran for ${e(report.quicktype)}`]]),
+            : [[seconds(unfinished.input.seconds), `for ${e(unfinished.stall.input)} that quicktype did not finish (${e(stoppedText(unfinished.stall))})`]]),
     ];
 
     const typicalList = bench.cli.filter(isTypical);
@@ -911,23 +948,18 @@ ${tableView("The golden corpus, every step once", ["Engine", "Wall time", "CLI t
 ${unexpectedExits(corpus)}
 </section>`);
 
-    const reportChart =
-        report === undefined
+    const stallChart =
+        unfinished === undefined
             ? ""
-            : `<figure class="chart" aria-labelledby="report-title">
-<figcaption id="report-title">${e(report.input.replace(/^a /, "A "))}: quicktype as a user reported it, quickertype measured here</figcaption>
-${pairChart({
-    theirs: { name: "quicktype", value: report.quicktype_seconds_at_least, text: report.quicktype, label: `quicktype: ${report.quicktype}, as a user reported it` },
-    ours: { name: "quickertype", value: reported.seconds, text: seconds(reported.seconds), label: `quickertype: ${seconds(reported.seconds)}, measured here` },
-    tips: false,
-    more: true,
-})}
-<p class="fineprint">${e(report.source)} quickertype's time is measured here (${e(reported.description)}, below). quicktype's bar is drawn at ${hours(report.quicktype_seconds_at_least)}; it ran longer.</p>
+            : `<figure class="chart" aria-labelledby="stall-title">
+<figcaption id="stall-title">${e(unfinished.stall.input.replace(/^a /, "A "))}: quicktype did not finish</figcaption>
+${unfinished.chart}
+<p class="fineprint">${unfinished.note} Its bar is solid up to then and faded after, as it was still running. quickertype's time is from the table below (${e(unfinished.input.description)}). How: ${e(unfinished.stall.how)}</p>
 </figure>`;
     sections.push(`<section id="big-files" aria-labelledby="big-title">
 <h2 id="big-title">Big files</h2>
 <p>quickertype reads JSON as a stream and keeps its tables compact, so files of several gigabytes run in seconds.</p>
-${reportChart}
+${stallChart}
 <figure class="chart" aria-labelledby="big-table-title">
 <figcaption id="big-table-title">quickertype on large inputs, measured here</figcaption>
 <table class="plain"><thead><tr><th scope="col">Input</th><th scope="col" class="num">Time</th><th scope="col" class="num">Peak memory</th>${

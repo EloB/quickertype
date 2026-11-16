@@ -209,9 +209,10 @@ to 98 ms
 
 The CLI on inputs of 27 MB to 3 GB (`site/data/big-inputs.json`), on all
 cores (the default) and on one thread (`QUICKTYPE_READ_THREADS=1`, which
-reads every sample in one go), and quicktype's CLI where it finished in
-seconds. `-l ts -o <file>` (the Scryfall cards with `--just-types -t
-Cards`); the commands of each block run in turn, after one untimed run
+reads every sample in one go), and quicktype's CLI where it finished
+(on the 3 GB cards it did not: see
+[quicktype on the 3 GB cards](#quicktype-on-the-3-gb-cards)).
+`-l ts -o <file>` (the Scryfall cards with `--just-types -t Cards`); the commands of each block run in turn, after one untimed run
 each (none for quicktype on the cards); wall time / CPU time (user +
 system) and peak RSS of each run from `wait4`; medians.
 
@@ -236,7 +237,7 @@ first thing to slow down when other work runs).
 Every command wrote the same output: all cores against one thread on
 every input, quicktype against quickertype on the 40 MB input, the 100k
 and 1M records and the 657 MB cards, and the cards as JSON Lines against
-the array. quicktype was not run on the 2.5 to 3.0 GB inputs.
+the array. quicktype was not run on the 2.5 and 2.6 GB inputs.
 
 - **Reading on several threads** pays on the arrays: 5.2× less wall time
   on the 1M records for 1.7× the CPU time, 4.5× on the text-heavy input,
@@ -290,6 +291,68 @@ with open(sys.argv[1], "w") as f:
 /usr/bin/time -l target/release/quickertype target/bench/text.json -l ts -o out.ts
 QUICKTYPE_READ_THREADS=1 /usr/bin/time -l target/release/quickertype target/bench/text.json -l ts -o out.ts
 ```
+
+### quicktype on the 3 GB cards
+
+quicktype's CLI (`c39af7d3`, Node.js 24.16.0) on the 3.01 GB cards, with
+the same options, on November 16, 2026, on the same machine
+(`site/data/big-inputs.json`, `unfinished`):
+
+- At Node's default memory limit (4,288 MiB here): it stalls from about
+  minute 3, its memory flat at 4.35 GiB. Stopped after 2 h 3 min
+  (7,402 s).
+- With `--max-old-space-size=49152`: the same stall. Stopped after
+  7 minutes, at a peak of 5.08 GiB.
+- A stack sample (`sample <pid>`) of each shows the main thread in
+  `Runtime_SetKeyedProperty` → `BaseNameDictionary::Add` →
+  `IterationIndices` → `std::sort`.
+
+quicktype's `CompressedJSON` interns strings of up to 64 characters, and
+every URI, in a plain object. Once a plain object has 2^23 = 8,388,608
+properties, V8 renumbers and re-sorts all of them for every new one,
+about 1.3 s each in Node.js 24:
+
+```js
+const o = {};
+let n = 0;
+while (n < 8_388_600) { o["s" + n] = n; n++; }
+for (let k = 0; k < 12; k++) {
+  const t = process.hrtime.bigint();
+  o["s" + n] = n; n++;
+  console.log(n, Number(process.hrtime.bigint() - t) / 1e6, "ms");
+}
+// ~0 ms up to key 8,388,607, then ~1,300 ms for each key
+```
+
+The cards have 9,323,597 interned strings, about 935,000 past the limit.
+With the table in a `Map` instead, through this preload (`map.cjs`, run as
+`QT_DIR=<quicktype> node -r ./map.cjs <quicktype>/dist/index.js <input>
+...`, so that it patches the quicktype-core the CLI loads):
+
+```js
+const core = require(require.resolve("quicktype-core", { paths: [process.env.QT_DIR] }));
+core.CompressedJSON.prototype.internString = function (s) {
+  const map = (this.__index ??= new Map());
+  const found = map.get(s);
+  if (found !== undefined) return found;
+  const index = this._strings.length;
+  this._strings.push(s);
+  map.set(s, index);
+  return index;
+};
+```
+
+- at the default memory limit, it runs out of memory ("JavaScript heap
+  out of memory") after 41 s;
+- with `--max-old-space-size=49152`, it finishes in 152 s at a peak of
+  15.7 GiB, and its output is quickertype's, byte for byte (quickertype
+  in the same session: 1.08 s, 154 MiB).
+
+The preload changes only `internString`; `CompressedJSON.hashCode`, which
+also reads the table, is left as it is (the output does not depend on it).
+The fix proposed to quicktype
+([#3559](https://github.com/glideapps/quicktype/pull/3559), for the issue
+[#3558](https://github.com/glideapps/quicktype/issues/3558)) changes both.
 
 ## WebAssembly in Chrome
 

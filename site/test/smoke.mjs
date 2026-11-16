@@ -165,6 +165,8 @@ import {
     readBenchmarks,
     seconds as bigSeconds,
     speedFacts,
+    stoppedText,
+    hoursMinutes,
     speedupText,
     times as speedup,
     wholeMiB,
@@ -484,6 +486,12 @@ const speedNow = speedFacts(benchmarkData.bench);
     refused("a big input that is not an object", checkBigInputs, "big-inputs.json", big((d) => (d.measured.inputs[0] = null)));
     refused("a big input without bytes", checkBigInputs, "big-inputs.json", big((d) => delete d.measured.inputs[0].bytes), /bytes/);
     refused("a big input with a size of its own", checkBigInputs, "big-inputs.json", big((d) => (d.measured.inputs[0].size = "40 MB")), /derive it from bytes/);
+    // quicktype's unfinished run: on the same machine, on an input it has no finished time for, with a real issue link.
+    refused("an unfinished run on another machine", checkBigInputs, "big-inputs.json", big((d) => (d.unfinished[0].machine = "another machine")), /measured\.machine/);
+    refused("an unfinished run on an input quicktype finished", checkBigInputs, "big-inputs.json", big((d) => (d.unfinished[0].measured = d.measured.inputs.find((i) => i.quicktype !== undefined).name)), /quicktype finished/);
+    refused("an unfinished run whose issue is not an issue", checkBigInputs, "big-inputs.json", big((d) => (d.unfinished[0].issue = "https://github.com/glideapps/quicktype/issues/")), /issue's URL/);
+    checkBigInputs(big((d) => (d.unfinished[0].issue = "https://github.com/glideapps/quicktype/issues/3548")));
+    assert.deepEqual([7402, 7190, 7200, 2700, 3590].map(hoursMinutes), ["2 h 3 min", "2 h", "2 h", "45 min", "1 h"], "hours and minutes, rounded to the minute");
     const browserData = (change) => {
         const data = structuredClone(benchmarkData.browser);
         change(data);
@@ -3347,7 +3355,7 @@ try {
                 memory: [...document.querySelectorAll("#memory .bar-row")].map((r) => [r.querySelector(".bar-name").textContent, ...[...r.querySelectorAll("text.tip")].map((t) => t.textContent)]),
                 corpus: [...document.querySelectorAll("#corpus text.tip")].map((t) => t.textContent),
                 big: [...document.querySelectorAll("#big-files table.plain tbody tr")].map((r) => [...r.children].map((c) => c.textContent)),
-                report: [...document.querySelectorAll("#big-files .bars .bar-value")].map((v) => v.textContent),
+                stall: [...document.querySelectorAll("#big-files .bars .bar-value")].map((v) => v.textContent),
                 browser: [...document.querySelectorAll("#browser .bar-row")].map((r) => [r.querySelector(".bar-value").textContent, r.querySelector(".bar-note").textContent]),
                 large: [...document.querySelectorAll("#browser-files .bar-row")].map((r) => [r.querySelector(".bar-name").textContent, r.querySelector(".bar-value").textContent, ...[...r.querySelectorAll("text.tip")].map((t) => t.textContent)]),
                 workers: [...document.querySelectorAll("#browser-files table.plain tbody tr")].map((r) => [...r.children].map((c) => c.textContent)),
@@ -3363,7 +3371,7 @@ try {
             `${speedNow.upTo}×`,
             speedup(speedNow.corpus),
             speedup(pokedex.typescript.peak_rss_mib / pokedex.rust.peak_rss_mib),
-            bigSeconds(big.measured.inputs.find((i) => i.name === big.reports[0].measured).seconds),
+            bigSeconds(big.measured.inputs.find((i) => i.name === big.unfinished[0].measured).seconds),
         ]);
         assert.deepEqual(
             pageNow.cli,
@@ -3394,9 +3402,9 @@ try {
             "the big inputs' sizes",
         );
         assert.deepEqual(
-            pageNow.report,
-            [big.reports[0].quicktype, bigSeconds(big.measured.inputs.find((i) => i.name === big.reports[0].measured).seconds)],
-            "the user's report, against quickertype measured on the same file",
+            pageNow.stall,
+            [stoppedText(big.unfinished[0]), bigSeconds(big.measured.inputs.find((i) => i.name === big.unfinished[0].measured).seconds)],
+            "quicktype on the file it did not finish, against quickertype on the same file",
         );
         const version = data.cli.find((r) => r.name === benchNamed.startup).results;
         assert.deepEqual(
@@ -3428,7 +3436,7 @@ try {
             ]),
             "reading on workers",
         );
-        console.log(`ok: the benchmarks page says what the data holds: ${pageNow.cli.length} CLI benchmarks, ${pageNow.memory.length} memory rows, the corpus, ${pageNow.big.length} big inputs and a user's report, the method (${pageNow.method.Date})`);
+        console.log(`ok: the benchmarks page says what the data holds: ${pageNow.cli.length} CLI benchmarks, ${pageNow.memory.length} memory rows, the corpus, ${pageNow.big.length} big inputs and a file quicktype did not finish, the method (${pageNow.method.Date})`);
 
         // Accessible: every chart a figure with a caption; every bar an image
         // with a name; every other drawing hidden; every chart's numbers in a table.
@@ -3447,8 +3455,8 @@ try {
         for (const name of data.cli.map((r) => r.name)) {
             assert.ok(a11y.bars.some((label) => label.startsWith(`${name}: quickertype `)), `no accessible label for ${name}`);
         }
-        const reportTables = big.reports.length; // the user's report lists its two values beside the bars
-        assert.equal(a11y.tables.length, reportTables, `charts without a table: ${a11y.tables.join(", ")}`);
+        const stallTables = big.unfinished.length; // the unfinished run lists its two values beside the bars
+        assert.equal(a11y.tables.length, stallTables, `charts without a table: ${a11y.tables.join(", ")}`);
         console.log(`ok: the charts are labelled: ${a11y.figures.length} figures with captions, ${a11y.bars.length} bars named (e.g. "${a11y.bars[2]}"), a table for each chart`);
 
         // The charts' colours come from the theme: violet and gray, light and dark.
@@ -3502,7 +3510,7 @@ try {
                 }
             } else {
                 assert.ok(
-                    [benchLinks.readme, benchLinks.install, benchLinks.releases, benchLinks.npmCore, repository, "https://github.com/glideapps/quicktype"].includes(href),
+                    [benchLinks.readme, benchLinks.install, benchLinks.releases, benchLinks.npmCore, repository, "https://github.com/glideapps/quicktype", ...big.unfinished.flatMap((u) => u.issue ?? [])].includes(href),
                     `an unexpected link: ${href}`,
                 );
             }
@@ -3719,7 +3727,7 @@ try {
             wall: document.querySelectorAll(".wall img").length,
         })`);
         const repo = quicktype.repository;
-        const quicktypeLinks = [repo.url, repo.homepage, `${repo.url}/graphs/contributors`, `${repo.url}/blob/${repo.default_branch}/LICENSE`, `https://github.com/glideapps/quicktype/commit/${quicktypeReference().commit}`];
+        const quicktypeLinks = [repo.url, repo.homepage, `${repo.url}/graphs/contributors`, `${repo.url}/blob/${repo.default_branch}/LICENSE`, `https://github.com/glideapps/quicktype/commit/${quicktypeReference().commit}`, ...benchmarkData.big.unfinished.flatMap((u) => u.issue ?? [])];
         const profiles = new Set(people.map((p) => `https://github.com/${p.login}`));
         const ours = new Set([landingLinks.repository, landingLinks.install, landingLinks.npmCore, landingLinks.crate]);
         const linked = { anchors: 0, pages: 0, files: 0, quicktype: 0, profiles: 0, ours: 0 };
