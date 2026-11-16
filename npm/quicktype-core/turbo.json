@@ -43,8 +43,6 @@
             // QUICKTYPE_REFERENCE: a quicktype checkout, or `self` (the
             // package's own TypeScript engine) to compare with.
             "env": ["QUICKTYPE_*"]
-        },
-        // Removes dist and build: never replayed from the cache.
-        "clean": {}
+        }
     }
 }

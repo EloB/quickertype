@@ -6,11 +6,14 @@
     // instead of running again. See docs/ARCHITECTURE.md, "Tasks and the
     // cache".
     //
-    // This file holds the global options and the tasks' names; each
-    // package's own turbo.json (next to its package.json, extending this
-    // one) says what its tasks read, write and wait for:
-    // crates/turbo.json, tests/golden/turbo.json,
-    // npm/quicktype-core/turbo.json and site/turbo.json.
+    // This file holds the global options. Each package's own turbo.json
+    // (next to its package.json, extending this one) defines its tasks:
+    // what they read, write and wait for (crates/turbo.json,
+    // tests/golden/turbo.json, npm/quicktype-core/turbo.json and
+    // site/turbo.json). A script a package's turbo.json does not name is
+    // not a task: Turborepo does not run it. A package's turbo.json is an
+    // input of all its tasks, so editing it, a comment included, runs
+    // them again once.
     //
     // Inputs are listed generously there: a file a task reads that is not
     // an input would let a stale result be replayed. Globs given in
@@ -22,16 +25,5 @@
     // Read by tests that print GitHub annotations; they do not change
     // results.
     "globalPassThroughEnv": ["GITHUB_ACTIONS"],
-    "tasks": {
-        "build": {},
-        "lint": {},
-        "test": {},
-        "test:differential": {},
-        "parity": {},
-        "generate": {},
-        // Removing files is never replayed from the cache.
-        "clean": {
-            "cache": false
-        }
-    }
+    "tasks": {}
 }

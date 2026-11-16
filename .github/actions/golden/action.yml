@@ -30,7 +30,8 @@ runs:
         exit 1
     # An exact key when nothing the corpus depends on changed; otherwise the
     # latest cache, in which Turborepo looks for its own hash (a change to
-    # the lockfile or the root turbo.json may leave it the same).
+    # the lockfile or the root turbo.json may leave it the same; one to
+    # tests/golden/turbo.json, a comment included, does not).
     - if: inputs.mode == 'generate' || inputs.mode == 'share'
       uses: actions/cache@v4
       with:

@@ -413,7 +413,7 @@ file (snake_case; `Type/` becomes `ty/`), so every Rust module has one
 obvious TypeScript counterpart.
 
 ```sh
-npm ci                          # once: Turborepo (turbo.json, one per package) and the npm package's dependencies
+npm ci                          # once: Turborepo (turbo.json at the root and in each package) and the npm package's dependencies
 npm run golden                  # generate tests/golden (or replay it from Turborepo's cache)
 npm test                        # every test, skipping those whose inputs did not change
 npm run parity                  # parity against the golden corpus, byte for byte

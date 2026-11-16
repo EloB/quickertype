@@ -7,11 +7,15 @@
     "tasks": {
         // Empties tests/golden before a replay unless it already holds the
         // corpus of the current inputs (xtask/golden/clean.mjs), so that a
-        // replayed corpus never mixes with another's files.
-        "clean": {},
+        // replayed corpus never mixes with another's files. Never cached:
+        // it must run before every replay.
+        "clean": {
+            "cache": false
+        },
         "generate": {
             "dependsOn": ["clean"],
-            // The same files as state.mjs's inputsDigest.
+            // The files state.mjs's inputsDigest covers; Turborepo also
+            // hashes this package's package.json and turbo.json.
             "inputs": ["REFERENCE", "$TURBO_ROOT$/xtask/golden/**", "$TURBO_ROOT$/tests/inputs/**", "!$TURBO_ROOT$/**/.DS_Store"],
             // Everything but the files in git and Turborepo's logs.
             "outputs": ["**", "!package.json", "!turbo.json", "!REFERENCE", "!.gitignore", "!.turbo/**"],
