@@ -3889,12 +3889,8 @@ try {
                 source: "{ let t = 0; const next = requestAnimationFrame; window.requestAnimationFrame = (f) => next(() => f((t += 60))); }",
             });
             await live.navigate(siteUrl, { playground: false });
-            await live.waitFor("document.querySelector('.hero canvas') === null && document.documentElement.dataset.art !== undefined", "the hero's scene to give up");
-            assert.deepEqual(
-                await live.evaluate("[document.documentElement.dataset.art, document.querySelectorAll('.hero img[data-scene]').length, document.querySelectorAll('canvas.live-art').length]"),
-                ["live", 1, 2],
-                "a device too slow for the hero's scene: its image, and the other scenes (off screen, not yet drawn) still waiting",
-            );
+            await live.waitFor("document.documentElement.dataset.art !== undefined && document.querySelector('.hero canvas') === null", "the hero's scene to give up");
+            assert.equal(await live.evaluate("document.querySelectorAll('.hero img[data-scene]').length"), 1, "a device too slow for the hero's scene: its image");
             await live.send("Page.removeScriptToEvaluateOnNewDocument", { identifier: slow });
             await live.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
             await live.navigate(siteUrl, { playground: false });

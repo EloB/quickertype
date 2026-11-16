@@ -617,11 +617,11 @@ html:has(.landing) {
     }
 }
 
+/* The frame (.art-frame) rounds the image and the scene over it. */
 .art {
     display: block;
     width: 100%;
     height: auto;
-    border-radius: 22px;
     background: var(--stage);
 }
 
@@ -629,6 +629,8 @@ html:has(.landing) {
    fades in after its first frame. The image stays under it. */
 .art-frame {
     position: relative;
+    overflow: hidden;
+    border-radius: 22px;
 }
 
 .art-frame > .live-art {
@@ -636,7 +638,6 @@ html:has(.landing) {
     inset: 0;
     width: 100%;
     height: 100%;
-    border-radius: 22px;
 }
 
 .live-art {

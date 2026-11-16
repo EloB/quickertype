@@ -10,8 +10,9 @@
 // The images stay. They are the first paint, and what anyone sees without
 // WebGL, with reduced motion or Save-Data, or on a device too slow to draw
 // the scene (a canvas lowers its resolution first, then gives up and is
-// removed). A canvas fades in over its image after its first frame, and
-// draws only while it is on screen and the page is visible.
+// removed). A scene starts when its image first comes near the screen; its
+// canvas fades in over the image after its first frame, and draws only
+// while it is on screen and the page is visible.
 //
 // <html data-art> says what happened: "live" while a scene draws; else why
 // none does: "reduced-motion", "save-data", "no-webgl" (no WebGL, or none
@@ -25,6 +26,13 @@ const root = document.documentElement;
 const motion = matchMedia("(prefers-reduced-motion: reduce)");
 /** The canvases that draw a scene. */
 const live = new Set();
+/** Why no scene draws, when none does. */
+let reason = "no-webgl";
+/** Sets <html data-art>, after a scene started or stopped (`why`, when it did not start or has gone). */
+function report(why) {
+    if (why !== undefined) reason = why;
+    root.dataset.art = motion.matches ? "reduced-motion" : live.size > 0 ? "live" : reason;
+}
 
 /** A WebGL context the scenes can draw with, or null. */
 function context(canvas) {
@@ -91,6 +99,7 @@ function animate(image, scene) {
         request = 0;
         last = null;
     };
+    // Gone: the canvas fades out over its last frame, then lets its context go.
     const remove = (why) => {
         if (gone) return;
         gone = true;
@@ -98,25 +107,29 @@ function animate(image, scene) {
         observer.disconnect();
         resized.disconnect();
         listening.abort();
-        gl.getExtension("WEBGL_lose_context")?.loseContext();
-        canvas.remove();
         live.delete(canvas);
-        if (live.size === 0) root.dataset.art = why;
+        report(why);
+        canvas.classList.remove("on");
+        setTimeout(() => {
+            gl.getExtension("WEBGL_lose_context")?.loseContext();
+            canvas.remove();
+        }, 1000);
     };
     const frame = (now) => {
         request = 0;
         if (last !== null) {
-            // A frame counts at most 250 ms against the device (a debugger's
-            // pause is not a slow device) and moves the scene at most 100 ms.
+            // A late frame moves the scene at most 100 ms.
             const elapsed = now - last;
-            frames.push(Math.min(elapsed, 250));
+            frames.push(elapsed);
             seconds += Math.min(elapsed, 100) / 1000;
         }
         last = now;
+        // Too slow: the median of 45 frames over 40 ms (a burst of long
+        // tasks elsewhere on the page, or a pause, is not a slow device).
         if (frames.length === 45) {
-            const average = frames.reduce((a, b) => a + b) / frames.length;
+            const median = frames.sort((a, b) => a - b)[22];
             frames = [];
-            if (average > 40) {
+            if (median > 40) {
                 if (step === scales.length - 1) return remove("too-slow");
                 step += 1;
             }
@@ -174,18 +187,32 @@ function animate(image, scene) {
     return "live";
 }
 
+let started = false;
+
 function start() {
-    if (motion.matches) return void (root.dataset.art = "reduced-motion");
-    if (navigator.connection?.saveData) return void (root.dataset.art = "save-data");
-    let why = "no-webgl";
-    for (const image of document.querySelectorAll("img[data-scene]")) {
-        if (!(image.dataset.scene in SCENES)) continue;
-        const result = animate(image, image.dataset.scene);
-        if (result === "no-webgl") break;
-        if (result === "failed") why = "failed";
-    }
-    root.dataset.art = live.size > 0 ? "live" : why;
+    if (motion.matches) return report();
+    if (navigator.connection?.saveData) return report("save-data");
+    started = true;
+    // Each scene starts (a context, its shader compiled) when its image first
+    // comes near the screen: a visitor who stays at the top pays for one.
+    const near = new IntersectionObserver(
+        (entries) => {
+            for (const { target, isIntersecting } of entries) {
+                if (!isIntersecting) continue;
+                near.unobserve(target);
+                const result = animate(target, target.dataset.scene);
+                if (result === "no-webgl") near.disconnect();
+                report(result === "live" ? undefined : result);
+            }
+        },
+        { rootMargin: "256px" },
+    );
+    for (const image of document.querySelectorAll("img[data-scene]")) if (image.dataset.scene in SCENES) near.observe(image);
 }
+
+// Reduced motion turned off after the page loaded starts the scenes then;
+// each canvas stops and starts itself.
+motion.addEventListener("change", () => (!motion.matches && !started ? start() : report()));
 
 // After the page has loaded and gone quiet: the images come first.
 const later = (callback) => ("requestIdleCallback" in window ? requestIdleCallback(callback, { timeout: 1500 }) : setTimeout(callback, 200));

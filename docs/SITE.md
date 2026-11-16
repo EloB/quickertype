@@ -257,10 +257,12 @@ Each image has a scene drawn over it, live, in WebGL 1
 The images stay: they are the first paint, and what anyone sees without
 WebGL, with `prefers-reduced-motion: reduce` or Save-Data, or on a device
 too slow to draw the scenes. The module starts after the page has loaded
-and gone idle; a canvas fades in over its image after its first frame and
-draws only while it is on screen (and the tab visible), at up to 1.5 device
-pixels per CSS pixel. When 45 frames average over 40 ms, it draws at 75%,
-then 50% of that; below that it removes itself and leaves the image. The
+and gone idle, and a scene (its WebGL context and shader) when its image
+first comes within 256 px of the screen; a canvas fades in over its image
+after its first frame and draws only while it is on screen (and the tab
+visible), at up to 1.5 device pixels per CSS pixel. When the median of 45
+frames is over 40 ms, it draws at 75%, then 50% of that; below that it
+fades out and leaves the image. The
 scenes need highp floats in fragment shaders; without them, as without
 WebGL, the images stay. `<html data-art>` says what happened: `live` while a
 scene draws; else `reduced-motion`, `save-data`, `no-webgl`, `failed` (a
