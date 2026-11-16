@@ -417,12 +417,17 @@ function contributorWall(people) {
         .join("")}</ul>`;
 }
 
-/** The image of a section: srcset of its two widths (files: the build's hashed names, by image). */
+/**
+ * The image of a section: srcset of its two widths (files: the build's
+ * hashed names, by image). `data-scene` names the scene landing-art.js
+ * draws over it; a section image is in a frame, which that canvas fills.
+ */
 function picture(images, name, alt, { sizes, eager = false, className = "art" }) {
     const image = images[name];
-    return `<img class="${className}" src="./${image.full}" srcset="./${image.small} 800w, ./${image.full} ${image.width}w" sizes="${sizes}" width="${image.width}" height="${image.height}" alt="${e(alt)}"${
+    const img = `<img class="${className}" src="./${image.full}" srcset="./${image.small} 800w, ./${image.full} ${image.width}w" sizes="${sizes}" width="${image.width}" height="${image.height}" alt="${e(alt)}"${
         eager ? ' fetchpriority="high"' : ' loading="lazy"'
-    } decoding="async">`;
+    } decoding="async" data-scene="${name}">`;
+    return className === "art" ? `<div class="art-frame">${img}</div>` : img;
 }
 
 /** The example: the input, the output per language (tabs that are radio buttons: no script), and that both engines wrote it. */

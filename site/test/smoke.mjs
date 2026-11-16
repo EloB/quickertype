@@ -125,7 +125,10 @@
 // (counted again here), its example is the CLI's output, its links and images
 // resolve, a link to the root with the playground's state goes on to app/
 // with it (also under a Content-Security-Policy), and it follows the theme
-// and fits a phone (see "The landing page" below).
+// and fits a phone (see "The landing page" below). Its images' scenes
+// (landing-art.js): without WebGL the images alone; with WebGL in software
+// (a second browser, SwiftShader) a canvas over exactly each image's box;
+// with reduced motion, none.
 //
 // The CLI is required: $QUICKTYPE_CLI, else target/release/quickertype
 // (`cargo build --release -p quickertype`). The browser is $CHROME, else
@@ -248,13 +251,15 @@ function expectedFor(command) {
 // ---------------------------------------------------------------------------
 // The browser
 
-async function launch(browser) {
+/** A headless browser and its one page; `args`: more of the browser's flags. */
+async function launch(browser, args = []) {
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), "qt-site-"));
     const child = spawn(
         browser,
         [
             "--headless=new",
             "--disable-gpu",
+            ...args,
             "--no-first-run",
             "--no-default-browser-check",
             "--hide-scrollbars",
@@ -3570,7 +3575,9 @@ try {
         assert.deepEqual(landing.sections.map(([id]) => id), ["", "thanks", "tested", "speed", "install"]);
         assert.ok(landing.sections.every(([, label]) => label), `sections without a heading: ${JSON.stringify(landing.sections)}`);
         assert.equal(landing.noAlt, 0, "images without alt");
-        assert.deepEqual(landing.scripts, ["inline"], "the landing page's scripts: the redirect in its head, nothing else");
+        assert.equal(landing.scripts.length, 2, `the landing page's scripts: ${landing.scripts.join(", ")}`);
+        assert.equal(landing.scripts[0], "inline", "the landing page's first script: the redirect in its head");
+        assert.match(landing.scripts[1], /\/quickertype\/landing-art-[^/]+\.js$/, "the landing page's other script: the images' scenes");
         assert.deepEqual([landing.canonical, landing.og.url, landing.og.image], [published, published, `${published}social-preview.png`]);
         assert.equal(landing.og.description, landing.description);
         for (const part of [`up to ${speedNow.upTo}× faster`, `${people.length} contributors`]) assert.ok(landing.description.includes(part), `the description says ${part}`);
@@ -3815,6 +3822,21 @@ try {
         assert.notEqual(lightTheme.page, darkTheme.page, "the landing page in light and dark");
         console.log(`ok: the landing page follows the theme (page ${lightTheme.page} / ${darkTheme.page})`);
 
+        // The images' scenes (landing-art.js), without WebGL: the images,
+        // no canvas, and nothing in the console.
+        const { identifier: noWebgl } = await page.send("Page.addScriptToEvaluateOnNewDocument", {
+            source: "{ const get = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (kind, ...rest) { return kind === 'webgl' ? null : get.call(this, kind, ...rest); }; }",
+        });
+        await page.navigate(siteUrl, { playground: false });
+        await page.waitFor("document.documentElement.dataset.art !== undefined", "the scenes to start or not");
+        assert.deepEqual(
+            await page.evaluate(`({ art: document.documentElement.dataset.art, canvases: document.querySelectorAll("canvas").length, images: [...document.querySelectorAll("img[data-scene]")].map((i) => i.dataset.scene) })`),
+            { art: "no-webgl", canvases: 0, images: ["speed-trails", "thanks-threads", "parity-mirror"] },
+            "the landing page without WebGL",
+        );
+        await page.send("Page.removeScriptToEvaluateOnNewDocument", { identifier: noWebgl });
+        console.log("ok: without WebGL the landing page keeps its three images, and draws no scene");
+
         // Phones: nothing past the right edge (code scrolls in its box).
         for (const width of [360, 390]) {
             await page.viewport(width, 844, { mobile: true });
@@ -3829,6 +3851,56 @@ try {
             console.log(`ok: the landing page at ${width} px: no horizontal scrolling`);
         }
         await page.viewport(1440, 900);
+    }
+
+    // The images' scenes, drawn: in a second browser, with WebGL in software
+    // (SwiftShader). Each scene's canvas fades in over its image once it is
+    // on screen, covers exactly the image's box and is hidden from assistive
+    // technology, with nothing in the console; with reduced motion there is
+    // none.
+    {
+        const live = await launch(browser, ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"]);
+        try {
+            // One device pixel per CSS pixel: software draws a quarter of the pixels.
+            await live.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+            await live.navigate(siteUrl, { playground: false });
+            await live.waitFor("document.documentElement.dataset.art !== undefined", "the scenes to start");
+            assert.equal(await live.evaluate("document.documentElement.dataset.art"), "live", "the scenes, with WebGL in software");
+            assert.equal(await live.evaluate("document.querySelectorAll('img[data-scene]').length"), 3, "the images with a scene");
+            // Each box as soon as its scene draws: a slow runner may later
+            // step a scene down and remove it, as a slow device would.
+            for (const [scene, section] of [["speed-trails", null], ["thanks-threads", "thanks"], ["parity-mirror", "tested"]]) {
+                if (section !== null) await live.evaluate(`document.getElementById(${JSON.stringify(section)}).scrollIntoView({ block: "center" })`);
+                const drawn = `document.querySelector('img[data-scene="${scene}"] + canvas.live-art.on')`;
+                await live.waitFor(`${drawn} !== null`, `the ${scene} scene to draw`);
+                const box = await live.evaluate(`(() => {
+                    const canvas = ${drawn};
+                    const box = (n) => { const b = n.getBoundingClientRect(); return [b.x, b.y, b.width, b.height].map(Math.round); };
+                    return { image: box(canvas.previousElementSibling), canvas: box(canvas), hidden: canvas.getAttribute("aria-hidden"), drawn: canvas.width > 0 && canvas.height > 0 };
+                })()`);
+                assert.deepEqual([box.canvas, box.hidden, box.drawn], [box.image, "true", true], `the ${scene} scene over its image`);
+            }
+            await live.evaluate("scrollTo(0, 0)");
+            await live.screenshot("landing-scenes.png");
+            // A device too slow for them: frames 60 ms apart on the clock the
+            // page sees. The hero's scene steps down twice, then removes itself
+            // and leaves its image.
+            const { identifier: slow } = await live.send("Page.addScriptToEvaluateOnNewDocument", {
+                source: "{ let t = 0; const next = requestAnimationFrame; window.requestAnimationFrame = (f) => next(() => f((t += 60))); }",
+            });
+            await live.navigate(siteUrl, { playground: false });
+            await live.waitFor("document.documentElement.dataset.art !== undefined && document.querySelector('.hero canvas') === null", "the hero's scene to give up");
+            assert.equal(await live.evaluate("document.querySelectorAll('.hero img[data-scene]').length"), 1, "a device too slow for the hero's scene: its image");
+            await live.send("Page.removeScriptToEvaluateOnNewDocument", { identifier: slow });
+            await live.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
+            await live.navigate(siteUrl, { playground: false });
+            await live.waitFor("document.documentElement.dataset.art !== undefined", "the scenes not to start");
+            assert.deepEqual(await live.evaluate("[document.documentElement.dataset.art, document.querySelectorAll('canvas').length]"), ["reduced-motion", 0], "the scenes with reduced motion");
+            assert.deepEqual(live.problems, [], "errors in the page with its scenes");
+        } finally {
+            await live.close();
+        }
+        console.log("ok: with WebGL each image gets its scene, over exactly its box and hidden from assistive technology; too slow, the image again; with reduced motion, none");
     }
 
     // Phones: stacked, no sideways scrolling, and a long command wrapped.

@@ -409,6 +409,8 @@ const landingGenerated =
     specimenCss(facts.specimen);
 const landingStyleFile = writeHashed("landing", "css", `${new TextDecoder().decode(await css("landing.css")).trim()}\n${landingGenerated}\n`, dist);
 const landingScript = await inlineScript("landing-head.js");
+// The images' scenes (landing-art.js): a module, loaded after the page.
+const artFile = writeHashed("landing-art", "js", await bundle("landing-art.js"), dist);
 const landingContent = landingPageHtml(facts, images);
 // The script sends a hash with "=" on to the playground: no anchor here may have one.
 const equalIds = [...landingContent.matchAll(/\sid="([^"]*=[^"]*)"/g)].map((m) => m[1]);
@@ -417,6 +419,7 @@ let landingHtml = fs
     .readFileSync(path.join(src, "landing.html"), "utf8")
     .replace("%STYLE%", `./${landingStyleFile}`)
     .replace("%FONT%", `./${fontFile}`)
+    .replace("%ART_SCRIPT%", `./${artFile}`)
     .replaceAll("%DESCRIPTION%", escapeHtml(landingDescription(facts)))
     .replaceAll("%SITE_URL%", siteUrl)
     .replace("%SOCIAL_IMAGE%", "social-preview.png")
@@ -434,6 +437,7 @@ const listed = [
     landingStyleFile,
     fontFile,
     ...Object.values(images).flatMap((i) => [i.full, i.small]),
+    artFile,
     "benchmarks.html",
     benchmarksStyleFile,
     ...[mainFile, styleFile, "index.html", workerFile, partWorkerFile, wasmFile].map((file) => `app/${file}`),
