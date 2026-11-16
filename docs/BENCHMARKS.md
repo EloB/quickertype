@@ -350,7 +350,9 @@ core.CompressedJSON.prototype.internString = function (s) {
 
 The preload changes only `internString`; `CompressedJSON.hashCode`, which
 also reads the table, is left as it is (the output does not depend on it).
-The fix proposed to quicktype changes both.
+The fix proposed to quicktype
+([#3559](https://github.com/glideapps/quicktype/pull/3559), for the issue
+[#3558](https://github.com/glideapps/quicktype/issues/3558)) changes both.
 
 ## WebAssembly in Chrome
 
