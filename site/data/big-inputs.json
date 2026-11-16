@@ -116,9 +116,8 @@
       "size": "3 GB",
       "quicktype": "more than 5 hours",
       "quicktype_seconds_at_least": 18000,
-      "quickertype": "about 25 s",
-      "quickertype_seconds": 25,
-      "source": "Reported by a user, on their own machine; not measured with cargo xtask bench."
+      "measured": "Scryfall cards (real data), every language",
+      "source": "quicktype's time was reported by a user, on their own machine, for this file; it was not measured here."
     }
   ]
 }

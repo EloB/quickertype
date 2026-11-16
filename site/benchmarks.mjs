@@ -243,8 +243,10 @@ export function checkBigInputs(data, file = bigInputsFile) {
     data.reports.forEach((report, i) => {
         const at = `reports[${i}]`;
         ok(isObject(report), at, "must be an object");
-        for (const key of ["input", "size", "quicktype", "quickertype", "source"]) ok(text(report[key]), at, `needs ${key}`);
-        ok(positive(report.quicktype_seconds_at_least) && positive(report.quickertype_seconds), at, "needs quicktype_seconds_at_least and quickertype_seconds");
+        for (const key of ["input", "size", "quicktype", "measured", "source"]) ok(text(report[key]), at, `needs ${key}`);
+        ok(positive(report.quicktype_seconds_at_least), at, "needs quicktype_seconds_at_least");
+        // quickertype's side is a measurement of the same file, never a report.
+        ok(data.measured.inputs.some((input) => input.name === report.measured), at, `measured names no measured input: ${report.measured}`);
     });
     return data;
 }
@@ -833,6 +835,8 @@ export function benchmarksPageHtml({ bench, big, workers, h2h }) {
     const machine = bench.machine;
     const date = longDate(bench.date);
     const report = big.reports[0];
+    // quickertype on the report's file, measured here.
+    const reported = report === undefined ? undefined : big.measured.inputs.find((i) => i.name === report.measured);
     // The 40 MB input, measured again for big-inputs.json after this run (only then is it news here;
     // said as what was measured, which may be more or less).
     const measuredLarge = big.measured.date > bench.date ? big.measured.inputs.find((i) => large.name.startsWith(`${i.name} `)) : undefined;
@@ -849,7 +853,7 @@ export function benchmarksPageHtml({ bench, big, workers, h2h }) {
         [`${times(pokedexMemory)}`, `less memory on pokedex.json: ${formatMiB(pokedex.results.rust.peak_rss_mib)} against ${formatMiB(pokedex.results.typescript.peak_rss_mib)}`],
         ...(report === undefined
             ? []
-            : [[e(report.quickertype.replace(/^about /, "~")), `for a user's ${e(report.size)} JSON file, where quicktype ran for ${e(report.quicktype)}`]]),
+            : [[seconds(reported.seconds), `for a user's ${e(report.size)} JSON file, where quicktype ran for ${e(report.quicktype)}`]]),
     ];
 
     const typicalList = bench.cli.filter(isTypical);
@@ -911,14 +915,14 @@ ${unexpectedExits(corpus)}
         report === undefined
             ? ""
             : `<figure class="chart" aria-labelledby="report-title">
-<figcaption id="report-title">${e(report.input.replace(/^a /, "A "))}, as a user reported it</figcaption>
+<figcaption id="report-title">${e(report.input.replace(/^a /, "A "))}: quicktype as a user reported it, quickertype measured here</figcaption>
 ${pairChart({
-    theirs: { name: "quicktype", value: report.quicktype_seconds_at_least, text: report.quicktype, label: `quicktype: ${report.quicktype}` },
-    ours: { name: "quickertype", value: report.quickertype_seconds, text: report.quickertype, label: `quickertype: ${report.quickertype}` },
+    theirs: { name: "quicktype", value: report.quicktype_seconds_at_least, text: report.quicktype, label: `quicktype: ${report.quicktype}, as a user reported it` },
+    ours: { name: "quickertype", value: reported.seconds, text: seconds(reported.seconds), label: `quickertype: ${seconds(reported.seconds)}, measured here` },
     tips: false,
     more: true,
 })}
-<p class="fineprint">${e(report.source)} quicktype's bar is drawn at ${hours(report.quicktype_seconds_at_least)}; it ran longer.</p>
+<p class="fineprint">${e(report.source)} quickertype's time is measured here (${e(reported.description)}, below). quicktype's bar is drawn at ${hours(report.quicktype_seconds_at_least)}; it ran longer.</p>
 </figure>`;
     sections.push(`<section id="big-files" aria-labelledby="big-title">
 <h2 id="big-title">Big files</h2>

@@ -490,6 +490,8 @@ export function landingPageHtml(facts, images) {
     const pokedex = cli(named.pokedex);
     const corpus = bench.corpus.results;
     const report = big.reports[0];
+    // quickertype on the report's file, measured here.
+    const reported = report === undefined ? undefined : big.measured.inputs.find((i) => i.name === report.measured);
     // The largest input measured here, and the largest quicktype was timed on too.
     const largest = big.measured.inputs.reduce((a, b) => (b.bytes > a.bytes ? b : a));
     const against = big.measured.inputs.filter((i) => i.quicktype !== undefined).reduce((a, b) => (a === undefined || b.bytes > a.bytes ? b : a), undefined);
@@ -682,16 +684,16 @@ ${tableView("A warm run in the playground, headless Chrome, s (site/data/head-to
     }</p>
 </figure>`;
     const machine = bench.machine;
-    // Big files: a user's report (quicktype's bar drawn as long as it was
+    // Big files: quicktype as a user reported it (its bar drawn as long as it was
     // known to run, and going on), and the largest input measured here.
     const bigFiles = `<figure class="chart" aria-labelledby="big-title">
-<figcaption id="big-title">Big files${report === undefined ? "" : `: ${e(report.input)}, as a user reported it`}</figcaption>
+<figcaption id="big-title">Big files${report === undefined ? "" : `: ${e(report.input)}`}</figcaption>
 ${
     report === undefined
         ? ""
         : pairChart({
-              theirs: { name: "quicktype", value: report.quicktype_seconds_at_least, text: report.quicktype, label: `quicktype: ${report.quicktype}` },
-              ours: { name: "quickertype", value: report.quickertype_seconds, text: report.quickertype, label: `quickertype: ${report.quickertype}` },
+              theirs: { name: "quicktype", value: report.quicktype_seconds_at_least, text: report.quicktype, label: `quicktype: ${report.quicktype}, as a user reported it` },
+              ours: { name: "quickertype", value: reported.seconds, text: seconds(reported.seconds), label: `quickertype: ${seconds(reported.seconds)}, measured here` },
               tips: false,
               more: true,
           })
