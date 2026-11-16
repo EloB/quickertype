@@ -259,10 +259,13 @@ WebGL, with `prefers-reduced-motion: reduce` or Save-Data, or on a device
 too slow to draw the scenes. The module starts after the page has loaded
 and gone idle; a canvas fades in over its image after its first frame and
 draws only while it is on screen (and the tab visible), at up to 1.5 device
-pixels per CSS pixel. When frames average over 40 ms, it draws at 75%, then
-50% of that; below that it removes itself and leaves the image. `<html
-data-art>` says what happened: `live`, `no-webgl`, `reduced-motion` or
-`save-data`. On an M2 Max all three draw at 120 frames per second.
+pixels per CSS pixel. When 45 frames average over 40 ms, it draws at 75%,
+then 50% of that; below that it removes itself and leaves the image. The
+scenes need highp floats in fragment shaders; without them, as without
+WebGL, the images stay. `<html data-art>` says what happened: `live` while a
+scene draws; else `reduced-motion`, `save-data`, `no-webgl`, `failed` (a
+shader did not compile), and once the last canvas has gone, `too-slow` or
+`context-lost`. On an M2 Max all three draw at 120 frames per second.
 
 To look at a scene at a given moment, a page can import `landing-scenes.js`
 and draw `COMMON + SCENES[name]` with its own `T` (seconds) and `R` (the

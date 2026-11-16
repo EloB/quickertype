@@ -4,12 +4,10 @@
 
 export const VERTEX = "attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}";
 
+// highp: the hashes' sin()*43758 overflows mediump (landing-art.js draws
+// only where fragment shaders have highp floats).
 export const COMMON = `
-#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
-#else
-precision mediump float;
-#endif
 uniform vec2 R;
 uniform float T;
 float hash(float n){return fract(sin(n*12.9898)*43758.5453);}

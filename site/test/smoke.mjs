@@ -3861,23 +3861,41 @@ try {
     {
         const live = await launch(browser, ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"]);
         try {
-            await live.viewport(1440, 900);
+            // One device pixel per CSS pixel: software draws a quarter of the pixels.
+            await live.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
             await live.navigate(siteUrl, { playground: false });
             await live.waitFor("document.documentElement.dataset.art !== undefined", "the scenes to start");
             assert.equal(await live.evaluate("document.documentElement.dataset.art"), "live", "the scenes, with WebGL in software");
+            assert.equal(await live.evaluate("document.querySelectorAll('img[data-scene]').length"), 3, "the images with a scene");
+            // Each box as soon as its scene draws: a slow runner may later
+            // step a scene down and remove it, as a slow device would.
             for (const [scene, section] of [["speed-trails", null], ["thanks-threads", "thanks"], ["parity-mirror", "tested"]]) {
                 if (section !== null) await live.evaluate(`document.getElementById(${JSON.stringify(section)}).scrollIntoView({ block: "center" })`);
-                await live.waitFor(`document.querySelector('img[data-scene="${scene}"] + canvas.live-art.on') !== null`, `the ${scene} scene to draw`);
+                const drawn = `document.querySelector('img[data-scene="${scene}"] + canvas.live-art.on')`;
+                await live.waitFor(`${drawn} !== null`, `the ${scene} scene to draw`);
+                const box = await live.evaluate(`(() => {
+                    const canvas = ${drawn};
+                    const box = (n) => { const b = n.getBoundingClientRect(); return [b.x, b.y, b.width, b.height].map(Math.round); };
+                    return { image: box(canvas.previousElementSibling), canvas: box(canvas), hidden: canvas.getAttribute("aria-hidden"), drawn: canvas.width > 0 && canvas.height > 0 };
+                })()`);
+                assert.deepEqual([box.canvas, box.hidden, box.drawn], [box.image, "true", true], `the ${scene} scene over its image`);
             }
-            const boxes = await live.evaluate(`[...document.querySelectorAll("img[data-scene]")].map((img) => {
-                const canvas = img.nextElementSibling;
-                const box = (n) => { const b = n.getBoundingClientRect(); return [b.x, b.y, b.width, b.height].map(Math.round); };
-                return { scene: img.dataset.scene, image: box(img), canvas: box(canvas), hidden: canvas.getAttribute("aria-hidden"), drawn: canvas.width > 0 && canvas.height > 0 };
-            })`);
-            assert.equal(boxes.length, 3, "the images with a scene");
-            for (const b of boxes) assert.deepEqual([b.canvas, b.hidden, b.drawn], [b.image, "true", true], `the ${b.scene} scene over its image`);
             await live.evaluate("scrollTo(0, 0)");
             await live.screenshot("landing-scenes.png");
+            // A device too slow for them: frames 60 ms apart on the clock the
+            // page sees. The hero's scene steps down twice, then removes itself
+            // and leaves its image.
+            const { identifier: slow } = await live.send("Page.addScriptToEvaluateOnNewDocument", {
+                source: "{ let t = 0; const next = requestAnimationFrame; window.requestAnimationFrame = (f) => next(() => f((t += 60))); }",
+            });
+            await live.navigate(siteUrl, { playground: false });
+            await live.waitFor("document.querySelector('.hero canvas') === null && document.documentElement.dataset.art !== undefined", "the hero's scene to give up");
+            assert.deepEqual(
+                await live.evaluate("[document.documentElement.dataset.art, document.querySelectorAll('.hero img[data-scene]').length, document.querySelectorAll('canvas.live-art').length]"),
+                ["live", 1, 2],
+                "a device too slow for the hero's scene: its image, and the other scenes (off screen, not yet drawn) still waiting",
+            );
+            await live.send("Page.removeScriptToEvaluateOnNewDocument", { identifier: slow });
             await live.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
             await live.navigate(siteUrl, { playground: false });
             await live.waitFor("document.documentElement.dataset.art !== undefined", "the scenes not to start");
@@ -3886,7 +3904,7 @@ try {
         } finally {
             await live.close();
         }
-        console.log("ok: with WebGL each image gets its scene, over exactly its box and hidden from assistive technology; with reduced motion, none");
+        console.log("ok: with WebGL each image gets its scene, over exactly its box and hidden from assistive technology; too slow, the image again; with reduced motion, none");
     }
 
     // Phones: stacked, no sideways scrolling, and a long command wrapped.
