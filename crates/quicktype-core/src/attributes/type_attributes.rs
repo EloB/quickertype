@@ -863,43 +863,27 @@ pub fn combine_type_attributes(
     Ok(result)
 }
 
-/// [`combine_type_attributes2`], reusing `a`'s names where nothing else
-/// holds them: a type that gains names one at a time (the string type every
-/// string property shares) would otherwise copy all of them each time.
-pub fn combine_type_attributes2_owned(
-    combination: CombinationKind,
-    a: TypeAttributes,
-    b: &TypeAttributes,
-) -> Result<TypeAttributes> {
-    // The kinds in the order `combine_type_attributes` gives them: `a`'s,
-    // then those only `b` has. A kind is in an attribute set at most once.
-    let a_kinds: Vec<TypeAttributeKind> = a.0.iter().map(TypeAttributeValue::kind).collect();
-    let mut result = TypeAttributes::new();
-    for value in a.0 {
-        let kind = value.kind();
-        let combined = match b.get(kind) {
-            None => Some(value),
-            Some(other) => match (value, other) {
-                (TypeAttributeValue::Names(names), TypeAttributeValue::Names(other_names)) => {
-                    let combined = match Rc::try_unwrap(names) {
-                        Ok(names) => names.add_owned(&[other_names.as_ref()]),
-                        Err(names) => type_names::combine(&[names.as_ref(), other_names.as_ref()]),
-                    };
-                    Some(TypeAttributeValue::Names(Rc::new(combined)))
-                }
-                (value, other) => combine_values(kind, combination, &[&value, other])?,
-            },
-        };
-        if let Some(value) = combined {
-            result.0.push(value);
-        }
-    }
-    for value in b.iter() {
-        if !a_kinds.contains(&value.kind()) {
-            result.0.push(value.clone());
-        }
-    }
-    Ok(result)
+/// Combines `b`'s names into `a`'s in place, as [`combine_type_attributes2`]
+/// would, and takes them out of `b`, so that combining the two afterwards
+/// gives what combining them before would. `a`'s names are reused where
+/// nothing else holds them: a type that gains names one at a time (the
+/// string type every string property shares) would otherwise copy all of
+/// them each time.
+pub fn merge_names_into(a: &mut TypeAttributes, b: &mut TypeAttributes) {
+    let Some(TypeAttributeValue::Names(names)) =
+        a.0.iter_mut()
+            .find(|v| v.kind() == TypeAttributeKind::Names)
+    else {
+        return;
+    };
+    let Some(TypeAttributeValue::Names(other)) = b.remove(TypeAttributeKind::Names) else {
+        return;
+    };
+    let mine = std::mem::replace(names, Rc::clone(&other));
+    *names = Rc::new(match Rc::try_unwrap(mine) {
+        Ok(mine) => mine.add_owned(&[other.as_ref()]),
+        Err(mine) => type_names::combine(&[mine.as_ref(), other.as_ref()]),
+    });
 }
 
 /// `combineTypeAttributes(kind, a, b)`.

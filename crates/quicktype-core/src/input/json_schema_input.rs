@@ -32,7 +32,7 @@
 use std::cell::{OnceCell, RefCell};
 use std::fmt;
 use std::future::Future;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 use quicktype_js_compat::sort::{compare_utf16, sort_by};
 use quicktype_js_compat::uri::{Uri, UriEqualsForm, UriError, decode_uri_component};
@@ -174,7 +174,8 @@ struct Address {
 enum Renormalized {
     /// Normalizing gives the same URI.
     Same,
-    Other(Rc<Address>),
+    /// Another address: weak, so that addresses never keep each other.
+    Other(Weak<Address>),
     Error(UriError),
 }
 
@@ -197,12 +198,15 @@ impl Address {
             self.renormalized
                 .get_or_init(|| match cached_normalize_address(&self.uri) {
                     Ok(address) if address.uri == self.uri => Renormalized::Same,
-                    Ok(address) => Renormalized::Other(address),
+                    Ok(address) => Renormalized::Other(Rc::downgrade(&address)),
                     Err(error) => Renormalized::Error(error),
                 });
         match renormalized {
             Renormalized::Same => Ok(Rc::clone(self)),
-            Renormalized::Other(address) => Ok(Rc::clone(address)),
+            Renormalized::Other(address) => match address.upgrade() {
+                Some(address) => Ok(address),
+                None => normalize_address(&self.uri),
+            },
             Renormalized::Error(error) => Err(uri_error(error.clone())),
         }
     }
@@ -223,10 +227,9 @@ impl Address {
     }
 
     fn equals_hash(&self) -> u64 {
-        *self.equals_hash.get_or_init(|| match self.equals_form() {
-            Some(form) => form.equals_hash(deep_state()),
-            None => std::hash::BuildHasher::hash_one(deep_state(), 0u8),
-        })
+        *self
+            .equals_hash
+            .get_or_init(|| UriEqualsForm::equals_hash_of(self.equals_form(), deep_state()))
     }
 
     fn hash_code(&self) -> i64 {

@@ -1178,10 +1178,7 @@ impl Uri {
     /// alike (see [`UriEqualsForm::equals_hash`]). A URI that does not
     /// normalize, which `equals` reports as an error, hashes as a constant.
     pub fn equals_hash(&self, state: &impl std::hash::BuildHasher) -> u64 {
-        match self.equals_form() {
-            Ok(form) => form.equals_hash(state),
-            Err(_) => state.hash_one(0u8),
-        }
+        UriEqualsForm::equals_hash_of(self.equals_form().ok().as_ref(), state)
     }
 }
 
@@ -1228,6 +1225,18 @@ impl UriEqualsForm {
             }
         }
         two_map.keys().all(|k| one_map.contains_key(k))
+    }
+
+    /// [`Uri::equals_hash`] of the URI with this form, or of one that does
+    /// not normalize (`None`), which hashes as a constant.
+    pub fn equals_hash_of(
+        form: Option<&UriEqualsForm>,
+        state: &impl std::hash::BuildHasher,
+    ) -> u64 {
+        match form {
+            Some(form) => form.equals_hash(state),
+            None => state.hash_one(0u8),
+        }
     }
 
     /// A hash consistent with [`equals`](Self::equals): it hashes what
