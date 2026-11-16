@@ -1,0 +1,77 @@
+#!/bin/zsh -f
+# measure: run a command; while it runs, show its elapsed time and current
+# memory, and when it exits, print its wall time and peak memory.
+#
+#   measure <command> [args...]
+#
+# The live line is polled about ten times a second: elapsed time on a clock
+# started at spawn, and the resident memory of the command's process tree
+# (ps). The final line does not come from polling: both numbers are what
+# macOS /usr/bin/time -l reports for the command, "real" (wall time from
+# spawn to exit) and "maximum resident set size" (bytes). Memory is shown in
+# binary units (1 GB = 2^30 bytes), as top and Activity Monitor show it.
+# macOS only (/usr/bin/time -l, ps -o rss).
+
+zmodload zsh/datetime zsh/mathfunc zsh/zselect || exit 1
+(( $# )) || { print -u2 "usage: measure <command> [args...]"; exit 2 }
+
+report=$(mktemp -t measure) || exit 1
+trap 'printf "\e[?25h"; rm -f -- "$report"' EXIT
+trap 'exit 130' INT TERM
+
+# The formatters leave their result in $REPLY.
+bytes() {
+  if (( $1 >= 1 << 30 )); then printf -v REPLY '%.1f GB' $(( $1 / 1073741824.0 ))
+  elif (( $1 >= 1 << 20 )); then printf -v REPLY '%.1f MB' $(( $1 / 1048576.0 ))
+  else printf -v REPLY '%d kB' $(( $1 / 1024 ))
+  fi
+}
+seconds() {
+  if (( $1 >= 10 )); then printf -v REPLY '%.1f s' $1; else printf -v REPLY '%.2f s' $1; fi
+}
+# Resident memory, in bytes, of every process below $1.
+tree_rss() {
+  local -A kids rss
+  local pid ppid kb total=0
+  local -a todo
+  ps -Ao pid=,ppid=,rss= | while read -r pid ppid kb; do
+    kids[$ppid]+=" $pid"; rss[$pid]=$kb
+  done
+  todo=(${=kids[$1]})
+  while (( $#todo )); do
+    pid=$todo[1]; shift todo
+    (( total += rss[$pid] ))
+    todo+=(${=kids[$pid]})
+  done
+  REPLY=$(( total * 1024 ))
+}
+
+start=$EPOCHREALTIME
+/usr/bin/time -l -o "$report" "$@" &
+timer=$!
+printf '\e[?25l'
+next=$start
+while kill -0 $timer 2>/dev/null; do
+  tree_rss $timer; bytes $REPLY
+  printf '\r\e[Krunning  %5.1f s · %s' $(( EPOCHREALTIME - start )) $REPLY
+  # One tick every 0.1 s on the clock, however long the polling took.
+  (( next += 0.1, pause = int((next - EPOCHREALTIME) * 100) ))
+  (( pause > 0 )) && zselect -t $pause
+done
+wait $timer
+code=$?
+
+real=$(awk '/ real /{ print $1; exit }' "$report")
+peak=$(awk '/maximum resident set size/{ print $1; exit }' "$report")
+printf '\r\e[K'
+if [[ -z $real || -z $peak ]]; then
+  print -u2 "measure: no report from /usr/bin/time (exit $code)"
+elif (( code )); then
+  seconds $real
+  printf '\e[1;31mfailed (exit %d) after %s\e[0m\n' $code $REPLY
+else
+  seconds $real; took=$REPLY
+  bytes $peak
+  printf '\e[1;32mdone\e[0m in \e[1m%s\e[0m · peak memory \e[1m%s\e[0m\n' $took $REPLY
+fi
+exit $code
